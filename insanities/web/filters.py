@@ -6,6 +6,7 @@ import logging
 import re
 import httplib
 from os import path
+from urllib import quote, unquote
 from .core import RequestHandler, ContinueRoute
 from .urlconvs import ConvertError
 from .http import RequestContext, HttpException
@@ -24,7 +25,7 @@ class match(RequestHandler):
             \:?                                     # delimiter
             (?P<variable>[a-zA-Z_][a-zA-Z0-9_]+)?    # variable name
             >$''', re.VERBOSE)
-    _static_url_pattern = re.compile(r'^/[^<]*/?$')
+    _static_url_pattern = re.compile(r'^[^<]*?$')
 
     def __init__(self, url, name, converters=None):
         super(match,self).__init__()
@@ -40,7 +41,7 @@ class match(RequestHandler):
         tracer.builder(self.build)
 
     def handle(self, rctx):
-        m = self._pattern.match(rctx.request.path)
+        m = self._pattern.match(unquote(rctx.request.path))
         if m:
             logger.debug('match - Got match for url "%s"' % rctx.request.path)
             kwargs = m.groupdict()
@@ -68,7 +69,7 @@ class match(RequestHandler):
             if part:
                 is_url_pattern = self._static_url_pattern.match(part)
                 if is_url_pattern:
-                    result += part
+                    result += re.escape(part)
                     self._builder_params.append(part)
                     continue
                 is_converter = self._converter_pattern.match(part)
