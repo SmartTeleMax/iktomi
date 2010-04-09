@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['prefix', 'conf']
+__all__ = ['prefix', 'Conf']
 
 import logging
 import re
@@ -52,3 +52,7 @@ class Conf(Wrapper):
         if self.namespace:
             rctx.conf.pop()
         return rctx
+
+    def trace(self, tracer):
+        if self.namespace:
+            tracer.namespace(self.namespace)

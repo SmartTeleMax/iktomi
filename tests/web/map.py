@@ -5,8 +5,7 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, Chain, RequestHandler, InvalidChaining,\
-                                Wrapper
+from insanities.web.core import Map, RequestHandler
 from insanities.web.filters import *
 
 class MapInit(unittest.TestCase):
@@ -16,8 +15,8 @@ class MapInit(unittest.TestCase):
         def handler(r):
             pass
         app = Map(handler)
-        self.assert_(len(app.chains) == 1)
-        first_item = app.chains[0]
+        self.assert_(len(app.handlers) == 1)
+        first_item = app.handlers[0]
         self.assert_(isinstance(first_item, RequestHandler))
 
     def test_functions_chain(self):
@@ -31,13 +30,11 @@ class MapInit(unittest.TestCase):
         app = Map(
             RequestHandler() | handler1 | handler2
         )
-        self.assert_(len(app.chains) == 1)
-        first_item = app.chains[0]
-        self.assert_(isinstance(first_item, Chain))
-        self.assert_(len(first_item.handlers) == 3)
-        self.assert_(isinstance(first_item.handlers[0], RequestHandler))
-        self.assert_(first_item.handlers[1].func is handler1)
-        self.assert_(first_item.handlers[2].func is handler2)
+        self.assert_(len(app.handlers) == 1)
+        first_item = app.handlers[0]
+        self.assert_(isinstance(first_item._next_handler, RequestHandler))
+        self.assert_(first_item._next_handler.func is handler1)
+        self.assert_(first_item._next_handler._next_handler.func is handler2)
 
     def test_usual_request_handlers(self):
         rh1 = RequestHandler()
@@ -45,32 +42,10 @@ class MapInit(unittest.TestCase):
         app = Map(
             rh1 | rh2
         )
-        self.assert_(len(app.chains) == 1)
-        first_item = app.chains[0]
-        self.assert_(isinstance(first_item, Chain))
-        self.assert_(len(first_item.handlers) == 2)
-        self.assert_(first_item.handlers[0] is rh1)
-        #self.assert_(first_item.handlers[0].map is app)
-        self.assert_(first_item.handlers[1] is rh2)
-        #self.assert_(first_item.handlers[1].map is app)
-    
-    def test_invalid_chainings(self):
-        rh1 = RequestHandler()
-
-        self.assertRaises(InvalidChaining, lambda: Map(rh1) | Map(rh1))
-        self.assertRaises(InvalidChaining, lambda: Map(rh1) | rh1 | Map(rh1))
-        self.assertRaises(InvalidChaining, lambda: rh1 | Map(rh1) | Map(rh1))
-
-        self.assertRaises(InvalidChaining, lambda: rh1 | Wrapper())
-        self.assertRaises(InvalidChaining, lambda: Wrapper() | rh1 | Wrapper())
-        
-        w = Wrapper()
-        Wrapper() | w
-        self.assertRaises(InvalidChaining, lambda: Wrapper() | w)
-        
-        
-        
-        
+        self.assert_(len(app.handlers) == 1)
+        first_item = app.handlers[0]
+        self.assert_(first_item is rh1)
+        self.assert_(first_item._next_handler is rh2)
 
 
 class MapReverse(unittest.TestCase):

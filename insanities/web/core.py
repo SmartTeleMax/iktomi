@@ -68,13 +68,14 @@ class RequestHandler(object):
         return rctx
 
     def handle(self, rctx):
+        '''this method you should override in subclasses'''
         return rctx
 
     def next(self):
         return self._next_handler
 
     def trace(self, tracer):
-        tracer.handler(self)
+        pass
 
     def __repr__(self):
         result = '%s()' % self.__class__.__name__
@@ -118,15 +119,47 @@ class Wrapper(RequestHandler):
         return '%s() | %r' % (self.__class__.__name__, self._next_handler)
 
 
+class Reverse(object):
+
+    def __init__(self, urls, namespace):
+        self.urls = urls
+        self.namespace = namespace
+
+    def __call__(self, name, **kwargs):
+        #TODO: what if we need to provide absolute
+        # url name and do not want namespace to be prepended
+        if self.namespace:
+            name = self.namespace + '.' + name
+        prefixes, builder = self.urls[name]
+        #TODO: return object insted of str
+        return builder(prefixes, **kwargs)
+
+
 class Map(RequestHandler):
 
     def __init__(self, *handlers, **kwargs):
         super(Map, self).__init__()
         # make sure all views are wrapped
         self.handlers = [prepaire_handler(h) for h in handlers]
+        self.__urls = self.compile_urls_map()
+
+    @property
+    def urls(self):
+        return self.__urls
 
     def handle(self, rctx):
         logger.debug('Map begin %r' % self)
+
+        # construct url_for
+        current_url_for = getattr(rctx.conf, 'url_for', None)
+        if current_url_for is None:
+            urls = self.urls
+        else:
+            urls = current_url_for.urls
+        url_for = Reverse(urls, rctx.conf.namespace)
+        rctx.conf['url_for'] = url_for
+        rctx.template_data['url_for'] = url_for
+
         handler = None
         for i in xrange(len(self.handlers)):
             try:
@@ -141,8 +174,24 @@ class Map(RequestHandler):
                 return rctx
             else:
                 return rctx
+
+        rctx.conf['url_for'] = current_url_for
+        rctx.template_data['url_for'] = current_url_for
         # all handlers raised ContinueRoute
         raise ContinueRoute(self)
+
+    def compile_urls_map(self):
+        tracer = Tracer()
+        for handler in self.handlers:
+            item = handler
+            while item:
+                if isinstance(item, self.__class__):
+                    tracer.nested_map(item)
+                    break
+                item.trace(tracer)
+                item = item._next_handler
+            tracer.finish_step()
+        return tracer.urls
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
@@ -199,7 +248,6 @@ class Tracer(object):
             raise ValueError('Dublicating key "%s" in url map' % name)
 
     def finish_step(self):
-        #TODO: check for correct chain members order
         # get prefixes, namespaces if there are any
         prefixes = self._current_step.get('prefix', [])
         namespaces = self._current_step.get('namespace', [])
@@ -207,9 +255,7 @@ class Tracer(object):
         # get url name and url builder if there are any
         url_name = self._current_step.get('url_name', None)
         builder = self._current_step.get('builder', None)
-        handlers = self._current_step.get('handler', [])
-
-        append = self._current_step.get('append', None)
+        nested_map = self._current_step.get('nested_map', None)
 
         # url name show that it is an usual chain (no nested map)
         if url_name:
@@ -217,16 +263,14 @@ class Tracer(object):
             if namespaces:
                 url_name = '.'.join(namespaces) + '.' + url_name
             self.check_name(url_name)
-            self.__urls[url_name] = [prefixes, builder[0], handlers]
+            self.__urls[url_name] = [prefixes, builder[0]]
         # nested map (which also may have nested maps)
-        elif append:
-            nested_map = append[0]
+        elif nested_map:
+            nested_map = nested_map[0]
             for k,v in nested_map.urls.items():
                 if namespaces:
-                    namespace = '.'.join(namespaces)
-                    nested_map.set_namespace(namespace)
-                    k = namespace + '.' + k
-                v = [prefixes + v[0], v[1], v[2] + handlers]
+                    k = '.'.join(namespaces) + '.' + k
+                v = [prefixes + v[0], v[1]]
                 self.check_name(k)
                 self.__urls[k] = v
 

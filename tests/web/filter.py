@@ -5,8 +5,9 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, Chain, RequestHandler, ContinueRoute
+from insanities.web.core import Map, RequestHandler, ContinueRoute
 from insanities.web.filters import *
+from insanities.web.wrappers import *
 from insanities.web.http import Request, RequestContext
 
 
@@ -58,36 +59,6 @@ class Prefix(unittest.TestCase):
         )
 
         rctx = RequestContext(Request.blank('/docs/item').environ)
-        app(rctx)
-
-    def test_prefix_data_transmit(self):
-        '''Check how data is transmited throw map to map'''
-
-        def handler(r):
-            self.assert_(r.data.has_key('data_key'), 'Data is not transmitting')
-
-        def data_setter(r):
-            r.add_data(data_key='some data')
-            ContinueRoute('data_setter')
-
-        app = Map(
-            data_setter,
-            match('/', 'index') | handler,
-            prefix('/docs') | Map(
-                match('/', 'docs') | handler,
-                match('/item', 'doc') | handler,
-                prefix('/tags') | Map(
-                    match('/', 'tags') | handler,
-                    match('/tag', 'tag') | handler
-                )
-            )
-        )
-
-        rctx = RequestContext(Request.blank('/docs/item').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags/').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags/tag').environ)
         app(rctx)
 
 

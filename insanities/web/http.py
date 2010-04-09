@@ -106,10 +106,10 @@ class RequestContext(object):
         self.template_data = DictWithNamespace()
         self.conf = DictWithNamespace()
 
-    def add_data(self, **kwargs):
-        logger.debug('rctx.add_data(): %r' % kwargs)
-        self.__data.update(kwargs)
-
-    @property
-    def data(self):
-        return self.__data
+    @classmethod
+    def blank(cls, url, **data):
+        import wsgiref.util
+        env = {}
+        wsgiref.util.setup_testing_defaults(env)
+        env['PATH_INFO'] = url
+        return cls(env)
