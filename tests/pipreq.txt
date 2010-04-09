@@ -1,0 +1,6 @@
+jinja2
+html5lib
+demjson
+pytils
+werkzeug
+webob

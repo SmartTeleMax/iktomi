@@ -1,0 +1,16 @@
+<input type="hidden" name="{{ input_name }}__mode" value="{{ mode }}" />
+{% if mode == 'existing' %}
+    <img src="{{ value.url }}" />
+    <br/><br/>
+{% elif mode == 'temp' %}
+    <img src="{{ temp_url }}{{ value.uid }}{{ value.thumb_sufix }}.png" />
+    <input type="hidden" name="{{ input_name }}__temp_name" value="{{ value.uid|escape }}{{ value.ext|escape }}" />
+    <input type="hidden" name="{{ input_name }}__original_name" value="{{ value.name|escape }}" />
+    <br/><br/>
+{% endif %}
+{% if mode != 'empty' and null %}
+  <label for="id-{{ input_name }}__delete">удалить</label>
+  <input type="checkbox" name="{{ input_name }}__delete" id="id-{{ input_name }}__delete" />
+  <br/>
+{% endif %}
+<input type="file" name="{{ input_name }}__file" />

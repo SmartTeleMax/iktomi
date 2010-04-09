@@ -1,0 +1,3 @@
+<input id="{{ widget.id }}" type="text" name="{{ widget.input_name }}" value="{{ value|escape }}"
+       {%- if readonly %} readonly="readonly"{% endif %}
+       {%- if widget.classname %} class="{{ widget.classname }}"{% endif %} />
