@@ -47,15 +47,64 @@ class Request(_Request):
         return path
 
 
+class DictWithNamespace(object):
+    #TODO: add unitests
+
+    def __init__(self, **data):
+        self._stack = []
+        self._current_data = data
+        self._current_ns = ''
+
+    def __setitem__(self, k, v):
+        self._current_data[k] = v
+
+    def __getitem__(self, k):
+        return self._current_data[k]
+
+    def __delitem__(self, k):
+        del self._current_data[k]
+
+    def update(self, other):
+        self._current_data.update(other)
+
+    def __getattr__(self, name):
+        if name in self._current_data:
+            return self._current_data[name]
+        raise AttributeError(name)
+
+    def push(self, ns, **data):
+        self._stack.append((self._current_ns, self._current_data))
+        new_data = self._current_data.copy()
+        new_data.update(data)
+        self._current_data = new_data
+        self._current_ns = self._current_ns + '.' + ns if self._current_ns else ns
+
+    def pop(self):
+        ns, data = self._current_ns, self._current_data
+        self._current_ns, self._current_data = self._stack.pop()
+        return ns, data
+
+    def get_namespace(self, ns):
+        for namespace, data in self._stack:
+            if ns == namespace:
+                return data
+        if self._current_ns == ns:
+            return self._current_data
+        raise ValueError('no namespace "%s"' % ns)
+
+    @property
+    def namespace(self):
+        return self._current_ns
+
+
 class RequestContext(object):
 
-    def __init__(self, wsgi_environ, url_for=None, data=None):
+    def __init__(self, wsgi_environ):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
         self.wsgi_env = wsgi_environ.copy()
-        self.__data = data or {}
-        self._main_map = None
-        self.__url_for = url_for
+        self.template_data = DictWithNamespace()
+        self.conf = DictWithNamespace()
 
     def add_data(self, **kwargs):
         logger.debug('rctx.add_data(): %r' % kwargs)
@@ -64,10 +113,3 @@ class RequestContext(object):
     @property
     def data(self):
         return self.__data
-
-    @property
-    def url_for(self):
-        if self.__url_for is None:
-            raise ValueError('No reverse url function was '
-                             'provided to RequestContext')
-        return self.__url_for

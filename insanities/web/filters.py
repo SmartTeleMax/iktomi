@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['match', 'prefix', 'namespace', 'method', 'static']
+__all__ = ['match', 'method', 'static']
 
 import logging
 import re
@@ -117,9 +117,8 @@ class match(RequestHandler):
         return conv
 
     def _init_converters(self, converters):
-        convs = convs_dict
+        convs = convs_dict.copy()
         if converters is not None:
-            convs = convs.copy()
             for conv in converters:
                  name = conv.name or conv.__name__
                  convs[name] = conv
@@ -143,35 +142,6 @@ class method(RequestHandler):
 
     def __repr__(self):
         return 'method(*%r)' % self._names
-
-
-class prefix(RequestHandler):
-
-    def __init__(self, _prefix):
-        super(prefix, self).__init__()
-        self.prefix = _prefix
-
-    def trace(self, tracer):
-        tracer.prefix(self.prefix)
-
-    def handle(self, rctx):
-        if rctx.request.path.startswith(self.prefix):
-            rctx.request.add_prefix(self.prefix)
-            return rctx
-        raise ContinueRoute(self)
-
-    def __repr__(self):
-        return '%s(\'%s\')' % (self.__class__.__name__, self.prefix)
-
-
-class namespace(RequestHandler):
-
-    def __init__(self, namespace_):
-        super(namespace, self).__init__()
-        self.namespace = namespace_
-
-    def trace(self, tracer):
-        tracer.namespace(self.namespace)
 
 
 class static(RequestHandler):
