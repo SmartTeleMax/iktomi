@@ -155,11 +155,14 @@ class Map(RequestHandler):
             rctx.main_map = self
 
         # construct url_for
-        current_url_for = getattr(rctx.conf, 'url_for', None)
-        if current_url_for is None:
+        last_url_for = getattr(rctx.conf, 'url_for', None)
+        if last_url_for is None:
             urls = self.urls
         else:
-            urls = current_url_for.urls
+            urls = last_url_for.urls
+        # urls - url map of the most parent Map instance.
+        # namespace is controlled by Conf wrapper instance,
+        # so we just use rctx.conf.namespace
         url_for = Reverse(urls, rctx.conf.namespace)
         rctx.conf['url_for'] = url_for
         rctx.template_data['url_for'] = url_for
@@ -179,8 +182,8 @@ class Map(RequestHandler):
             else:
                 return rctx
 
-        rctx.conf['url_for'] = current_url_for
-        rctx.template_data['url_for'] = current_url_for
+        rctx.conf['url_for'] = last_url_for
+        rctx.template_data['url_for'] = last_url_for
         if rctx.main_map is self:
             return rctx
         # all handlers raised ContinueRoute

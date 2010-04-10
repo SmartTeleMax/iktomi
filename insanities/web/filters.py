@@ -163,10 +163,9 @@ class static(RequestHandler):
             file_path = path.join(self.path, static_path)
             if path.exists(file_path) and path.isfile(file_path):
                 rctx.response.status = httplib.OK
-                file = open(file_path, 'r')
-                rctx.response.write(file.read())
-                file.close()
+                with open(file_path, 'r') as f:
+                    rctx.response.write(f.read())
                 return rctx
             else:
-                raise HttpException(404)
+                raise HttpException(httplib.NOT_FOUND)
         raise ContinueRoute(self)
