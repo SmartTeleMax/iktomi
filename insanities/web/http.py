@@ -3,6 +3,7 @@
 __all__ = ['HttpException', 'RequestContext', ]
 
 import logging
+import httplib
 from webob import Request as _Request, Response
 
 logger = logging.getLogger(__name__)
@@ -96,20 +97,24 @@ class DictWithNamespace(object):
     def namespace(self):
         return self._current_ns
 
+    def __repr__(self):
+        return repr(self._current_data)
+
 
 class RequestContext(object):
 
     def __init__(self, wsgi_environ):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
+        self.response.status = httplib.NOT_FOUND
         self.wsgi_env = wsgi_environ.copy()
         self.template_data = DictWithNamespace()
         self.conf = DictWithNamespace()
+        # this is mark of main map
+        self.main_map = None
 
     @classmethod
     def blank(cls, url, **data):
-        import wsgiref.util
-        env = {}
-        wsgiref.util.setup_testing_defaults(env)
-        env['PATH_INFO'] = url
+        POST = data if data else None
+        env = _Request.blank(url, POST=POST).environ
         return cls(env)

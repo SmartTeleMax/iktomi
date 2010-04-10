@@ -150,6 +150,10 @@ class Map(RequestHandler):
     def handle(self, rctx):
         logger.debug('Map begin %r' % self)
 
+        # put main map link to rctx
+        if rctx.main_map is None:
+            rctx.main_map = self
+
         # construct url_for
         current_url_for = getattr(rctx.conf, 'url_for', None)
         if current_url_for is None:
@@ -177,6 +181,8 @@ class Map(RequestHandler):
 
         rctx.conf['url_for'] = current_url_for
         rctx.template_data['url_for'] = current_url_for
+        if rctx.main_map is self:
+            return rctx
         # all handlers raised ContinueRoute
         raise ContinueRoute(self)
 
@@ -278,87 +284,3 @@ class Tracer(object):
 
     def __getattr__(self, name):
         return lambda e: self._current_step.setdefault(name, []).append(e)
-
-
-class OldMap(RequestHandler):
-    '''
-    '''
-
-    def __init__(self, *chains, **kwargs):
-        super(Map, self).__init__()
-        self.chains = []
-        self._namespace = ''
-        self.rctx_class = kwargs.get('rctx_class', RequestContext)
-        # lets walk through chains and check them
-        for chain in chains:
-            if type(chain) in (types.FunctionType, types.LambdaType):
-                chain = FunctionWrapper(chain)
-            self.chains.append(chain)
-        # now we will trace all map to get urls dict
-        self._urls = self.trace().urls
-
-    def set_namespace(self, namespace):
-        self._namespace = namespace
-
-    @property
-    def namespace(self):
-        return self._namespace
-
-    def trace(self, **kwargs):
-        tracer = Tracer(**kwargs)
-        for chain in self.chains:
-            if isinstance(chain, self.__class__):
-                tracer.append(chain)
-                tracer.finish_step()
-            else:
-                chain.trace(tracer)
-        return tracer
-
-    def handle(self, rctx):
-        logger.debug('Handle the path -- %s | qs -- %s' % (rctx.request.path, rctx.request.GET))
-        from .filters import prefix
-        
-        if rctx._main_map is None:
-            rctx._main_map = self
-        
-        for chain in self.chains:
-            try:
-                rctx = chain(rctx)
-            except ContinueRoute, e:
-                logger.debug('ContinueRoute by %r', e.who)
-                # if prefixed nested map ask to continue?
-                if isinstance(e.who, self.__class__) \
-                and isinstance(chain, Chain) \
-                and prefix in chain:
-                    raise HttpException(httplib.NOT_FOUND)
-                continue
-            except HttpException, e:
-                # here we process all HttpExceptions thrown by our chains
-                rctx.response.status = e.status
-                if e.status in (httplib.MOVED_PERMANENTLY,
-                                httplib.SEE_OTHER):
-                    rctx.response.headers['Location'] = e.url
-                return rctx
-            else:
-                logger.debug('Matched chain "%r"' % chain)
-                return rctx
-        
-        if rctx._main_map is self:
-            rctx.response.status = httplib.NOT_FOUND
-            return rctx
-        raise ContinueRoute(self)
-
-    @property
-    def urls(self):
-        return self._urls
-
-    def url_for(self, url_name_, **kwargs):
-        # if this map is nestead self.namespace will return full
-        # namespace for this map
-        url_name_ = self.namespace and self.namespace+'.'+url_name_ or url_name_
-        # and now we ask the most parent map for prefixes and url builder
-        prefixes, builder, handlers = self.urls[url_name_]
-        return builder(prefixes, **kwargs)
-
-    def __repr__(self):
-        return '%s(*%r)' % (self.__class__.__name__, self.chains)

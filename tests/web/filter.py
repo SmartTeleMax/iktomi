@@ -79,7 +79,7 @@ class Match(unittest.TestCase):
         '''Check int converter'''
 
         def handler(r):
-            self.assertEqual(r.data['id'], 42)
+            self.assertEqual(r.template_data.id, 42)
 
         app = Map(
             match('/first', 'first') | handler,
@@ -129,9 +129,9 @@ class Match(unittest.TestCase):
             match('/second/<int:id>', 'second') | handler
         )
 
-        rctx = RequestContext(Request.blank('/second/42/').environ)
+        rctx = RequestContext.blank('/second/42/')
         app(rctx)
         self.assertEqual(rctx.response.status_int, 404)
-        rctx = RequestContext(Request.blank('/second/42s').environ)
+        rctx = RequestContext.blank('/second/42s')
         app(rctx)
         self.assertEqual(rctx.response.status_int, 404)

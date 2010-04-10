@@ -20,7 +20,6 @@ class WSGIHandler(object):
 
     def __call__(self, env, start_response):
         rctx = self.app.rctx_class(env, self.app.url_for)
-        rctx.response.status = httplib.NOT_FOUND
         try:
             rctx = self.app(rctx)
             headers = rctx.response.headers.items()

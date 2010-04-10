@@ -5,8 +5,9 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler
+from insanities.web.core import Map, RequestHandler, Reverse
 from insanities.web.filters import *
+from insanities.web.wrappers import *
 
 class MapInit(unittest.TestCase):
 
@@ -52,20 +53,21 @@ class MapReverse(unittest.TestCase):
 
     def test_simple_urls(self):
         '''Stright match'''
+
         def handler(r):
             pass
 
         app = Map(
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
-            match('/items/all', 'all') | handler
-        )
-        self.assertEqual(app.url_for('index'), '/')
-        self.assertEqual(app.url_for('docs'), '/docs')
-        self.assertEqual(app.url_for('all'), '/items/all')
+            match('/items/all', 'all') | handler)
+        url_for = Reverse(app.urls, '')
+        self.assertEqual(url_for('index'), '/')
+        self.assertEqual(url_for('docs'), '/docs')
+        self.assertEqual(url_for('all'), '/items/all')
 
         def fail():
-            app.url_for('notHeare')
+            url_for('notHeare')
 
         self.assertRaises(KeyError, fail)
 
@@ -82,10 +84,11 @@ class MapReverse(unittest.TestCase):
                 match('/nested/', 'nested') | handler
             )
         )
-        self.assertEqual(app.url_for('index'), '/')
-        self.assertEqual(app.url_for('docs'), '/docs')
-        self.assertEqual(app.url_for('all'), '/items/all')
-        self.assertEqual(app.url_for('nested'), '/nested/')
+        url_for = Reverse(app.urls, '')
+        self.assertEqual(url_for('index'), '/')
+        self.assertEqual(url_for('docs'), '/docs')
+        self.assertEqual(url_for('all'), '/items/all')
+        self.assertEqual(url_for('nested'), '/nested/')
 
     def test_nested_map_with_ns(self):
         '''Nested Maps with namespace'''
@@ -96,21 +99,22 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler,
-            namespace('nested') | Map(
+            Conf('nested') | Map(
                 match('/nested/', 'item') | handler
             ),
             Map(
                 match('/other/', 'other') | handler
             )
         )
-        self.assertEqual(app.url_for('index'), '/')
-        self.assertEqual(app.url_for('docs'), '/docs')
-        self.assertEqual(app.url_for('all'), '/items/all')
-        self.assertEqual(app.url_for('nested.item'), '/nested/')
-        self.assertEqual(app.url_for('other'), '/other/')
+        url_for = Reverse(app.urls, '')
+        self.assertEqual(url_for('index'), '/')
+        self.assertEqual(url_for('docs'), '/docs')
+        self.assertEqual(url_for('all'), '/items/all')
+        self.assertEqual(url_for('nested.item'), '/nested/')
+        self.assertEqual(url_for('other'), '/other/')
 
         def fail():
-            app.url_for('nested')
+            url_for('nested')
 
         self.assertRaises(KeyError, fail)
 
@@ -123,25 +127,26 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler,
-            namespace('nested') | Map(
+            Conf('nested') | Map(
                 match('/nested/', 'item') | handler
             ),
-            namespace('other') | Map(
+            Conf('other') | Map(
                 match('/other/', 'item') | handler
             ),
             Map(
                 match('/other/', 'other') | handler
             )
         )
-        self.assertEqual(app.url_for('index'), '/')
-        self.assertEqual(app.url_for('docs'), '/docs')
-        self.assertEqual(app.url_for('all'), '/items/all')
-        self.assertEqual(app.url_for('nested.item'), '/nested/')
-        self.assertEqual(app.url_for('other'), '/other/')
-        self.assertEqual(app.url_for('other.item'), '/other/')
+        url_for = Reverse(app.urls, '')
+        self.assertEqual(url_for('index'), '/')
+        self.assertEqual(url_for('docs'), '/docs')
+        self.assertEqual(url_for('all'), '/items/all')
+        self.assertEqual(url_for('nested.item'), '/nested/')
+        self.assertEqual(url_for('other'), '/other/')
+        self.assertEqual(url_for('other.item'), '/other/')
 
         def fail():
-            app.url_for('nested')
+            url_for('nested')
 
         self.assertRaises(KeyError, fail)
 

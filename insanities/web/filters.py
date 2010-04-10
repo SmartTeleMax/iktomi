@@ -54,9 +54,9 @@ class match(RequestHandler):
                     kwargs[k] = conv.to_python(v)
                 except ConvertError:
                     logger.debug('ConverterError by "%s", value "%s"' % (k, v.encode('utf-8')))
-                    raise HttpException(httplib.NOT_FOUND)
+                    raise ContinueRoute(self)
             if kwargs:
-                rctx.add_data(**kwargs)
+                rctx.template_data.update(kwargs)
             rctx.response.status = httplib.OK
             return rctx
         raise ContinueRoute(self)
@@ -156,7 +156,7 @@ class static(RequestHandler):
         def url_for_static(part):
             return path.join(self.prefix, part)
 
-        rctx.add_data(url_for_static=url_for_static)
+        rctx.template_data['url_for_static'] = url_for_static
 
         if rctx.request.path.startswith(self.prefix):
             static_path = rctx.request.path[len(self.prefix):]
