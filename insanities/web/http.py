@@ -73,6 +73,9 @@ class DictWithNamespace(object):
             return self._current_data[name]
         raise AttributeError(name)
 
+    def as_dict(self):
+        return self._current_data.copy()
+
     def push(self, ns, **data):
         self._stack.append((self._current_ns, self._current_data))
         new_data = self._current_data.copy()
@@ -108,7 +111,8 @@ class RequestContext(object):
         self.response = Response()
         self.response.status = httplib.NOT_FOUND
         self.wsgi_env = wsgi_environ.copy()
-        self.template_data = DictWithNamespace()
+        #XXX: it may be not good idea to put self in template_data
+        self.template_data = DictWithNamespace(rctx=self)
         self.conf = DictWithNamespace()
         # this is mark of main map
         self.main_map = None

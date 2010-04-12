@@ -19,7 +19,7 @@ class WSGIHandler(object):
         return '%d %s' % (number, httplib.responses[number])
 
     def __call__(self, env, start_response):
-        rctx = self.app.rctx_class(env, self.app.url_for)
+        rctx = self.app.rctx_class(env)
         try:
             rctx = self.app(rctx)
             headers = rctx.response.headers.items()
