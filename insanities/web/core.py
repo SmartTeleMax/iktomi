@@ -142,6 +142,7 @@ class Map(RequestHandler):
         # make sure all views are wrapped
         self.handlers = [prepaire_handler(h) for h in handlers]
         self.__urls = self.compile_urls_map()
+        self.rctx_class = kwargs.get('rctx_class', RequestContext)
 
     @property
     def urls(self):
