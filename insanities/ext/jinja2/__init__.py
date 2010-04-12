@@ -39,6 +39,7 @@ class FormEnvironment(object):
 class render_to(RequestHandler):
 
     def __init__(self, template, **kwargs):
+        super(render_to, self).__init__()
         self.template = template
         self._kwargs = kwargs
 
@@ -46,9 +47,10 @@ class render_to(RequestHandler):
         # XXX in handler?
         template = self.template
         if isinstance(template, basestring):
-            template = rctx.data['jinja_env'].get_template(template)
+            template = rctx.conf.jinja_env.get_template(template)
 
-        template_kw = dict(rctx.data, rctx=rctx, url_for=rctx.url_for, **self._kwargs)
+        template_kw = self._kwargs.copy()
+        template_kw.update(rctx.template_data.as_dict())
         logger.debug('render_to - rendering template "%s"' % self.template)
         rendered = template.render(**template_kw)
         rctx.response.write(rendered)
@@ -58,6 +60,7 @@ class render_to(RequestHandler):
 class JinjaEnv(RequestHandler):
 
     def __init__(self, paths=None, autoescape=False):
+        super(JinjaEnv, self).__init__()
         paths_ = [DEFAULT_TEMPLATE_DIR]
         if paths:
             if isinstance(paths, basestring):
@@ -70,6 +73,6 @@ class JinjaEnv(RequestHandler):
         )
 
     def handle(self, rctx):
-        form_env = FormEnvironment(env=self.jinja_env)
-        rctx.add_data(form_env=form_env, jinja_env=self.jinja_env)
+        form_env = FormEnvironment(env=self.jinja_env, rctx=rctx)
+        rctx.conf.update(dict(form_env=form_env, jinja_env=self.jinja_env))
         raise ContinueRoute(self)
