@@ -35,6 +35,8 @@ class FormEnvironment(object):
         vars = dict(self.locals, **kwargs)
         return self.get_template(template).render(**vars)
 
+    def get_string(self, msg, args={}):
+        return msg
 
 class render_to(RequestHandler):
 

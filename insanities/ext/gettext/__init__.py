@@ -15,6 +15,12 @@ def N_(msg):
     '''gettext marker'''
     return msg
 
+class M_(unicode):
+    def __new__(self, string, multiple_by=None):
+        self = str.__new__(cls, string)
+        self.multiple_by = multiple_by
+        return self
+
 def translation(localepath, language, default_language):
     """
     Returns a translation object.
@@ -63,6 +69,7 @@ class LanguageSupport(RequestHandler):
     def handle(self, rctx):
         rctx.languages = self.languages
         rctx.language = rctx.default_language = self.default_language
+        rctx.localepath = self.localepath
         rctx.translation = translation(self.localepath,
                                        self.default_language,
                                        self.default_language)
@@ -84,7 +91,8 @@ class set_lang(RequestHandler):
         self.language = language
 
     def handle(self, rctx):
-        rctx.translation = translation(self.language,
+        rctx.translation = translation(rctx.localepath,
+                                       self.language,
                                        rctx.default_language)
 
 

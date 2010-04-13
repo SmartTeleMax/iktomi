@@ -21,8 +21,6 @@ class BaseField(object):
     methods for data access control, widget to render the g
     '''
 
-    #: Label of field. Can be set by field inheritance or throught constructor.
-    label = None
     #: Passed to widget and rendered as HTML element of field's classname.
     #: Can be set by field inheritance or throught constructor.
     classname = None
@@ -35,6 +33,8 @@ class BaseField(object):
     
 
     def __init__(self, **kwargs):
+        #if 'label' in kwargs:
+        #    kwargs['_label'] = kwargs.pop('label')
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
@@ -51,6 +51,15 @@ class BaseField(object):
         if isinstance(self.parent, form.Form):
             return name
         return self.parent.resolve_name() + '.' + name
+
+    @property
+    def label(self):
+        '''
+        Label of field. Can be set by field inheritance or throught constructor.
+        '''
+        if 'label' in self.__dict__:
+            return self.env.get_string(self.__dict__['label'])
+        return None
     
     @property
     def parent(self):

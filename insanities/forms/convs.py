@@ -8,6 +8,7 @@ import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
+from insanities.ext.gettext import N_, M_
 from jinja2 import Markup
 
 
@@ -113,14 +114,18 @@ class Converter(object):
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
+        
+    def error(self, error_type):
+        message_template = getattr(self, 'error_'+error_type)
+        if callable(message_template):
+            message_template = message_template()
+        message_template = self.env.get_string(message_template, self.__dict__)
+        message = message_template % self.__dict__
+        raise ValidationError(message)
 
-    def _assert(self, expression, message_template, error_type=None):
+    def _assert(self, expression, error_type):
         if not expression:
-            if error_type is not None:
-                message_template = getattr(self, 'error_'+error_type,
-                                           message_template)
-            message = message_template % self.__dict__
-            raise ValidationError(message)
+            self.error()
 
 
 class Chain(Converter):
@@ -185,6 +190,13 @@ class Char(Converter):
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
     
+    error_length_exact = M_(u'Длина должна быть ровно %s символов', 'max_length')
+    error_max_length = M_(u'Длина должна быть не более %s символов', 'max_length')
+    error_min_length = M_(u'Длина должна быть не менее %s символов', 'min_length')
+
+    error_notempty = N_(u'field can not be empty')
+    error_regexp = N_('field should match %(regex)s')
+    
     def clean_value(self, value):
         '''
         Additional clean action to preprocess value before :meth:`to_python`
@@ -206,25 +218,20 @@ class Char(Converter):
         if self.nontext_replacement is not None:
             value = replace_nontext(value, self.nontext_replacement)
         if self.max_length==self.min_length!=None:
-            self._assert(len(value) == self.max_length,
-                         u'Длина должна быть ровно ' + plural_char(self.max_length), 'min_length')
+            self._assert(len(value) == self.max_length, 'error_length_exact')
         else:
             if self.max_length:
-                self._assert(len(value) <= self.max_length,
-                             u'Длина должна быть не более ' + plural_chars(self.max_length), 'max_length')
+                self._assert(len(value) <= self.max_length, 'max_length')
             if self.min_length:
                 if self.min_length == 1:
-                    self._assert(len(value) >= self.min_length,
-                                 u'Поле не должно быть пустым', 'min_length')
+                    self._assert(len(value) >= self.min_length, 'notempty')
                 else:
-                    self._assert(len(value) >= self.min_length,
-                                 u'Длина должна быть не менее ' + plural_chars(self.min_length), 'min_length')
+                    self._assert(len(value) >= self.min_length, 'min_length')
         if self.regex:
             regex = self.regex
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
-            self._assert(regex.match(value),
-                         'field should match %(regex)s', 'regex')
+            self._assert(regex.match(value), 'regex')
         return value
 
     def from_python(self, value):
@@ -244,6 +251,10 @@ class Int(Converter):
     #: Max allowed valid number
     max = None
 
+    error_notvalid = N_('it is not valid integer')
+    error_min = N_('min value is %(min)s')
+    error_max = N_('max value is %(max)s')
+
     def to_python(self, value):
         if value is None:
             if self.null:
@@ -252,11 +263,11 @@ class Int(Converter):
         try:
             value = int(value)
         except ValueError:
-            self._assert(False, 'it is not valid integer')
+            self.error('notvalid')
         if self.min is not None:
-            self._assert(self.min <= value, 'min value is %(min)s', 'min')
+            self._assert(self.min <= value, 'min')
         if self.max is not None:
-            self._assert(self.max >= value, 'max value is %(max)s', 'max')
+            self._assert(self.max >= value, 'max')
         return value
     
     def from_python(self, value):
@@ -299,6 +310,8 @@ class EnumChoice(Converter):
     choices = ()
     multiple = False
 
+    error_null = N_('you must select a value')
+
     def from_python(self, value):
         if self.multiple:
             return [self.conv.from_python(item) for item in value or []]
@@ -321,8 +334,7 @@ class EnumChoice(Converter):
         else:
             value = self._safe_to_python(value)
         if not self.null:
-            self._assert(value not in (None, []),
-                         'you must select a value', 'null')
+            self._assert(value not in (None, []), 'null')
         return value
 
     def __iter__(self):
@@ -339,13 +351,15 @@ class DatetimeDisplay(DisplayOnly):
 
     def from_python(self, value):
         if not value:
-            return u'не задано'
+            return self.env.get_string(N_(u'is not set'))
         return value.strftime(self.format)
 
 
 class Datetime(Converter):
 
     format = '%d.%m.%Y, %H:%M'
+    
+    error_required = N_('required field')
     
     def from_python(self, value):
         if not value:
@@ -354,7 +368,7 @@ class Datetime(Converter):
     
     def to_python(self, value):
         if not value and not self.null:
-            raise ValidationError, u'обязательное поле'
+            self.error('required')
         try:
             return datetime.strptime(value, self.format)
         except ValueError:
@@ -365,6 +379,8 @@ class Datetime(Converter):
 class Date(Converter):
 
     format = '%d.%m.%Y'
+
+    error_required = N_('required field')
     
     def from_python(self, value):
         if not value:
@@ -373,7 +389,7 @@ class Date(Converter):
     
     def to_python(self, value):
         if not value and not self.null:
-            raise ValidationError, u'обязательное поле'
+            self.error('required')
         elif not value:
             return None
         try:
@@ -387,6 +403,8 @@ class Time(Converter):
 
     format = '%H:%M'
 
+    error_required = N_('required field')
+
     def from_python(self, value):
         if value in (None, ''):
             return ''
@@ -394,7 +412,7 @@ class Time(Converter):
     
     def to_python(self, value):
         if not value and not self.null:
-            raise ValidationError, u'обязательное поле'
+            self.error('required')
         try:
             return datetime.strptime(value, self.format).time()
         except ValueError:
