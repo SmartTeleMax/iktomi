@@ -190,9 +190,12 @@ class Char(Converter):
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
     
-    error_length_exact = M_(u'Длина должна быть ровно %s символов', 'max_length')
-    error_max_length = M_(u'Длина должна быть не более %s символов', 'max_length')
-    error_min_length = M_(u'Длина должна быть не менее %s символов', 'min_length')
+    error_length_exact = M_(u'Длина должна быть ровно один символ',
+                            u'Длина должна быть ровно %s символов', 'max_length')
+    error_max_length = M_(u'Длина должна быть не более одного символа',
+                          u'Длина должна быть не более %s символов', 'max_length')
+    error_min_length = M_(u'Длина должна быть не менее одного символа',
+                          u'Длина должна быть не менее %s символов', 'min_length')
 
     error_notempty = N_(u'field can not be empty')
     error_regexp = N_('field should match %(regex)s')

@@ -16,8 +16,9 @@ def N_(msg):
     return msg
 
 class M_(unicode):
-    def __new__(self, string, multiple_by=None):
+    def __new__(self, single, plural, multiple_by=None):
         self = str.__new__(cls, string)
+        self.plural = plural
         self.multiple_by = multiple_by
         return self
 

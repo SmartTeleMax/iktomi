@@ -75,7 +75,7 @@ class gettext_commands(CommandDigest):
                 if verbosity > 1:
                     sys.stdout.write('processing file %s in %s\n' % (file, dirpath))
                 
-                cmd = 'xgettext -d %s -L Python --keyword=N_ --from-code UTF-8 -o - "%s"' % (
+                cmd = 'xgettext -d %s -L Python --keyword=N_ --keyword=M_:1,2 --from-code UTF-8 -o - "%s"' % (
                     domain, os.path.join(dirpath, file))
                 msgs, errors = _popen(cmd)
                 if errors:

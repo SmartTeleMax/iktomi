@@ -8,6 +8,7 @@ class FormEnvironmentMixin(object):
     '''
 
     def get_string(self, msg, args={}):
+        tr = self.rctx.translation
         if isinstance(msg, M_) and msg.multiple_by:
-            return self.rctx.translation.ungettext(msg, args[msg.multiple_by])
-        return self.rctx.translation.ugettext(msg)
+            return tr.ungettext(msg, msg.plural, args[msg.multiple_by])
+        return tr.ugettext(msg)

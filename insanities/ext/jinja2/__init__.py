@@ -36,7 +36,14 @@ class FormEnvironment(object):
         return self.get_template(template).render(**vars)
 
     def get_string(self, msg, args={}):
+        if isinstance(msg, M_):
+            try:
+                if int(args.get(msg.multiple_by)) != 1:
+                    return msg.plural
+            except ValueError:
+                pass
         return msg
+
 
 class render_to(RequestHandler):
 
@@ -59,19 +66,20 @@ class render_to(RequestHandler):
 
 class JinjaEnv(RequestHandler):
 
-    def __init__(self, paths=None, autoescape=False):
+    def __init__(self, paths=None, autoescape=False, EnvCls=FormEnvironment):
         paths_ = [DEFAULT_TEMPLATE_DIR]
         if paths:
             if isinstance(paths, basestring):
                 paths_.append(paths)
             elif isinstance(paths_, (list, tuple)):
                 paths_ += paths
+        self.EnvCls = EnvCls
         self.jinja_env = Environment(
             loader=FileSystemLoader(paths_),
             autoescape=autoescape,
         )
 
     def handle(self, rctx):
-        form_env = FormEnvironment(env=self.jinja_env)
+        form_env = self.EnvCls(env=self.jinja_env)
         rctx.add_data(form_env=form_env, jinja_env=self.jinja_env)
         raise ContinueRoute(self)
