@@ -41,13 +41,17 @@ class gettext_commands(CommandDigest):
             extensions='html', ignore='', searchdir='.'):
         """
         --locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
+        --localedir     Directory containig locale files
+        --searchdir     Directory containig source code files
         --domain        The domain of the message files (default: "insanities").
         --extensions    The file extension(s) to examine (default: ".html", separate multiple extensions with commas).
         --ignore        Ignore files or directories matching this glob-style pattern. Use multiple times to ignore more.
         --verbosity     Verbosity.
         """
         extensions = [x.lstrip('.') for x in extensions.split(',')]
-        ignore_patterns = ignore.split(';') + ['.*', '*~']
+        ignore_patterns = ['*/.*', '*~']
+        if ignore:
+            ignore_patterns += ignore.split(';')
         
         if localedir is None:
             localedir = os.path.abspath('locale')
@@ -102,11 +106,21 @@ class gettext_commands(CommandDigest):
             os.unlink(potfile)
 
     def command_compile(self, locale=None, localedir=None, dbg=False):
+        """
+        --locale        Compiles the message files only for the given locale.
+        --localedir     Directory containig locale files.
+        --dbg           Set if you want to debug .po file wil be outputted
+                        to LC_MESSAGES/_dbg.po.
+        """
         import polib
         cfg = self.cfg
         
         if localedir is None:
             localedir = os.path.abspath('locale')
+
+        if locale is None:
+            sys.stdout.write(self.__class__.command_compile.__doc__)
+            raise Exception() # what exception we need to raise?
         
         result = polib.pofile(cfg.LOCALE_FILES[1] % locale)
         
@@ -152,6 +166,6 @@ def is_ignored(path, ignore_patterns):
     """
     import fnmatch
     for pattern in ignore_patterns:
-        if fnmatch.fnmatchcase(path, pattern):
+        if pattern and fnmatch.fnmatchcase(path, pattern):
             return True
     return False

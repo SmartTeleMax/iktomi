@@ -7,8 +7,10 @@ class FormEnvironmentMixin(object):
     Mixin adding get_string method to environment
     '''
 
-    def get_string(self, msg, args={}):
-        tr = self.rctx.translation
+    def gettext(self, msg, args={}):
         if isinstance(msg, M_) and msg.multiple_by:
-            return tr.ungettext(msg, msg.plural, args[msg.multiple_by])
-        return tr.ugettext(msg)
+            return self.nget_string(msg, msg.plural, args[msg.multiple_by])
+        return self.rctx.translation.ugettext(msg)
+
+    def ngettext(self, single, plural, count):
+        return self.rctx.translation.ungettext(single, plural, count)

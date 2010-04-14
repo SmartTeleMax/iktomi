@@ -119,7 +119,7 @@ class Converter(object):
         message_template = getattr(self, 'error_'+error_type)
         if callable(message_template):
             message_template = message_template()
-        message_template = self.env.get_string(message_template, self.__dict__)
+        message_template = self.env.gettext(message_template, self.__dict__)
         message = message_template % self.__dict__
         raise ValidationError(message)
 

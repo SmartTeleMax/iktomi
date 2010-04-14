@@ -58,7 +58,7 @@ class BaseField(object):
         Label of field. Can be set by field inheritance or throught constructor.
         '''
         if 'label' in self.__dict__:
-            return self.env.get_string(self.__dict__['label'])
+            return self.env.gettext(self.__dict__['label'])
         return None
     
     @property

@@ -35,13 +35,17 @@ class FormEnvironment(object):
         vars = dict(self.locals, **kwargs)
         return self.get_template(template).render(**vars)
 
-    def get_string(self, msg, args={}):
+    def gettext(self, msg, args={}):
         if isinstance(msg, M_):
-            try:
-                if int(args.get(msg.multiple_by)) != 1:
-                    return msg.plural
-            except ValueError:
-                pass
+            return self.nget_string(msg, msg.plural, args[msg.multiple_by])
+        return msg
+
+    def ngetext(self, single, plural, count):
+        try:
+            if int(msg.multiple_by) !=  1:
+                return msg.plural
+        except ValueError:
+            pass
         return msg
 
 
