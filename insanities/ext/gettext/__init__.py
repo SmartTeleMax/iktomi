@@ -3,7 +3,7 @@ import locale
 import gettext
 import os
 
-from insanities.web import RequestHandler
+from insanities.web import RequestHandler, ContinueRoute
 
 from .commands import gettext_commands
 
@@ -13,8 +13,8 @@ def N_(msg):
     return msg
 
 class M_(unicode):
-    def __new__(self, single, plural, multiple_by=None):
-        self = str.__new__(cls, string)
+    def __new__(cls, single, plural, multiple_by=None):
+        self = unicode.__new__(cls, single)
         self.plural = plural
         self.multiple_by = multiple_by
         return self
@@ -22,7 +22,7 @@ class M_(unicode):
 # global translations cache
 _translations = {}
 
-def translation(localepath, language, default_language):
+def translation(localepath, language, default_language, domain):
     """
     Returns a translation object.
 
@@ -35,16 +35,15 @@ def translation(localepath, language, default_language):
     if t is not None:
         return t
 
-    loc = to_locale(lang)
+    # XXX normalize locale
 
-    res = _translations.get(lang, None)
+    res = _translations.get(language, None)
     if res is not None:
         return res
 
-    # xxx
     if os.path.isdir(localepath):
         try:
-            t = gettext.translation('insanities-compiled', localepath, [loc])
+            t = gettext.translation(domain, localepath, [language])
             t.set_language(lang)
         except IOError, e:
             t = None
@@ -52,7 +51,7 @@ def translation(localepath, language, default_language):
     if res is None and language != default_language:
         res = translation(default_language)
     elif res is None:
-        return gettext_module.NullTranslations()
+        return gettext.NullTranslations()
 
     _translations[lang] = res
 
@@ -61,11 +60,12 @@ def translation(localepath, language, default_language):
 
 class LanguageSupport(RequestHandler):
 
-    def __init__(self, languages, localepath):
-        super(static, self).__init__()
+    def __init__(self, languages, localepath, domain='insanities-compiled'):
+        super(LanguageSupport, self).__init__()
         self.languages = languages
         self.default_language = languages[0]
         self.localepath = localepath
+        self.domain = domain
         
     def handle(self, rctx):
         rctx.languages = self.languages
@@ -73,7 +73,8 @@ class LanguageSupport(RequestHandler):
         rctx.localepath = self.localepath
         rctx.translation = translation(self.localepath,
                                        self.default_language,
-                                       self.default_language)
+                                       self.default_language,
+                                       self.domain)
         raise ContinueRoute(self)
 
 
