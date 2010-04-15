@@ -40,7 +40,34 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(rctx.languages, ['en', 'ru'])
         self.assertEqual(rctx.language, 'en')
         self.assertEqual(rctx.translation.language, 'en')
-        
+    
+    def test_set_lang(self):
+        pass
+    
+    def test_translation(self):
+        pass
+    
+    def test_ntranslation(self):
+        pass
+    
+    def test_translation_forms(self):
+        pass
+
+    def test_translation_forms_multiple(self):
+        pass
+
+    def test_translation_forms_templates(self):
+        pass
+
+    def test_translation_templates(self):
+        pass
+    
+    def test_make(self):
+        pass
+    
+    def test_compile(self):
+        pass
+    
     
 CURDIR = os.path.dirname(os.path.abspath(__file__))
     
