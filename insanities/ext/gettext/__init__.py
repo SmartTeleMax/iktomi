@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-
 import locale
 import gettext
 import os
 
-from insanities.web.core import RequestHandler
-from .commands import gettext_commands
-# global translations cache
-_translations = {}
+from insanities.web import RequestHandler
 
+from .commands import gettext_commands
 
 
 def N_(msg):
@@ -21,6 +18,9 @@ class M_(unicode):
         self.plural = plural
         self.multiple_by = multiple_by
         return self
+
+# global translations cache
+_translations = {}
 
 def translation(localepath, language, default_language):
     """
@@ -97,3 +97,15 @@ class set_lang(RequestHandler):
                                        rctx.default_language)
 
 
+class FormEnvironmentMixin(object):
+    '''
+    Mixin adding get_string method to environment
+    '''
+
+    def gettext(self, msg, args={}):
+        if isinstance(msg, M_) and msg.multiple_by:
+            return self.nget_string(msg, msg.plural, args[msg.multiple_by])
+        return self.rctx.translation.ugettext(msg)
+
+    def ngettext(self, single, plural, count):
+        return self.rctx.translation.ungettext(single, plural, count)
