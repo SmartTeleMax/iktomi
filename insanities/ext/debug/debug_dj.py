@@ -5,6 +5,8 @@ import datetime
 
 from jinja2 import Environment, FileSystemLoader
 
+# Code mainly from django
+# XXX should we write some license notes?
 
 CURDIR = os.path.dirname(os.path.abspath(__file__))
 
