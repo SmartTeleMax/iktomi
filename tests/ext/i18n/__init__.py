@@ -8,11 +8,23 @@ from insanities.web import Map
 
 from insanities.ext.jinja2 import JinjaEnv, FormEnvironment
 from insanities.ext.gettext import LanguageSupport, set_lang, FormEnvironmentMixin
+from insanities.ext.gettext.commands import gettext_commands
+import insanities
+
+from gettext import GNUTranslations
 
 
 class TranslationFormEnv(FormEnvironment, FormEnvironmentMixin): pass
 
-class Config(object): pass
+INSANITIES_ROOT = CURDIR = os.path.dirname(os.path.abspath(insanities.__file__))
+CURDIR = os.path.dirname(os.path.abspath(__file__))
+
+class Config(object):
+    LOCALE_FILES = [
+        os.path.join(INSANITIES_ROOT, 'locale/%s/LC_MESSAGES/insanities-core.po'),
+        os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/insanities-core.po'),
+    ]
+    pass
 
 
 
@@ -39,10 +51,17 @@ class TranslationTestCase(unittest.TestCase):
         rctx = self.run_app(app)
         self.assertEqual(rctx.languages, ['en', 'ru'])
         self.assertEqual(rctx.language, 'en')
-        self.assertEqual(rctx.translation.language, 'en')
+        assert isinstance(rctx.translation, GNUTranslations)
+        self.assertEqual(rctx.translation.plural, 'en')
     
     def test_set_lang(self):
-        pass
+        app = self.get_app(languages=['en', 'ru'], chains=[
+                set_lang('ru'),
+            ])
+        rctx = self.run_app(app)
+        self.assertEqual(rctx.languages, ['en', 'ru'])
+        self.assertEqual(rctx.language, 'ru')
+        assert isinstance(rctx.translation, GNUTranslations)
     
     def test_translation(self):
         pass
@@ -63,13 +82,11 @@ class TranslationTestCase(unittest.TestCase):
         pass
     
     def test_make(self):
+        gettext_commands
         pass
     
     def test_compile(self):
         pass
-    
-    
-CURDIR = os.path.dirname(os.path.abspath(__file__))
-    
+        
 if __name__ == '__main__':
     unittest.main()

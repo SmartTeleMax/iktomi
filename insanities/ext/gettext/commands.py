@@ -105,10 +105,12 @@ class gettext_commands(CommandDigest):
             open(pofile, 'wb').write(msgs)
             os.unlink(potfile)
 
-    def command_compile(self, locale=None, localedir=None, dbg=False):
+    def command_compile(self, locale=None, localedir=None, dbg=False,
+                        domain='insanities'):
         """
         --locale        Compiles the message files only for the given locale.
         --localedir     Directory containig locale files.
+        --domain        Default is 'insanities'
         --dbg           Set if you want to debug .po file wil be outputted
                         to LC_MESSAGES/_dbg.po.
         """
@@ -122,7 +124,7 @@ class gettext_commands(CommandDigest):
             sys.stdout.write(self.__class__.command_compile.__doc__)
             raise Exception() # what exception we need to raise?
         
-        result = polib.pofile(cfg.LOCALE_FILES[1] % locale)
+        result = polib.pofile(cfg.LOCALE_FILES[0] % locale)
         
         if '_' in locale:
             locales = (locale, locale.split('_')[0])
@@ -144,13 +146,14 @@ class gettext_commands(CommandDigest):
                     elif not old_entry.msgstr and entry.msgstr:
                         # XXX check if it is correct
                         old_entry.msgstr = entry.msgstr
+                # XXX merge headers
 
-        out_path = os.path.join(localedir, locale, 'LC_MESSAGES/insanitites.mo')
-        result.save_as_mofile(out_path)
+        out_path = os.path.join(localedir, locale, 'LC_MESSAGES/%s.mo' % domain)
+        result.save_as_mofile(out_path) #are plural expressions saved correctly?
         if dbg:
             out_path = os.path.join(localedir, locale, 'LC_MESSAGES/_dbg.po')
             result.save(out_path)
-        # save to mo file
+
 
 # XXX staff from Django. need to be refactored
 def _popen(cmd):

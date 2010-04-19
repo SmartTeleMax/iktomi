@@ -31,10 +31,6 @@ def translation(localepath, language, default_language, domain):
     """
     global _translations
     
-    t = _translations.get(language, None)
-    if t is not None:
-        return t
-
     # XXX normalize locale
 
     res = _translations.get(language, None)
@@ -43,24 +39,23 @@ def translation(localepath, language, default_language, domain):
 
     if os.path.isdir(localepath):
         try:
-            t = gettext.translation(domain, localepath, [language])
-            t.set_language(lang)
+            res = gettext.translation(domain, localepath, [language])
         except IOError, e:
-            t = None
+            pass
 
     if res is None and language != default_language:
-        res = translation(default_language)
+        res = translation(localepath, default_language, default_language, domain)
     elif res is None:
         return gettext.NullTranslations()
 
-    _translations[lang] = res
+    _translations[language] = res
 
     return res
 
 
 class LanguageSupport(RequestHandler):
 
-    def __init__(self, languages, localepath, domain='insanities-compiled'):
+    def __init__(self, languages, localepath, domain='insanities'):
         super(LanguageSupport, self).__init__()
         self.languages = languages
         self.default_language = languages[0]
@@ -71,6 +66,7 @@ class LanguageSupport(RequestHandler):
         rctx.languages = self.languages
         rctx.language = rctx.default_language = self.default_language
         rctx.localepath = self.localepath
+        rctx.localedomain = self.domain
         rctx.translation = translation(self.localepath,
                                        self.default_language,
                                        self.default_language,
@@ -89,14 +85,16 @@ class set_lang(RequestHandler):
     '''
 
     def __init__(self, language):
-        super(static, self).__init__()
+        super(set_lang, self).__init__()
         self.language = language
 
     def handle(self, rctx):
         rctx.translation = translation(rctx.localepath,
                                        self.language,
-                                       rctx.default_language)
-
+                                       rctx.default_language,
+                                       rctx.localedomain)
+        rctx.language = self.language
+        return rctx
 
 class FormEnvironmentMixin(object):
     '''
