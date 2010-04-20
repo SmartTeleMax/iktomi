@@ -8,6 +8,8 @@ from itertools import dropwhile
 from insanities.management.commands import CommandDigest
 from subprocess import PIPE, Popen
 
+plural_forms_re = re.compile(r'^(?P<value>"Plural-Forms.+?\\n")\s*$', re.MULTILINE | re.DOTALL)
+
 
 class gettext_commands(CommandDigest):
     ''''''
@@ -125,6 +127,7 @@ class gettext_commands(CommandDigest):
             raise Exception() # what exception we need to raise?
         
         result = polib.pofile(cfg.LOCALE_FILES[0] % locale)
+        plural = result.metadata.get('Plural-Forms')
         
         if '_' in locale:
             locales = (locale, locale.split('_')[0])
@@ -137,18 +140,24 @@ class gettext_commands(CommandDigest):
                 if not os.path.isfile(file):
                     sys.stdout.write('skipping file %s\n' % file)
                     continue
+                pofile = polib.pofile(file)
                 
-                for entry in polib.pofile(file):
-                    old_entry = self.find(entry.msgid, by='msgid')
+                for entry in pofile:
+                    old_entry = result.find(entry.msgid, by='msgid')
                     
                     if old_entry is None:
                         result.append(entry)
                     elif not old_entry.msgstr and entry.msgstr:
                         # XXX check if it is correct
                         old_entry.msgstr = entry.msgstr
-                # XXX merge headers
+                
+                new_plural = pofile.metadata.get('Plural-Forms')
+                if not plural and new_plural:
+                    result.metadata['Plural-Forms'] = new_plural
 
         out_path = os.path.join(localedir, locale, 'LC_MESSAGES/%s.mo' % domain)
+        if not os.path.isdir(os.path.dirname(out_path)):
+            os.makedirs(os.path.dirname(out_path))
         result.save_as_mofile(out_path) #are plural expressions saved correctly?
         if dbg:
             out_path = os.path.join(localedir, locale, 'LC_MESSAGES/_dbg.po')

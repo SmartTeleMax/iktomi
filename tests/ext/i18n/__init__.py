@@ -2,6 +2,7 @@
 import unittest
 import os
 from copy import copy
+import shutil
 
 from insanities.forms import fields, convs, form, widgets, media, perms
 from insanities.web import Map
@@ -22,7 +23,7 @@ CURDIR = os.path.dirname(os.path.abspath(__file__))
 class Config(object):
     LOCALE_FILES = [
         os.path.join(INSANITIES_ROOT, 'locale/%s/LC_MESSAGES/insanities-core.po'),
-        os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/insanities-core.po'),
+        os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/test.po'),
     ]
     pass
 
@@ -32,9 +33,14 @@ class TranslationTestCase(unittest.TestCase):
     def setUp(self):
         pass
     
+    def tearDown(self):
+        modir = os.path.join(CURDIR, 'mo')
+        if os.path.isdir(modir):
+            shutil.rmtree(modir)
+    
     def get_app(self, chains=[], languages=['en', 'ru']):
         app = Map(
-            LanguageSupport(languages, os.path.join(CURDIR, 'mo')),
+            LanguageSupport(languages, os.path.join(CURDIR, 'locale')),
             JinjaEnv(paths=[os.path.join(CURDIR, 'templates')],
                      EnvCls=TranslationFormEnv),
             *chains)
@@ -52,7 +58,7 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(rctx.languages, ['en', 'ru'])
         self.assertEqual(rctx.language, 'en')
         assert isinstance(rctx.translation, GNUTranslations)
-        self.assertEqual(rctx.translation.plural, 'en')
+        #self.assertEqual(rctx.translation.plural, 'en')
     
     def test_set_lang(self):
         app = self.get_app(languages=['en', 'ru'], chains=[
@@ -63,30 +69,46 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(rctx.language, 'ru')
         assert isinstance(rctx.translation, GNUTranslations)
     
-    def test_translation(self):
-        pass
-    
     def test_ntranslation(self):
-        pass
+        raise NotImplementedError()
     
     def test_translation_forms(self):
-        pass
+        raise NotImplementedError()
 
     def test_translation_forms_multiple(self):
-        pass
+        raise NotImplementedError()
 
     def test_translation_forms_templates(self):
-        pass
+        raise NotImplementedError()
 
     def test_translation_templates(self):
-        pass
+        raise NotImplementedError()
     
     def test_make(self):
-        gettext_commands
-        pass
+        class Config(object):
+            pass
+        command = gettext_commands(Config())
+        raise NotImplementedError()
     
     def test_compile(self):
-        pass
+        class Config(object):
+            LOCALE_FILES = [
+                os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/test.po'),
+                os.path.join(INSANITIES_ROOT, 'locale/%s/LC_MESSAGES/insanities-core.po'),
+            ]
+        command = gettext_commands(Config())
+        command.command_compile(locale='ru',
+                                localedir=os.path.join(CURDIR, 'mo'),
+                                dbg=True, domain='test')
         
+        outfile_dbg = os.path.join(CURDIR, 'mo/ru/LC_MESSAGES/_dbg.po')
+        with open(outfile_dbg) as pofile:
+            string = pofile.read().decode('utf-8')
+            assert 'Plural-Forms:' in string
+            assert u"временный файл v2" in string
+            assert u"специальныйтестовыймессидж" in string
+            assert u"удалить" in string
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -8,86 +8,86 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-19 19:57+0400\n"
+"POT-Creation-Date: 2010-04-20 13:52+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
 #: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/fileinput.html:4
-msgid "текущий файл"
-msgstr ""
+msgid "current file"
+msgstr "текущий файл"
 
 #: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/fileinput.html:8
-msgid "временный файл"
-msgstr ""
+msgid "temporary file"
+msgstr "временный файл"
 
 #: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/fileinput.html:15
 #: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/imageinput.html:13
-msgid "удалить"
-msgstr ""
+msgid "delete"
+msgstr "удалить"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:193
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:184
 #, python-format
-msgid "Длина должна быть ровно один символ"
-msgid_plural "Длина должна быть ровно %s символов"
-msgstr[0] ""
-msgstr[1] ""
+msgid "The length should be exactly one symbol"
+msgid_plural "The length should be exactly %(max_length)s symbols"
+msgstr[0] "Длина должна быть ровно %s символ"
+msgstr[1] "Длина должна быть ровно %s символа"
+msgstr[2] "Длина должна быть ровно %s символов"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:195
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:186
 #, python-format
-msgid "Длина должна быть не более одного символа"
-msgid_plural "Длина должна быть не более %s символов"
-msgstr[0] ""
-msgstr[1] ""
+msgid "The length should be at most one symbol"
+msgid_plural "The length should be at most %(max_length)s symbols"
+msgstr[0] "Длина должна быть не более %s символа"
+msgstr[1] "Длина должна быть не более %s символов"
+msgstr[2] "Длина должна быть не более %s символов"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:197
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:188
 #, python-format
-msgid "Длина должна быть не менее одного символа"
-msgid_plural "Длина должна быть не менее %s символов"
-msgstr[0] ""
-msgstr[1] ""
+msgid "The length should be at least one symbol"
+msgid_plural "The length should be at least %(min_length)s symbols"
+msgstr[0] "Длина должна быть не менее %s символа"
+msgstr[1] "Длина должна быть не менее %s символов"
+msgstr[2] "Длина должна быть не менее %s символов"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:200
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:191
 msgid "field can not be empty"
-msgstr ""
+msgstr "поле не может быть пустым"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:201
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:192
 #, python-format
 msgid "field should match %(regex)s"
-msgstr ""
+msgstr "поле должно удовлетворять регулярному выражению: %(regex)s"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:257
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:248
 msgid "it is not valid integer"
-msgstr ""
+msgstr "значение не является целым числом"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:258
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:249
 #, python-format
 msgid "min value is %(min)s"
-msgstr ""
+msgstr "минимальное допустимое значение: %(min)s"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:259
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:250
 #, python-format
 msgid "max value is %(max)s"
-msgstr ""
+msgstr "миаксимальное допустимое значение: %(max)s"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:316
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:307
 msgid "you must select a value"
-msgstr ""
+msgstr "необходимо выбрать значение"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:357
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:348
 msgid "is not set"
-msgstr ""
+msgstr "не задано"
 
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:365
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:386
-#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:409
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:356
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:377
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:400
 msgid "required field"
-msgstr ""
-
-#: /home/harut/python/apps/insanities-testing/insanities/forms/fields.py:61
-msgid "label"
-msgstr ""
+msgstr "обязательное поле"

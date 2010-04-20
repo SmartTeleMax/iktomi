@@ -1,18 +1,18 @@
 <input type="hidden" name="{{ input_name }}__mode" value="{{ mode }}" />
 {% if mode == 'existing' %}
     <a target="_blank" href="{{ value.base_url }}{{ value.filename }}">
-        {{ form.env.gettext('текущий файл') }}
+        {{ form.env.gettext('current file') }}
     </a><br/>
 {% elif mode == 'temp' %}
     <a target="_blank" href="{{ temp_url }}{{ value.uid }}{{ value.ext }}">
-        {{ form.env.gettext('временный файл') }}
+        {{ form.env.gettext('temporary file') }}
     </a><br/>
     <input type="hidden" name="{{ input_name }}__temp_name" value="{{ value.uid|escape }}{{ value.ext|escape }}" />
     <input type="hidden" name="{{ input_name }}__original_name" value="{{ value.name|escape }}" />
 {% endif %}
 {% if mode != 'empty' and null %}
   <label for="id-{{ input_name }}__delete">
-    {{ form.env.gettext('удалить') }}
+    {{ form.env.gettext('delete') }}
   </label>
   <input type="checkbox" name="{{ input_name }}__delete" id="id-{{ input_name }}__delete"
          {% if delete %}checked="checked"{% endif %} />

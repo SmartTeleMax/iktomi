@@ -163,15 +163,6 @@ class Chain(Converter):
         return Converter.__call__(self, convs=convs, **kwargs)
 
 
-from pytils.numeral import get_plural
-
-def plural_chars(n):
-    return get_plural(n, [u'символа', u'cимволов', u'символов'])
-
-def plural_char(n):
-    return get_plural(n, [u'символ', u'символа', u'символов'])
-
-
 class Char(Converter):
     
     """
@@ -190,12 +181,12 @@ class Char(Converter):
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
     
-    error_length_exact = M_(u'Длина должна быть ровно один символ',
-                            u'Длина должна быть ровно %s символов', 'max_length')
-    error_max_length = M_(u'Длина должна быть не более одного символа',
-                          u'Длина должна быть не более %s символов', 'max_length')
-    error_min_length = M_(u'Длина должна быть не менее одного символа',
-                          u'Длина должна быть не менее %s символов', 'min_length')
+    error_length_exact = M_(u'The length should be exactly one symbol',
+                            u'The length should be exactly %(max_length)s symbols', 'max_length')
+    error_max_length = M_(u'The length should be at most one symbol',
+                          u'The length should be at most %(max_length)s symbols', 'max_length')
+    error_min_length = M_(u'The length should be at least one symbol',
+                          u'The length should be at least %(min_length)s symbols', 'min_length')
 
     error_notempty = N_(u'field can not be empty')
     error_regexp = N_('field should match %(regex)s')
