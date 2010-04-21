@@ -6,7 +6,7 @@ import logging
 import types
 import httplib
 from inspect import getargspec
-from .http import HttpException, RequestContext
+from .http import HttpException, RequestContext, URL
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def process_http_exception(rctx, e):
     rctx.response.status = e.status
     if e.status in (httplib.MOVED_PERMANENTLY,
                     httplib.SEE_OTHER):
-        rctx.response.headers['Location'] = e.url
+        rctx.response.headers['Location'] = unicode(e.url)
 
 
 class RequestHandler(object):
@@ -121,18 +121,25 @@ class Wrapper(RequestHandler):
 
 class Reverse(object):
 
-    def __init__(self, urls, namespace):
+    def __init__(self, urls, namespace, domain=''):
         self.urls = urls
         self.namespace = namespace
+        self.domain = domain
 
     def __call__(self, name, **kwargs):
-        #TODO: what if we need to provide absolute
-        # url name and do not want namespace to be prepended
         if self.namespace:
-            name = self.namespace + '.' + name
-        prefixes, builder = self.urls[name]
-        #TODO: return object insted of str
-        return builder(prefixes, **kwargs)
+            local_name = self.namespace + '.' + name
+            # if there are no url in local namespace, we search it in global
+            url = self.urls.get(local_name) or self.urls[name]
+        else:
+            url = self.urls[name]
+            
+        prefixes, subdomains, builder = url
+
+        domain = '.'.join(subdomains)
+        absolute = (domain != self.domain)
+        path = builder(prefixes, **kwargs)
+        return URL(path, domain=domain, is_absolute=absolute)
 
 
 class Map(RequestHandler):
@@ -164,9 +171,9 @@ class Map(RequestHandler):
         # urls - url map of the most parent Map instance.
         # namespace is controlled by Conf wrapper instance,
         # so we just use rctx.conf.namespace
-        url_for = Reverse(urls, rctx.conf.namespace)
-        rctx.conf['url_for'] = url_for
-        rctx.template_data['url_for'] = url_for
+        url_for = Reverse(urls, rctx.conf.namespace,
+                          domain=rctx.request.host.split(':')[0])
+        rctx.conf['url_for'] = rctx.template_data['url_for'] = url_for
 
         handler = None
         for i in xrange(len(self.handlers)):
@@ -183,8 +190,7 @@ class Map(RequestHandler):
             else:
                 return rctx
 
-        rctx.conf['url_for'] = last_url_for
-        rctx.template_data['url_for'] = last_url_for
+        rctx.conf['url_for'] = rctx.template_data['url_for'] = last_url_for
         if rctx.main_map is self:
             return rctx
         # all handlers raised ContinueRoute
@@ -260,6 +266,8 @@ class Tracer(object):
     def finish_step(self):
         # get prefixes, namespaces if there are any
         prefixes = self._current_step.get('prefix', [])
+        subdomains = self._current_step.get('subdomain', [])
+        subdomains.reverse()
         namespaces = self._current_step.get('namespace', [])
 
         # get url name and url builder if there are any
@@ -273,16 +281,15 @@ class Tracer(object):
             if namespaces:
                 url_name = '.'.join(namespaces) + '.' + url_name
             self.check_name(url_name)
-            self.__urls[url_name] = [prefixes, builder[0]]
+            self.__urls[url_name] = (prefixes, subdomains, builder[0])
         # nested map (which also may have nested maps)
         elif nested_map:
             nested_map = nested_map[0]
             for k,v in nested_map.urls.items():
                 if namespaces:
                     k = '.'.join(namespaces) + '.' + k
-                v = [prefixes + v[0], v[1]]
                 self.check_name(k)
-                self.__urls[k] = v
+                self.__urls[k] = (prefixes + v[0], v[1] + subdomains, v[2])
 
         self._current_step = {}
 

@@ -50,7 +50,7 @@ class MapInit(unittest.TestCase):
 
 
 class MapReverse(unittest.TestCase):
-
+    
     def test_simple_urls(self):
         '''Stright match'''
 
@@ -61,7 +61,7 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler)
-        url_for = Reverse(app.urls, '')
+        url_for = lambda x: unicode(Reverse(app.urls, '')(x))
         self.assertEqual(url_for('index'), '/')
         self.assertEqual(url_for('docs'), '/docs')
         self.assertEqual(url_for('all'), '/items/all')
@@ -84,7 +84,7 @@ class MapReverse(unittest.TestCase):
                 match('/nested/', 'nested') | handler
             )
         )
-        url_for = Reverse(app.urls, '')
+        url_for = lambda x: unicode(Reverse(app.urls, '')(x))
         self.assertEqual(url_for('index'), '/')
         self.assertEqual(url_for('docs'), '/docs')
         self.assertEqual(url_for('all'), '/items/all')
@@ -106,7 +106,7 @@ class MapReverse(unittest.TestCase):
                 match('/other/', 'other') | handler
             )
         )
-        url_for = Reverse(app.urls, '')
+        url_for = lambda x: unicode(Reverse(app.urls, '')(x))
         self.assertEqual(url_for('index'), '/')
         self.assertEqual(url_for('docs'), '/docs')
         self.assertEqual(url_for('all'), '/items/all')
@@ -137,7 +137,7 @@ class MapReverse(unittest.TestCase):
                 match('/other/', 'other') | handler
             )
         )
-        url_for = Reverse(app.urls, '')
+        url_for = lambda x: unicode(Reverse(app.urls, '')(x))
         self.assertEqual(url_for('index'), '/')
         self.assertEqual(url_for('docs'), '/docs')
         self.assertEqual(url_for('all'), '/items/all')

@@ -32,6 +32,28 @@ class prefix(Wrapper):
     def __repr__(self):
         return '%s(\'%s\')' % (self.__class__.__name__, self.prefix)
 
+class subdomain(Wrapper):
+
+    def __init__(self, _subdomain):
+        super(subdomain, self).__init__()
+        self.subdomain = _subdomain
+
+    def trace(self, tracer):
+        tracer.subdomain(self.subdomain)
+
+    def handle(self, rctx):
+        subdomain = rctx.request.subdomain
+        slen = len(self.subdomain)
+        delimiter = subdomain[-slen-1:-slen]
+        if path.endswith(self.subdomain) and delimiter in ('', '.'):
+            rctx.request.add_subdomain(self.subdomain)
+            rctx = self.exec_wrapped(rctx)
+            return rctx
+        raise ContinueRoute(self)
+
+    def __repr__(self):
+        return '%s(\'%s\')' % (self.__class__.__name__, self.subdomain)
+
 
 class Conf(Wrapper):
 

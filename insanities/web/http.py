@@ -4,7 +4,8 @@ __all__ = ['HttpException', 'RequestContext', ]
 
 import logging
 import httplib
-from webob import Request as _Request, Response
+import urllib
+from webob import Request as _Request, Response, MultiDict
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +17,76 @@ class HttpException(Exception):
         self.url = url
 
 
+class URL(object):
+    
+    schema = 'http'
+    domain = None
+    path = '/'
+    port = None
+    is_absolute = False
+    query = MultiDict()
+    
+    def __init__(self, path, **kwargs):
+        self.path = path
+        query = kwargs.get('query', MultiDict())
+        if not isinstance(query, MultiDict):
+            query = MultiDict(query)
+        kwargs['query'] = query
+
+        self._kwargs = kwargs
+        for key, v in kwargs.items():
+            setattr(self, key, v)
+    
+    def _copy(self, **kwargs):
+        path = kwargs.pop('path', self.path)
+        kw = self._kwargs.copy()
+        kw.update(kwargs)
+        return self.__class__(path, **kw)
+    
+    def add_args(self, **kwargs):
+        query = self.query.copy()
+        query.update(kwargs)
+        return self._copy(query=query)
+
+    def replace_args(self, **kwargs):
+        query = self.query.copy()
+        for key, v in kwargs.items():
+            query[key] = v
+        return self._copy(query=query)
+    
+    def delete_args(self, *args):
+        query = self.query.copy()
+        for key in args:
+            if key in query: del query[key]
+        return self._copy(query=query)
+    
+    def force_absolute(self):
+        return self._copy(is_absolute=True)
+    
+    def __unicode__(self):
+        query = '?' + urllib.urlencode(self.query) if self.query else ''
+        if self.is_absolute:
+            assert self.host
+            port = ':' + self.port if self.port else ''
+            return ''.join((self.schema, '://', self.domain, port, self.path,  query))
+        else:
+            return self.path + query
+
+    def __repr__(self):
+        return '<URL "%s">' % unicode(self)
+
 class Request(_Request):
 
     def __init__(self, *args, **kwargs):
         super(Request, self).__init__(*args, **kwargs)
         self._prefixes = []
+        self._subdomain = ''
 
     def add_prefix(self, prefix):
         self._prefixes.append(prefix)
+
+    def add_subdomain(self, subdomain):
+        self._subdomain = subdomain + '.' + self._subdomain
 
     # We need to inject code which works with
     # prefixes
@@ -33,9 +96,7 @@ class Request(_Request):
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
-        if not path:
-            path = '/'
-        return path
+        return path or '/'
 
     @property
     def path_qs(self):
@@ -43,9 +104,16 @@ class Request(_Request):
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
-        if not path:
-            path = '/'
+        return path or '/'
+
+    @property
+    def subdomain(self):
+        path = super(Request, self).host.split(':')[0]
+        if self._subdomain:
+            path = path[-len(self.subdomain)-1:]
         return path
+    
+    
 
 
 class DictWithNamespace(object):
