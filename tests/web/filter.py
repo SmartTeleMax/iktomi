@@ -30,15 +30,17 @@ class Prefix(unittest.TestCase):
                 )
             )
         )
-
-        rctx = RequestContext(Request.blank('/docs').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags/').environ)
-        app(rctx)
+        
+        def assertStatus(url, st):
+            rctx = RequestContext(Request.blank(url).environ)
+            self.assertEqual(app(rctx).response.status_int, st)
+        
+        assertStatus('/docs', 200)
+        assertStatus('/docs/', 200)
+        assertStatus('/docs/tags', 200)
+        assertStatus('/docs/tags/', 200)
+        # assert assertStatus works correct
+        assertStatus('/docs/tags/asdasd', 404) 
 
     def test_prefix_leaf(self):
         '''Simple prefix'''
@@ -59,7 +61,39 @@ class Prefix(unittest.TestCase):
         )
 
         rctx = RequestContext(Request.blank('/docs/item').environ)
-        app(rctx)
+        self.assertEqual(app(rctx).response.status_int, 200)
+
+
+class Subdomain(unittest.TestCase):
+
+    def test_subdomain(self):
+        '''Prefix root'''
+
+        def handler(r):
+            self.assertEqual(r.request.path, '/')
+
+        app = subdomain('host') | Map(
+            subdomain('') | match('/', 'index') | handler,
+            subdomain('k') | Map(
+                subdomain('l') | Map(
+                    match('/', 'l') | handler,
+                ),
+                subdomain('') | match('/', 'k') | handler,
+            )
+        )
+        
+        def assertStatus(url, st):
+            rctx = RequestContext(Request.blank(url).environ)
+            self.assertEqual(app(rctx).response.status_int, st)
+
+        assertStatus('http://host/', 200)
+        assertStatus('http://k.host/', 200)
+        assertStatus('http://l.k.host/', 200)
+        assertStatus('http://x.l.k.host/', 200) # XXX: Is it right?
+        assertStatus('http://x.k.host/', 404)
+        assertStatus('http://lk.host/', 404)
+        assertStatus('http://mhost/', 404) # XXX: we need a method to set root
+                                           #domain without chaining subdomain to the map
 
 
 class Match(unittest.TestCase):

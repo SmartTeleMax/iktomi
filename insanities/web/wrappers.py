@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['prefix', 'Conf']
+__all__ = ['prefix', 'subdomain', 'Conf']
 
 import logging
 import re
@@ -43,12 +43,20 @@ class subdomain(Wrapper):
 
     def handle(self, rctx):
         subdomain = rctx.request.subdomain
-        slen = len(self.subdomain)
-        delimiter = subdomain[-slen-1:-slen]
-        if path.endswith(self.subdomain) and delimiter in ('', '.'):
+        print '\n\n==', subdomain, '==', 
+        if self.subdomain:
+            slen = len(self.subdomain)
+            delimiter = subdomain[-slen-1:-slen]
+            matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
+        else:
+            matches = not subdomain
+        
+        if matches:
+            print 'matches'
             rctx.request.add_subdomain(self.subdomain)
             rctx = self.exec_wrapped(rctx)
             return rctx
+        print 'continue'
         raise ContinueRoute(self)
 
     def __repr__(self):

@@ -86,7 +86,10 @@ class Request(_Request):
         self._prefixes.append(prefix)
 
     def add_subdomain(self, subdomain):
-        self._subdomain = subdomain + '.' + self._subdomain
+        if self._subdomain:
+            self._subdomain = subdomain + '.' + self._subdomain
+        else:
+            self._subdomain = subdomain
 
     # We need to inject code which works with
     # prefixes
@@ -109,8 +112,9 @@ class Request(_Request):
     @property
     def subdomain(self):
         path = super(Request, self).host.split(':')[0]
+        print '_subdomain:', self._subdomain, 'path:', path
         if self._subdomain:
-            path = path[-len(self.subdomain)-1:]
+            path = path[:-len(self._subdomain)-1]
         return path
     
     
