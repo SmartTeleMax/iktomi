@@ -112,7 +112,6 @@ class Request(_Request):
     @property
     def subdomain(self):
         path = super(Request, self).host.split(':')[0]
-        print '_subdomain:', self._subdomain, 'path:', path
         if self._subdomain:
             path = path[:-len(self._subdomain)-1]
         return path

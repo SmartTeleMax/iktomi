@@ -43,7 +43,6 @@ class subdomain(Wrapper):
 
     def handle(self, rctx):
         subdomain = rctx.request.subdomain
-        print '\n\n==', subdomain, '==', 
         if self.subdomain:
             slen = len(self.subdomain)
             delimiter = subdomain[-slen-1:-slen]
@@ -52,11 +51,9 @@ class subdomain(Wrapper):
             matches = not subdomain
         
         if matches:
-            print 'matches'
             rctx.request.add_subdomain(self.subdomain)
             rctx = self.exec_wrapped(rctx)
             return rctx
-        print 'continue'
         raise ContinueRoute(self)
 
     def __repr__(self):
