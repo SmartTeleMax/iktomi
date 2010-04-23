@@ -39,7 +39,8 @@ class subdomain(Wrapper):
         self.subdomain = _subdomain
 
     def trace(self, tracer):
-        tracer.subdomain(self.subdomain)
+        if self.subdomain:
+            tracer.subdomain(self.subdomain)
 
     def handle(self, rctx):
         subdomain = rctx.request.subdomain

@@ -67,7 +67,7 @@ class Prefix(unittest.TestCase):
 class Subdomain(unittest.TestCase):
 
     def test_subdomain(self):
-        '''Prefix root'''
+        '''Subdomain filter'''
 
         def handler(r):
             self.assertEqual(r.request.path, '/')
@@ -81,6 +81,7 @@ class Subdomain(unittest.TestCase):
                 subdomain('') | match('/', 'k') | handler,
             )
         )
+        app = Map(app)
         
         def assertStatus(url, st):
             rctx = RequestContext(Request.blank(url).environ)

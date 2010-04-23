@@ -145,10 +145,35 @@ class MapReverse(unittest.TestCase):
         self.assertEqual(url_for('other'), '/other/')
         self.assertEqual(url_for('other.item'), '/other/')
 
-        def fail():
-            url_for('nested')
+        self.assertRaises(KeyError, lambda: url_for('nested'))
 
-        self.assertRaises(KeyError, fail)
+
+    def test_subdomain(self):
+        '''Subdomain reverse'''
+
+        def handler(r):
+            pass
+
+        app = subdomain('host') | Map(
+            subdomain('') | match('/', 'index') | handler,
+            subdomain('k') | Map(
+                subdomain('l') | Map(
+                    match('/', 'l') | handler,
+                    match('/url/', 'l1') | handler,
+                    prefix('/my') | match('/url/', 'l2') | handler,
+                ),
+                subdomain('') | match('/', 'k') | handler,
+            )
+        )
+        app = Map(app)
+        
+        url_for = lambda x: unicode(Reverse(app.urls, '')(x))
+        self.assertEqual(url_for('index'), 'http://host/')
+        self.assertEqual(url_for('k'), 'http://k.host/')
+        self.assertEqual(url_for('l'), 'http://l.k.host/')
+        self.assertEqual(url_for('l1'), 'http://l.k.host/url/')
+        self.assertEqual(url_for('l2'), 'http://l.k.host/my/url/')
+
 
     def test_double_match(self):
         '''Check double match'''

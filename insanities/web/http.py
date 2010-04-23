@@ -66,7 +66,7 @@ class URL(object):
     def __unicode__(self):
         query = '?' + urllib.urlencode(self.query) if self.query else ''
         if self.is_absolute:
-            assert self.host
+            assert self.domain
             port = ':' + self.port if self.port else ''
             return ''.join((self.schema, '://', self.domain, port, self.path,  query))
         else:
@@ -86,9 +86,9 @@ class Request(_Request):
         self._prefixes.append(prefix)
 
     def add_subdomain(self, subdomain):
-        if self._subdomain:
+        if self._subdomain and subdomain:
             self._subdomain = subdomain + '.' + self._subdomain
-        else:
+        elif subdomain:
             self._subdomain = subdomain
 
     # We need to inject code which works with
