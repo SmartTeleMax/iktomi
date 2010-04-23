@@ -6,28 +6,25 @@ import shutil
 
 from insanities.forms import fields, convs, form, widgets, media, perms
 from insanities.web import Map
+from insanities.web.http import Request, RequestContext
 
 from insanities.ext.jinja2 import JinjaEnv, FormEnvironment
-from insanities.ext.gettext import LanguageSupport, set_lang, FormEnvironmentMixin
+from insanities.ext.gettext import LanguageSupport, set_lang, \
+                                   FormEnvironmentMixin, N_, M_
 from insanities.ext.gettext.commands import gettext_commands
 import insanities
 
 from gettext import GNUTranslations
 
 
-class TranslationFormEnv(FormEnvironment, FormEnvironmentMixin): pass
+class TranslationFormEnv(FormEnvironmentMixin, FormEnvironment): pass
 
 INSANITIES_ROOT = CURDIR = os.path.dirname(os.path.abspath(insanities.__file__))
 CURDIR = os.path.dirname(os.path.abspath(__file__))
 
-class Config(object):
-    LOCALE_FILES = [
-        os.path.join(INSANITIES_ROOT, 'locale/%s/LC_MESSAGES/insanities-core.po'),
-        os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/test.po'),
-    ]
-    pass
-
-
+EN_SINGLE = "The length should be at least one symbol"
+EN_PLURAL = "The length should be at least %(min_length)s symbols"
+RU_PLURAL_1 = u"Длина должна быть не менее %s символов"
 
 class TranslationTestCase(unittest.TestCase):
     def setUp(self):
@@ -47,8 +44,8 @@ class TranslationTestCase(unittest.TestCase):
         
         return app
     
-    def run_app(self, app, env={}):
-        rctx = app.rctx_class(env, app.url_for)
+    def run_app(self, app, url='/'):
+        rctx = RequestContext(Request.blank(url).environ)
         #rctx.response.status = httplib.NOT_FOUND
         return app(rctx)
 
@@ -70,16 +67,44 @@ class TranslationTestCase(unittest.TestCase):
         assert isinstance(rctx.translation, GNUTranslations)
     
     def test_ntranslation(self):
-        raise NotImplementedError()
-    
+        app = self.get_app(languages=['ru'])
+        rctx = self.run_app(app)
+
+        # assert that plural forms are Russian
+        self.assertEqual(rctx.translation.plural(51), 0)
+        self.assertEqual(rctx.translation.plural(52), 1)
+        self.assertEqual(rctx.translation.plural(55), 2)
+        
+        args = (EN_SINGLE, EN_PLURAL, 2)
+        t_rctx = rctx.translation.ungettext(*args)
+        t_form = rctx.data['form_env'].ngettext(*args)
+        
+        self.assertEqual(t_rctx, t_form)
+        self.assertEqual(t_rctx, RU_PLURAL_1)
+       
     def test_translation_forms(self):
-        raise NotImplementedError()
+        from insanities.forms import form, fields, widgets, convs
+        from webob import MultiDict
+        
+        class SampleForm(form.Form):
+            fields=[fields.Field('name', label=M_(EN_SINGLE, EN_PLURAL, 'n'),
+                                 n=22, conv=convs.Int(min=10)),
+                    fields.Field('name2', label=N_('required field'),
+                                 widget=widgets.Widget(template='myinput')),
+                    ]        
+        
+        app = self.get_app(languages=['ru'])
+        rctx = self.run_app(app)
+        
+        frm = SampleForm(rctx.data['form_env'])
+        frm.accept(MultiDict({'name': 0}))
+        rendered = frm.render()
+        
+        assert RU_PLURAL_1 in rendered
+        assert u'обязательное поле' in rendered
+        assert u'удалить' in rendered
+        assert u'минимальное допустимое значение: 10' in rendered
 
-    def test_translation_forms_multiple(self):
-        raise NotImplementedError()
-
-    def test_translation_forms_templates(self):
-        raise NotImplementedError()
 
     def test_translation_templates(self):
         raise NotImplementedError()

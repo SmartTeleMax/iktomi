@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 from jinja2 import Environment, FileSystemLoader
 from insanities.web.core import ContinueRoute, RequestHandler
+from insanities.ext.gettext import M_
 
 __all__ = ('FormEnvironment', 'render_to', 'JinjaEnv')
 
@@ -37,16 +38,16 @@ class FormEnvironment(object):
 
     def gettext(self, msg, args={}):
         if isinstance(msg, M_):
-            return self.nget_string(msg, msg.plural, args[msg.multiple_by])
+            return self.ngettext(msg, msg.plural, args[msg.multiple_by])
         return msg
 
-    def ngetext(self, single, plural, count):
+    def ngettext(self, single, plural, count):
         try:
-            if int(msg.multiple_by) !=  1:
-                return msg.plural
+            if int(count) !=  1:
+                return plural
         except ValueError:
             pass
-        return msg
+        return single
 
 
 class render_to(RequestHandler):
@@ -84,6 +85,6 @@ class JinjaEnv(RequestHandler):
         )
 
     def handle(self, rctx):
-        form_env = self.EnvCls(env=self.jinja_env)
+        form_env = self.EnvCls(env=self.jinja_env, rctx=rctx)
         rctx.add_data(form_env=form_env, jinja_env=self.jinja_env)
         raise ContinueRoute(self)

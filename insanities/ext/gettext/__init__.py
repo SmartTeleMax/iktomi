@@ -53,6 +53,12 @@ def translation(localepath, language, default_language, domain):
     return res
 
 
+def _apply_translation_to_rctx(rctx, language, translation):
+    rctx.language = language
+    rctx.data['gettext'] = translation.ugettext
+    rctx.data['ngettext'] = translation.ungettext
+
+
 class LanguageSupport(RequestHandler):
 
     def __init__(self, languages, localepath, domain='insanities'):
@@ -64,13 +70,14 @@ class LanguageSupport(RequestHandler):
         
     def handle(self, rctx):
         rctx.languages = self.languages
-        rctx.language = rctx.default_language = self.default_language
+        rctx.default_language = self.default_language
         rctx.localepath = self.localepath
         rctx.localedomain = self.domain
         rctx.translation = translation(self.localepath,
                                        self.default_language,
                                        self.default_language,
                                        self.domain)
+        _apply_translation_to_rctx(rctx, self.default_language, rctx.translation)
         raise ContinueRoute(self)
 
 
@@ -93,7 +100,7 @@ class set_lang(RequestHandler):
                                        self.language,
                                        rctx.default_language,
                                        rctx.localedomain)
-        rctx.language = self.language
+        _apply_translation_to_rctx(rctx, self.language, rctx.translation)
         return rctx
 
 class FormEnvironmentMixin(object):
@@ -103,7 +110,7 @@ class FormEnvironmentMixin(object):
 
     def gettext(self, msg, args={}):
         if isinstance(msg, M_) and msg.multiple_by:
-            return self.nget_string(msg, msg.plural, args[msg.multiple_by])
+            return self.ngettext(msg, msg.plural, args[msg.multiple_by])
         return self.rctx.translation.ugettext(msg)
 
     def ngettext(self, single, plural, count):

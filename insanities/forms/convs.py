@@ -125,7 +125,7 @@ class Converter(object):
 
     def _assert(self, expression, error_type):
         if not expression:
-            self.error()
+            self.error(error_type)
 
 
 class Chain(Converter):

@@ -10,7 +10,7 @@
 {% endif %}
 {% if mode != 'empty' and null %}
   <label for="id-{{ input_name }}__delete">
-    {{ form.env.gettext('delete') }}
+    {{ widget.env.gettext('delete') }}
   </label>
   <input type="checkbox" name="{{ input_name }}__delete" id="id-{{ input_name }}__delete" />
   <br/>
