@@ -32,6 +32,7 @@ class prefix(Wrapper):
     def __repr__(self):
         return '%s(\'%s\')' % (self.__class__.__name__, self.prefix)
 
+
 class subdomain(Wrapper):
 
     def __init__(self, _subdomain):
@@ -50,7 +51,7 @@ class subdomain(Wrapper):
             matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
         else:
             matches = not subdomain
-        
+
         if matches:
             rctx.request.add_subdomain(self.subdomain)
             rctx = self.exec_wrapped(rctx)
