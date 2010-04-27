@@ -16,7 +16,7 @@ from .urlconvs import convs_dict
 logger = logging.getLogger(__name__)
 
 
-class match(RequestHandler):
+class UrlTemplate(object):
 
     _split_pattern = re.compile(r'(<[^<]*>)')
     _converter_pattern = re.compile(r'''^<
@@ -27,23 +27,17 @@ class match(RequestHandler):
             >$''', re.VERBOSE)
     _static_url_pattern = re.compile(r'^[^<]*?$')
 
-    def __init__(self, url, name, converters=None):
-        super(match,self).__init__()
-        self.url = url
-        self.url_name = name
+    def __init__(self, template, match_whole_str=True, converters=None):
+        self.template = template
+        self.match_whole_str = match_whole_str
         self._allowed_converters = self._init_converters(converters)
         self._builder_params = []
         self._converters = {}
-        self._pattern = re.compile(self._parse(url))
+        self._pattern = re.compile(self._parse(template))
 
-    def trace(self, tracer):
-        tracer.url_name(self.url_name)
-        tracer.builder(self.build)
-
-    def handle(self, rctx):
-        m = self._pattern.match(unquote(rctx.request.path))
+    def match(self, path):
+        m = self._pattern.match(unquote(path))
         if m:
-            logger.debug('match - Got match for url "%s"' % rctx.request.path)
             kwargs = m.groupdict()
             # convert params
             for k,v in kwargs.items():
@@ -52,14 +46,11 @@ class match(RequestHandler):
                 conv = self._init_converter(conv_name, args)
                 try:
                     kwargs[k] = conv.to_python(v)
-                except ConvertError:
-                    logger.debug('ConverterError by "%s", value "%s"' % (k, v.encode('utf-8')))
-                    raise ContinueRoute(self)
-            if kwargs:
-                rctx.template_data.update(kwargs)
-            rctx.response.status = httplib.OK
-            return rctx
-        raise ContinueRoute(self)
+                except ConvertError, err:
+                    logger.debug('ConvertError by "%s", value "%s"' % (err.converter, err.value.encode('utf-8')))
+                    return False, {}
+            return True, kwargs
+        return False, {}
 
     def _parse(self, url):
         result = r'^'
@@ -88,12 +79,11 @@ class match(RequestHandler):
             else:
                 if i < total_parts - 1:
                     raise ValueError('Incorrect url "%s"' % url)
-        result += '$'
+        if self.match_whole_str:
+            result += '$'
         return result
 
-    def build(self, prefixes=None, **kwargs):
-        prefixes = prefixes and prefixes or []
-        prefix = ''.join(prefixes)
+    def __call__(self, **kwargs):
         result = ''
         for part in self._builder_params:
             if isinstance(part, list):
@@ -103,7 +93,7 @@ class match(RequestHandler):
                 result += conv.to_url(value)
             else:
                 result += part
-        return prefix + result
+        return result
 
     def _init_converter(self, conv_name, args):
         try:
@@ -124,6 +114,30 @@ class match(RequestHandler):
                  name = conv.name or conv.__name__
                  convs[name] = conv
         return convs
+
+    def __repr__(self):
+        return '%s("%s")' % (self.__class__.__name__, self.template)
+
+
+class match(RequestHandler):
+
+    def __init__(self, url, name, converters=None):
+        super(match,self).__init__()
+        self.url = url
+        self.url_name = name
+        self.builder = UrlTemplate(url)
+
+    def trace(self, tracer):
+        tracer.url_name(self.url_name)
+        tracer.builder(self.builder)
+
+    def handle(self, rctx):
+        matched, kwargs = self.builder.match(rctx.request.path)
+        if matched:
+            rctx.template_data.update(kwargs)
+            rctx.response.status = httplib.OK
+            return rctx
+        raise ContinueRoute(self)
 
     def __repr__(self):
         return '%s(\'%s\', \'%s\')' % \

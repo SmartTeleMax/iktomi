@@ -7,8 +7,52 @@ FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
 from insanities.web.core import Map, RequestHandler, ContinueRoute
 from insanities.web.filters import *
+from insanities.web.filters import UrlTemplate
+from insanities.web.urlconvs import ConvertError
 from insanities.web.wrappers import *
 from insanities.web.http import Request, RequestContext
+
+class UrlTemplateTests(unittest.TestCase):
+
+    def test_match_without_params(self):
+        'UrlTemplate match method without params'
+        ut = UrlTemplate('simple')
+        self.assertEqual(ut.match('simple'), (True, {}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+
+    def test_match_with_params(self):
+        'UrlTemplate match method with params'
+        ut = UrlTemplate('/simple/<int:id>')
+        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('/simple/d'), (False, {}))
+
+    def test_match_from_begining_without_params(self):
+        'UrlTemplate match method without params (from begining of str)'
+        ut = UrlTemplate('simple', match_whole_str=False)
+        self.assertEqual(ut.match('simple'), (True, {}))
+        self.assertEqual(ut.match('simple/sdffds'), (True, {}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('/simple/'), (False, {}))
+
+    def test_match_from_begining_with_params(self):
+        'UrlTemplate match method with params (from begining of str)'
+        ut = UrlTemplate('/simple/<int:id>', match_whole_str=False)
+        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
+        self.assertEqual(ut.match('/simple/2/sdfsf'), (True, {'id':2}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('/simple/d'), (False, {}))
+        self.assertEqual(ut.match('/simple/d/sdfsdf'), (False, {}))
+
+    def test_builder_without_params(self):
+        'UrlTemplate builder method (without params)'
+        ut = UrlTemplate('/simple')
+        self.assertEqual(ut(), '/simple')
+
+    def test_builder_with_params(self):
+        'UrlTemplate builder method (with params)'
+        ut = UrlTemplate('/simple/<int:id>/data')
+        self.assertEqual(ut(id=2), '/simple/2/data')
 
 
 class Prefix(unittest.TestCase):
@@ -30,17 +74,17 @@ class Prefix(unittest.TestCase):
                 )
             )
         )
-        
-        def assertStatus(url, st):
-            rctx = RequestContext(Request.blank(url).environ)
-            self.assertEqual(app(rctx).response.status_int, st)
-        
-        assertStatus('/docs', 200)
+
+        def assertStatus(url, status):
+            rctx = RequestContext.blank(url)
+            self.assertEqual(app(rctx).response.status_int, status)
+
+        assertStatus('/docs', 404)
         assertStatus('/docs/', 200)
-        assertStatus('/docs/tags', 200)
-        assertStatus('/docs/tags/', 200)
+        assertStatus('/docs/tags', 404)
+        assertStatus('/docs/tags/',200)
         # assert assertStatus works correct
-        assertStatus('/docs/tags/asdasd', 404) 
+        assertStatus('/docs/tags/asdasd', 404)
 
     def test_prefix_leaf(self):
         '''Simple prefix'''
@@ -60,7 +104,7 @@ class Prefix(unittest.TestCase):
             )
         )
 
-        rctx = RequestContext(Request.blank('/docs/item').environ)
+        rctx = RequestContext.blank('/docs/item')
         self.assertEqual(app(rctx).response.status_int, 200)
 
 

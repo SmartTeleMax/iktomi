@@ -133,12 +133,12 @@ class Reverse(object):
             url = self.urls.get(local_name) or self.urls[name]
         else:
             url = self.urls[name]
-            
-        prefixes, subdomains, builder = url
+
+        subdomains, builders = url
 
         domain = '.'.join(subdomains)
         absolute = (domain != self.domain)
-        path = builder(prefixes, **kwargs)
+        path = ''.join([b(**kwargs) for b in builders])
         return URL(path, domain=domain, is_absolute=absolute)
 
 
@@ -265,14 +265,13 @@ class Tracer(object):
 
     def finish_step(self):
         # get prefixes, namespaces if there are any
-        prefixes = self._current_step.get('prefix', [])
         subdomains = self._current_step.get('subdomain', [])
         subdomains.reverse()
         namespaces = self._current_step.get('namespace', [])
 
         # get url name and url builder if there are any
         url_name = self._current_step.get('url_name', None)
-        builder = self._current_step.get('builder', None)
+        builders = self._current_step.get('builder', [])
         nested_map = self._current_step.get('nested_map', None)
 
         # url name show that it is an usual chain (no nested map)
@@ -281,7 +280,7 @@ class Tracer(object):
             if namespaces:
                 url_name = '.'.join(namespaces) + '.' + url_name
             self.check_name(url_name)
-            self.__urls[url_name] = (prefixes, subdomains, builder[0])
+            self.__urls[url_name] = (subdomains, builders)
         # nested map (which also may have nested maps)
         elif nested_map:
             nested_map = nested_map[0]
@@ -289,7 +288,7 @@ class Tracer(object):
                 if namespaces:
                     k = '.'.join(namespaces) + '.' + k
                 self.check_name(k)
-                self.__urls[k] = (prefixes + v[0], v[1] + subdomains, v[2])
+                self.__urls[k] = (v[0] + subdomains, builders + v[1])
 
         self._current_step = {}
 

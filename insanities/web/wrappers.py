@@ -8,6 +8,7 @@ import httplib
 from os import path
 from .core import Wrapper, ContinueRoute
 from .http import RequestContext, HttpException
+from .filters import UrlTemplate
 
 
 logger = logging.getLogger(__name__)
@@ -17,20 +18,22 @@ class prefix(Wrapper):
 
     def __init__(self, _prefix):
         super(prefix, self).__init__()
-        self.prefix = _prefix
+        self.builder = UrlTemplate(_prefix, match_whole_str=False)
 
     def trace(self, tracer):
-        tracer.prefix(self.prefix)
+        tracer.builder(self.builder)
 
     def handle(self, rctx):
-        if rctx.request.path.startswith(self.prefix):
-            rctx.request.add_prefix(self.prefix)
+        matched, kwargs = self.builder.match(rctx.request.path)
+        if matched:
+            rctx.template_data.update(kwargs)
+            rctx.request.add_prefix(self.builder(**kwargs))
             rctx = self.exec_wrapped(rctx)
             return rctx
         raise ContinueRoute(self)
 
     def __repr__(self):
-        return '%s(\'%s\')' % (self.__class__.__name__, self.prefix)
+        return '%s(\'%r\')' % (self.__class__.__name__, self.builder)
 
 
 class subdomain(Wrapper):
