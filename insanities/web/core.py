@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'ContinueRoute', 'Tracer', 'Map', 'Wrapper']
+__all__ = ['RequestHandler', 'ContinueRoute', 'Map', 'Wrapper']
 
 import logging
 import types
@@ -175,10 +175,9 @@ class Map(RequestHandler):
                           domain=rctx.request.host.split(':')[0])
         rctx.conf['url_for'] = rctx.template_data['url_for'] = url_for
 
-        handler = None
         for i in xrange(len(self.handlers)):
+            handler = self.handlers[i]
             try:
-                handler = self.handlers[i]
                 rctx = handler(rctx)
             except ContinueRoute:
                 pass
@@ -264,12 +263,12 @@ class Tracer(object):
             raise ValueError('Dublicating key "%s" in url map' % name)
 
     def finish_step(self):
-        # get prefixes, namespaces if there are any
+        # get subdomains, namespaces if there are any
         subdomains = self._current_step.get('subdomain', [])
         subdomains.reverse()
         namespaces = self._current_step.get('namespace', [])
 
-        # get url name and url builder if there are any
+        # get url name and url builders if there are any
         url_name = self._current_step.get('url_name', None)
         builders = self._current_step.get('builder', [])
         nested_map = self._current_step.get('nested_map', None)

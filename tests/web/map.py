@@ -50,7 +50,7 @@ class MapInit(unittest.TestCase):
 
 
 class MapReverse(unittest.TestCase):
-    
+
     def test_simple_urls(self):
         '''Stright match'''
 
@@ -166,7 +166,7 @@ class MapReverse(unittest.TestCase):
             )
         )
         app = Map(app)
-        
+
         url_for = lambda x: unicode(Reverse(app.urls, '')(x))
         self.assertEqual(url_for('index'), 'http://host/')
         self.assertEqual(url_for('k'), 'http://k.host/')
