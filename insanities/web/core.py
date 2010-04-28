@@ -6,7 +6,8 @@ import logging
 import types
 import httplib
 from inspect import getargspec
-from .http import HttpException, RequestContext, URL
+from .http import HttpException, RequestContext
+from ..utils.url import URL
 
 
 logger = logging.getLogger(__name__)
