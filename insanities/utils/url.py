@@ -12,13 +12,6 @@ logger = logging.getLogger(__name__)
 
 class URL(object):
 
-    schema = 'http'
-    host = None
-    path = '/'
-    port = None
-    is_absolute = False
-    query = MultiDict()
-
     def __init__(self, path, query=None, host=None, port=None, schema=None):
         self.path = path
         self.query = MultiDict(query) if query else MultiDict()
