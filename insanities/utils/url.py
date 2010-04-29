@@ -13,57 +13,59 @@ logger = logging.getLogger(__name__)
 class URL(object):
 
     schema = 'http'
-    domain = None
+    host = None
     path = '/'
     port = None
     is_absolute = False
     query = MultiDict()
 
-    def __init__(self, path, **kwargs):
+    def __init__(self, path, query=None, host=None, port=None, schema=None):
         self.path = path
-        query = kwargs.get('query', MultiDict())
-        if not isinstance(query, MultiDict):
-            query = MultiDict(query)
-        kwargs['query'] = query
-
-        self._kwargs = kwargs
-        for key, v in kwargs.items():
-            setattr(self, key, v)
+        self.query = MultiDict(query) if query else MultiDict()
+        self.host = host or ''
+        self.port = port or ''
+        self.schema = schema or 'http'
 
     def _copy(self, **kwargs):
         path = kwargs.pop('path', self.path)
-        kw = self._kwargs.copy()
+        kw = dict(query=self.query, host=self.host, 
+                  port=self.port, schema=self.schema)
         kw.update(kwargs)
         return self.__class__(path, **kw)
 
-    def add_args(self, **kwargs):
+    def set(self, **kwargs):
         query = self.query.copy()
-        query.update(kwargs)
+        for k, v in kwargs.items():
+            query[k] = v
         return self._copy(query=query)
 
-    def replace_args(self, **kwargs):
+    def add(self, **kwargs):
         query = self.query.copy()
-        for key, v in kwargs.items():
-            query[key] = v
+        for k, v in kwargs.items():
+            query.add(k, v)
         return self._copy(query=query)
 
-    def delete_args(self, *args):
+    def delete(self, key):
         query = self.query.copy()
-        for key in args:
-            if key in query: del query[key]
+        del query[key]
         return self._copy(query=query)
 
-    def force_absolute(self):
-        return self._copy(is_absolute=True)
+    def getall(self, key):
+        return self.query.getall(key)
 
-    def __unicode__(self):
+    def getone(self, key):
+        return self.query.getone(key)
+
+    def get(self, key, default=None):
+        return self.query.get(key, default=default)
+
+    def __str__(self):
         query = '?' + urllib.urlencode(self.query) if self.query else ''
-        if self.is_absolute:
-            assert self.domain
+        if self.host:
             port = ':' + self.port if self.port else ''
-            return ''.join((self.schema, '://', self.domain, port, self.path,  query))
+            return ''.join((self.schema, '://', self.host, port, quote(self.path),  query))
         else:
-            return self.path + query
+            return quote(self.path) + query
 
     def __repr__(self):
         return '<URL "%s">' % unicode(self)

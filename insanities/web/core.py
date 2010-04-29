@@ -122,10 +122,10 @@ class Wrapper(RequestHandler):
 
 class Reverse(object):
 
-    def __init__(self, urls, namespace, domain=''):
+    def __init__(self, urls, namespace, host=''):
         self.urls = urls
         self.namespace = namespace
-        self.domain = domain
+        self.host = host
 
     def __call__(self, name, **kwargs):
         if self.namespace:
@@ -137,10 +137,10 @@ class Reverse(object):
 
         subdomains, builders = url
 
-        domain = '.'.join(subdomains)
-        absolute = (domain != self.domain)
+        host = '.'.join(subdomains)
+        absolute = (host != self.host)
         path = ''.join([b(**kwargs) for b in builders])
-        return URL(path, domain=domain, is_absolute=absolute)
+        return URL(path, host=host)
 
 
 class Map(RequestHandler):
@@ -173,7 +173,7 @@ class Map(RequestHandler):
         # namespace is controlled by Conf wrapper instance,
         # so we just use rctx.conf.namespace
         url_for = Reverse(urls, rctx.conf.namespace,
-                          domain=rctx.request.host.split(':')[0])
+                          host=rctx.request.host.split(':')[0])
         rctx.conf['url_for'] = rctx.template_data['url_for'] = url_for
 
         for i in xrange(len(self.handlers)):
