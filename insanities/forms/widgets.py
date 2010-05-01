@@ -187,13 +187,11 @@ class Textarea(Widget):
 
 
 class TinyMce(Widget):
-    
+
     template = 'tinymce'
 
-    media = [FormCSSRef('tinymce.ccss'),
-             FormJSRef('endpoint:tinymce_compressor'),
-             FormJSRef('tiny_mce/tiny_mce_init.js')]
-    
+    media = [FormJSRef('tiny_mce/tiny_mce_init.js')]
+
     #: List of buttons used on widget
     buttons = (('bold', 'italic', 'underline'),
                ('bullist', 'numlist'),
@@ -202,17 +200,17 @@ class TinyMce(Widget):
                ('link', 'unlink'),
                ('undo', 'redo'),
                ('fullscreen', ))
-    
+
     #: List of attached plugins
     plugins = ('safari', 'directionality',
                'fullscreen', 'xhtmlxtras', 'inlinepopups')
-    
+
     #: Need to be documented
     content_css = None
-    
+
     #: Need to be documented
     browsers = ('safari', 'gecko', 'msie')
-    
+
     #: TinyMce initial config
     cfg = {
         'mode': 'exact',
@@ -240,10 +238,10 @@ class TinyMce(Widget):
         'theme_advanced_statusbar_location': 'bottom',
         'theme_advanced_resizing': True,
     }
-    
+
     #: Need to be documented
     compress = False
-    
+
     def select_value(self, value, default):
         if value is not None:
             if callable(value):
@@ -252,10 +250,10 @@ class TinyMce(Widget):
                 return value.copy()
             return value
         return default
-    
+
     def __init__(self, add_plugins=None, add_buttons=None, drop_buttons=None,
                  **kwargs):
-        
+
         for option in 'buttons', 'plugins', 'browsers', 'cfg', 'content_css':
             val = kwargs.get(option, None)
             default = getattr(self, option)
@@ -274,15 +272,18 @@ class TinyMce(Widget):
             kwargs['buttons'] = tuple(map(tuple, btns))
 
         super(TinyMce, self).__init__(**kwargs)
-        
+
     @cached_property
     def js_config(self):
         '''Serializes all TinyMce configs into JSON object'''
         buttons = ',|,'.join([','.join(pack) for pack in self.buttons])
         plugins = ','.join(self.plugins)
         browsers = ','.join(self.browsers)
-        tags = '@[%s],%s' % ('|'.join(set(self.field.conv.attrs)),
-                             ','.join(self.field.conv.tags))
+        tags = ''
+        if hasattr(self.field.conv, 'allowed_attributes') and \
+        hasattr(self.field.conv, 'allowed_elements'):
+            tags = '@[%s],%s' % ('|'.join(set(self.field.conv.allowed_attributes)),
+                                 ','.join(self.field.conv.allowed_elements))
         cfg = self.cfg.copy()
         for key, value in cfg.items():
             if type(value) is str and '%' in value:
@@ -294,27 +295,26 @@ class TinyMce(Widget):
             if not css.startswith('/'):
                 css = self.env.cfg.STATIC_URL + css
             cfg['content_css'] = css
-        
+
         cfg['field_name'] = self.field.resolve_name()
-        cfg['clean_form_field_url'] = self.env.url_for(action='clean_form_field')
-        
+
         return demjson.encode(cfg)
-    
+
     def prepare_data(self, value, readonly=False):
         data = Widget.prepare_data(self, value, readonly)
         return dict(data,
                     config=self.js_config,
                     plugins=','.join(self.plugins))
-    
+
 
 
 class ReadonlySelect(Select):
-    
+
     template = 'readonlyselect'
 
 
 class CharDisplay(Widget):
-    
+
     template = 'span'
     classname = 'chardisplay'
     #: If is True, value is escaped while rendering. 
@@ -328,9 +328,9 @@ class CharDisplay(Widget):
         return dict(data,
                     value=self.getter(value),
                     should_escape=self.escape)
-    
+
 
 class ImageView(Widget):
-    
+
     template = 'imageview'
     classname = 'imageview'
