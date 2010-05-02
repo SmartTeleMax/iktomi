@@ -10,10 +10,14 @@ from ..web.urlconvs import ConvertError, convs_dict
 logger = logging.getLogger(__name__)
 
 
+def urlquote(value):
+    return quote(value.encode('utf-8') if isinstance(value, unicode) else value)
+
+
 class URL(object):
 
     def __init__(self, path, query=None, host=None, port=None, schema=None):
-        self.path = path
+        self.path = urlquote(path)
         self.query = MultiDict(query) if query else MultiDict()
         self.host = host or ''
         self.port = port or ''
@@ -56,9 +60,9 @@ class URL(object):
         query = '?' + urllib.urlencode(self.query) if self.query else ''
         if self.host:
             port = ':' + self.port if self.port else ''
-            return ''.join((self.schema, '://', self.host, port, quote(self.path),  query))
+            return ''.join((self.schema, '://', self.host, port, self.path,  query))
         else:
-            return quote(self.path) + query
+            return self.path + query
 
     def __repr__(self):
         return '<URL "%s">' % unicode(self)

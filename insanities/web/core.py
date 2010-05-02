@@ -34,7 +34,11 @@ def process_http_exception(rctx, e):
     rctx.response.status = e.status
     if e.status in (httplib.MOVED_PERMANENTLY,
                     httplib.SEE_OTHER):
-        rctx.response.headers['Location'] = unicode(e.url)
+        if isinstance(e.url, unicode):
+            url = e.url.encode('utf-8')
+        else:
+            url = str(e.url)
+        rctx.response.headers.add('Location', url)
 
 
 class RequestHandler(object):
