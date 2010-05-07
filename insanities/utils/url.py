@@ -5,7 +5,6 @@ import re
 import logging
 from urllib import quote, unquote
 from webob.multidict import MultiDict
-from ..web.urlconvs import ConvertError, convs_dict
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ def urlquote(value):
 class URL(object):
 
     def __init__(self, path, query=None, host=None, port=None, schema=None):
-        self.path = urlquote(path)
+        self.path = path
         self.query = MultiDict(query) if query else MultiDict()
         self.host = host or ''
         self.port = port or ''
@@ -60,9 +59,9 @@ class URL(object):
         query = '?' + urllib.urlencode(self.query) if self.query else ''
         if self.host:
             port = ':' + self.port if self.port else ''
-            return ''.join((self.schema, '://', self.host, port, self.path,  query))
+            return ''.join((self.schema, '://', self.host, port, urlquote(self.path),  query))
         else:
-            return self.path + query
+            return urlquote(self.path) + query
 
     def __repr__(self):
         return '<URL "%s">' % unicode(self)
@@ -171,3 +170,4 @@ class UrlTemplate(object):
         return '%s("%s")' % (self.__class__.__name__, self.template)
 
 
+from ..web.urlconvs import ConvertError, convs_dict

@@ -39,3 +39,5 @@ class URLTests(unittest.TestCase):
     def test_quote(self):
         u = URL('/path/to/+')
         self.assertEqual(str(u), '/path/to/%2B')
+        u = u.set(page=7)
+        self.assertEqual(str(u), '/path/to/%2B?page=7')
