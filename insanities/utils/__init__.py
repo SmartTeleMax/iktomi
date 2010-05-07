@@ -71,3 +71,11 @@ _nontext_sub = re.compile(
                 re.U).sub
 def replace_nontext(text, replacement=u'\uFFFD'):
     return _nontext_sub(replacement, text)
+
+def conf_to_dict(cfg):
+    '''Selects all module members which names are upper case and return dict'''
+    keys = filter(lambda x: x.isupper(), dir(cfg))
+    d = {}
+    for key in keys:
+        d[key] = getattr(cfg, key)
+    return d

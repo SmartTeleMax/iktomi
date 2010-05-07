@@ -121,9 +121,18 @@ class RequestContext(object):
         self.response = Response()
         self.response.status = httplib.NOT_FOUND
         self.wsgi_env = wsgi_environ.copy()
-        #XXX: it may be not good idea to put self in template_data
-        self.template_data = DictWithNamespace(rctx=self)
+
+        # this attribute is for views and template data,
+        # for example filter match appends params here.
+        self.data = DictWithNamespace()
+
+        # this is config, static, declarative (key, value)
         self.conf = DictWithNamespace()
+
+        # this storage is for nesecary objects like db session, templates env,
+        # cache, url_for. something like dynamic config values.
+        self.vals = DictWithNamespace()
+
         # this is mark of main map
         self.main_map = None
 

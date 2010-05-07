@@ -26,7 +26,7 @@ class prefix(Wrapper):
     def handle(self, rctx):
         matched, kwargs = self.builder.match(rctx.request.path)
         if matched:
-            rctx.template_data.update(kwargs)
+            rctx.data.update(kwargs)
             rctx.request.add_prefix(self.builder(**kwargs))
             rctx = self.exec_wrapped(rctx)
             return rctx
@@ -67,8 +67,6 @@ class subdomain(Wrapper):
 
 class Conf(Wrapper):
 
-    handlers = []
-
     def __init__(self, ns, **kwargs):
         super(Conf, self).__init__()
         # namespace is str, may be empty for default namespace
@@ -78,8 +76,7 @@ class Conf(Wrapper):
     def handle(self, rctx):
         if self.namespace:
             rctx.conf.push(self.namespace)
-        for conf_handler in self.handlers:
-            conf_handler(rctx, self.conf)
+        rctx.conf.update(self.conf)
         rctx = self.exec_wrapped(rctx)
         if self.namespace:
             rctx.conf.pop()

@@ -29,7 +29,7 @@ class match(RequestHandler):
     def handle(self, rctx):
         matched, kwargs = self.builder.match(rctx.request.path)
         if matched:
-            rctx.template_data.update(kwargs)
+            rctx.data.update(kwargs)
             rctx.response.status = httplib.OK
             return rctx
         raise ContinueRoute(self)
@@ -54,27 +54,21 @@ class method(RequestHandler):
         return 'method(*%r)' % self._names
 
 
-class static(RequestHandler):
 
-    def __init__(self, prefix, path):
-        super(static, self).__init__()
-        self.prefix = prefix
-        self.path = path
+def static(rctx):
+    def url_for_static(part):
+        return path.join(rctx.conf.STATIC_URL, part)
 
-    def handle(self, rctx):
-        def url_for_static(part):
-            return path.join(self.prefix, part)
+    rctx.data['url_for_static'] = url_for_static
 
-        rctx.template_data['url_for_static'] = url_for_static
-
-        if rctx.request.path.startswith(self.prefix):
-            static_path = rctx.request.path[len(self.prefix):]
-            file_path = path.join(self.path, static_path)
-            if path.exists(file_path) and path.isfile(file_path):
-                rctx.response.status = httplib.OK
-                with open(file_path, 'r') as f:
-                    rctx.response.write(f.read())
-                return rctx
-            else:
-                raise HttpException(httplib.NOT_FOUND)
-        raise ContinueRoute(self)
+    if rctx.request.path.startswith(rctx.conf.STATIC_URL):
+        static_path = rctx.request.path[len(rctx.conf.STATIC_URL):]
+        file_path = path.join(rctx.conf.STATIC, static_path)
+        if path.exists(file_path) and path.isfile(file_path):
+            rctx.response.status = httplib.OK
+            with open(file_path, 'r') as f:
+                rctx.response.write(f.read())
+            return rctx
+        else:
+            raise HttpException(httplib.NOT_FOUND)
+    raise ContinueRoute('static')

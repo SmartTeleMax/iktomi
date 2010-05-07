@@ -168,7 +168,7 @@ class Map(RequestHandler):
             rctx.main_map = self
 
         # construct url_for
-        last_url_for = getattr(rctx.conf, 'url_for', None)
+        last_url_for = getattr(rctx.vals, 'url_for', None)
         if last_url_for is None:
             urls = self.urls
         else:
@@ -178,7 +178,7 @@ class Map(RequestHandler):
         # so we just use rctx.conf.namespace
         url_for = Reverse(urls, rctx.conf.namespace,
                           host=rctx.request.host.split(':')[0])
-        rctx.conf['url_for'] = rctx.template_data['url_for'] = url_for
+        rctx.vals['url_for'] = rctx.data['url_for'] = url_for
 
         for i in xrange(len(self.handlers)):
             handler = self.handlers[i]
@@ -194,7 +194,7 @@ class Map(RequestHandler):
             else:
                 return rctx
 
-        rctx.conf['url_for'] = rctx.template_data['url_for'] = last_url_for
+        rctx.vals['url_for'] = rctx.data['url_for'] = last_url_for
         if rctx.main_map is self:
             return rctx
         # all handlers raised ContinueRoute
@@ -227,7 +227,7 @@ class FunctionWrapper(RequestHandler):
     def handle(self, rctx):
         # Now we will find which arguments are required by
         # wrapped function. And then get arguments values from rctx
-        # template_data,
+        # data,
         # if there is no value argument we trying to get default value
         # from function specification otherwise Exception is raised
         argsspec = getargspec(self.func)
@@ -235,18 +235,18 @@ class FunctionWrapper(RequestHandler):
             args = argsspec.args[:-len(argsspec.defaults)]
             kwargs = {}
             for i, kwarg_name in enumerate(argsspec.args[-len(argsspec.defaults):]):
-                if kwarg_name in rctx.template_data:
-                    kwargs[kwarg_name] = rctx.template_data[kwarg_name]
+                if kwarg_name in rctx.data:
+                    kwargs[kwarg_name] = rctx.data[kwarg_name]
                 else:
                     kwargs[kwarg_name] = argsspec.defaults[i]
         else:
             args = argsspec.args
             kwargs = {}
         # form list of arguments values
-        args = [rctx] + [rctx.template_data[arg_name] for arg_name in args[1:]]
+        args = [rctx] + [rctx.data[arg_name] for arg_name in args[1:]]
         result = self.func(*args, **kwargs)
         if isinstance(result, dict):
-            rctx.template_data.update(result)
+            rctx.data.update(result)
         return rctx
 
     def __repr__(self):

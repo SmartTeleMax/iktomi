@@ -158,7 +158,7 @@ class Match(unittest.TestCase):
         '''Check int converter'''
 
         def handler(r):
-            self.assertEqual(r.template_data.id, 42)
+            self.assertEqual(r.data.id, 42)
 
         app = Map(
             match('/first', 'first') | handler,
