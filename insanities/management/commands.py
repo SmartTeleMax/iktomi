@@ -45,7 +45,7 @@ class server(CommandDigest):
     '''
 
     def command_serve(self, host='', port='8000'):
-        '''python manage.py serve [host] [port]'''
+        '''python manage.py server:serve [host] [port]'''
         import logging
         from app import app
         logging.basicConfig(level=logging.DEBUG)
@@ -62,8 +62,13 @@ class server(CommandDigest):
         except KeyboardInterrupt:
             pass
 
-    def command_map(self):
+    def command_debug(self, url):
+        '''python manage.py server:debug url'''
+        import pdb
         from app import app
-        for chain in app.chains:
-            print repr(chain)
-
+        from ..web.http import RequestContext
+        rctx = RequestContext.blank(url)
+        try:
+            app(rctx)
+        except Exception, e:
+            pdb.post_mortem(e)

@@ -8,7 +8,7 @@ import httplib
 from os import path
 from .core import Wrapper, ContinueRoute
 from .http import RequestContext, HttpException
-from .filters import UrlTemplate
+from ..utils.url import UrlTemplate
 
 
 logger = logging.getLogger(__name__)

@@ -65,7 +65,7 @@ class JinjaEnv(RequestHandler):
         if paths:
             if isinstance(paths, basestring):
                 paths_.append(paths)
-            elif isinstance(paths_, (list, tuple)):
+            elif isinstance(paths, (list, tuple)):
                 paths_ += paths
         self.jinja_env = Environment(
             loader=FileSystemLoader(paths_),

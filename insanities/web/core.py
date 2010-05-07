@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'ContinueRoute', 'Tracer', 'Map', 'Wrapper']
+__all__ = ['RequestHandler', 'ContinueRoute', 'Map', 'Wrapper']
 
 import logging
 import types
 import httplib
 from inspect import getargspec
-from .http import HttpException, RequestContext, URL
+from .http import HttpException, RequestContext
+from ..utils.url import URL
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,11 @@ def process_http_exception(rctx, e):
     rctx.response.status = e.status
     if e.status in (httplib.MOVED_PERMANENTLY,
                     httplib.SEE_OTHER):
-        rctx.response.headers['Location'] = unicode(e.url)
+        if isinstance(e.url, unicode):
+            url = e.url.encode('utf-8')
+        else:
+            url = str(e.url)
+        rctx.response.headers.add('Location', url)
 
 
 class RequestHandler(object):
@@ -121,10 +126,10 @@ class Wrapper(RequestHandler):
 
 class Reverse(object):
 
-    def __init__(self, urls, namespace, domain=''):
+    def __init__(self, urls, namespace, host=''):
         self.urls = urls
         self.namespace = namespace
-        self.domain = domain
+        self.host = host
 
     def __call__(self, name, **kwargs):
         if self.namespace:
@@ -136,10 +141,10 @@ class Reverse(object):
 
         subdomains, builders = url
 
-        domain = '.'.join(subdomains)
-        absolute = (domain != self.domain)
+        host = '.'.join(subdomains)
+        absolute = (host != self.host)
         path = ''.join([b(**kwargs) for b in builders])
-        return URL(path, domain=domain, is_absolute=absolute)
+        return URL(path, host=host)
 
 
 class Map(RequestHandler):
@@ -172,13 +177,12 @@ class Map(RequestHandler):
         # namespace is controlled by Conf wrapper instance,
         # so we just use rctx.conf.namespace
         url_for = Reverse(urls, rctx.conf.namespace,
-                          domain=rctx.request.host.split(':')[0])
+                          host=rctx.request.host.split(':')[0])
         rctx.conf['url_for'] = rctx.template_data['url_for'] = url_for
 
-        handler = None
         for i in xrange(len(self.handlers)):
+            handler = self.handlers[i]
             try:
-                handler = self.handlers[i]
                 rctx = handler(rctx)
             except ContinueRoute:
                 pass
@@ -264,12 +268,12 @@ class Tracer(object):
             raise ValueError('Dublicating key "%s" in url map' % name)
 
     def finish_step(self):
-        # get prefixes, namespaces if there are any
+        # get subdomains, namespaces if there are any
         subdomains = self._current_step.get('subdomain', [])
         subdomains.reverse()
         namespaces = self._current_step.get('namespace', [])
 
-        # get url name and url builder if there are any
+        # get url name and url builders if there are any
         url_name = self._current_step.get('url_name', None)
         builders = self._current_step.get('builder', [])
         nested_map = self._current_step.get('nested_map', None)
