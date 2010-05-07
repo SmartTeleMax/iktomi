@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 from jinja2 import Environment, FileSystemLoader
 from insanities.web.core import ContinueRoute, RequestHandler
+from insanities.forms.form import BaseFormEnvironment
 from insanities.ext.gettext import M_
 
 __all__ = ('FormEnvironment', 'render_to', 'JinjaEnv')
@@ -14,7 +15,7 @@ CURDIR = dirname(abspath(__file__))
 DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
 
 
-class FormEnvironment(object):
+class FormEnvironment(BaseFormEnvironment):
     '''
     Encapsulates all data and methods needed to form in current realization.
 
@@ -35,19 +36,6 @@ class FormEnvironment(object):
     def render(self, template, **kwargs):
         vars = dict(self.locals, **kwargs)
         return self.get_template(template).render(**vars)
-
-    def gettext(self, msg, args={}):
-        if isinstance(msg, M_):
-            return self.ngettext(msg, msg.plural, args[msg.multiple_by])
-        return msg
-
-    def ngettext(self, single, plural, count):
-        try:
-            if int(count) !=  1:
-                return plural
-        except ValueError:
-            pass
-        return single
 
 
 class render_to(RequestHandler):

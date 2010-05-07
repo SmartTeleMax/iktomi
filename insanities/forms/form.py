@@ -11,6 +11,31 @@ from .perms import DEFAULT_PERMISSIONS
 from .media import FormMedia
 
 
+class BaseFormEnvironment(object):
+    '''
+    Mixin adding get_string method to environment
+    '''
+
+    def __init__(self, rctx=None):
+        '''
+            Should be implemented in subclasses.
+            The only claim is to put rctx into self.rctx
+        '''
+        self.rctx = rctx
+
+    def render(self, template, form):
+        '''Should be implemented in subclasses'''
+        raise NotImplementedError()
+
+    def gettext(self, msg, args={}):
+        if isinstance(msg, M_) and msg.multiple_by:
+            return self.ngettext(msg, msg.plural, args[msg.multiple_by])
+        return self.rctx.translation.ugettext(msg)
+
+    def ngettext(self, single, plural, count):
+        return self.rctx.translation.ungettext(single, plural, count)
+
+
 class Form(object):
 
     '''
