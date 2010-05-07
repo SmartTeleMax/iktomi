@@ -13,10 +13,7 @@ class FormMedia(object):
 
     def __init__(self, items=[], env=None):
         self.env = env
-        if isinstance(items, FormMedia):
-            self._media = items._media
-        else:
-            self._media = []
+        self._media = []
         map(self._append, items)
 
     def _append(self, item):
@@ -24,10 +21,8 @@ class FormMedia(object):
             self._media.append(item(holder=self))
 
     def __iadd__(self, other):
-        if isinstance(other, FormMedia):
-            map(self._append, other._media)
-        else:
-            map(self._append, other)
+        # `other` is iterable (including FormMedia)
+        map(self._append, other)
         return self
 
     def __add__(self, other):
@@ -36,9 +31,7 @@ class FormMedia(object):
         return media
 
     def __radd__(self, other):
-        media = FormMedia(other)
-        media += self
-        return media
+        return self.__add__(other)
 
     def __iter__(self):
         return iter(self._media)
