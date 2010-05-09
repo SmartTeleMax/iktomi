@@ -16,7 +16,7 @@ class FieldError(Exception): pass
 class BaseField(object):
     '''
     Simple container class which ancestors represents various parts of Form.
-    
+
     Encapsulates converter, various fields attributes, media objects,
     methods for data access control, widget to render the g
     '''
@@ -30,7 +30,6 @@ class BaseField(object):
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
-    
 
     def __init__(self, **kwargs):
         #if 'label' in kwargs:

@@ -126,9 +126,9 @@ class gettext_commands(CommandDigest):
         if match:
             xversion = (int(match.group('major')), int(match.group('minor')))
             if xversion < (0, 15):
-                raise Exception("Internationalization requires GNU gettext'
+                raise Exception('Internationalization requires GNU gettext'
                 ' 0.15 or newer. You are using version %s, please upgrade '
-                'your gettext toolset." % match.group())
+                'your gettext toolset.' % match.group())
 
     def find_files(self, root, ignore_patterns, verbosity):
         """
