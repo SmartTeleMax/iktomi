@@ -11,19 +11,6 @@ from insanities.management.commands import CommandDigest
 from insanities.web import RequestHandler, ContinueRoute
 
 
-def N_(msg):
-    '''gettext marker'''
-    return msg
-
-
-class M_(unicode):
-    def __new__(cls, single, plural, multiple_by=None):
-        self = unicode.__new__(cls, single)
-        self.plural = plural
-        self.multiple_by = multiple_by
-        return self
-
-
 class LanguageSupport(RequestHandler):
     """
     Request handler addding support of i18n
@@ -84,8 +71,8 @@ class LanguageSupport(RequestHandler):
     def activate(self, rctx, language):
         rctx.translation = self.get_translation(self.language)
         rctx.language = language
-        rctx.data['gettext'] = rctx.translation.ugettext
-        rctx.data['ngettext'] = rctx.translation.ungettext
+        rctx.vals['gettext'] = rctx.translation.ugettext
+        rctx.vals['ngettext'] = rctx.translation.ungettext
 
 
 class set_lang(RequestHandler):
@@ -105,7 +92,6 @@ class set_lang(RequestHandler):
     def handle(self, rctx):
         rctx._language_handler.activate(rctx, self.language)
         return rctx
-
 
 
 class gettext_commands(CommandDigest):

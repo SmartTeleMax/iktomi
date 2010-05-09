@@ -3,6 +3,7 @@
 __all__ = ['HttpException', 'RequestContext', ]
 
 import logging
+import gettext
 from webob import Request as _Request, Response
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,8 @@ class Request(_Request):
 
 class RequestContext(object):
 
+    _null_translation = gettext.NullTranslations()
+
     def __init__(self, wsgi_environ, url_for=None, data=None):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
@@ -64,6 +67,10 @@ class RequestContext(object):
     @property
     def data(self):
         return self.__data
+
+    @property
+    def translation(self):
+        return self.vals.get('translation', self._null_translation)
 
     @property
     def url_for(self):

@@ -5,6 +5,7 @@ import struct, os, itertools
 
 from webob.multidict import MultiDict
 from ..utils import weakproxy, cached_property
+from ..utils.i18n import smart_gettext
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
@@ -28,9 +29,7 @@ class BaseFormEnvironment(object):
         raise NotImplementedError()
 
     def gettext(self, msg, args={}):
-        if isinstance(msg, M_) and msg.multiple_by:
-            return self.ngettext(msg, msg.plural, args[msg.multiple_by])
-        return self.rctx.translation.ugettext(msg)
+        return smart_gettext(self.rctx.translation, msg, args)
 
     def ngettext(self, single, plural, count):
         return self.rctx.translation.ungettext(single, plural, count)
@@ -40,9 +39,9 @@ class Form(object):
 
     '''
     Object designed to validate and convert data passed throught HTTP
-    
+
     To use it you must specify an ancestor class, like this::
-    
+
         class MyForm(Form):
             fields=[
                   fields.Field(name='input2',
@@ -53,9 +52,9 @@ class Form(object):
             medias = [media.FormJSRef('field_buttons.js'),
                       media.FormCSSRef('field_buttons.css'),]
             permissions = 'rw'
-    
+
     The constructor accepts folowing parameters:
-    
+
     :*env* - FormEnvironment instance, which keeps usefull stuff.
     There is only one required method to be implemented in FormEnvironment:
     FormEnvironment.render(template_name, **kwargs)
