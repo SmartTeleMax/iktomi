@@ -205,9 +205,9 @@ class FileField(Field):
             if temp_name and ('/' not in temp_name):
 
                 if not path.isfile(path.join(self.env.temp_path, temp_name)):
-                    raise convs.ValidationError(self.hacking)
+                    raise convs.ValidationError(u'Временный файл утерян')
 
-                if not file.filename:
+                if not (file and file.filename):
                     uid, ext = path.splitext(temp_name)
                     return self.temp_file_cls(self, original_name, ext, uid)
 
@@ -253,7 +253,7 @@ class FileField(Field):
         return self.env.render('widgets/%s' % self.template, value=value,
                                mode=mode, input_name=self.input_name,
                                delete=delete, temp_url=self.env.temp_url,
-                               null=self.null)
+                               null=self.null, field=self)
 
     def delete_temp_file(self, temp_name):
         uid, ext = path.splitext(temp_name)

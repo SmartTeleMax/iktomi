@@ -51,7 +51,7 @@ class SqlAlchemy(Wrapper):
         # XXX should be lazy
         rctx.db = self.maker()
         try:
-            rctx = self.next(rctx)
+            rctx = self.exec_wrapped(rctx)
         finally:
             rctx.db.close()
         return rctx

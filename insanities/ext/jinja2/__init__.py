@@ -5,11 +5,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 from jinja2 import Environment, FileSystemLoader
-from insanities.web.core import ContinueRoute, RequestHandler
 from insanities.forms.form import BaseFormEnvironment
-from insanities.ext.gettext import M_
+from insanities.web.core import ContinueRoute, RequestHandler, Wrapper
 
-__all__ = ('FormEnvironment', 'render_to', 'JinjaEnv')
+__all__ = ('FormEnvironment', 'render_to', 'jinja_env')
 
 CURDIR = dirname(abspath(__file__))
 DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
@@ -41,38 +40,47 @@ class FormEnvironment(BaseFormEnvironment):
 class render_to(RequestHandler):
 
     def __init__(self, template, **kwargs):
+        super(render_to, self).__init__()
         self.template = template
         self._kwargs = kwargs
 
     def handle(self, rctx):
-        # XXX in handler?
         template = self.template
         if isinstance(template, basestring):
-            template = rctx.data['jinja_env'].get_template(template)
+            template = rctx.vals.jinja_env.get_template(template)
 
-        template_kw = dict(rctx.data, rctx=rctx, url_for=rctx.url_for, **self._kwargs)
+        template_kw = self._kwargs.copy()
+        template_kw['rctx'] = rctx
+        template_kw.update(rctx.data.as_dict())
         logger.debug('render_to - rendering template "%s"' % self.template)
         rendered = template.render(**template_kw)
         rctx.response.write(rendered)
         return rctx
 
 
-class JinjaEnv(RequestHandler):
+class jinja_env(Wrapper):
 
-    def __init__(self, paths=None, autoescape=False, EnvCls=FormEnvironment):
-        paths_ = [DEFAULT_TEMPLATE_DIR]
+    def __init__(self, param='TEMPLATES', autoescape=False):
+        super(jinja_env, self).__init__()
+        self.param = param
+        self.autoescape = autoescape
+
+    def handle(self, rctx):
+        kw = rctx.conf.as_dict()
+        kw['rctx'] = rctx
+        paths = kw.pop(self.param, None)
+        paths_ = []
         if paths:
             if isinstance(paths, basestring):
                 paths_.append(paths)
-            elif isinstance(paths_, (list, tuple)):
+            elif isinstance(paths, (list, tuple)):
                 paths_ += paths
-        self.EnvCls = EnvCls
-        self.jinja_env = Environment(
+        paths_.append(DEFAULT_TEMPLATE_DIR)
+        jinja_env = Environment(
             loader=FileSystemLoader(paths_),
-            autoescape=autoescape,
+            autoescape=self.autoescape,
         )
-
-    def handle(self, rctx):
-        form_env = self.EnvCls(env=self.jinja_env, rctx=rctx)
-        rctx.add_data(form_env=form_env, jinja_env=self.jinja_env)
-        raise ContinueRoute(self)
+        form_env = FormEnvironment(env=jinja_env, **kw)
+        rctx.vals.update(dict(form_env=form_env, jinja_env=jinja_env))
+        rctx = self.exec_wrapped(rctx)
+        return rctx

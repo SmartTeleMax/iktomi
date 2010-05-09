@@ -9,7 +9,7 @@ setup(
     name="insanities",
     version="",
     packages=["insanities","insanities.utils","insanities.forms",
-              "insanities.web"],
+              "insanities.web","insanities.ext"],
     package_data={
         '':["templates/*/*.html"]
     },

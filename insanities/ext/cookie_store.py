@@ -63,16 +63,18 @@ class CookieStore(Wrapper):
             cookie_store = self.store.new()
         rctx.cookie_store = cookie_store
 
-        rctx = self.next(rctx)
-
-        if rctx.cookie_store.should_save:
-            logger.debug('Cookie storage: ' + unicode(rctx.cookie_store))
-            self.store.save(rctx.cookie_store)
-
-            rctx.response.set_cookie(self.cookie_name,
-                                     rctx.cookie_store.sid,
-                                     **self.cookie_args)
+        try:
+            rctx = self.exec_wrapped(rctx)
+        finally:
+            if rctx.cookie_store.should_save:
+                self.store.save(rctx.cookie_store)
+    
+                rctx.response.set_cookie(self.cookie_name,
+                                         rctx.cookie_store.sid,
+                                         **self.cookie_args)
+                logger.debug('Cookie storage: ' + unicode(rctx.cookie_store))
         return rctx
+
 
 class RCtxFlashMixin(object):
 

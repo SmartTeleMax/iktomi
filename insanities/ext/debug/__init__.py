@@ -10,7 +10,7 @@ from debug_dj import technical_500_response
 class Debug(Wrapper):
     def handle(self, rctx):
         try:
-            rctx = self.next(rctx)
+            rctx = self.exec_wrapped(rctx)
         except Exception, e:
             import httplib
             import logging

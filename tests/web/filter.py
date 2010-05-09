@@ -5,9 +5,54 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, Chain, RequestHandler, ContinueRoute
+from insanities.web.core import Map, RequestHandler, ContinueRoute
 from insanities.web.filters import *
+from insanities.web.filters import UrlTemplate
+from insanities.web.urlconvs import ConvertError
+from insanities.web.wrappers import *
 from insanities.web.http import Request, RequestContext
+
+class UrlTemplateTests(unittest.TestCase):
+
+    def test_match_without_params(self):
+        'UrlTemplate match method without params'
+        ut = UrlTemplate('simple')
+        self.assertEqual(ut.match('simple'), (True, {}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+
+    def test_match_with_params(self):
+        'UrlTemplate match method with params'
+        ut = UrlTemplate('/simple/<int:id>')
+        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('/simple/d'), (False, {}))
+
+    def test_match_from_begining_without_params(self):
+        'UrlTemplate match method without params (from begining of str)'
+        ut = UrlTemplate('simple', match_whole_str=False)
+        self.assertEqual(ut.match('simple'), (True, {}))
+        self.assertEqual(ut.match('simple/sdffds'), (True, {}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('/simple/'), (False, {}))
+
+    def test_match_from_begining_with_params(self):
+        'UrlTemplate match method with params (from begining of str)'
+        ut = UrlTemplate('/simple/<int:id>', match_whole_str=False)
+        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
+        self.assertEqual(ut.match('/simple/2/sdfsf'), (True, {'id':2}))
+        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('/simple/d'), (False, {}))
+        self.assertEqual(ut.match('/simple/d/sdfsdf'), (False, {}))
+
+    def test_builder_without_params(self):
+        'UrlTemplate builder method (without params)'
+        ut = UrlTemplate('/simple')
+        self.assertEqual(ut(), '/simple')
+
+    def test_builder_with_params(self):
+        'UrlTemplate builder method (with params)'
+        ut = UrlTemplate('/simple/<int:id>/data')
+        self.assertEqual(ut(id=2), '/simple/2/data')
 
 
 class Prefix(unittest.TestCase):
@@ -30,14 +75,16 @@ class Prefix(unittest.TestCase):
             )
         )
 
-        rctx = RequestContext(Request.blank('/docs').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags/').environ)
-        app(rctx)
+        def assertStatus(url, status):
+            rctx = RequestContext.blank(url)
+            self.assertEqual(app(rctx).response.status_int, status)
+
+        assertStatus('/docs', 404)
+        assertStatus('/docs/', 200)
+        assertStatus('/docs/tags', 404)
+        assertStatus('/docs/tags/',200)
+        # assert assertStatus works correct
+        assertStatus('/docs/tags/asdasd', 404)
 
     def test_prefix_leaf(self):
         '''Simple prefix'''
@@ -57,38 +104,41 @@ class Prefix(unittest.TestCase):
             )
         )
 
-        rctx = RequestContext(Request.blank('/docs/item').environ)
-        app(rctx)
+        rctx = RequestContext.blank('/docs/item')
+        self.assertEqual(app(rctx).response.status_int, 200)
 
-    def test_prefix_data_transmit(self):
-        '''Check how data is transmited throw map to map'''
+
+class Subdomain(unittest.TestCase):
+
+    def test_subdomain(self):
+        '''Subdomain filter'''
 
         def handler(r):
-            self.assert_(r.data.has_key('data_key'), 'Data is not transmitting')
+            self.assertEqual(r.request.path, '/')
 
-        def data_setter(r):
-            r.add_data(data_key='some data')
-            ContinueRoute('data_setter')
-
-        app = Map(
-            data_setter,
-            match('/', 'index') | handler,
-            prefix('/docs') | Map(
-                match('/', 'docs') | handler,
-                match('/item', 'doc') | handler,
-                prefix('/tags') | Map(
-                    match('/', 'tags') | handler,
-                    match('/tag', 'tag') | handler
-                )
+        app = subdomain('host') | Map(
+            subdomain('') | match('/', 'index') | handler,
+            subdomain('k') | Map(
+                subdomain('l') | Map(
+                    match('/', 'l') | handler,
+                ),
+                subdomain('') | match('/', 'k') | handler,
             )
         )
+        app = Map(app)
+        
+        def assertStatus(url, st):
+            rctx = RequestContext(Request.blank(url).environ)
+            self.assertEqual(app(rctx).response.status_int, st)
 
-        rctx = RequestContext(Request.blank('/docs/item').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags/').environ)
-        app(rctx)
-        rctx = RequestContext(Request.blank('/docs/tags/tag').environ)
-        app(rctx)
+        assertStatus('http://host/', 200)
+        assertStatus('http://k.host/', 200)
+        assertStatus('http://l.k.host/', 200)
+        assertStatus('http://x.l.k.host/', 200) # XXX: Is it right?
+        assertStatus('http://x.k.host/', 404)
+        assertStatus('http://lk.host/', 404)
+        assertStatus('http://mhost/', 404) # XXX: we need a method to set root
+                                           #domain without chaining subdomain to the map
 
 
 class Match(unittest.TestCase):
@@ -108,7 +158,7 @@ class Match(unittest.TestCase):
         '''Check int converter'''
 
         def handler(r):
-            self.assertEqual(r.data['id'], 42)
+            self.assertEqual(r.data.id, 42)
 
         app = Map(
             match('/first', 'first') | handler,
@@ -158,9 +208,9 @@ class Match(unittest.TestCase):
             match('/second/<int:id>', 'second') | handler
         )
 
-        rctx = RequestContext(Request.blank('/second/42/').environ)
+        rctx = RequestContext.blank('/second/42/')
         app(rctx)
         self.assertEqual(rctx.response.status_int, 404)
-        rctx = RequestContext(Request.blank('/second/42s').environ)
+        rctx = RequestContext.blank('/second/42s')
         app(rctx)
         self.assertEqual(rctx.response.status_int, 404)

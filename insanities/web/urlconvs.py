@@ -5,7 +5,14 @@ from inspect import isclass
 
 
 class ConvertError(Exception):
-    pass
+
+    @property
+    def converter(self):
+        return self.args[0]
+
+    @property
+    def value(self):
+        return self.args[1]
 
 
 class Converter(object):
@@ -38,7 +45,7 @@ class Integer(Converter):
         try:
             value = int(unquote(value))
         except ValueError:
-            raise ConvertError(self.name)
+            raise ConvertError(self.name, value)
         else:
             return value
 
@@ -58,7 +65,7 @@ class Boolean(Converter):
             return True
         elif value in self._false:
             return False
-        raise ConvertError(self.name)
+        raise ConvertError(self.name, value)
 
     def to_url(self, value):
         if value:
