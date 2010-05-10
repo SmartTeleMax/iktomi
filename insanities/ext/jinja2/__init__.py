@@ -63,23 +63,25 @@ class jinja_env(Wrapper):
         super(jinja_env, self).__init__()
         self.param = param
         self.autoescape = autoescape
+        self.env = None
 
     def handle(self, rctx):
         kw = rctx.conf.as_dict()
         kw['rctx'] = rctx
-        paths = kw.pop(self.param, None)
-        paths_ = []
-        if paths:
-            if isinstance(paths, basestring):
-                paths_.append(paths)
-            elif isinstance(paths, (list, tuple)):
-                paths_ += paths
-        paths_.append(DEFAULT_TEMPLATE_DIR)
-        jinja_env = Environment(
-            loader=FileSystemLoader(paths_),
-            autoescape=self.autoescape,
-        )
-        form_env = FormEnvironment(env=jinja_env, **kw)
-        rctx.vals.update(dict(form_env=form_env, jinja_env=jinja_env))
+        paths = kw.get(self.param)
+        if self.env is None:
+            paths_ = []
+            if paths:
+                if isinstance(paths, basestring):
+                    paths_.append(paths)
+                elif isinstance(paths, (list, tuple)):
+                    paths_ += paths
+            paths_.append(DEFAULT_TEMPLATE_DIR)
+            self.env = Environment(
+                loader=FileSystemLoader(paths_),
+                autoescape=self.autoescape,
+            )
+        form_env = FormEnvironment(env=self.env, **kw)
+        rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
         rctx = self.exec_wrapped(rctx)
         return rctx
