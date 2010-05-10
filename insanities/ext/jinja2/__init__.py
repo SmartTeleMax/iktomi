@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from jinja2 import Environment, FileSystemLoader
-from insanities.web.core import ContinueRoute, RequestHandler, Wrapper
+from insanities.web.core import ContinueRoute, RequestHandler
 
 __all__ = ('FormEnvironment', 'render_to', 'jinja_env')
 
@@ -57,7 +57,7 @@ class render_to(RequestHandler):
         return rctx
 
 
-class jinja_env(Wrapper):
+class jinja_env(RequestHandler):
 
     def __init__(self, param='TEMPLATES', autoescape=False):
         super(jinja_env, self).__init__()
@@ -83,5 +83,4 @@ class jinja_env(Wrapper):
             )
         form_env = FormEnvironment(env=self.env, **kw)
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
-        rctx = self.exec_wrapped(rctx)
         return rctx
