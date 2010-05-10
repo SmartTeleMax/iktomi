@@ -15,9 +15,9 @@ class Form(object):
 
     '''
     Object designed to validate and convert data passed throught HTTP
-    
+
     To use it you must specify an ancestor class, like this::
-    
+
         class MyForm(Form):
             fields=[
                   fields.Field(name='input2',
@@ -28,13 +28,13 @@ class Form(object):
             medias = [media.FormJSRef('field_buttons.js'),
                       media.FormCSSRef('field_buttons.css'),]
             permissions = 'rw'
-    
+
     The constructor accepts folowing parameters:
-    
+
     :*env* - FormEnvironment instance, which keeps usefull stuff.
     There is only one required method to be implemented in FormEnvironment:
     FormEnvironment.render(template_name, **kwargs)
-    
+
     :*initial* - dictionary containing initial data for the form.
 
     :*name* - name of the form. Used asname attribute of form HTML tag,
@@ -56,7 +56,7 @@ class Form(object):
         self.python_data = initial.copy()
         # clone all fields
         self.fields = [field(parent=self) for field in self.fields]
-        
+
         if permissions is None:
             # to allow permissions definition in Form class
             permissions = self.permissions
@@ -83,7 +83,7 @@ class Form(object):
     def get_data(self, compact=True):
         '''
         Fills form data into new MultiDict.
-        
+
         If compact is True, includes only not-None values
         '''
         data = MultiDict()
@@ -135,21 +135,21 @@ class Form(object):
         Takes data (usually, request.POST) MultiDict and optionally files
         MultiDict. Validates given data using form's fields' accept method.
         If there are validation errors, collects them for future display.
-        
+
         If particular field has no edit permissions, disallows it's editing.
-        
+
         Provides an additional interface for field validation using form's
         :meth:`clean__%s` methods. This tests are started after accepting all
         of fields' data. This interface is useful for validation of couple of
         fields. Here is example it's of usage::
-        
+
             class MyForm(form.Form):
                 def clean__fieldname(self, value):
                     othervalue = self.python_data['otherfield']
                     if not mytest(value, othervalue):
                         raise convs.ValidationError("I don't like it")
                     return value
-        
+
         Returns True if the form is valid
         '''
         self.data = MultiDict(data)
