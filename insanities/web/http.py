@@ -69,6 +69,9 @@ class DictWithNamespace(object):
     def __setitem__(self, k, v):
         self._current_data[k] = v
 
+    def __contains__(self, k):
+        return k in self._current_data
+
     def __getitem__(self, k):
         return self._current_data[k]
 
