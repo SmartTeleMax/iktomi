@@ -2,6 +2,7 @@
 from sqlalchemy import orm, types, create_engine
 from sqlalchemy.ext import declarative
 from sqlalchemy.orm.query import Query
+from sqlalchemy import create_engine
 
 from insanities.utils import cached_property
 from insanities.web import HttpException, ContinueRoute, Wrapper
@@ -57,3 +58,34 @@ class SqlAlchemy(Wrapper):
         finally:
             db.close()
         return rctx
+
+
+from .. import CommandDigest
+
+
+class SqlAlchemyCommands(CommandDigest):
+
+    def __init__(self, cfg, models_module, initial=None):
+        self.cfg = cfg
+        self.models_module = models_module
+        self.initial = initial
+
+    def command_sync(self, db_name=None):
+        if db_name is None:
+            db_name = ''
+        engine = create_engine(self.cfg[db_name], echo=True)
+        self.models_module.metadata.create_all(engine)
+
+    def command_drop(self, db_name=None):
+        if db_name is None:
+            db_name = ''
+        engine = create_engine(self.cfg[db_name], echo=True)
+        self.models_module.metadata.drop_all(engine, checkfirst=True)
+
+    def command_initial(self, db_name):
+        pass
+
+    def command_reset(self, db_name=None):
+        self.command_drop(db_name)
+        self.command_sync(db_name)
+        self.command_initial(db_name)
