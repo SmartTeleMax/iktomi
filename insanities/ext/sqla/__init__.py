@@ -27,9 +27,10 @@ class DBSession(orm.session.Session):
 
 class SqlAlchemy(Wrapper):
 
-    def __init__(self, uris, models, query_cls=Query, class_=DBSession,
+    def __init__(self, uris, models, param_name='db', query_cls=Query, class_=DBSession,
                  engine_params={}):
         super(SqlAlchemy, self).__init__()
+        self.param_name = param_name
 
         db_dict = {}
         for ref, uri in uris.items():
@@ -49,9 +50,10 @@ class SqlAlchemy(Wrapper):
 
     def handle(self, rctx):
         # XXX should be lazy
-        rctx.db = self.maker()
+        db = self.maker()
+        rctx.vals[self.param_name] = db
         try:
             rctx = self.exec_wrapped(rctx)
         finally:
-            rctx.db.close()
+            db.close()
         return rctx
