@@ -8,7 +8,6 @@ import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
-from jinja2 import Markup
 
 
 class NotSubmitted(Exception): pass
@@ -81,7 +80,7 @@ class Converter(object):
         Multiple converters usually accept and return lists.
         '''
         return False
-    
+
     def __init__(self, field=None, **kwargs):
         self.field = weakproxy(field)
         self._init_kwargs = kwargs
@@ -90,7 +89,7 @@ class Converter(object):
     @property
     def env(self):
         return self.field.env
-    
+
     def to_python_wrapper(self, value):
         if self.null and value in ('', None):
             return None
@@ -99,11 +98,11 @@ class Converter(object):
     def to_python(self, value):
         """ custom converters should override this """
         return value
-    
+
     def from_python(self, value):
         """ custom converters should override this """
         return value
-    
+
     def __or__(self, next):
         """ chaining converters """
         chain = Chain((self, next))
@@ -134,7 +133,7 @@ class Chain(Converter):
             convs = (conv(field=field) for conv in convs)
         self.convs = tuple(convs)
         super(Chain, self).__init__(**kwargs)
-    
+
     def to_python(self, value):
         for conv in self.convs:
             value = conv.to_python_wrapper(value)
@@ -168,7 +167,7 @@ def plural_char(n):
 
 
 class Char(Converter):
-    
+
     """
     string converter with min length, max length and regex
     checks support
@@ -184,12 +183,12 @@ class Char(Converter):
     strip = True
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
-    
+
     def clean_value(self, value):
         '''
         Additional clean action to preprocess value before :meth:`to_python`
         method.
-        
+
         Subclasses may define own clean_value method to allow additional clean
         actions like html cleanup, etc.
         '''
@@ -236,7 +235,6 @@ class Char(Converter):
 class Int(Converter):
     """
     integer converter with max and min values support
-    
     """
 
     #: Min allowed valid number
@@ -258,7 +256,7 @@ class Int(Converter):
         if self.max is not None:
             self._assert(self.max >= value, 'max value is %(max)s', 'max')
         return value
-    
+
     def from_python(self, value):
         if value is None:
             return ''
@@ -271,10 +269,10 @@ class Int(Converter):
 
 
 class Bool(Converter):
-    
+
     def to_python(self, value):
         return bool(value)
-    
+
     def from_python(self, value):
         if value:
             return 'checked'
@@ -282,10 +280,10 @@ class Bool(Converter):
 
 
 class DisplayOnly(Converter):
-    
+
     def from_python(self, value):
         return value
-    
+
     def to_python(self, value):
         raise SkipReadonly
 
@@ -334,7 +332,7 @@ class EnumChoice(Converter):
 
 
 class DatetimeDisplay(DisplayOnly):
-    
+
     format = '%d.%m.%Y, %H:%M'
 
     def from_python(self, value):
@@ -346,12 +344,12 @@ class DatetimeDisplay(DisplayOnly):
 class Datetime(Converter):
 
     format = '%d.%m.%Y, %H:%M'
-    
+
     def from_python(self, value):
         if not value:
             return ''
         return value.strftime(self.format)
-    
+
     def to_python(self, value):
         if not value and not self.null:
             raise ValidationError, u'обязательное поле'
@@ -365,12 +363,12 @@ class Datetime(Converter):
 class Date(Converter):
 
     format = '%d.%m.%Y'
-    
+
     def from_python(self, value):
         if not value:
             return ''
         return value.strftime(self.format)
-    
+
     def to_python(self, value):
         if not value and not self.null:
             raise ValidationError, u'обязательное поле'
@@ -391,7 +389,7 @@ class Time(Converter):
         if value in (None, ''):
             return ''
         return value.strftime(self.format)
-    
+
     def to_python(self, value):
         if not value and not self.null:
             raise ValidationError, u'обязательное поле'
@@ -400,13 +398,13 @@ class Time(Converter):
         except ValueError:
             # XXX Message is format dependent
             raise ValidationError, u'неверный формат (ЧЧ:ММ)'
-    
+
 
 class SplitDateTime(Converter):
 
     def from_python(self, value):
         return {'date':value, 'time':value}
-    
+
     def to_python(self, value):
         if value['date'] is None:
             return None
@@ -424,13 +422,13 @@ class Joiner(object):
 
     def __call__(self):
         return self.__class__()
-    
+
 
 class DatetimeJoiner(Joiner):
     # XXX Two classes to split and join datetimes?
     def join(self, values):
         return datetime.combine(*values)
-    
+
     def split(self, value):
         if not value:
             return None, None
@@ -441,50 +439,53 @@ class Html(Char):
     '''
     Converter for flexible cleanup of HTML document fragments.
     A subclass of :class:`Char<insanities.forms.convs.Char>`.
-    
+
     Uses :class:`utils.html.Sanitizer<insanities.utils.html.Sanitizer>`
     instance to sanitize input HTML.
-    
+
     Construtor collects from given kwargs all of
     :class:`Sanitizer<insanities.utils.html.Sanitizer>`
     options and passes them into Sanitizer's constructor.
-    
+
     For list properties it is allowed to use :meth:`add_%s` interface::
-    
+
         Html(add_allowed_elements=['span'], add_dom_callbacks=[myfunc])
     '''
-    
+
     allowed_elements = frozenset(('a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u',
                                   'i', 'b', 'blockquote', 'sub', 'sup'))
     allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
     drop_empty_tags = frozenset(('p', 'a', 'u', 'i', 'b', 'sub', 'sup'))
     allowed_classes = {}
+    #: Function returning object marked safe for template engine.
+    #: For example: jinja Markup object
+    Markup = lambda x: x
 
     def _load_arg(self, kwargs, opt):
         if hasattr(self, opt):
             kwargs.setdefault(opt, getattr(self, opt))
-    
+
     def __init__(self, **kwargs):
         from ..utils.html import PROPERTIES, LIST_PROPERTIES
-        
+
         for opt in PROPERTIES:
             if not opt in kwargs:
                 # passed throught kwargs set is stronger then stored in class
                 # add_%  
                 self._load_arg(kwargs, 'add_' + opt)
             self._load_arg(kwargs, opt)
-                
+
         for opt in LIST_PROPERTIES:
             add_key = 'add_' + opt
             if add_key in kwargs:
                 kwargs[opt] = set(kwargs.get(opt, LIST_PROPERTIES[opt]))
                 kwargs[opt].update(kwargs.pop(add_key))
-        
+
         super(Html, self).__init__(**kwargs)
-    
+
     def clean_value(self, value):
         from ..utils.html import ParseError, Sanitizer
-        
+
         value = super(Html, self).clean_value(value)
         sanitizer = Sanitizer(**self._init_kwargs)
         try:
@@ -492,8 +493,8 @@ class Html(Char):
         except ParseError:
             raise ValidationError, u'not valid html'
         else:
-            return Markup(clean)
-    
+            return self.Markup(clean)
+
     @property
     def tags(self):
         return self.allowed_elements

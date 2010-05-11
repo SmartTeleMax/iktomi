@@ -5,7 +5,6 @@ import demjson
 from ..utils import weakproxy, cached_property
 from . import convs
 from .media import FormMedia, FormCSSRef, FormJSRef
-from jinja2 import Markup
 
 class Widget(object):
 
@@ -40,7 +39,7 @@ class Widget(object):
 
     def get_media(self):
         return FormMedia(self.media)
-    
+
     def prepare_data(self, value, readonly=False):
         '''
         Method returning data passed to template.
@@ -70,12 +69,12 @@ class TextInput(Widget):
 
 
 class HiddenInput(Widget):
-    
+
     template = 'hiddeninput'
 
 
 class PasswordInput(Widget):
-    
+
     template = 'passwordinput'
     classname = 'textinput'
 
@@ -91,7 +90,7 @@ class Select(Widget):
     #: HTML select element's select attribute value.
     size = None
     #: Label assigned to None value if field is not required
-    null_label = Markup('&mdash;')
+    null_label = '--------'
 
     def get_options(self, value):
         if self.multiple:
@@ -108,7 +107,7 @@ class Select(Widget):
             values = value
         else:
             values = [value]
-        values = map(unicode, values) 
+        values = map(unicode, values)
         for choice, label in self.field.conv:
             choice = unicode(choice)
             options.append(dict(value=choice,
@@ -124,7 +123,7 @@ class Select(Widget):
 
 
 class GroupedSelect(Select):
-    
+
     template = 'grouped_select'
     classname = 'grouped_select select'
     size = None
@@ -140,7 +139,7 @@ class GroupedSelect(Select):
         else:
             values = [value]
         values = map(unicode, values)
-        
+
         # TODO fix tree generation
         _group_items = []
         _group_name = None
@@ -157,7 +156,7 @@ class GroupedSelect(Select):
             if group:
                 _group_items.append(dict(value=choice,
                                          title=label,
-                                         selected=(choice in values))) 
+                                         selected=(choice in values)))
             else:
                 options.append(dict(value=choice,
                                     title=label,
@@ -166,18 +165,18 @@ class GroupedSelect(Select):
         if _group_name:
             options.append(dict(is_group=True,
                                 title=_group_name,
-                                options=_group_items[0:]))        
+                                options=_group_items[0:]))
         return options
 
 
 
 class CheckBoxSelect(Select):
-    
+
     template = 'select-checkbox'
 
 
 class CheckBox(Widget):
-    
+
     template = 'checkbox'
 
 
