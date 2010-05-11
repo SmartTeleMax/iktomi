@@ -8,6 +8,7 @@ sys.path.append(FRAMEWORK_DIR)
 from insanities.web.core import Map, RequestHandler, Reverse
 from insanities.web.filters import *
 from insanities.web.wrappers import *
+from insanities.web.http import RequestContext
 
 class MapInit(unittest.TestCase):
 
@@ -47,6 +48,23 @@ class MapInit(unittest.TestCase):
         first_item = app.handlers[0]
         self.assert_(first_item is rh1)
         self.assert_(first_item._next_handler is rh2)
+
+    def test_function_argspec(self):
+        'ARGSPEC'
+
+        def handler(r, a, b=None):
+            self.assertEqual(a, 'a')
+            self.assert_(b in [None, 'b'])
+
+        app = Map(
+            match('/<string:a>', 'a') | handler,
+            match('/<string:a>/<string:b>', 'b') | handler,
+        )
+
+        rctx = RequestContext.blank('/a')
+        app(rctx)
+        rctx = RequestContext.blank('/a/b')
+        app(rctx)
 
 
 class MapReverse(unittest.TestCase):

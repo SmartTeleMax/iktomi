@@ -74,7 +74,7 @@ class UrlTemplate(object):
             (?P<converter>[a-zA-Z_][a-zA-Z0-9]+)    # converter name
             (?P<args>\(.*?\))?                      # converter args
             \:?                                     # delimiter
-            (?P<variable>[a-zA-Z_][a-zA-Z0-9_]+)?    # variable name
+            (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?    # variable name
             >$''', re.VERBOSE)
     _static_url_pattern = re.compile(r'^[^<]*?$')
 
