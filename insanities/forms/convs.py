@@ -39,23 +39,23 @@ class Converter(object):
     Base converter with chaining support
     extend this class in order to get custom
     converter.
-    
+
     Converting:
-    
+
     :meth:`to_python` method takes value from form
     and converts it to python type
-    
+
     :meth:`from_python` method takes value as python
     object and converts it to string or something
     else widget can display
-    
+
     Chaining:
-    
+
     Result of first converter is passed as input value
     to second. for example::
-    
+
         convs.Char(max_length=2)|convs.Int()
-    
+
     will be a convertor which first validates
     if string's length is 2 or less and after
     that converts it to integer

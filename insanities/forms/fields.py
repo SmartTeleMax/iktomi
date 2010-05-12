@@ -16,7 +16,7 @@ class FieldError(Exception): pass
 class BaseField(object):
     '''
     Simple container class which ancestors represents various parts of Form.
-    
+
     Encapsulates converter, various fields attributes, media objects,
     methods for data access control, widget to render the g
     '''
@@ -32,7 +32,7 @@ class BaseField(object):
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
-    
+
 
     def __init__(self, **kwargs):
         self._init_kwargs = kwargs
@@ -51,13 +51,13 @@ class BaseField(object):
         if isinstance(self.parent, form.Form):
             return name
         return self.parent.resolve_name() + '.' + name
-    
+
     @property
     def parent(self):
         '''
         Proxy getter of current field's parent. Parent can be Form instance or
         other BaseField instance if there are field nesting.
-        
+
         Raises FormError if it is attempt to access the parent of an unbound
         field.
         '''
@@ -87,13 +87,13 @@ class BaseField(object):
         nestiong of fields. The input name is to be used in templates as value
         of Input (Select, etc) element's Name attribute and Label element's For
         attribute.
-        
+
         It is also used as key in form's data multidict.
-        
+
         The property is available only if field is bound.
         '''
         return self.parent.prefix + self.name
-    
+
     @property
     def error(self):
         '''
@@ -102,7 +102,7 @@ class BaseField(object):
         The property is available only if field is bound.
         '''
         return self.form.errors.get(self.input_name)
-    
+
     @property
     def value(self):
         '''
@@ -122,13 +122,13 @@ class BaseField(object):
         # We use template names in list to replace, so we must use it here to
         # insure unique IDs.
         return '%s-%s' % (self.form.id, self.input_name)
-            
+
     def to_python(self, value):
         return self.conv.to_python_wrapper(value)
-    
+
     def from_python(self, value):
         return self.conv.from_python(value)
-    
+
     @cached_property
     def permissions(self):
         '''
@@ -156,7 +156,7 @@ class Field(BaseField):
             kw['field'] = self
         conv = conv(**kw)
         widget = widget(**kw)
-        
+
         kwargs.update(dict(
             parent=parent,
             name=name,
@@ -164,7 +164,7 @@ class Field(BaseField):
             widget=widget,
         ))
         BaseField.__init__(self, **kwargs)
-    
+
     def get_default(self):
         '''
         Returns fields default value
@@ -174,7 +174,7 @@ class Field(BaseField):
         if self.multiple:
             return []
         return None
-    
+
     def grab(self):
         '''
         Returns field's raw value from form's data multidict.
@@ -197,7 +197,7 @@ class Field(BaseField):
                 data.add(self.input_name, v)
         else:
             data[self.input_name] = value
-    
+
     def accept(self):
         '''
         Converts field's raw value to python, but raises SkipReadonly exception
@@ -215,7 +215,7 @@ class Field(BaseField):
         media = BaseField.get_media(self)
         media += self.widget.get_media()
         return media
-    
+
     def render(self):
         '''
         Renders the field.
@@ -263,7 +263,7 @@ class FieldSet(AggregateField):
     @property
     def prefix(self):
         return self.input_name+'.'
-    
+
     def get_field(self, name):
         names = name.split('.', 1)
         for field in self.fields:
@@ -272,7 +272,7 @@ class FieldSet(AggregateField):
                     return field.get_field(names[1])
                 return field
         return None
-    
+
     def get_default(self):
         result = dict((field.name, field.get_default())
                       for field in self.fields)

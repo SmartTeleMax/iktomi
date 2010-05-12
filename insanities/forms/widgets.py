@@ -333,3 +333,36 @@ class ImageView(Widget):
 
     template = 'imageview'
     classname = 'imageview'
+
+
+class FileInput(Widget):
+    '''
+    '''
+    template = 'fileinput'
+
+    def prepare_data(self, value, readonly=False):
+        data = Widget.prepare_data(self, value, readonly)
+
+        field = self.field
+        value = field.parent.python_data.get(field.name, None)
+        delete = field.form.data.get(field.input_name + '__delete', False)
+        if value is None:
+            value = field.parent.initial.get(self.name, None)
+            if isinstance(value, StoredFile):
+                mode = 'existing'
+            else:
+                value = None
+                mode = 'empty'
+        elif isinstance(value, StoredFile):
+            mode = 'existing'
+        elif isinstance(value, self.temp_file_cls):
+            mode = 'temp'
+        else:
+            assert None
+        return dict(data, value=value, mode=mode, input_name=self.input_name,
+                    delete=delete, temp_url=self.env.temp_url,
+                    null=self.null)
+
+class ImageInput(FileInput):
+    template = 'imageinput'
+

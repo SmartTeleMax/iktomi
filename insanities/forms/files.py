@@ -6,6 +6,7 @@ import os, struct, tempfile, time
 from PIL import Image
 from ..utils import weakproxy, cached_property
 from .fields import Field
+from .widgets import FileInput, ImageInput
 from . import convs
 
 
@@ -125,9 +126,9 @@ class FileField(Field):
 
     hacking = u'Что-то пошло не так'
     required = u'Обязательное поле'
-    template = 'fileinput'
     temp_file_cls = TempUploadedFile
     null = True
+    widget = FileInput
 
     def from_python(self, value):
         return value
@@ -202,27 +203,6 @@ class FileField(Field):
         tmp.save(file)
         return tmp
 
-    def render(self):
-        value = self.parent.python_data.get(self.name, None)
-        delete = self.form.data.get(self.input_name + '__delete', False)
-        if value is None:
-            value = self.parent.initial.get(self.name, None)
-            if isinstance(value, StoredFile):
-                mode = 'existing'
-            else:
-                value = None
-                mode = 'empty'
-        elif isinstance(value, StoredFile):
-            mode = 'existing'
-        elif isinstance(value, self.temp_file_cls):
-            mode = 'temp'
-        else:
-            assert None
-        return self.env.render('widgets/%s' % self.template, value=value,
-                               mode=mode, input_name=self.input_name,
-                               delete=delete, temp_url=self.env.temp_url,
-                               null=self.null, field=self)
-
     def delete_temp_file(self, temp_name):
         uid, ext = path.splitext(temp_name)
         tmp = self.temp_file_cls(self, name=None, ext=ext, uid=uid)
@@ -231,7 +211,7 @@ class FileField(Field):
 
 class ImageField(FileField):
 
-    template = 'imageinput'
+    widget = ImageInput
     temp_file_cls = TempImageFile
     thumb_size = None
     thumb_sufix = '__thumb'
