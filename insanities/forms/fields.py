@@ -145,17 +145,20 @@ class Field(BaseField):
     Atomic field
     '''
 
-    #: :class:`Widget` class instance used to render the field.
+    #: :class:`Widget` subclass or instance used to render the field.
     #: Can be set by Field inheritance or throught constructor.
-    widget = None
+    widget = widgets.TextInput
+    #: :class:`Conv` subclass or instance used to convert field data 
+    #: and validate it
+    conv = convs.Char
 
-    def __init__(self, name, conv=convs.Char, widget=widgets.TextInput,
-                 parent=None, **kwargs):
+    def __init__(self, name, conv=None, widget=None, parent=None,
+                 **kwargs):
         kw = {}
         if parent is not None:
             kw['field'] = self
-        conv = conv(**kw)
-        widget = widget(**kw)
+        conv = (conv or self.conv)(**kw)
+        widget = (widget or self.widget)(**kw)
 
         kwargs.update(dict(
             parent=parent,
