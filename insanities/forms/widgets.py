@@ -361,7 +361,7 @@ class FileInput(Widget):
             assert None
         return dict(data, value=value, mode=mode, input_name=self.input_name,
                     delete=delete, temp_url=self.env.temp_url,
-                    null=self.null)
+                    null=field.null)
 
 class ImageInput(FileInput):
     template = 'imageinput'
