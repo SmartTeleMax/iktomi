@@ -138,7 +138,7 @@ class FileField(Field):
         return value
 
     def fill(self, data, value):
-        if isinstance(value, StoredFile):
+        if isinstance(value, self.stored_file_cls):
             data[self.input_name + '__mode'] = 'existing'
         elif isinstance(value, TempUploadedFile):
             data[self.input_name + '__mode'] = 'temp'
