@@ -127,6 +127,7 @@ class FileField(Field):
     hacking = u'Что-то пошло не так'
     required = u'Обязательное поле'
     temp_file_cls = TempUploadedFile
+    stored_file_cls = StoredFile
     null = True
     widget = FileInput
 
@@ -137,7 +138,7 @@ class FileField(Field):
         return value
 
     def fill(self, data, value):
-        if isinstance(value, StoredFile):
+        if isinstance(value, self.stored_file_cls):
             data[self.input_name + '__mode'] = 'existing'
         elif isinstance(value, TempUploadedFile):
             data[self.input_name + '__mode'] = 'temp'
