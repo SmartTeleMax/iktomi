@@ -4,7 +4,6 @@ import string
 from os import path
 import os, struct, tempfile, time
 from PIL import Image
-import sqlalchemy.types as types
 from ..utils import weakproxy, cached_property
 from .fields import Field
 from . import convs
@@ -120,37 +119,6 @@ class StoredImageFile(StoredFile):
     @cached_property
     def image(self):
         return Image.open(self.full_path)
-
-
-class AlchemyFile(types.TypeDecorator):
-
-    impl = types.Binary
-    file_class = StoredFile # must be subclass of StoredFile
-
-    def __init__(self, base_path=None, base_url=None):
-        assert base_path and base_url
-        super(AlchemyFile, self).__init__(255)
-        self.base_path = base_path
-        self.base_url = base_url
-
-    def process_bind_param(self, value, dialect):
-        if isinstance(value, StoredFile):
-            return value.filename
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value:
-            return self.file_class(value, base_path=self.base_path,
-                                   base_url=self.base_url)
-        return value
-
-    def copy(self):
-        return self.__class__(base_path=self.base_path, base_url=self.base_url)
-
-
-class AlchemyImageFile(AlchemyFile):
-
-    file_class = StoredImageFile
 
 
 class FileField(Field):
