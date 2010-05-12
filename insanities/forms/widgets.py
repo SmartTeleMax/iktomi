@@ -347,21 +347,21 @@ class FileInput(Widget):
         value = field.parent.python_data.get(field.name, None)
         delete = field.form.data.get(field.input_name + '__delete', False)
         if value is None:
-            value = field.parent.initial.get(self.name, None)
-            if isinstance(value, StoredFile):
+            value = field.parent.initial.get(field.name, None)
+            if isinstance(value, field.stored_file_cls):
                 mode = 'existing'
             else:
                 value = None
                 mode = 'empty'
-        elif isinstance(value, StoredFile):
+        elif isinstance(value, field.stored_file_cls):
             mode = 'existing'
-        elif isinstance(value, self.temp_file_cls):
+        elif isinstance(value, field.temp_file_cls):
             mode = 'temp'
         else:
             assert None
         return dict(data, value=value, mode=mode, input_name=self.input_name,
                     delete=delete, temp_url=self.env.temp_url,
-                    null=self.null)
+                    null=field.null)
 
 class ImageInput(FileInput):
     template = 'imageinput'

@@ -127,6 +127,7 @@ class FileField(Field):
     hacking = u'Что-то пошло не так'
     required = u'Обязательное поле'
     temp_file_cls = TempUploadedFile
+    stored_file_cls = StoredFile
     null = True
     widget = FileInput
 
@@ -154,15 +155,15 @@ class FileField(Field):
         temp_name = self.form.data.get(self.input_name + '__temp_name', None)
         original_name = self.form.data.get(self.input_name + '__original_name',
                                            None)
-        delete = self.form.data.get(self.input_name + '__delete', None)
+        delete = self.form.data.get(self.input_name + '__delete', None) 
 
-        if file and file.filename == '<fdopen>':
-            file.filename = None
+#        if file and file.filename == '<fdopen>':
+#            file.filename = None
 
         if mode == 'empty':
-            if not file.filename:
-                if self.null:
-                    raise convs.SkipReadonly # XXX This is incorrect
+            if file == u'' or file is None: #XXX WEBOB ONLY !!!
+                if not self.null:
+                    raise convs.SkipReadonly # XXX this is incorrect
                 raise convs.ValidationError(self.required)
             return self.save_temp_file(file)
 
