@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def urlquote(value):
-    return quote(value.encode('utf-8') if isinstance(value, unicode) else value)
+    return quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
 
 
 class URL(object):
@@ -56,12 +56,27 @@ class URL(object):
         return self.query.get(key, default=default)
 
     def __str__(self):
-        query = '?' + urllib.urlencode(self.query) if self.query else ''
+        query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
+                                for k,v in self.query.iteritems()])  \
+                 if self.query else '')
+        path = urlquote(self.path)
+
+        if self.host:
+            host = self.host.encode('idna')
+            port = ':' + self.port if self.port else ''
+            return ''.join((self.schema, '://', host, port, path,  query))
+        else:
+            return path + query
+
+    def get_readable(self):
+        query = u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()])
+
         if self.host:
             port = ':' + self.port if self.port else ''
-            return ''.join((self.schema, '://', self.host, port, urlquote(self.path),  query))
+            return u''.join((self.schema, '://', self.host, port, self.path,  query))
         else:
-            return urlquote(self.path) + query
+            return self.path + query
+
 
     def __repr__(self):
         return '<URL "%s">' % unicode(self)
