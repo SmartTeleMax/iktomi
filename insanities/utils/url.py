@@ -14,6 +14,25 @@ def urlquote(value):
 
 
 class URL(object):
+    '''
+        URL object
+
+        Represents URL with schema, host, port, path (required) and query
+        specified.
+
+        `schema`, `host`, `port`, `path` are string objects. `query` is 
+        MultiDict or any object accepted by MultiDict's constructor.
+
+        `host`, `path` and `query`'s keys and values can be also unicode strings.
+
+        You can get encoded URL like this::
+
+          url = URL('path', **kwargs)
+          str_url = str(url)
+
+        In this case path and query args are encoded by urlencode, while host is
+        encoded by idna.
+    '''
 
     def __init__(self, path, query=None, host=None, port=None, schema=None):
         self.path = path
@@ -30,29 +49,35 @@ class URL(object):
         return self.__class__(path, **kw)
 
     def set(self, **kwargs):
+        '''Sets value of URL's query keys to given values'''
         query = self.query.copy()
         for k, v in kwargs.items():
             query[k] = v
         return self._copy(query=query)
 
     def add(self, **kwargs):
+        '''Adds values to URL's query'''
         query = self.query.copy()
         for k, v in kwargs.items():
             query.add(k, v)
         return self._copy(query=query)
 
     def delete(self, key):
+        '''Deletes given key from the URL's query'''
         query = self.query.copy()
         del query[key]
         return self._copy(query=query)
 
     def getall(self, key):
+        '''A proxy method for query.getall'''
         return self.query.getall(key)
 
     def getone(self, key):
+        '''A proxy method for query.getone'''
         return self.query.getone(key)
 
     def get(self, key, default=None):
+        '''A proxy method for query.get'''
         return self.query.get(key, default=default)
 
     def __str__(self):
@@ -69,6 +94,7 @@ class URL(object):
             return path + query
 
     def get_readable(self):
+        '''Gets human-readable representation of the url'''
         query = u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()])
 
         if self.host:

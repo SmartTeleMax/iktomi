@@ -7,8 +7,8 @@ Different utilities used in project
    :maxdepth: 2
 
 * :ref:`OrderedDict <OrderedDict>`
-* :ref:`MultiDict <MultiDict>`
 * :ref:`HTML Sanitarization <Sanitarization>`
+* :ref:`URL handling <URLS>`
 
 
 .. _OrderedDict:
@@ -23,24 +23,24 @@ OrderedDict Interface
 .. autoclass:: insanities.utils.odict.OrderedDict
    :members:
 
+..
+
+    S.. _MultiDict:
+
+    SMultiDict
+    S-----------
+
+    S.. automodule:: insanities.utils.mdict
+
+    SMultiDict Interface
+    S^^^^^^^^^^^^^^^^^^^
+
+    S.. autoclass:: insanities.utils.mdict.MultiDict
+    S   :members: items, append, getfirst, getlast
 
 
-.. _MultiDict:
 
-MultiDict
------------
-
-.. automodule:: insanities.utils.mdict
-
-MultiDict Interface
-^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: insanities.utils.mdict.MultiDict
-   :members: items, append, getfirst, getlast
-
-
-
-.. _MultiDict:
+.. _Sanitarization:
 
 HTML Sanitarization
 -----------
@@ -51,4 +51,24 @@ Sanitizer
 ^^^^^^^^^
 
 .. autoclass:: insanities.utils.html.Sanitizer
+   :members:
+
+
+.. _URLS:
+
+URLs handling
+-------------
+
+.. automodule:: insanities.utils.url
+
+URL
+^^^
+
+.. autoclass:: insanities.utils.url.URL(path\[query=None][host=None][port=None][schema=None])
+   :members:
+
+URLTemplate
+^^^^^^^^^^^
+
+.. autoclass:: insanities.utils.url.URLTemplate
    :members:

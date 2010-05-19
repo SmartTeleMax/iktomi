@@ -1,105 +1,55 @@
-Forms API: Fields
+Forms API: Media
 =========
 
-.. _insanities-forms-widgets:
+.. _insanities-forms-media:
 
 .. toctree::
    :maxdepth: 2
 
-* :ref:`Module description<insanities-forms-widgets>`
-* :ref:`Widget <insanities-Widget>`
-* :ref:`Some predefined widgets <insanities-predefined-widgets>`
+* :ref:`Module description<insanities-forms-media>`
+* :ref:`FormMedia <insanities-FormMedia>`
+* :ref:`FormMediaAtom <insanities-FormMediaAtom>`
+* :ref:`FormMediaAtom subclasses <insanities-FormMediaAtom-subclasses>`
 
 Module Description
 ------------------
 
-.. automodule:: insanities.forms.fields
+.. automodule:: insanities.forms.media
 
 
 
-.. _insanities-Widget:
+.. _insanities-FormMedia:
 
-Widget
+FormMedia
 ^^^^^^
-.. autoclass:: insanities.forms.widgets.Widget(\[template][, media][, classname][, \**kwargs])
+.. autoclass:: insanities.forms.media.FormMedia
    :members:
 
 
 
-.. _insanities-Select:
+.. _insanities-FormMediaAtom:
 
-Select
-^^^^^^
-.. autoclass:: insanities.forms.widgets.Select(\[size][, null_label][, \**kwargs])
-   :members:
-
-.. autoclass:: insanities.forms.widgets.CheckBoxSelect(\[\**kwargs])
-   :members:
-
-.. autoclass:: insanities.forms.widgets.ReadonlySelect(\[\**kwargs])
-   :members:
-
-
-
-.. _insanities-GroupedSelect:
-
-GroupedSelect
+FormMediaAtom
 ^^^^^^^^^^^^^
-.. autoclass:: insanities.forms.widgets.GroupedSelect(\[\**kwargs])
+.. autoclass:: insanities.forms.media.FormMediaAtom
    :members:
 
 
 
-.. _insanities-TinyMce:
+.. _insanities-FormMediaAtom-subclasses:
 
-TinyMce
-^^^^^^^
-.. autoclass:: insanities.forms.widgets.TinyMce(\[buttons][, plugins][, browsers][, cfg][, content_css][, compress][, add_plugins][, add_buttons][, drop_buttons][, \**kwargs])
+FormMediaAtom subclasses
+^^^^^^^^^^^^^^^^^^^^^^^^
+There are some predefined :class:`FormMediaAtom` subclasses:
+
+.. autoclass:: insanities.forms.media.FormCSSRef
    :members:
 
-
-
-.. _insanities-CharDisplay:
-
-CharDisplay
-^^^^^^^^^^^
-.. autoclass:: insanities.forms.widgets.CharDisplay(\[escape][, getter][\**kwargs])
+.. autoclass:: insanities.forms.media.FormCSSInline
    :members:
 
-
-
-.. _insanities-predefined-widgets:
-
-Some predefined widgets
-^^^^^^^^^^^^^^^^^^^^^^^
-There are some :class:`Widget <insanities-Widget>` subclasses
-just defining their own templates and classnames.
-
-.. autoclass:: insanities.forms.widgets.TextInput(\[\**kwargs])
+.. autoclass:: insanities.forms.media.FormJSRef
    :members:
 
-
-.. autoclass:: insanities.forms.widgets.HiddenInput(\[\**kwargs])
+.. autoclass:: insanities.forms.media.FormJSInline
    :members:
-
-
-.. autoclass:: insanities.forms.widgets.PasswordInput(\[\**kwargs])
-   :members:
-
-
-.. autoclass:: insanities.forms.widgets.Textarea(\[\**kwargs])
-   :members:
-
-
-.. autoclass:: insanities.forms.widgets.CheckBox(\[\**kwargs])
-   :members:
-
-
-.. autoclass:: insanities.forms.widgets.ImageView(\[\**kwargs])
-   :members:
-
-
-.. autoclass:: insanities.forms.widgets.Textarea(\[\**kwargs])
-   :members:
-
-
