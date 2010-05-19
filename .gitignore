@@ -4,6 +4,7 @@
 *~
 .ropeproject
 *.*.swp
+build
 dist
 *.egg-info
 pip-log.txt
