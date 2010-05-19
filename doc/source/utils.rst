@@ -24,7 +24,6 @@ OrderedDict Interface
    :members:
 
 ..
-
     S.. _MultiDict:
 
     SMultiDict

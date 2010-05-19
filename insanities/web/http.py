@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class HttpException(Exception):
+    '''
+    Exception forcing :class:`Map <insanities.web.core.Map>` to generate
+    :class:`Response` with given status code and Location header (if provided)
+    '''
     def __init__(self, status, url=None):
         super(HttpException, self).__init__()
         self.status = int(status)
@@ -17,6 +21,9 @@ class HttpException(Exception):
 
 
 class Request(_Request):
+    '''
+    Patched webob Request class
+    '''
 
     def __init__(self, *args, **kwargs):
         super(Request, self).__init__(*args, **kwargs)
@@ -118,22 +125,25 @@ class DictWithNamespace(object):
 
 
 class RequestContext(object):
-
+    '''
+    Context of the request. A class containing request and response objects and
+    a number of data containers with request environment and processing data.
+    '''
     def __init__(self, wsgi_environ):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
         self.response.status = httplib.NOT_FOUND
         self.wsgi_env = wsgi_environ.copy()
 
-        # this attribute is for views and template data,
-        # for example filter match appends params here.
+        #: this attribute is for views and template data,
+        #: for example filter match appends params here.
         self.data = DictWithNamespace()
 
-        # this is config, static, declarative (key, value)
+        #: this is config, static, declarative (key, value)
         self.conf = DictWithNamespace()
 
-        # this storage is for nesecary objects like db session, templates env,
-        # cache, url_for. something like dynamic config values.
+        #: this storage is for nesecary objects like db session, templates env,
+        #: cache, url_for. something like dynamic config values.
         self.vals = DictWithNamespace()
 
         # this is mark of main map
@@ -141,6 +151,12 @@ class RequestContext(object):
 
     @classmethod
     def blank(cls, url, **data):
+        '''
+        Method returning blank rctx. Very useful for testing
+
+        `data` - POST parameters.
+        '''
         POST = data if data else None
         env = _Request.blank(url, POST=POST).environ
         return cls(env)
+
