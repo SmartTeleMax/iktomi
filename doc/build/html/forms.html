@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Forms API: Forms &mdash; insanities v0.5 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.5',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="insanities v0.5 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li><a href="index.html">insanities v0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="forms-api-forms">
+<h1>Forms API: Forms<a class="headerlink" href="#forms-api-forms" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+</ul>
+<ul class="simple">
+<li><a class="reference internal" href="#insanities-forms"><em>Module description</em></a></li>
+<li><a class="reference internal" href="#insanities-form"><em>Form</em></a></li>
+</ul>
+<div class="section" id="module-insanities.forms.form">
+<h2>Forms<a class="headerlink" href="#module-insanities.forms.form" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="form">
+<span id="insanities-form"></span><h3>Form<a class="headerlink" href="#form" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="insanities.forms.form.Form">
+<em class="property">class </em><tt class="descclassname">insanities.forms.form.</tt><tt class="descname">Form</tt><big>(</big><em>env</em>, <em>initial={}</em>, <em>name=None</em>, <em>permissions=None</em><big>)</big><a class="headerlink" href="#insanities.forms.form.Form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object designed to validate and convert data passed throught HTTP</p>
+<p>To use it you must specify an ancestor class, like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">Form</span><span class="p">):</span>
+    <span class="n">fields</span><span class="o">=</span><span class="p">[</span>
+          <span class="n">fields</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;input2&#39;</span><span class="p">,</span>
+                       <span class="n">conv</span><span class="o">=</span><span class="n">convs</span><span class="o">.</span><span class="n">Int</span><span class="p">,</span>
+                       <span class="n">widget</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">TextInput</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="s">&#39;form-template&#39;</span>
+    <span class="n">medias</span> <span class="o">=</span> <span class="p">[</span><span class="n">media</span><span class="o">.</span><span class="n">FormJSRef</span><span class="p">(</span><span class="s">&#39;field_buttons.js&#39;</span><span class="p">),</span>
+              <span class="n">media</span><span class="o">.</span><span class="n">FormCSSRef</span><span class="p">(</span><span class="s">&#39;field_buttons.css&#39;</span><span class="p">),]</span>
+    <span class="n">permissions</span> <span class="o">=</span> <span class="s">&#39;rw&#39;</span>
+</pre></div>
+</div>
+<p>The constructor accepts folowing parameters:</p>
+<p>:<em>env</em> - FormEnvironment instance, which keeps usefull stuff.
+There is only one required method to be implemented in FormEnvironment:
+FormEnvironment.render(template_name, <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</p>
+<p>:<em>initial</em> - dictionary containing initial data for the form.</p>
+<p>:<em>name</em> - name of the form. Used asname attribute of form HTML tag,
+as a part of form&#8217;s inputs names.</p>
+<p>:<em>permissions</em> - an iterable containing all allowed permissions for
+this particular form.</p>
+<dl class="method">
+<dt id="insanities.forms.form.Form.accept">
+<tt class="descname">accept</tt><big>(</big><em>data</em>, <em>files=None</em><big>)</big><a class="headerlink" href="#insanities.forms.form.Form.accept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes data (usually, request.POST) MultiDict and optionally files
+MultiDict. Validates given data using form&#8217;s fields&#8217; accept method.
+If there are validation errors, collects them for future display.</p>
+<p>If particular field has no edit permissions, disallows it&#8217;s editing.</p>
+<p>Provides an additional interface for field validation using form&#8217;s
+<tt class="xref docutils literal"><span class="pre">clean__%s()</span></tt> methods. This tests are started after accepting all
+of fields&#8217; data. This interface is useful for validation of couple of
+fields. Here is example it&#8217;s of usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyForm</span><span class="p">(</span><span class="n">form</span><span class="o">.</span><span class="n">Form</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">clean__fieldname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">othervalue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">python_data</span><span class="p">[</span><span class="s">&#39;otherfield&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mytest</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">othervalue</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">convs</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="s">&quot;I don&#39;t like it&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p>Returns True if the form is valid</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="insanities.forms.form.Form.get_data">
+<tt class="descname">get_data</tt><big>(</big><em>compact=True</em><big>)</big><a class="headerlink" href="#insanities.forms.form.Form.get_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills form data into new MultiDict.</p>
+<p>If compact is True, includes only not-None values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="insanities.forms.form.Form.get_field">
+<tt class="descname">get_field</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#insanities.forms.form.Form.get_field" title="Permalink to this definition">¶</a></dt>
+<dd>Gets field by input name</dd></dl>
+
+<dl class="method">
+<dt id="insanities.forms.form.Form.get_media">
+<tt class="descname">get_media</tt><big>(</big><big>)</big><a class="headerlink" href="#insanities.forms.form.Form.get_media" title="Permalink to this definition">¶</a></dt>
+<dd>Returns a list of FormMedia objects related to the form and
+all of it&#8217;s fields</dd></dl>
+
+<dl class="attribute">
+<dt id="insanities.forms.form.Form.id">
+<tt class="descname">id</tt><a class="headerlink" href="#insanities.forms.form.Form.id" title="Permalink to this definition">¶</a></dt>
+<dd>Random ID for given form input</dd></dl>
+
+<dl class="attribute">
+<dt id="insanities.forms.form.Form.is_valid">
+<tt class="descname">is_valid</tt><a class="headerlink" href="#insanities.forms.form.Form.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd>Is true if validated form as no errors</dd></dl>
+
+<dl class="attribute">
+<dt id="insanities.forms.form.Form.prefix">
+<tt class="descname">prefix</tt><a class="headerlink" href="#insanities.forms.form.Form.prefix" title="Permalink to this definition">¶</a></dt>
+<dd>A prefix for names of field inputs</dd></dl>
+
+<dl class="method">
+<dt id="insanities.forms.form.Form.render">
+<tt class="descname">render</tt><big>(</big><big>)</big><a class="headerlink" href="#insanities.forms.form.Form.render" title="Permalink to this definition">¶</a></dt>
+<dd>Proxy method to form&#8217;s environment render method</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Forms API: Forms</a><ul>
+<li><a class="reference external" href="#module-insanities.forms.form">Forms</a><ul>
+<li><a class="reference external" href="#form">Form</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/forms.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">insanities v0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Denis Otkidach.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Forms API: Fields &mdash; insanities v0.5 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.5',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="insanities v0.5 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li><a href="index.html">insanities v0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="forms-api-fields">
+<h1>Forms API: Fields<a class="headerlink" href="#forms-api-fields" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+</ul>
+<ul class="simple">
+<li><a class="reference internal" href="#insanities-forms-media"><em>Module description</em></a></li>
+<li><a class="reference internal" href="#insanities-formmedia"><em>FormMedia</em></a></li>
+<li><a class="reference internal" href="#insanities-formmediaatom"><em>FormMediaAtom</em></a></li>
+<li><a class="reference internal" href="#insanities-formmediaatom-subclasses"><em>FormMediaAtom subclasses</em></a></li>
+</ul>
+<div class="section" id="module-insanities.forms.media">
+<h2>Module Description<a class="headerlink" href="#module-insanities.forms.media" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="formmedia">
+<span id="insanities-formmedia"></span><h3>FormMedia<a class="headerlink" href="#formmedia" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="insanities.forms.media.FormMedia">
+<em class="property">class </em><tt class="descclassname">insanities.forms.media.</tt><tt class="descname">FormMedia</tt><big>(</big><em>items=</em><span class="optional">[</span><span class="optional">]</span>, <em>env=None</em><big>)</big><a class="headerlink" href="#insanities.forms.media.FormMedia" title="Permalink to this definition">¶</a></dt>
+<dd>Instance encapsulating media items assigned to instances of
+<a title="insanities.forms.form.Form" class="reference external" href="forms.html#insanities.forms.form.Form"><tt class="xref docutils literal"><span class="pre">Form</span></tt></a>,
+<a title="insanities.forms.fields.Field" class="reference external" href="fields.html#insanities.forms.fields.Field"><tt class="xref docutils literal"><span class="pre">Field</span></tt></a> and
+<a title="insanities.forms.widgets.Widget" class="reference external" href="media.html#insanities.forms.widgets.Widget"><tt class="xref docutils literal"><span class="pre">Widget</span></tt></a></dd></dl>
+
+</div>
+<div class="section" id="formmediaatom">
+<span id="insanities-formmediaatom"></span><h3>FormMediaAtom<a class="headerlink" href="#formmediaatom" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="insanities.forms.media.FormMediaAtom">
+<em class="property">class </em><tt class="descclassname">insanities.forms.media.</tt><tt class="descname">FormMediaAtom</tt><big>(</big><em>data</em>, <em>holder=None</em><big>)</big><a class="headerlink" href="#insanities.forms.media.FormMediaAtom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Media item representing JS, CSS or some other media stuff linked to
+<a title="insanities.forms.form.Form" class="reference external" href="forms.html#insanities.forms.form.Form"><tt class="xref docutils literal"><span class="pre">Form</span></tt></a> or it&#8217;s parts.</p>
+<dl class="method">
+<dt id="insanities.forms.media.FormMediaAtom.render">
+<tt class="descname">render</tt><big>(</big><big>)</big><a class="headerlink" href="#insanities.forms.media.FormMediaAtom.render" title="Permalink to this definition">¶</a></dt>
+<dd>Renders media item to HTML</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="formmediaatom-subclasses">
+<span id="insanities-formmediaatom-subclasses"></span><h3>FormMediaAtom subclasses<a class="headerlink" href="#formmediaatom-subclasses" title="Permalink to this headline">¶</a></h3>
+<p>There are some predefined <a title="insanities.forms.media.FormMediaAtom" class="reference internal" href="#insanities.forms.media.FormMediaAtom"><tt class="xref docutils literal"><span class="pre">FormMediaAtom</span></tt></a> subclasses:</p>
+<dl class="class">
+<dt id="insanities.forms.media.FormCSSRef">
+<em class="property">class </em><tt class="descclassname">insanities.forms.media.</tt><tt class="descname">FormCSSRef</tt><big>(</big><em>data</em>, <em>holder=None</em><big>)</big><a class="headerlink" href="#insanities.forms.media.FormCSSRef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="insanities.forms.media.FormCSSInline">
+<em class="property">class </em><tt class="descclassname">insanities.forms.media.</tt><tt class="descname">FormCSSInline</tt><big>(</big><em>data</em>, <em>holder=None</em><big>)</big><a class="headerlink" href="#insanities.forms.media.FormCSSInline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="insanities.forms.media.FormJSRef">
+<em class="property">class </em><tt class="descclassname">insanities.forms.media.</tt><tt class="descname">FormJSRef</tt><big>(</big><em>data</em>, <em>holder=None</em><big>)</big><a class="headerlink" href="#insanities.forms.media.FormJSRef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="insanities.forms.media.FormJSInline">
+<em class="property">class </em><tt class="descclassname">insanities.forms.media.</tt><tt class="descname">FormJSInline</tt><big>(</big><em>data</em>, <em>holder=None</em><big>)</big><a class="headerlink" href="#insanities.forms.media.FormJSInline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Forms API: Fields</a><ul>
+<li><a class="reference external" href="#module-insanities.forms.media">Module Description</a><ul>
+<li><a class="reference external" href="#formmedia">FormMedia</a></li>
+<li><a class="reference external" href="#formmediaatom">FormMediaAtom</a></li>
+<li><a class="reference external" href="#formmediaatom-subclasses">FormMediaAtom subclasses</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/widgets.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">insanities v0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Denis Otkidach.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>

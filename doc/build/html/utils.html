@@ -1,0 +1,432 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Different utilities used in project &mdash; insanities v0.5 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.5',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="insanities v0.5 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li><a href="index.html">insanities v0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="different-utilities-used-in-project">
+<h1>Different utilities used in project<a class="headerlink" href="#different-utilities-used-in-project" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+</ul>
+<ul class="simple">
+<li><em class="xref">OrderedDict</em></li>
+<li><em class="xref">MultiDict</em></li>
+<li><em class="xref">HTML Sanitarization</em></li>
+</ul>
+<div class="section" id="module-insanities.utils.odict">
+<span id="ordereddict"></span><h2>OrderedDict<a class="headerlink" href="#module-insanities.utils.odict" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h3>OrderedDict<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>This module is an example implementation of an ordered dict for the
+collections module.  It&#8217;s not written for performance (it actually
+performs pretty bad) but to show how the API works.</p>
+<div class="section" id="questions-and-answers">
+<h4>Questions and Answers<a class="headerlink" href="#questions-and-answers" title="Permalink to this headline">¶</a></h4>
+<p>Why would anyone need ordered dicts?</p>
+<blockquote>
+<p>Dicts in python are unordered which means that the order of items when
+iterating over dicts is undefined.  As a matter of fact it is most of
+the time useless and differs from implementation to implementation.</p>
+<p>Many developers stumble upon that problem sooner or later when
+comparing the output of doctests which often does not match the order
+the developer thought it would.</p>
+<p>Also XML systems such as Genshi have their problems with unordered
+dicts as the input and output ordering of tag attributes is often
+mixed up because the ordering is lost when converting the data into
+a dict.  Switching to lists is often not possible because the
+complexity of a lookup is too high.</p>
+<p>Another very common case is metaprogramming.  The default namespace
+of a class in python is a dict.  With Python 3 it becomes possible
+to replace it with a different object which could be an ordered dict.
+Django is already doing something similar with a hack that assigns
+numbers to some descriptors initialized in the class body of a
+specific subclass to restore the ordering after class creation.</p>
+<p>When porting code from programming languages such as PHP and Ruby
+where the item-order in a dict is guaranteed it&#8217;s also a great help
+to have an equivalent data structure in Python to ease the transition.</p>
+</blockquote>
+<p>Where are new keys added?</p>
+<blockquote>
+At the end.  This behavior is consistent with Ruby 1.9 Hashmaps
+and PHP Arrays.  It also matches what common ordered dict
+implementations do currently.</blockquote>
+<p>What happens if an existing key is reassigned?</p>
+<blockquote>
+<p>The key is <em>not</em> moved.  This is consitent with existing
+implementations and can be changed by a subclass very easily:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MovingOrderedDict</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="n">OrderedDict</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Moving keys to the end of a ordered dict on reassignment is not
+very useful for most applications.</p>
+</blockquote>
+<p>Does it mean the dict keys are sorted by a sort expression?</p>
+<blockquote>
+That&#8217;s not the case.  The OrderedDict only guarantees that there is an
+order and that newly inserted keys are inserted at the end of the dict.
+If you want to sort it you can do so, but newly added keys are again
+added at the end of the dict.</blockquote>
+<p>I initializes the OrderedDict with a dict literal but the keys are not
+ordered like they should!</p>
+<blockquote>
+Dict literals in Python generate dict objects and as such the order of
+their items is not guaranteed.  Before they are passed to the
+OrderedDict constructor they are already unordered.</blockquote>
+<p>What happens if keys appear multiple times in the list passed to the
+constructor?</p>
+<blockquote>
+<p>The same as for the dict.  The latter item overrides the former.  This
+has the side-effect that the position of the first key is used because
+the key is actually overwritten:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">OrderedDict</span><span class="p">([(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="go">OrderedDict([(&#39;a&#39;, 3), (&#39;b&#39;, 2)])</span>
+</pre></div>
+</div>
+<p>This behavor is consistent with existing implementation in Python
+and the PHP array and the hashmap in Ruby 1.9.</p>
+</blockquote>
+<p>This OrderedDict doesn&#8217;t scale!</p>
+<blockquote>
+Yes it doesn&#8217;t.  The delitem operation is O(n).  This is file is a
+mockup of a real OrderedDict that could be implemented for collections
+based on an linked list.</blockquote>
+<p>Why is there no .insert()?</p>
+<blockquote>
+<p>There are few situations where you really want to insert a key at
+an specified index.  To now make the API too complex the proposed
+solution for this situation is creating a list of items, manipulating
+that and converting it back into an OrderedDict:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">42</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="mi">23</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="mi">19</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">l</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">OrderedDict</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+<span class="go">OrderedDict([(&#39;a&#39;, 42), (&#39;x&#39;, 0), (&#39;b&#39;, 23), (&#39;c&#39;, 19)])</span>
+</pre></div>
+</div>
+</blockquote>
+</div>
+</div>
+<div class="section" id="ordereddict-interface">
+<h3>OrderedDict Interface<a class="headerlink" href="#ordereddict-interface" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="insanities.utils.odict.OrderedDict">
+<em class="property">class </em><tt class="descclassname">insanities.utils.odict.</tt><tt class="descname">OrderedDict</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#insanities.utils.odict.OrderedDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ordered dict example implementation.</p>
+<p>This is the proposed interface for a an ordered dict as proposed on the
+Python mailinglist (<a class="reference external" href="http://thread.gmane.org/gmane.comp.python.devel/95316">proposal</a>).</p>
+<p>It&#8217;s a dict subclass and provides some list functions.  The implementation
+of this class is inspired by the implementation of Babel but incorporates
+some ideas from the <a href="#id6"><span class="problematic" id="id7">`ordereddict`_</span></a> and Django&#8217;s ordered dict.</p>
+<p>The constructor and <cite>update()</cite> both accept iterables of tuples as well as
+mappings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;d&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&#39;foo&#39;</span><span class="p">:</span> <span class="s">&#39;bar&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;)])</span>
+</pre></div>
+</div>
+<p>Keep in mind that when updating from dict-literals the order is not
+preserved as these dicts are unsorted!</p>
+<p>You can copy an OrderedDict like a dict by using the constructor,
+<cite>copy.copy</cite> or the <cite>copy</cite> method and make deep copies with <cite>copy.deepcopy</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span><span class="p">,</span> <span class="n">deepcopy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">copy</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">OrderedDict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="s">&#39;spam&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d2</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d2</span><span class="p">[</span><span class="s">&#39;spam&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;eggs&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;), (&#39;spam&#39;, [])])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d2</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;), (&#39;spam&#39;, [&#39;eggs&#39;])])</span>
+</pre></div>
+</div>
+<p>All iteration methods as well as <cite>keys</cite>, <cite>values</cite> and <cite>items</cite> return
+the values ordered by the the time the key-value pair is inserted:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="go">[&#39;a&#39;, &#39;c&#39;, &#39;foo&#39;, &#39;spam&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+<span class="go">[&#39;b&#39;, &#39;d&#39;, &#39;bar&#39;, []]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="go">[(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;), (&#39;spam&#39;, [])]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">())</span>
+<span class="go">[&#39;a&#39;, &#39;c&#39;, &#39;foo&#39;, &#39;spam&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">itervalues</span><span class="p">())</span>
+<span class="go">[&#39;b&#39;, &#39;d&#39;, &#39;bar&#39;, []]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+<span class="go">[(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;), (&#39;spam&#39;, [])]</span>
+</pre></div>
+</div>
+<p>Index based lookup is supported too by <cite>byindex</cite> which returns the
+key/value pair for an index:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">byindex</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">(&#39;foo&#39;, &#39;bar&#39;)</span>
+</pre></div>
+</div>
+<p>You can reverse the OrderedDict as well:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">OrderedDict([(&#39;spam&#39;, []), (&#39;foo&#39;, &#39;bar&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;a&#39;, &#39;b&#39;)])</span>
+</pre></div>
+</div>
+<p>And sort it like a list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">OrderedDict([(&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;d&#39;), (&#39;foo&#39;, &#39;bar&#39;), (&#39;spam&#39;, [])])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-insanities.utils.mdict">
+<span id="multidict"></span><h2>MultiDict<a class="headerlink" href="#module-insanities.utils.mdict" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="multidict-interface">
+<h3>MultiDict Interface<a class="headerlink" href="#multidict-interface" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="insanities.utils.mdict.MultiDict">
+<em class="property">class </em><tt class="descclassname">insanities.utils.mdict.</tt><tt class="descname">MultiDict</tt><big>(</big><em>initial_data={}</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#insanities.utils.mdict.MultiDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary that allows to map multiple <tt class="docutils literal"><span class="pre">values</span></tt>
+to one <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">md</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">(((</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">,</span> <span class="s">&#39;eggs&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;baz&#39;</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span>
+<span class="go">[&#39;bar&#39;, &#39;baz&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="p">[</span><span class="s">&#39;spam&#39;</span><span class="p">]</span>
+<span class="go">[&#39;eggs&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="go">[&#39;bar&#39;, &#39;baz&#39;]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="insanities.utils.mdict.MultiDict.items">
+<tt class="descname">items</tt><big>(</big><big>)</big><a class="headerlink" href="#insanities.utils.mdict.MultiDict.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method returns list of tuples (<tt class="docutils literal"><span class="pre">key</span></tt>, <tt class="docutils literal"><span class="pre">value</span></tt>).
+If <tt class="docutils literal"><span class="pre">key</span></tt> has multiple values, then multiple tuples
+will be returned for this <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">md</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">(((</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">,</span> <span class="s">&#39;eggs&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;baz&#39;</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="go">[(&#39;foo&#39;, &#39;bar&#39;), (&#39;foo&#39;, &#39;baz&#39;), (&#39;spam&#39;, &#39;eggs&#39;)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="insanities.utils.mdict.MultiDict.append">
+<tt class="descname">append</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#insanities.utils.mdict.MultiDict.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method appends <tt class="docutils literal"><span class="pre">value</span></tt> for <tt class="docutils literal"><span class="pre">key</span></tt>, if <tt class="docutils literal"><span class="pre">key</span></tt> doesn&#8217;t
+exists it will be created.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">md</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;baz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">,</span> <span class="s">&#39;eggs&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">md</span>
+<span class="go">MultiDict([(&#39;foo&#39;, &#39;bar&#39;), (&#39;foo&#39;, &#39;baz&#39;), (&#39;spam&#39;, &#39;eggs&#39;)])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="insanities.utils.mdict.MultiDict.getfirst">
+<tt class="descname">getfirst</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#insanities.utils.mdict.MultiDict.getfirst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method returns first value from values list
+of the <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">md</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">(((</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">,</span> <span class="s">&#39;eggs&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;baz&#39;</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">getfirst</span><span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">)</span>
+<span class="go">&#39;eggs&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">getfirst</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="go">&#39;bar&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="insanities.utils.mdict.MultiDict.getlast">
+<tt class="descname">getlast</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#insanities.utils.mdict.MultiDict.getlast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method returns last value from values list
+of the <tt class="docutils literal"><span class="pre">key</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">md</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">(((</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">,</span> <span class="s">&#39;eggs&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;baz&#39;</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">getlast</span><span class="p">(</span><span class="s">&#39;spam&#39;</span><span class="p">)</span>
+<span class="go">&#39;eggs&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">md</span><span class="o">.</span><span class="n">getlast</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="go">&#39;baz&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-insanities.utils.html">
+<span id="id5"></span><h2>HTML Sanitarization<a class="headerlink" href="#module-insanities.utils.html" title="Permalink to this headline">¶</a></h2>
+<p>Module containing classes for easy and flexible HTML cleanup</p>
+<div class="section" id="sanitizer">
+<h3>Sanitizer<a class="headerlink" href="#sanitizer" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="insanities.utils.html.Sanitizer">
+<em class="property">class </em><tt class="descclassname">insanities.utils.html.</tt><tt class="descname">Sanitizer</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#insanities.utils.html.Sanitizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sanitizer object customizing sanitarization
+and providing method for sanitizing string.
+Is used by <a title="insanities.forms.convs.Html" class="reference external" href="convs.html#insanities.forms.convs.Html"><tt class="xref docutils literal"><span class="pre">forms.convs.Html</span></tt></a>.</p>
+<p>There are some options accepted by constructor:</p>
+<ul>
+<li><p class="first"><em>allowed_elements</em>. A list of HTML elements tag names
+that are not removed or escaped.</p>
+</li>
+<li><p class="first"><em>allowed_attributes</em>. A list of HTML attributes that
+are not removed.</p>
+</li>
+<li><p class="first"><em>escape_invalid_tags</em>. If it&#8217;s True, disallowed HTML
+elements are escaped, otherwise they are removed.</p>
+</li>
+<li><p class="first"><em>allowed_classes</em>. Dict with keys representing HTML
+tag names and values describing what classes are allowed
+for this element. It can be list of accepted classes
+(strings) or callable accepting the classname and
+returning condition if it is allowed:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Sanitizer</span><span class="p">(</span><span class="n">allowed_classes</span><span class="o">=</span><span class="p">{</span>
+    <span class="s">&#39;p&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;hidden&#39;</span><span class="p">],</span>
+    <span class="s">&#39;span&#39;</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^num_\d+$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">,</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><em>strip_whitespaces</em>. Strip whitespaces or not.</p>
+</li>
+<li><p class="first"><em>method</em>. Method of html rendering, default is xhtml.
+See html5lib docs for details.</p>
+</li>
+<li><p class="first"><em>dom_callbacks</em>. A list of functions called after HTML
+is parsed. Function accept and returns minidom
+<tt class="xref docutils literal"><span class="pre">DocumentFragment</span></tt> object and can process it.</p>
+</li>
+<li><p class="first"><em>string_callbacks</em>. A list of functions called after HTML
+is rendered. Function accept and returns the rendered
+HTML string.</p>
+</li>
+</ul>
+<p>For more options (including CSS, SVG, MathML cleanup)
+see source code and html5lib documentation.</p>
+<dl class="method">
+<dt id="insanities.utils.html.Sanitizer.sanitize">
+<tt class="descname">sanitize</tt><big>(</big><em>htmlstring</em><big>)</big><a class="headerlink" href="#insanities.utils.html.Sanitizer.sanitize" title="Permalink to this definition">¶</a></dt>
+<dd>HTML sanitirization with html5lib-like interface</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Different utilities used in project</a><ul>
+<li><a class="reference external" href="#module-insanities.utils.odict">OrderedDict</a><ul>
+<li><a class="reference external" href="#id2">OrderedDict</a><ul>
+<li><a class="reference external" href="#questions-and-answers">Questions and Answers</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#ordereddict-interface">OrderedDict Interface</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#module-insanities.utils.mdict">MultiDict</a><ul>
+<li><a class="reference external" href="#multidict-interface">MultiDict Interface</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#module-insanities.utils.html">HTML Sanitarization</a><ul>
+<li><a class="reference external" href="#sanitizer">Sanitizer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/utils.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">insanities v0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Denis Otkidach.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>
