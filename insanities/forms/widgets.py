@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from copy import deepcopy
-import demjson
+import simplejson
 from ..utils import weakproxy, cached_property
 from . import convs
 from .media import FormMedia, FormCSSRef, FormJSRef
@@ -297,7 +297,7 @@ class TinyMce(Widget):
 
         cfg['field_name'] = self.field.resolve_name()
 
-        return demjson.encode(cfg)
+        return simplejson.dumps(cfg)
 
     def prepare_data(self, value, readonly=False):
         data = Widget.prepare_data(self, value, readonly)
