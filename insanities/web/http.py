@@ -8,7 +8,7 @@ import cgi
 from webob import Request as _Request, Response
 from webob.multidict import MultiDict, NoVars
 
-from ..utils import cached_preoperty
+from ..utils import cached_property
 
 logger = logging.getLogger(__name__)
 

@@ -95,7 +95,8 @@ class URL(object):
 
     def get_readable(self):
         '''Gets human-readable representation of the url'''
-        query = u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()])
+        query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
+                 if self.query else '')
 
         if self.host:
             port = ':' + self.port if self.port else ''
