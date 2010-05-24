@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import cgi
 import string
 from os import path
 import os, struct, tempfile, time
@@ -12,6 +12,11 @@ from . import convs
 
 def time_uid():
     return (struct.pack('!d', time.time()) + os.urandom(2)).encode('hex')
+
+def _get_file_content(f):
+    if isinstance(f, cgi.FieldStorage)
+        return f.value
+    return f.read()
 
 
 class BaseFile(object):
@@ -47,7 +52,7 @@ class TempUploadedFile(BaseFile):
             os.makedirs(self.temp_path)
         try:
             fp = open(self.full_path, 'wb')
-            fp.write(file.read())
+            fp.write(_get_file_content(file))
             fp.close()
         except Exception, e:
             raise convs.ValidationError(u"coudn't save file: %s" % e)
