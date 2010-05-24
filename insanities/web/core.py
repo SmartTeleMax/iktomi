@@ -262,8 +262,9 @@ class FunctionWrapper(RequestHandler):
         # if there is no value argument we trying to get default value
         # from function specification otherwise Exception is raised
         argsspec = getargspec(self.func)
+        arg_offset = 1 if type(self.func) is types.MethodType else 0
         if argsspec.defaults and len(argsspec.defaults) > 0:
-            args = argsspec.args[:-len(argsspec.defaults)]
+            args = argsspec.args[arg_offset:-len(argsspec.defaults)]
             kwargs = {}
             for i, kwarg_name in enumerate(argsspec.args[-len(argsspec.defaults):]):
                 if kwarg_name in rctx.data:
@@ -271,7 +272,7 @@ class FunctionWrapper(RequestHandler):
                 else:
                     kwargs[kwarg_name] = argsspec.defaults[i]
         else:
-            args = argsspec.args
+            args = argsspec.args[arg_offset:]
             kwargs = {}
         # form list of arguments values
         args = [rctx] + [rctx.data[arg_name] for arg_name in args[1:]]
