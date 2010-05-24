@@ -25,7 +25,8 @@ class ContinueRoute(Exception):
 
 def prepaire_handler(handler):
     '''Wrappes functions, that they can be usual RequestHandler's'''
-    if type(handler) in (types.FunctionType, types.LambdaType):
+    if type(handler) in (types.FunctionType, types.LambdaType,
+                         types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
 
@@ -235,7 +236,7 @@ class Map(RequestHandler):
         for handler in self.handlers:
             item = handler
             while item:
-                if isinstance(item, self.__class__):
+                if isinstance(item, Map):
                     tracer.nested_map(item)
                     break
                 item.trace(tracer)
