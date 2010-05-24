@@ -45,7 +45,7 @@ class TokenSanitazer(sanitizer.HTMLSanitizer):
             if old in kwargs:
                 # XXX write warning
                 kwargs[new] = kwargs.pop(old)
-                
+
         for key in kwargs.keys():
             if key in self.options:
                 setattr(self, key, kwargs.pop(key))
@@ -75,7 +75,7 @@ class TokenSanitazer(sanitizer.HTMLSanitizer):
                              self.allowed_protocols)):
                             del attrs[attr]
                     # end copypasted
-                    
+
                     if attrs.has_key('style'):
                         styles = self.sanitize_css(attrs.pop('style'))
                         if styles:
@@ -179,7 +179,7 @@ class Sanitizer(object):
       for this element. It can be list of accepted classes
       (strings) or callable accepting the classname and
       returning condition if it is allowed::
-        
+
         Sanitizer(allowed_classes={
             'p': ['hidden'],
             'span': re.compile('^num_\d+$').match,
@@ -193,11 +193,11 @@ class Sanitizer(object):
     * *string_callbacks*. A list of functions called after HTML
       is rendered. Function accept and returns the rendered
       HTML string. 
-    
+
     For more options (including CSS, SVG, MathML cleanup)
     see source code and html5lib documentation.
     '''
-    
+
     dom_callbacks = [remove_a_tags_without_href]
     string_callbacks = [strip_empty_tags]
     method = 'xhtml'
@@ -211,7 +211,7 @@ class Sanitizer(object):
             if key in self.options:
                 setattr(self, key, kwargs.pop(key))
         self.kwargs = kwargs
-        
+
     def token_sanitizer(self):
         # Proxy function to pass arguments into Sanitizer constructor
         def func(*args, **kwargs):
@@ -226,7 +226,7 @@ class Sanitizer(object):
         p = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"),
                                 tokenizer=self.token_sanitizer())
         return p.parseFragment(buf)
-    
+
     def render(self, dom_tree):
         walker = treewalkers.getTreeWalker("dom")
         stream = walker(dom_tree)
@@ -238,7 +238,7 @@ class Sanitizer(object):
                          quote_attr_values=True,
                          omit_optional_tags=False)
         return ser.render(stream)
-    
+
     def sanitize(self, htmlstring):
         '''
         HTML sanitirization with html5lib-like interface
@@ -246,12 +246,12 @@ class Sanitizer(object):
         dom_tree = self.get_dom(htmlstring)
         if dom_tree is None:
             return ''
-        
+
         for callback in self.dom_callbacks:
             dom_tree = callback(dom_tree, **self.kwargs)
-    
+
         clean = self.render(dom_tree)
-        
+
         for callback in self.string_callbacks:
             clean = callback(clean, **self.kwargs)
 

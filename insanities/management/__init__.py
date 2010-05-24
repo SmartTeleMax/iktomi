@@ -7,7 +7,7 @@ from sys import argv
 class CommandNotFound(AttributeError): pass
 
 
-def manage(cfg, commands):
+def manage(commands):
     if len(argv) > 1:
         cmd_name = argv[1]
         raw_args = argv[2:]
@@ -31,10 +31,9 @@ def manage(cfg, commands):
             digest_name = cmd_name
             command = None
         try:
-            digest_class = getattr(commands, digest_name)
-        except AttributeError:
+            digest = commands[digest_name]
+        except KeyError:
             sys.exit('Command "%s" not found' % digest_name)
-        digest = digest_class(cfg)
         try:
             digest(command, *args, **kwargs)
         except CommandNotFound:

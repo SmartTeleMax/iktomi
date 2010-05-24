@@ -9,7 +9,6 @@ from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
 from ..utils.i18n import N_, M_
-from jinja2 import Markup
 
 
 class NotSubmitted(Exception): pass
@@ -470,6 +469,9 @@ class Html(Char):
     allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
     drop_empty_tags = frozenset(('p', 'a', 'u', 'i', 'b', 'sub', 'sup'))
     allowed_classes = {}
+    #: Function returning object marked safe for template engine.
+    #: For example: jinja Markup object
+    Markup = lambda x: x
 
     def _load_arg(self, kwargs, opt):
         if hasattr(self, opt):
@@ -503,7 +505,7 @@ class Html(Char):
         except ParseError:
             raise ValidationError, u'not valid html'
         else:
-            return Markup(clean)
+            return self.Markup(clean)
 
     @property
     def tags(self):

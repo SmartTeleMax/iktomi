@@ -25,7 +25,8 @@ class ContinueRoute(Exception):
 
 def prepaire_handler(handler):
     '''Wrappes functions, that they can be usual RequestHandler's'''
-    if type(handler) in (types.FunctionType, types.LambdaType):
+    if type(handler) in (types.FunctionType, types.LambdaType,
+                         types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
 
@@ -42,6 +43,10 @@ def process_http_exception(rctx, e):
 
 
 class RequestHandler(object):
+    '''
+        Base class for all request handlers.
+    '''
+
 
     def __init__(self):
         self._next_handler = None
@@ -73,7 +78,11 @@ class RequestHandler(object):
         return rctx
 
     def handle(self, rctx):
-        '''this method you should override in subclasses'''
+        '''
+        This method should be overridden in subclasses.
+
+        It always takes rctx object as only argument and returns it
+        '''
         return rctx
 
     def next(self):
@@ -99,11 +108,32 @@ class RequestHandler(object):
 
 
 class Wrapper(RequestHandler):
+    '''
+    A subclass of RequestHandler with other order of calling chained handlers.
 
+    Base class for handlers wrapping execution of next chains. Subclasses should
+    execute chained handlers in :meth:`handle` method by calling :meth:`exec_wrapped`
+    method. For example::
+
+        class MyWrapper(Wrapper):
+            def handle(self, rctx):
+                do_smth(rctx)
+                try:
+                    rctx = self.exec_wrapped(rctx)
+                finally:
+                    do_smth2(rctx)
+                return rctx
+
+    *Note*: Be careful with exceptions. Chained method can throw exceptions including
+    HttpExceptions. If you use wrappers to finalize some actions (close db connection,
+    store http-sessions), it is recommended to use context managers
+    ("with" statements) or try...finally constructions.
+    '''
     def next(self):
         return None
 
     def exec_wrapped(self, rctx):
+        '''Executes the wrapped chain. Should be called from :meth:`handle` method.'''
         next = self._next_handler
         while next is not None:
             logger.debug('Handled by %r' % next)
@@ -115,6 +145,7 @@ class Wrapper(RequestHandler):
         return rctx
 
     def handle(self, rctx):
+        '''Should be overriden in subclasses.'''
         logger.debug("Wrapper begin %r" % self)
         rctx = self.exec_wrapped(rctx)
         logger.debug("Wrapper end %r" % self)
@@ -205,7 +236,7 @@ class Map(RequestHandler):
         for handler in self.handlers:
             item = handler
             while item:
-                if isinstance(item, self.__class__):
+                if isinstance(item, Map):
                     tracer.nested_map(item)
                     break
                 item.trace(tracer)

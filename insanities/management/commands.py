@@ -10,14 +10,6 @@ __all__ = ['server']
 
 class CommandDigest(object):
 
-    def __init__(self, cfg):
-        '''Do not override init, use prepair instead'''
-        self.prepair(cfg)
-
-    def prepair(self, cfg):
-        '''Here you can do any initial tasks'''
-        self.cfg = cfg
-
     def default(self, *args, **kwargs):
         '''This method will be called if command_name in __call__ is None'''
         sys.stdout.write(self.__class__.__doc__)
@@ -44,10 +36,12 @@ class server(CommandDigest):
         $ python manage.py server:serve
     '''
 
+    def __init__(self, app):
+        self.app = app
+
     def command_serve(self, host='', port='8000'):
         '''python manage.py server:serve [host] [port]'''
         import logging
-        from app import app
         logging.basicConfig(level=logging.DEBUG)
         from wsgiref.simple_server import make_server
         from insanities.web.wsgi import WSGIHandler
@@ -55,7 +49,7 @@ class server(CommandDigest):
             port = int(port)
         except ValueError:
             raise ValueError('Please provide valid port value insted of "%s"' % port)
-        server = make_server(host, port, WSGIHandler(app))
+        server = make_server(host, port, WSGIHandler(self.app))
         try:
             logging.debug('Insanities server is running on port %s\n' % port)
             server.serve_forever()
@@ -65,10 +59,9 @@ class server(CommandDigest):
     def command_debug(self, url):
         '''python manage.py server:debug url'''
         import pdb
-        from app import app
         from ..web.http import RequestContext
         rctx = RequestContext.blank(url)
         try:
-            app(rctx)
+            self.app(rctx)
         except Exception, e:
             pdb.post_mortem(e)

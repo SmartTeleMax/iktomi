@@ -5,12 +5,20 @@ __all__ = ['HttpException', 'RequestContext', ]
 import logging
 import gettext
 import httplib
+import cgi
 from webob import Request as _Request, Response
+from webob.multidict import MultiDict, NoVars
+
+from ..utils import cached_property
 
 logger = logging.getLogger(__name__)
 
 
 class HttpException(Exception):
+    '''
+    Exception forcing :class:`Map <insanities.web.core.Map>` to generate
+    :class:`Response` with given status code and Location header (if provided)
+    '''
     def __init__(self, status, url=None):
         super(HttpException, self).__init__()
         self.status = int(status)
@@ -18,6 +26,9 @@ class HttpException(Exception):
 
 
 class Request(_Request):
+    '''
+    Patched webob Request class
+    '''
 
     def __init__(self, *args, **kwargs):
         super(Request, self).__init__(*args, **kwargs)
@@ -58,6 +69,23 @@ class Request(_Request):
             path = path[:-len(self._subdomain)-1]
         return path
 
+    @cached_property
+    def FILES(self):
+        return self._sub_post(lambda x: isinstance(x[1], cgi.FieldStorage))
+
+    @cached_property
+    def POST(self):
+        return self._sub_post(lambda x: not isinstance(x[1], cgi.FieldStorage))
+
+    def _sub_post(self, condition):
+        post = super(Request, self).str_POST
+        if isinstance(post, NoVars):
+            return post
+        return UnicodeMultiDict(MultiDict(filter(condition, post.items())),
+                                encoding=self.charset,
+                                errors=self.unicode_errors,
+                                decode_keys=self.decode_param_names)
+
 
 class DictWithNamespace(object):
     #TODO: add unitests
@@ -69,6 +97,9 @@ class DictWithNamespace(object):
 
     def __setitem__(self, k, v):
         self._current_data[k] = v
+
+    def __contains__(self, k):
+        return k in self._current_data
 
     def __getitem__(self, k):
         return self._current_data[k]
@@ -116,6 +147,10 @@ class DictWithNamespace(object):
 
 
 class RequestContext(object):
+    '''
+    Context of the request. A class containing request and response objects and
+    a number of data containers with request environment and processing data.
+    '''
 
     _null_translation = gettext.NullTranslations()
 
@@ -125,15 +160,15 @@ class RequestContext(object):
         self.response.status = httplib.NOT_FOUND
         self.wsgi_env = wsgi_environ.copy()
 
-        # this attribute is for views and template data,
-        # for example filter match appends params here.
+        #: this attribute is for views and template data,
+        #: for example filter match appends params here.
         self.data = DictWithNamespace()
 
-        # this is config, static, declarative (key, value)
+        #: this is config, static, declarative (key, value)
         self.conf = DictWithNamespace()
 
-        # this storage is for nesecary objects like db session, templates env,
-        # cache, url_for. something like dynamic config values.
+        #: this storage is for nesecary objects like db session, templates env,
+        #: cache, url_for. something like dynamic config values.
         self.vals = DictWithNamespace()
 
         # this is mark of main map
@@ -141,6 +176,11 @@ class RequestContext(object):
 
     @classmethod
     def blank(cls, url, **data):
+        '''
+        Method returning blank rctx. Very useful for testing
+
+        `data` - POST parameters.
+        '''
         POST = data if data else None
         env = _Request.blank(url, POST=POST).environ
         return cls(env)

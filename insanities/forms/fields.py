@@ -63,13 +63,13 @@ class BaseField(object):
             # as translatable string
             return gt(dict_['label'], dict_)
         return None
-    
+
     @property
     def parent(self):
         '''
         Proxy getter of current field's parent. Parent can be Form instance or
         other BaseField instance if there are field nesting.
-        
+
         Raises FormError if it is attempt to access the parent of an unbound
         field.
         '''
@@ -99,13 +99,13 @@ class BaseField(object):
         nestiong of fields. The input name is to be used in templates as value
         of Input (Select, etc) element's Name attribute and Label element's For
         attribute.
-        
+
         It is also used as key in form's data multidict.
-        
+
         The property is available only if field is bound.
         '''
         return self.parent.prefix + self.name
-    
+
     @property
     def error(self):
         '''
@@ -114,7 +114,7 @@ class BaseField(object):
         The property is available only if field is bound.
         '''
         return self.form.errors.get(self.input_name)
-    
+
     @property
     def value(self):
         '''
@@ -134,13 +134,13 @@ class BaseField(object):
         # We use template names in list to replace, so we must use it here to
         # insure unique IDs.
         return '%s-%s' % (self.form.id, self.input_name)
-            
+
     def to_python(self, value):
         return self.conv.to_python_wrapper(value)
-    
+
     def from_python(self, value):
         return self.conv.from_python(value)
-    
+
     @cached_property
     def permissions(self):
         '''
@@ -157,18 +157,21 @@ class Field(BaseField):
     Atomic field
     '''
 
-    #: :class:`Widget` class instance used to render the field.
+    #: :class:`Widget` subclass or instance used to render the field.
     #: Can be set by Field inheritance or throught constructor.
-    widget = None
+    widget = widgets.TextInput
+    #: :class:`Conv` subclass or instance used to convert field data 
+    #: and validate it
+    conv = convs.Char
 
-    def __init__(self, name, conv=convs.Char, widget=widgets.TextInput,
-                 parent=None, **kwargs):
+    def __init__(self, name, conv=None, widget=None, parent=None,
+                 **kwargs):
         kw = {}
         if parent is not None:
             kw['field'] = self
-        conv = conv(**kw)
-        widget = widget(**kw)
-        
+        conv = (conv or self.conv)(**kw)
+        widget = (widget or self.widget)(**kw)
+
         kwargs.update(dict(
             parent=parent,
             name=name,
@@ -176,7 +179,7 @@ class Field(BaseField):
             widget=widget,
         ))
         BaseField.__init__(self, **kwargs)
-    
+
     def get_default(self):
         '''
         Returns fields default value
@@ -186,7 +189,7 @@ class Field(BaseField):
         if self.multiple:
             return []
         return None
-    
+
     def grab(self):
         '''
         Returns field's raw value from form's data multidict.
@@ -209,7 +212,7 @@ class Field(BaseField):
                 data.add(self.input_name, v)
         else:
             data[self.input_name] = value
-    
+
     def accept(self):
         '''
         Converts field's raw value to python, but raises SkipReadonly exception
@@ -227,7 +230,7 @@ class Field(BaseField):
         media = BaseField.get_media(self)
         media += self.widget.get_media()
         return media
-    
+
     def render(self):
         '''
         Renders the field.
@@ -275,7 +278,7 @@ class FieldSet(AggregateField):
     @property
     def prefix(self):
         return self.input_name+'.'
-    
+
     def get_field(self, name):
         names = name.split('.', 1)
         for field in self.fields:
@@ -284,7 +287,7 @@ class FieldSet(AggregateField):
                     return field.get_field(names[1])
                 return field
         return None
-    
+
     def get_default(self):
         result = dict((field.name, field.get_default())
                       for field in self.fields)

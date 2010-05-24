@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
-
+import cgi
 import string
 from os import path
 import os, struct, tempfile, time
 from PIL import Image
-import sqlalchemy.types as types
 from ..utils import weakproxy, cached_property
 from .fields import Field
+from .widgets import FileInput, ImageInput
 from . import convs
 
 
 def time_uid():
     return (struct.pack('!d', time.time()) + os.urandom(2)).encode('hex')
+
+def _get_file_content(f):
+    if isinstance(f, cgi.FieldStorage)
+        return f.value
+    return f.read()
 
 
 class BaseFile(object):
@@ -47,7 +52,7 @@ class TempUploadedFile(BaseFile):
             os.makedirs(self.temp_path)
         try:
             fp = open(self.full_path, 'wb')
-            fp.write(file.read())
+            fp.write(_get_file_content(file))
             fp.close()
         except Exception, e:
             raise convs.ValidationError(u"coudn't save file: %s" % e)
@@ -122,44 +127,14 @@ class StoredImageFile(StoredFile):
         return Image.open(self.full_path)
 
 
-class AlchemyFile(types.TypeDecorator):
-
-    impl = types.Binary
-    file_class = StoredFile # must be subclass of StoredFile
-
-    def __init__(self, base_path=None, base_url=None):
-        assert base_path and base_url
-        super(AlchemyFile, self).__init__(255)
-        self.base_path = base_path
-        self.base_url = base_url
-
-    def process_bind_param(self, value, dialect):
-        if isinstance(value, StoredFile):
-            return value.filename
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value:
-            return self.file_class(value, base_path=self.base_path,
-                                   base_url=self.base_url)
-        return value
-
-    def copy(self):
-        return self.__class__(base_path=self.base_path, base_url=self.base_url)
-
-
-class AlchemyImageFile(AlchemyFile):
-
-    file_class = StoredImageFile
-
-
 class FileField(Field):
 
     hacking = u'Что-то пошло не так'
     required = u'Обязательное поле'
-    template = 'fileinput'
     temp_file_cls = TempUploadedFile
+    stored_file_cls = StoredFile
     null = True
+    widget = FileInput
 
     def from_python(self, value):
         return value
@@ -168,7 +143,7 @@ class FileField(Field):
         return value
 
     def fill(self, data, value):
-        if isinstance(value, StoredFile):
+        if isinstance(value, self.stored_file_cls):
             data[self.input_name + '__mode'] = 'existing'
         elif isinstance(value, TempUploadedFile):
             data[self.input_name + '__mode'] = 'temp'
@@ -185,15 +160,15 @@ class FileField(Field):
         temp_name = self.form.data.get(self.input_name + '__temp_name', None)
         original_name = self.form.data.get(self.input_name + '__original_name',
                                            None)
-        delete = self.form.data.get(self.input_name + '__delete', None)
+        delete = self.form.data.get(self.input_name + '__delete', None) 
 
-        if file and file.filename == '<fdopen>':
-            file.filename = None
+#        if file and file.filename == '<fdopen>':
+#            file.filename = None
 
         if mode == 'empty':
-            if not file.filename:
-                if self.null:
-                    raise convs.SkipReadonly # XXX This is incorrect
+            if file == u'' or file is None: #XXX WEBOB ONLY !!!
+                if not self.null:
+                    raise convs.SkipReadonly # XXX this is incorrect
                 raise convs.ValidationError(self.required)
             return self.save_temp_file(file)
 
@@ -234,27 +209,6 @@ class FileField(Field):
         tmp.save(file)
         return tmp
 
-    def render(self):
-        value = self.parent.python_data.get(self.name, None)
-        delete = self.form.data.get(self.input_name + '__delete', False)
-        if value is None:
-            value = self.parent.initial.get(self.name, None)
-            if isinstance(value, StoredFile):
-                mode = 'existing'
-            else:
-                value = None
-                mode = 'empty'
-        elif isinstance(value, StoredFile):
-            mode = 'existing'
-        elif isinstance(value, self.temp_file_cls):
-            mode = 'temp'
-        else:
-            assert None
-        return self.env.render('widgets/%s' % self.template, value=value,
-                               mode=mode, input_name=self.input_name,
-                               delete=delete, temp_url=self.env.temp_url,
-                               null=self.null, field=self)
-
     def delete_temp_file(self, temp_name):
         uid, ext = path.splitext(temp_name)
         tmp = self.temp_file_cls(self, name=None, ext=ext, uid=uid)
@@ -263,7 +217,7 @@ class FileField(Field):
 
 class ImageField(FileField):
 
-    template = 'imageinput'
+    widget = ImageInput
     temp_file_cls = TempImageFile
     thumb_size = None
     thumb_sufix = '__thumb'

@@ -83,10 +83,10 @@ class ChunkedPageRange(object):
 
 
 class _PageURL(tuple):
-    
+
     def __new__(cls, page=None, url=None):
         return tuple.__new__(cls, (page, url))
-    
+
     @property
     def page(self):
         return self[0]
@@ -133,7 +133,7 @@ class Paginator(object):
     @cached_property
     def page(self):
         '''Current page.'''
-        page = self._rctx.GET.get(self.page_param)
+        page = self._rctx.request.GET.get(self.page_param)
         if not page:
             return 1
         try:

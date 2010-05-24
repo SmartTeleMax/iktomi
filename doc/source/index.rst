@@ -33,9 +33,9 @@ Web
 
 .. automodule:: insanities.web
 
-   * :ref:`http`
-   * :ref:`routing`
-   * :ref:`...`
+   * :ref:`HTTP <insanities-web-http>`
+   * :ref:`Routing <insanities-web-routing>`
+   * :ref:`URL converters <insanities-web-urlconvs>`
 
 
 Other

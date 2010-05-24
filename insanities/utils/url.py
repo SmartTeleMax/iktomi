@@ -10,10 +10,29 @@ logger = logging.getLogger(__name__)
 
 
 def urlquote(value):
-    return quote(value.encode('utf-8') if isinstance(value, unicode) else value)
+    return quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
 
 
 class URL(object):
+    '''
+        URL object
+
+        Represents URL with schema, host, port, path (required) and query
+        specified.
+
+        `schema`, `host`, `port`, `path` are string objects. `query` is 
+        MultiDict or any object accepted by MultiDict's constructor.
+
+        `host`, `path` and `query`'s keys and values can be also unicode strings.
+
+        You can get encoded URL like this::
+
+          url = URL('path', **kwargs)
+          str_url = str(url)
+
+        In this case path and query args are encoded by urlencode, while host is
+        encoded by idna.
+    '''
 
     def __init__(self, path, query=None, host=None, port=None, schema=None):
         self.path = path
@@ -30,38 +49,61 @@ class URL(object):
         return self.__class__(path, **kw)
 
     def set(self, **kwargs):
+        '''Sets value of URL's query keys to given values'''
         query = self.query.copy()
         for k, v in kwargs.items():
             query[k] = v
         return self._copy(query=query)
 
     def add(self, **kwargs):
+        '''Adds values to URL's query'''
         query = self.query.copy()
         for k, v in kwargs.items():
             query.add(k, v)
         return self._copy(query=query)
 
     def delete(self, key):
+        '''Deletes given key from the URL's query'''
         query = self.query.copy()
         del query[key]
         return self._copy(query=query)
 
     def getall(self, key):
+        '''A proxy method for query.getall'''
         return self.query.getall(key)
 
     def getone(self, key):
+        '''A proxy method for query.getone'''
         return self.query.getone(key)
 
     def get(self, key, default=None):
+        '''A proxy method for query.get'''
         return self.query.get(key, default=default)
 
     def __str__(self):
-        query = '?' + urllib.urlencode(self.query) if self.query else ''
+        query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
+                                for k,v in self.query.iteritems()])  \
+                 if self.query else '')
+        path = urlquote(self.path)
+
+        if self.host:
+            host = self.host.encode('idna')
+            port = ':' + self.port if self.port else ''
+            return ''.join((self.schema, '://', host, port, path,  query))
+        else:
+            return path + query
+
+    def get_readable(self):
+        '''Gets human-readable representation of the url'''
+        query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
+                 if self.query else '')
+
         if self.host:
             port = ':' + self.port if self.port else ''
-            return ''.join((self.schema, '://', self.host, port, urlquote(self.path),  query))
+            return u''.join((self.schema, '://', self.host, port, self.path,  query))
         else:
-            return urlquote(self.path) + query
+            return self.path + query
+
 
     def __repr__(self):
         return '<URL "%s">' % unicode(self)
@@ -74,7 +116,7 @@ class UrlTemplate(object):
             (?P<converter>[a-zA-Z_][a-zA-Z0-9]+)    # converter name
             (?P<args>\(.*?\))?                      # converter args
             \:?                                     # delimiter
-            (?P<variable>[a-zA-Z_][a-zA-Z0-9_]+)?    # variable name
+            (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?    # variable name
             >$''', re.VERBOSE)
     _static_url_pattern = re.compile(r'^[^<]*?$')
 
