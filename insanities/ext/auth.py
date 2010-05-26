@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from ..web.core import ContinueRoute, Wrapper
+from ..web.core import ContinueRoute, Wrapper, RequestHandler
 from ..web.http import HttpException
 from ..web.filters import *
 from ..forms import *
@@ -45,6 +45,8 @@ class LoginForm(Form):
               widget=widgets.PasswordInput(),
               label=u'Пароль'),
     )
+
+
 
 
 class CookieAuth(Wrapper):
@@ -111,9 +113,7 @@ class CookieAuth(Wrapper):
             form = self._login_form(rctx.vals.form_env)
             if rctx.request.method == 'POST':
                 if form.accept(rctx.request.POST):
-                    login = form.python_data.get('login')
-                    password = form.python_data.get('password')
-                    user_id = self._user_by_credential(rctx, login, password)
+                    user_id = self._user_by_credential(rctx, **form.python_data)
                     if user_id is not None:
                         key = os.urandom(10).encode('hex')
                         rctx.response.set_cookie(self._cookie_name, key, path='/')
@@ -140,3 +140,8 @@ class CookieAuth(Wrapper):
                 raise HttpException(303, url=rctx.vals.url_for(self._login))
             raise HttpException(404)
         return match('/%s' % self._logout, self._logout) | logout
+
+    def login_required(self, rctx):
+        if 'user' in rctx.vals and rctx.vals.user is not None:
+            return rctx
+        raise HttpException(303, url=rctx.vals.url_for(self._login))
