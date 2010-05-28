@@ -28,8 +28,8 @@ class BaseFormEnvironment(object):
         '''Should be implemented in subclasses'''
         raise NotImplementedError()
 
-    def gettext(self, msg, args={}):
-        return smart_gettext(self.rctx.translation, msg, args)
+    def gettext(self, msg, count=None):
+        return smart_gettext(self.rctx.translation, msg, count=None)
 
     def ngettext(self, single, plural, count):
         return self.rctx.translation.ungettext(single, plural, count)

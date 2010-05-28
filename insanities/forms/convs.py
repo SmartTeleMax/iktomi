@@ -114,17 +114,17 @@ class Converter(object):
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
 
-    def error(self, error_type):
+    def error(self, error_type, count=None):
         message_template = getattr(self, 'error_'+error_type)
         if callable(message_template):
             message_template = message_template()
-        message_template = self.env.gettext(message_template, self.__dict__)
+        message_template = self.env.gettext(message_template, count)
         message = message_template % self.__dict__
         raise ValidationError(message)
 
-    def _assert(self, expression, error_type):
+    def _assert(self, expression, error_type, count=None):
         if not expression:
-            self.error(error_type)
+            self.error(error_type, count=None)
 
 
 class Chain(Converter):
@@ -181,11 +181,11 @@ class Char(Converter):
                                     # remove.
 
     error_length_exact = M_(u'The length should be exactly one symbol',
-                            u'The length should be exactly %(max_length)s symbols', 'max_length')
+                            u'The length should be exactly %(max_length)s symbols')
     error_max_length = M_(u'The length should be at most one symbol',
-                          u'The length should be at most %(max_length)s symbols', 'max_length')
+                          u'The length should be at most %(max_length)s symbols')
     error_min_length = M_(u'The length should be at least one symbol',
-                          u'The length should be at least %(min_length)s symbols', 'min_length')
+                          u'The length should be at least %(min_length)s symbols')
 
     error_notempty = N_(u'field can not be empty')
     error_regexp = N_('field should match %(regex)s')
@@ -211,15 +211,18 @@ class Char(Converter):
         if self.nontext_replacement is not None:
             value = replace_nontext(value, self.nontext_replacement)
         if self.max_length==self.min_length!=None:
-            self._assert(len(value) == self.max_length, 'error_length_exact')
+            self._assert(len(value) == self.max_length, 'error_length_exact',
+                         count=self.max_length)
         else:
             if self.max_length:
-                self._assert(len(value) <= self.max_length, 'max_length')
+                self._assert(len(value) <= self.max_length, 'max_length',
+                             count=self.max_length)
             if self.min_length:
                 if self.min_length == 1:
                     self._assert(len(value) >= self.min_length, 'notempty')
                 else:
-                    self._assert(len(value) >= self.min_length, 'min_length')
+                    self._assert(len(value) >= self.min_length, 'min_length',
+                                 count=self.min_length)
         if self.regex:
             regex = self.regex
             if isinstance(self.regex, basestring):
