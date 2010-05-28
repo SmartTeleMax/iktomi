@@ -105,8 +105,9 @@ class Converter(object):
 
     def __or__(self, next):
         """ chaining converters """
-        chain = Chain((self, next))
-        return chain
+        if isinstance(next, Chain):
+            return Chain((self,) + next.convs)
+        return Chain((self, next))
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
@@ -127,9 +128,9 @@ class Chain(Converter):
     wrapper for chained converters
     """
 
-    def __init__(self, convs=(), field=None, **kwargs):
-        self.field = weakproxy(field)
-        if field:
+    def __init__(self, convs=(), **kwargs):
+        field = kwargs.get('field', None)
+        if field is not None:
             convs = (conv(field=field) for conv in convs)
         self.convs = tuple(convs)
         super(Chain, self).__init__(**kwargs)
@@ -148,6 +149,7 @@ class Chain(Converter):
         return Chain(self.convs+(next,))
 
     def __ior__(self, next):
+        # is this ever used?
         self.convs += (next,)
         return self
 

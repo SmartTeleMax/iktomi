@@ -19,7 +19,7 @@ class TestConv(TestFormClass):
         chain2 = conv3 | chain1
         chain3 = chain1 | conv3
 
-        # I don't want to copy converters since they are not linked to a form
+        # don't copy converters since they are not linked to a form
         assert chain1.convs[0] is conv1 and chain1.convs[1] is conv2
         assert chain2.convs[0] is conv3 and chain2.convs[2] is conv2
         assert chain3.convs[0] is conv1 and chain3.convs[2] is conv3
