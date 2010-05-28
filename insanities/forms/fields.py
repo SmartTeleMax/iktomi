@@ -30,10 +30,10 @@ class BaseField(object):
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
+    #: Label of field. Can be set by field inheritance or throught constructor.
+    label = None
 
     def __init__(self, **kwargs):
-        #if 'label' in kwargs:
-        #    kwargs['_label'] = kwargs.pop('label')
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
@@ -52,17 +52,12 @@ class BaseField(object):
         return self.parent.resolve_name() + '.' + name
 
     @property
-    def label(self):
-        '''
-        Label of field. Can be set by field inheritance or throught constructor.
-        '''
-        dict_ = self.__dict__
-        if 'label' in dict_:
-            gt = self.env.gettext 
-            # in two lines to prevent recognition of "label"
-            # as translatable string
-            return gt(dict_['label'], dict_)
-        return None
+    def i18n_label(self):
+        # XXX is it necessary?
+        gt = self.env.gettext
+        # in two lines to prevent recognition of "label"
+        # as translatable string by makemessages
+        return gt(self.label)
 
     @property
     def parent(self):
