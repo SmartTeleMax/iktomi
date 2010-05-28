@@ -1,23 +1,60 @@
 # -*- coding: utf-8 -*-
 import unittest
-from insanities.forms import convs
+from insanities.forms import convs, form, fields
 from insanities.utils.odict import OrderedDict
+from forms import TestFormClass
 
-class TestConv(unittest.TestCase):
-    
-    def test_multiplicity(self):
-        pass
-    
-    def test_chaining(self):
-        pass
-    
-    def test_messages(self):
-        pass
+class TestConv(TestFormClass):
+
+#    def test_multiplicity(self):
+#        raise NotImplemented
+#        pass
+
+    def test_chain(self):
+        conv1 = convs.Converter()
+        conv2 = convs.Converter()
+        conv3 = convs.Converter()
+
+        chain1 = conv1 | conv2
+        chain2 = conv3 | chain1
+        chain3 = chain1 | conv3
+
+        # I don't want to copy converters since they are not linked to a form
+        assert chain1.convs[0] is conv1 and chain1.convs[1] is conv2
+        assert chain2.convs[0] is conv3 and chain2.convs[2] is conv2
+        assert chain3.convs[0] is conv1 and chain3.convs[2] is conv3
+
+    def test_chain_instantiated(self):
+        chain = convs.Converter() | convs.Converter()
+        conv1 = chain.convs[0]
+        conv2 = chain.convs[1]
+
+        class SampleForm(form.Form):
+            fields=[fields.Field('x', conv=chain)]
+
+        frm = SampleForm(self.env)
+        frm_conv = frm.get_field('x').conv
+        assert not frm_conv is chain, 'Chain converter should be copied'
+        assert not frm_conv.convs[0] is conv1, 'Chained converters should be copied'
+        assert frm_conv.env is frm.env
+        assert frm_conv.convs[0].env is frm.env
+
+    def test_chain_to_from_python(self):
+        class SomeStrangeConv(convs.Converter):
+            def to_python(self, value): return '1' + value
+            def from_python(self, value): return value[1:]
+
+        chain = SomeStrangeConv() | convs.Int()
+        self.assertEqual(chain.to_python('2'), 12)
+        self.assertEqual(chain.from_python(12), '2')
+
+#    def test_messages(self):
+#        pass
 
 class TestChar(unittest.TestCase):
     def setUp(self):
         pass
-    
+
     def test_clean_any_value(self):
         txt = 'any random value'
         clean = convs.Char().to_python(txt)
@@ -25,7 +62,7 @@ class TestChar(unittest.TestCase):
 
     def test_min_max(self):
         conv = convs.Char(min_length=2, max_length=5)
-        
+
         self.assertRaises(convs.ValidationError, conv.to_python, 'a')
         self.assertRaises(convs.ValidationError, conv.to_python, 'abcdef')
         self.assertEqual(conv.to_python('abcde'), 'abcde')
@@ -33,13 +70,13 @@ class TestChar(unittest.TestCase):
 
     def test_regex(self):
         conv = convs.Char(regex="\d+")
-        
+
         self.assertRaises(convs.ValidationError, conv.to_python, 'a32')
         self.assertEqual(conv.to_python('32'), '32')
 
 
 class TestInt(unittest.TestCase):
-    
+
     def test_clean_any_value(self):
         conv = convs.Int()
         self.assertEqual(conv.to_python('1'), 1)
@@ -48,13 +85,12 @@ class TestInt(unittest.TestCase):
 
     def test_min_max(self):
         conv = convs.Int(min=2, max=5)
-        
+
         self.assertRaises(convs.ValidationError, conv.to_python, 1)
         self.assertRaises(convs.ValidationError, conv.to_python, 6)
         self.assertEqual(conv.to_python(5), 5)
         self.assertEqual(conv.to_python(2), 2)
 
- 
     def test_call(self):
         conv = convs.Int(min=2, max=5, null=True)()
 
@@ -69,7 +105,7 @@ class TestInt(unittest.TestCase):
 
 
 class TestBool(unittest.TestCase):
-    
+
     def test_clean_any_value(self):
         conv = convs.Bool()
         self.assertEqual(conv.to_python('1'), True)
@@ -82,7 +118,7 @@ class TestBool(unittest.TestCase):
 
 
 class TestDisplayOnly(unittest.TestCase):
-    
+
     def test_clean_any_value(self):
         conv = convs.DisplayOnly()
         self.assertRaises(convs.SkipReadonly, conv.to_python, '')
@@ -93,9 +129,9 @@ class TestDisplayOnly(unittest.TestCase):
         self.assertEqual(conv.from_python(1), 1)
         self.assertEqual(conv.from_python('checked'), 'checked')
 
-    
+
 class TestEnumChoice(unittest.TestCase):
-    
+
     def test_clean_single(self):
         conv = convs.EnumChoice(choices=[
                                     (0, 'label_0'),
@@ -144,7 +180,7 @@ class TestEnumChoice(unittest.TestCase):
                                 ],
                                 conv=convs.Int())
         lst = [x for x in conv]
-        
+
         self.assertEqual(lst, [('0', 'label_0'), ('1', 'label_1')])
 
     def test_get_label(self):
