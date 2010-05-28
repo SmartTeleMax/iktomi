@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from .. import CommandDigest
 
 __all__ = ['sqlobject']
@@ -8,13 +9,11 @@ class sqlobject(CommandDigest):
     SQLObject operations:
     '''
 
-    def prepair(self, cfg):
-        import logging
-        logging.basicConfig(level=logging.DEBUG)
+    def __init__(self, databases, models_module):
+        self.database = database
         from inspect import isclass
         from sqlobject import SQLObject
         from sqlobject.inheritance import InheritableSQLObject
-        models_module = __import__('models', (), (), ['*'])
         self.models = []
         for item_name in dir(models_module):
             item = getattr(models_module, item_name)

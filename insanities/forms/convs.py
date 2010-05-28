@@ -459,7 +459,7 @@ class Html(Char):
     allowed_classes = {}
     #: Function returning object marked safe for template engine.
     #: For example: jinja Markup object
-    Markup = lambda x: x
+    Markup = lambda s, x: x
 
     def _load_arg(self, kwargs, opt):
         if hasattr(self, opt):

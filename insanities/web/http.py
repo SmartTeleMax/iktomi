@@ -6,7 +6,7 @@ import logging
 import httplib
 import cgi
 from webob import Request as _Request, Response
-from webob.multidict import MultiDict, NoVars
+from webob.multidict import MultiDict, NoVars, UnicodeMultiDict
 
 from ..utils import cached_property
 

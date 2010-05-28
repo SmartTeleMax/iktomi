@@ -15,7 +15,7 @@ setup(
     },
     install_requires=[
         "jinja2",# template engine
-        "demjson",# json encode, decode tool
+        "simplejson",# json encode, decode tool
         "webob",
 
         #XXX Soon to be gone

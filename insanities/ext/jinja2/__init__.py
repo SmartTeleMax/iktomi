@@ -36,6 +36,13 @@ class FormEnvironment(object):
         return self.get_template(template).render(**vars)
 
 
+
+class template_name_from_data(object):
+    
+    def __init__(self, var):
+        self.var = var
+
+
 class render_to(RequestHandler):
 
     def __init__(self, template, **kwargs):
@@ -45,6 +52,8 @@ class render_to(RequestHandler):
 
     def handle(self, rctx):
         template = self.template
+        if isinstance(template, template_name_from_data):
+            template = rctx.data[template.var]
         if isinstance(template, basestring):
             template = rctx.vals.jinja_env.get_template(template)
 
