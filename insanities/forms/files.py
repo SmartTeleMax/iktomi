@@ -14,7 +14,7 @@ def time_uid():
     return (struct.pack('!d', time.time()) + os.urandom(2)).encode('hex')
 
 def _get_file_content(f):
-    if isinstance(f, cgi.FieldStorage)
+    if isinstance(f, cgi.FieldStorage):
         return f.value
     return f.read()
 
@@ -47,7 +47,7 @@ class TempUploadedFile(BaseFile):
 
     def save(self, file):
         if not self.name or not self.ext:
-            self.name, self.ext = path.splitext(file.filename)
+            self.name, self.ext = path.splitext(file.name)
         if not path.isdir(self.temp_path):
             os.makedirs(self.temp_path)
         try:
@@ -206,7 +206,8 @@ class FileField(Field):
 
     def save_temp_file(self, file):
         tmp = self.temp_file_cls(self)
-        tmp.save(file)
+        #XXX: file.file - due to FieldStorage interface
+        tmp.save(file.file)
         return tmp
 
     def delete_temp_file(self, temp_name):

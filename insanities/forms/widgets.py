@@ -360,7 +360,7 @@ class FileInput(Widget):
         else:
             assert None
         return dict(data, value=value, mode=mode, input_name=self.input_name,
-                    delete=delete, temp_url=self.env.temp_url,
+                    delete=delete, temp_url=self.env.rctx.conf.temp_url,
                     null=field.null)
 
 class ImageInput(FileInput):

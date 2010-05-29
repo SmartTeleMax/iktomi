@@ -9,8 +9,7 @@ class sqlobject(CommandDigest):
     SQLObject operations:
     '''
 
-    def __init__(self, databases, models_module):
-        self.database = database
+    def __init__(self, models_module):
         from inspect import isclass
         from sqlobject import SQLObject
         from sqlobject.inheritance import InheritableSQLObject
@@ -30,7 +29,7 @@ class sqlobject(CommandDigest):
         '''
         for model in self.models:
             if db == '' or model.__module__ == db:
-                model.createTable()
+                model.createTable(ifNotExists=True)
 
     def command_drop(self, db=''):
         '''
@@ -56,6 +55,7 @@ class sqlobject(CommandDigest):
         Show model schema
         $ python manage.py sqlobject:schema [model name]
         '''
+        #XXX: also show intermedian tables for many2many relations
         for model in self.models:
             if model_name == '' or model.__name__ == model_name:
                 print ''.join(model.createTableSQL()[0])
