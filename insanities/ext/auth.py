@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from ..web.core import ContinueRoute, Wrapper, RequestHandler
+from ..web.core import ContinueRoute, Wrapper, RequestHandler, FunctionWrapper
 from ..web.http import HttpException
 from ..web.filters import *
 from ..forms import *
@@ -141,7 +141,10 @@ class CookieAuth(Wrapper):
             raise HttpException(404)
         return match('/%s' % self._logout, self._logout) | logout
 
-    def login_required(self, rctx):
-        if 'user' in rctx.vals and rctx.vals.user is not None:
-            return rctx
-        raise HttpException(303, url=rctx.vals.url_for(self._login))
+    @property
+    def login_required(self):
+        def _login_required(rctx):
+            if 'user' in rctx.vals and rctx.vals.user is not None:
+                return rctx
+            raise HttpException(303, url=rctx.vals.url_for(self._login))
+        return FunctionWrapper(_login_required)
