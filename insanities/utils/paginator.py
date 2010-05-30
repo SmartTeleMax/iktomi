@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
 from . import cached_property
 import math, itertools
+from .url import URL
 
 
 def full_page_range(pages_count, page):
@@ -150,12 +153,12 @@ class Paginator(object):
     def url(self):
         '''Current or base URL. Can be redefined via keyword argument on
         initialization.'''
-        return self._rctx.url_for()
+        return URL(self._rctx.request.path)
 
     def page_url(self, page):
         '''Returns URL for page.'''
         if page is not None:
-            return self.url(**{self.page_param: page})
+            return self.url.set(**{self.page_param: page})
 
     def _page_url_pair(self, page=None):
         return _PageURL(page, self.page_url(page))
