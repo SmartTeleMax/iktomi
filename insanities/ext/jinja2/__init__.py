@@ -67,29 +67,41 @@ class render_to(RequestHandler):
 
 
 class jinja_env(RequestHandler):
+    '''
+    This handler adds Jinja Environment.
+    '''
 
-    def __init__(self, param='TEMPLATES', autoescape=False):
+    def __init__(self, param='TEMPLATES', paths=None, autoescape=False):
         super(jinja_env, self).__init__()
         self.param = param
+        self.paths = paths
         self.autoescape = autoescape
         self.env = None
 
     def handle(self, rctx):
         kw = rctx.conf.as_dict()
         kw['rctx'] = rctx
-        paths = kw.get(self.param)
+        # lazy jinja env
         if self.env is None:
-            paths_ = []
-            if paths:
-                if isinstance(paths, basestring):
-                    paths_.append(paths)
-                elif isinstance(paths, (list, tuple)):
-                    paths_ += paths
-            paths_.append(DEFAULT_TEMPLATE_DIR)
+            # paths from init
+            paths_list = self._paths_list(self.paths)
+            # paths from rctx.conf
+            paths_list += self._paths_list(kw.get(self.param))
+            # default templates for forms
+            paths_list.append(DEFAULT_TEMPLATE_DIR)
             self.env = Environment(
-                loader=FileSystemLoader(paths_),
+                loader=FileSystemLoader(paths_list),
                 autoescape=self.autoescape,
             )
         form_env = FormEnvironment(env=self.env, **kw)
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
         return rctx
+
+    def _paths_list(self, paths):
+        paths_ = []
+        if paths:
+            if isinstance(paths, basestring):
+                paths_.append(paths)
+            elif isinstance(paths, (list, tuple)):
+                paths_ += paths
+        return paths_
