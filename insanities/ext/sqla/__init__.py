@@ -89,3 +89,11 @@ class SqlAlchemyCommands(CommandDigest):
         self.command_drop(db_name)
         self.command_sync(db_name)
         self.command_initial(db_name)
+
+    def command_shell(self, db_name=None):
+        if db_name is None:
+            db_name = ''
+        engine = create_engine(self.cfg[db_name], echo=True)
+        from code import interact
+        interact('SqlAlchemy session with db: %s' % (db_name if db_name else 'default',),
+                 local={'db': orm.sessionmaker(bind=engine)()})
