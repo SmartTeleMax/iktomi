@@ -24,6 +24,11 @@ env = Conf('', **conf_to_dict(cfg)) | jinja_env() | cache_dict() | sqla_session(
 app = env | Map(
     auth.login_handler | render_to('login.html'),
     auth.logout_handler,
+    # API
+    prefix('/api') | Map(
+        ctype(ctype.xml) | match('/posts', 'posts-xml') | h.posts_paginator | h.to_xml,
+        ctype(ctype.json) | match('/posts', 'posts-json') | h.posts_paginator | h.to_json,
+    ),
     auth | Map(
         match('/', 'posts') | h.posts_paginator | render_to('posts.html'),
         match('/<int:id>', 'post') | h.post_by_id | render_to('post.html'),
@@ -32,5 +37,5 @@ app = env | Map(
             match('/edit/<int:id>', 'edit-post') | h.edit_post | render_to('add_post.html'),
             match('/delete/<int:id>', 'del-post') | h.del_post | render_to('del_post.html')
         )
-    )
+    ),
 )

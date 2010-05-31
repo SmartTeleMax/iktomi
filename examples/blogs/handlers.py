@@ -78,3 +78,37 @@ def edit_post(rctx, id):
                 rctx.vals.db.commit()
                 redirect_to(rctx.vals.url_for('post', id=post.id))
     return dict(form=form)
+
+
+from xml.etree.ElementTree import Element, tostring
+
+
+def to_xml(rctx, paginator):
+    rctx.response.content_type = 'application/xml'
+    root = Element('posts', {'total_pages':str(paginator.pages_count),
+                        'page':str(paginator.page)})
+    for i in paginator.items:
+        post = Element('post', {'id':str(i.id), 'date':i.date.strftime('%d:%m:%Y')})
+        title = Element('title')
+        title.text = i.title
+        post.append(title)
+        body = Element('body')
+        body.text = i.body
+        post.append(body)
+        root.append(post)
+    rctx.response.write(tostring(root))
+
+
+import simplejson
+
+
+def to_json(rctx, paginator):
+    rctx.response.content_type = 'application/json'
+    rctx.response.write(simplejson.dumps(
+        dict(total_pages=paginator.pages_count,
+             page=paginator.page,
+             items=[dict(title=i.title,
+                         body=i.body,
+                         id=i.id,
+                         date=i.date.strftime('%d:%m:%Y')) for i in paginator.items])
+    ))
