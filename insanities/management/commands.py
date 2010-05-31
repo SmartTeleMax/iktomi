@@ -12,7 +12,15 @@ class CommandDigest(object):
 
     def default(self, *args, **kwargs):
         '''This method will be called if command_name in __call__ is None'''
-        sys.stdout.write(self.__class__.__doc__)
+        print self.description()
+
+    def description(self):
+        _help = self.__class__.__doc__
+        for k in dir(self):
+            if k.startswith('command_'):
+                _help += '\n'
+                _help += getattr(self, k).__doc__
+        return _help
 
     def __call__(self, command_name, *args, **kwargs):
         if command_name is None:

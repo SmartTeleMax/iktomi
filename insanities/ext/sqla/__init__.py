@@ -26,31 +26,20 @@ class DBSession(orm.session.Session):
         return obj
 
 
-class SqlAlchemy(Wrapper):
+class sqla_session(Wrapper):
 
-    def __init__(self, uris, models, param_name='db', query_cls=Query, class_=DBSession,
-                 engine_params={}):
-        super(SqlAlchemy, self).__init__()
+    def __init__(self, uri, param_name='db', query_cls=Query,
+                 class_=DBSession, engine_params=None):
+        super(sqla_session, self).__init__()
         self.param_name = param_name
-
-        db_dict = {}
-        for ref, uri in uris.items():
-            models_module = ref and getattr(models, ref) or models
-            metadata = models_module.metadata
-
-            engine = create_engine(uri, **engine_params)
-            engine.logger.name += '(%s)' % ref
-
-            for table in metadata.sorted_tables:
-                db_dict[table] = engine
-            for model in getattr(metadata, '_mapped_models', []):
-                db_dict[model] = engine
+        engine_params = engine_params if engine_params else {}
+        engine = create_engine(uri, **engine_params)
+        #engine.logger.name += '(%s)' % ref
         self.maker = orm.sessionmaker(class_=class_, query_cls=query_cls,
-                                      binds=db_dict, autoflush=False,
+                                      bind=engine, autoflush=False,
                                       autocommit=False)
 
     def handle(self, rctx):
-        # XXX should be lazy
         db = self.maker()
         rctx.vals[self.param_name] = db
         try:
@@ -64,33 +53,87 @@ from .. import CommandDigest
 
 
 class SqlAlchemyCommands(CommandDigest):
+    '''
+    sqlalchemy operations on models:
+    db_name - key from databases dict, provided during init
+    '''
 
-    def __init__(self, cfg, models_module, initial=None):
-        self.cfg = cfg
-        self.models_module = models_module
+    def __init__(self, databases, base_class, initial=None):
+        '''
+        :*base_class* - base class of models (usualy result of declarative_meta())
+
+        :*databases* - dict[db_name:db_uri]
+
+        :*initial* - function that takes session object and populates 
+                     session with models instances
+        '''
+        self.cfg = databases
+        self.base_class = base_class
         self.initial = initial
 
     def command_sync(self, db_name=None):
+        '''
+        $ python manage.py sqlalchemy:sync [db_name]
+
+        syncs models with database
+        '''
         if db_name is None:
             db_name = ''
         engine = create_engine(self.cfg[db_name], echo=True)
-        self.models_module.metadata.create_all(engine)
+        self.base_class.metadata.create_all(engine)
 
     def command_drop(self, db_name=None):
+        '''
+        $ python manage.py sqlalchemy:drop [db_name]
+
+        drops model's tables from database
+        '''
         if db_name is None:
             db_name = ''
         engine = create_engine(self.cfg[db_name], echo=True)
-        self.models_module.metadata.drop_all(engine, checkfirst=True)
+        self.base_class.metadata.drop_all(engine, checkfirst=True)
 
-    def command_initial(self, db_name):
-        pass
+    def command_initial(self, db_name=None):
+        '''
+        $ python manage.py sqlalchemy:initial [db_name]
+
+        populates models with initial data
+        '''
+        if db_name is None:
+            db_name = ''
+        if self.initial:
+            engine = create_engine(self.cfg[db_name], echo=True)
+            session = orm.sessionmaker(bind=engine)()
+            initial(session)
+
+    def command_schema(self, model_name=None):
+        '''
+        $ python manage.py sqlalchemy:schema [model_name]
+
+        shows CREATE sql script for model(s)
+        '''
+        from sqlalchemy.schema import CreateTable
+        if model_name:
+            table = self.base_class._decl_class_registry[model_name].__table__
+            print str(CreateTable(table))
+        else:
+            for model in self.base_class._decl_class_registry.values():
+                print str(CreateTable(model.__table__))
 
     def command_reset(self, db_name=None):
+        '''
+        $ python manage.py sqlalchemy:reset [db_name]
+        '''
         self.command_drop(db_name)
         self.command_sync(db_name)
         self.command_initial(db_name)
 
     def command_shell(self, db_name=None):
+        '''
+        $ python manage.py sqlalchemy:shell [db_name]
+
+        provides python interactive shell with 'db' as session to database
+        '''
         if db_name is None:
             db_name = ''
         engine = create_engine(self.cfg[db_name], echo=True)
