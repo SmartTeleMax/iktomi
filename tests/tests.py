@@ -15,6 +15,7 @@ env = FormEnvironment(jinja_env)
 from utils import *
 from web import *
 from forms import *
+from ext import *
 
 suite = unittest.TestSuite()
 

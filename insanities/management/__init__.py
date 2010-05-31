@@ -33,10 +33,14 @@ def manage(commands):
         try:
             digest = commands[digest_name]
         except KeyError:
+            print 'Commands:'
+            for k in commands.keys():
+                print k
             sys.exit('Command "%s" not found' % digest_name)
         try:
             digest(command, *args, **kwargs)
         except CommandNotFound:
-            sys.exit('Command "%s.%s" not found' % (digest_name, command))
+            print commands[digest_name].description()
+            sys.exit('Command "%s:%s" not found' % (digest_name, command))
     else:
         sys.exit('Please provide any command')
