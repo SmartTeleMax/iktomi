@@ -32,7 +32,7 @@ class LanguageSupport(RequestHandler):
         self.translation_set = {}
 
     def handle(self, rctx):
-        rctx._language_handler = self
+        rctx.vals['_language_handler'] = self
         self.activate(rctx, self.default_language)
         raise ContinueRoute(self)
 
@@ -69,10 +69,12 @@ class LanguageSupport(RequestHandler):
         return res
 
     def activate(self, rctx, language):
-        rctx.translation = self.get_translation(self.language)
-        rctx.language = language
-        rctx.vals['gettext'] = rctx.translation.ugettext
-        rctx.vals['ngettext'] = rctx.translation.ungettext
+        rctx.vals['translation'] = self.get_translation(self.language)
+        rctx.conf['language'] = language
+        # XXX what's better: rctx.vals.N_ or rctx.vals.gettext?
+        # Or maybe it's more useful to make shortcuts from rctx like: rctx.N_?
+        rctx.vals['gettext'] = rctx.data['N_'] = rctx.translation.ugettext
+        rctx.vals['ngettext'] = rctx.data['M_'] = rctx.translation.ungettext
 
 
 class set_lang(RequestHandler):
@@ -90,7 +92,7 @@ class set_lang(RequestHandler):
         self.language = language
 
     def handle(self, rctx):
-        rctx._language_handler.activate(rctx, self.language)
+        rctx.vals_language_handler.activate(rctx, self.language)
         return rctx
 
 

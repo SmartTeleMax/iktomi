@@ -3,7 +3,6 @@
 __all__ = ['HttpException', 'RequestContext', ]
 
 import logging
-import gettext
 import httplib
 import cgi
 from webob import Request as _Request, Response
@@ -152,8 +151,6 @@ class RequestContext(object):
     a number of data containers with request environment and processing data.
     '''
 
-    _null_translation = gettext.NullTranslations()
-
     def __init__(self, wsgi_environ):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
@@ -184,8 +181,3 @@ class RequestContext(object):
         POST = data if data else None
         env = _Request.blank(url, POST=POST).environ
         return cls(env)
-
-    @property
-    def translation(self):
-        # XXX move to vals?
-        return self.vals.get('translation', self._null_translation)

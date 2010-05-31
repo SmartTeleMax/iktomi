@@ -2,6 +2,7 @@
 
 from time import time
 import struct, os, itertools
+from gettext import NullTranslations
 
 from webob.multidict import MultiDict
 from ..utils import weakproxy, cached_property
@@ -28,11 +29,22 @@ class BaseFormEnvironment(object):
         '''Should be implemented in subclasses'''
         raise NotImplementedError()
 
+    @cached_property
+    def translation(self):
+        return self.rctx.vals.get('translation', NullTranslations())
+
     def gettext(self, msg, count=None):
-        return smart_gettext(self.rctx.translation, msg, count=None)
+        '''Smart gettext method. If the given message is instance of
+        :class:`M_ <insanities.utils.i18.M_>` subclass, returns a plural
+        form of message translation. Otherwhise, returns single form.
+
+        Can be overriden in subclasses (f.e. to use babel instead of gettext)'''
+        return smart_gettext(self.translation, msg, count=None)
 
     def ngettext(self, single, plural, count):
-        return self.rctx.translation.ungettext(single, plural, count)
+        '''A proxy method to gettext ungettext method.
+        Can be overriden in subclasses (f.e. to use babel instead of gettext)'''
+        return self.translation.ungettext(single, plural, count)
 
 
 class Form(object):
