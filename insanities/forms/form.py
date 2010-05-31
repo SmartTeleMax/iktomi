@@ -5,10 +5,34 @@ import struct, os, itertools
 
 from webob.multidict import MultiDict
 from ..utils import weakproxy, cached_property
+from ..utils.i18n import smart_gettext
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
 from .media import FormMedia
+
+
+class BaseFormEnvironment(object):
+    '''
+    Mixin adding get_string method to environment
+    '''
+
+    def __init__(self, rctx=None):
+        '''
+            Should be implemented in subclasses.
+            The only claim is to put rctx into self.rctx
+        '''
+        self.rctx = rctx
+
+    def render(self, template, form):
+        '''Should be implemented in subclasses'''
+        raise NotImplementedError()
+
+    def gettext(self, msg, count=None):
+        return smart_gettext(self.rctx.translation, msg, count=None)
+
+    def ngettext(self, single, plural, count):
+        return self.rctx.translation.ungettext(single, plural, count)
 
 
 class Form(object):

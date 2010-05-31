@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from jinja2 import Environment, FileSystemLoader
+from insanities.forms.form import BaseFormEnvironment
 from insanities.web.core import ContinueRoute, RequestHandler
 
 __all__ = ('FormEnvironment', 'render_to', 'jinja_env')
@@ -13,7 +14,7 @@ CURDIR = dirname(abspath(__file__))
 DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
 
 
-class FormEnvironment(object):
+class FormEnvironment(BaseFormEnvironment):
     '''
     Encapsulates all data and methods needed to form in current realization.
 

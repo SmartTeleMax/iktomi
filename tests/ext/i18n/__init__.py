@@ -1,0 +1,139 @@
+# -*- coding: utf-8 -*-
+import unittest
+import os
+from copy import copy
+import shutil
+
+from insanities.forms import fields, convs, form, widgets, media, perms
+from insanities.web import Map
+from insanities.web.http import Request, RequestContext
+
+from insanities.ext.jinja2 import JinjaEnv, FormEnvironment
+from insanities.ext.gettext import LanguageSupport, set_lang, \
+                                   FormEnvironmentMixin, N_, M_
+from insanities.ext.gettext.commands import gettext_commands
+import insanities
+
+from gettext import GNUTranslations
+
+
+class TranslationFormEnv(FormEnvironmentMixin, FormEnvironment): pass
+
+INSANITIES_ROOT = CURDIR = os.path.dirname(os.path.abspath(insanities.__file__))
+CURDIR = os.path.dirname(os.path.abspath(__file__))
+
+EN_SINGLE = "The length should be at least one symbol"
+EN_PLURAL = "The length should be at least %(min_length)s symbols"
+RU_PLURAL_1 = u"Длина должна быть не менее %s символов"
+
+class TranslationTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+    
+    def tearDown(self):
+        modir = os.path.join(CURDIR, 'mo')
+        if os.path.isdir(modir):
+            shutil.rmtree(modir)
+    
+    def get_app(self, chains=[], languages=['en', 'ru']):
+        app = Map(
+            LanguageSupport(languages, os.path.join(CURDIR, 'locale')),
+            JinjaEnv(paths=[os.path.join(CURDIR, 'templates')],
+                     EnvCls=TranslationFormEnv),
+            *chains)
+        
+        return app
+    
+    def run_app(self, app, url='/'):
+        rctx = RequestContext(Request.blank(url).environ)
+        #rctx.response.status = httplib.NOT_FOUND
+        return app(rctx)
+
+    def test_language_support(self):
+        app = self.get_app(languages=['en', 'ru'])
+        rctx = self.run_app(app)
+        self.assertEqual(rctx.languages, ['en', 'ru'])
+        self.assertEqual(rctx.language, 'en')
+        assert isinstance(rctx.translation, GNUTranslations)
+        #self.assertEqual(rctx.translation.plural, 'en')
+    
+    def test_set_lang(self):
+        app = self.get_app(languages=['en', 'ru'], chains=[
+                set_lang('ru'),
+            ])
+        rctx = self.run_app(app)
+        self.assertEqual(rctx.languages, ['en', 'ru'])
+        self.assertEqual(rctx.language, 'ru')
+        assert isinstance(rctx.translation, GNUTranslations)
+    
+    def test_ntranslation(self):
+        app = self.get_app(languages=['ru'])
+        rctx = self.run_app(app)
+
+        # assert that plural forms are Russian
+        self.assertEqual(rctx.translation.plural(51), 0)
+        self.assertEqual(rctx.translation.plural(52), 1)
+        self.assertEqual(rctx.translation.plural(55), 2)
+        
+        args = (EN_SINGLE, EN_PLURAL, 2)
+        t_rctx = rctx.translation.ungettext(*args)
+        t_form = rctx.data['form_env'].ngettext(*args)
+        
+        self.assertEqual(t_rctx, t_form)
+        self.assertEqual(t_rctx, RU_PLURAL_1)
+       
+    def test_translation_forms(self):
+        from insanities.forms import form, fields, widgets, convs
+        from webob import MultiDict
+        
+        class SampleForm(form.Form):
+            fields=[fields.Field('name', label=M_(EN_SINGLE, EN_PLURAL, 'n'),
+                                 n=22, conv=convs.Int(min=10)),
+                    fields.Field('name2', label=N_('required field'),
+                                 widget=widgets.Widget(template='myinput')),
+                    ]        
+        
+        app = self.get_app(languages=['ru'])
+        rctx = self.run_app(app)
+        
+        frm = SampleForm(rctx.data['form_env'])
+        frm.accept(MultiDict({'name': 0}))
+        rendered = frm.render()
+        
+        assert RU_PLURAL_1 in rendered
+        assert u'обязательное поле' in rendered
+        assert u'удалить' in rendered
+        assert u'минимальное допустимое значение: 10' in rendered
+
+
+    def test_translation_templates(self):
+        raise NotImplementedError()
+    
+    def test_make(self):
+        class Config(object):
+            pass
+        command = gettext_commands(Config())
+        raise NotImplementedError()
+    
+    def test_compile(self):
+        class Config(object):
+            LOCALE_FILES = [
+                os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/test.po'),
+                os.path.join(INSANITIES_ROOT, 'locale/%s/LC_MESSAGES/insanities-core.po'),
+            ]
+        command = gettext_commands(Config())
+        command.command_compile(locale='ru',
+                                localedir=os.path.join(CURDIR, 'mo'),
+                                dbg=True, domain='test')
+        
+        outfile_dbg = os.path.join(CURDIR, 'mo/ru/LC_MESSAGES/_dbg.po')
+        with open(outfile_dbg) as pofile:
+            string = pofile.read().decode('utf-8')
+            assert 'Plural-Forms:' in string
+            assert u"временный файл v2" in string
+            assert u"специальныйтестовыймессидж" in string
+            assert u"удалить" in string
+
+
+if __name__ == '__main__':
+    unittest.main()
