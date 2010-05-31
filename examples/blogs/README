@@ -3,7 +3,7 @@ THIS IS EXAMPLE APPLICATON
 
 Before using make sure you built 'venv':
 
-    ./build/buildenv.sh
+    ./buildenv.sh
 
 After that syncronize models by:
 
