@@ -9,4 +9,5 @@ dist
 *.egg-info
 pip-log.txt
 venv
+*.db
 *.orig

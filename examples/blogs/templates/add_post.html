@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<a href="{{ url_for('posts') }}">back to posts page</a>
+<form action="" method="post">
+    {{ form.render() }}
+    <input type="submit" value="add post" />
+</form>
+{% endblock %}

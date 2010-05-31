@@ -1,0 +1,8 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<a href="{{ url_for('posts') }}">back to posts page</a>
+<p class="title">{{ post.title }}</p>
+{{ post.body }}
+{% endblock %}
+
