@@ -7,10 +7,11 @@ Before using make sure you built 'venv':
 
 After that syncronize models by:
 
-    ./manage.py sqla:sync
+    ./manage.py sqla:reset
 
 Now you are ready to start application:
 
     ./manage.py server:serve
 
 Open 'http://localhost:8000/' in your browser
+By default there is user 'admin' with password 'admin'

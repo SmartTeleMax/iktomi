@@ -18,7 +18,6 @@ class User(ModelBase):
     name = Column(String)
     login = Column(String)
     password = Column(String)
-    title = Column(String)
 
     @classmethod
     def by_credential(cls, rctx, login, password):

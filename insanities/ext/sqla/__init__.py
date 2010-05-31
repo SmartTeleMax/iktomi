@@ -104,7 +104,7 @@ class SqlAlchemyCommands(CommandDigest):
         if self.initial:
             engine = create_engine(self.cfg[db_name], echo=True)
             session = orm.sessionmaker(bind=engine)()
-            initial(session)
+            self.initial(session)
 
     def command_schema(self, model_name=None):
         '''
