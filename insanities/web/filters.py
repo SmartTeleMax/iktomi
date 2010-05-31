@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['match', 'method', 'static']
+__all__ = ['match', 'method', 'static', 'ctype']
 
 import logging
 import re
@@ -53,6 +53,25 @@ class method(RequestHandler):
     def __repr__(self):
         return 'method(*%r)' % self._names
 
+
+class ctype(RequestHandler):
+
+    xml = 'application/xml'
+    json = 'application/json'
+    html = 'text/html'
+    xhtml = 'application/xhtml+xml'
+
+    def __init__(self, *types):
+        super(ctype, self).__init__()
+        self._types = types
+
+    def handle(self, rctx):
+        if rctx.request.content_type in self._types:
+            return rctx
+        raise ContinueRoute(self)
+
+    def __repr__(self):
+        return '%s(*%r)' % (self.__class__.__name__, self._types)
 
 
 def static(rctx):
