@@ -51,7 +51,7 @@ class Request(_Request):
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
-        return path or '/'
+        return path# or '/'
 
     @property
     def path_qs(self):
@@ -59,7 +59,7 @@ class Request(_Request):
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
-        return path or '/'
+        return path# or '/'
 
     @property
     def subdomain(self):
@@ -168,7 +168,7 @@ class RequestContext(object):
         self.vals = DictWithNamespace()
 
         # this is mark of main map
-        self.main_map = None
+        #self.main_map = None
 
     @classmethod
     def blank(cls, url, **data):

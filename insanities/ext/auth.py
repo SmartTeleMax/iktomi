@@ -96,8 +96,10 @@ class CookieAuth(Wrapper):
                 user = self._user_by_id(rctx, int(value))
         logger.debug('Got user: %r' % user)
         rctx.vals['user'] = user
-        rctx = self.exec_wrapped(rctx)
-        del rctx.vals['user']
+        try:
+            rctx = self.exec_wrapped(rctx)
+        finally:
+            del rctx.vals['user']
         return rctx
 
     @property

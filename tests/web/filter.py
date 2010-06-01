@@ -79,12 +79,15 @@ class Prefix(unittest.TestCase):
             rctx = RequestContext.blank(url)
             self.assertEqual(app(rctx).response.status_int, status)
 
-        assertStatus('/docs', 404)
+        #assertStatus('/docs', 404)
+        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('/docs')))
         assertStatus('/docs/', 200)
-        assertStatus('/docs/tags', 404)
+        #assertStatus('/docs/tags', 404)
+        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('/docs/tags')))
         assertStatus('/docs/tags/',200)
         # assert assertStatus works correct
-        assertStatus('/docs/tags/asdasd', 404)
+        #assertStatus('/docs/tags/asdasd', 404)
+        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('/docs/tags/asasd')))
 
     def test_prefix_leaf(self):
         '''Simple prefix'''
@@ -126,7 +129,7 @@ class Subdomain(unittest.TestCase):
             )
         )
         app = Map(app)
-        
+
         def assertStatus(url, st):
             rctx = RequestContext(Request.blank(url).environ)
             self.assertEqual(app(rctx).response.status_int, st)
@@ -135,10 +138,9 @@ class Subdomain(unittest.TestCase):
         assertStatus('http://k.host/', 200)
         assertStatus('http://l.k.host/', 200)
         assertStatus('http://x.l.k.host/', 200) # XXX: Is it right?
-        assertStatus('http://x.k.host/', 404)
-        assertStatus('http://lk.host/', 404)
-        assertStatus('http://mhost/', 404) # XXX: we need a method to set root
-                                           #domain without chaining subdomain to the map
+        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('http://x.k.host/')))
+        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('http://lk.host/')))
+        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('http://mhost/')))
 
 
 class Match(unittest.TestCase):
@@ -150,7 +152,7 @@ class Match(unittest.TestCase):
 
         rctx = RequestContext(Request.blank('/first').environ)
         rctx = m(rctx)
-        self.assertEqual(rctx.response.status_int, 200)
+        self.assertEqual(rctx.response.status_int, 404)
         rctx = RequestContext(Request.blank('/second').environ)
         self.assertRaises(ContinueRoute, lambda : m(rctx))
 
@@ -209,8 +211,10 @@ class Match(unittest.TestCase):
         )
 
         rctx = RequestContext.blank('/second/42/')
-        app(rctx)
-        self.assertEqual(rctx.response.status_int, 404)
+        #app(rctx)
+        #self.assertEqual(rctx.response.status_int, 404)
+        self.assertRaises(ContinueRoute, lambda : app(rctx))
         rctx = RequestContext.blank('/second/42s')
-        app(rctx)
-        self.assertEqual(rctx.response.status_int, 404)
+        self.assertRaises(ContinueRoute, lambda : app(rctx))
+        #app(rctx)
+        #self.assertEqual(rctx.response.status_int, 404)

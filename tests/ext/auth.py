@@ -79,7 +79,7 @@ class AuthTest(unittest.TestCase):
         )
         rctx = RequestContext.blank('/')
         self.assertEqual(app(rctx).response.status_int, 303)
-        self.assertEqual(app(rctx).response.headers.get('Location'), '/login')
+        self.assertEqual(app(rctx).response.headers.get('Location'), '/login?next=/')
 
     def test_auth(self):
         'Authorized access'

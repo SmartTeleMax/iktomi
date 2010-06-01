@@ -22,14 +22,8 @@ class WSGIHandler(object):
         rctx = RequestContext(env)
         try:
             rctx = self.app(rctx)
-            headers = rctx.response.headers.items()
-            start_response(rctx.response.status, headers)
-            return [rctx.response.body]
-        except Exception, e:
-            raise
-            #logger.exception(e)
-            try:
-                start_response(self.status(httplib.INTERNAL_SERVER_ERROR), [])
-            except AssertionError:
-                pass
-            return ['500 Internal Server Error']
+        except ContinueRoute, e:
+            pass
+        headers = rctx.response.headers.items()
+        start_response(rctx.response.status, headers)
+        return [rctx.response.body]

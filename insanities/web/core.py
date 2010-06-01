@@ -142,7 +142,9 @@ class Wrapper(RequestHandler):
             except ContinueRoute:
                 break
             next = next.next()
-        return rctx
+        if rctx.response.status_int != httplib.NOT_FOUND:
+            return rctx
+        raise ContinueRoute(self)
 
     def handle(self, rctx):
         '''Should be overriden in subclasses.'''
@@ -195,8 +197,8 @@ class Map(RequestHandler):
         logger.debug('Map begin %r' % self)
 
         # put main map link to rctx
-        if rctx.main_map is None:
-            rctx.main_map = self
+        #if rctx.main_map is None:
+            #rctx.main_map = self
 
         # construct url_for
         last_url_for = getattr(rctx.vals, 'url_for', None)
@@ -216,6 +218,7 @@ class Map(RequestHandler):
             try:
                 rctx = handler(rctx)
             except ContinueRoute:
+                print handler
                 pass
             except HttpException, e:
                 # here we process all HttpExceptions thrown by our chains
@@ -223,12 +226,14 @@ class Map(RequestHandler):
                 process_http_exception(rctx, e)
                 return rctx
             else:
+                rctx.response.status_int = httplib.OK
                 return rctx
 
         rctx.vals['url_for'] = rctx.data['url_for'] = last_url_for
-        if rctx.main_map is self:
-            return rctx
         # all handlers raised ContinueRoute
+        # we ensures that status is 404
+        rctx.response.status_int = httplib.NOT_FOUND
+        # and raise ContinueRoute
         raise ContinueRoute(self)
 
     def compile_urls_map(self):
