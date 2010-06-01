@@ -20,6 +20,11 @@ class TestFormClass(unittest.TestCase):
                             loader=jinja2.FileSystemLoader(TEMPLATES))
         return jnj.FormEnvironment(template_loader)
 
+    def instantiate_conv(self, conv, value=None):
+        class SampleForm(form.Form):
+            fields=[fields.Field(name='input', conv=conv)]
+        return SampleForm(self.env, initial={'input': value}).get_field('input').conv
+
 class TestForm(TestFormClass):
     def test_init(self):
         class SampleForm(form.Form):

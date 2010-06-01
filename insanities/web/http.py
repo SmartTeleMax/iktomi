@@ -114,6 +114,9 @@ class DictWithNamespace(object):
             return self._current_data[name]
         raise AttributeError(name)
 
+    def get(self, name, default=None):
+        return self._current_data.get(name, default)
+
     def as_dict(self):
         return self._current_data.copy()
 
@@ -150,6 +153,7 @@ class RequestContext(object):
     Context of the request. A class containing request and response objects and
     a number of data containers with request environment and processing data.
     '''
+
     def __init__(self, wsgi_environ):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
@@ -176,4 +180,3 @@ class RequestContext(object):
         POST = data if data else None
         env = _Request.blank(url, POST=POST).environ
         return cls(env)
-
