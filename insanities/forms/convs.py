@@ -190,7 +190,7 @@ class Char(Converter):
                           u'The length should be at least %(min_length)s symbols')
 
     error_notempty = N_(u'field can not be empty')
-    error_regexp = N_('field should match %(regex)s')
+    error_regex = N_('field should match %(regex)s')
 
     def clean_value(self, value):
         '''
@@ -526,6 +526,9 @@ class List(Converter):
     min_length = None
     max_length = None
 
+    error_min_length = N_('min length is %(min_length)s')
+    error_max_length = N_('max length is %(max_length)s')
+
     def from_python(self, value):
         result = OrderedDict()
         for index, item in enumerate(value):
@@ -537,9 +540,7 @@ class List(Converter):
         if self.filter is not None:
             items = filter(self.filter, items)
         if self.max_length:
-            self._assert(len(items)<=self.max_length,
-                         'max length is %(max_length)s', 'max_length')
+            self._assert(len(items)<=self.max_length, 'max_length')
         if self.min_length:
-            self._assert(len(value)>=self.min_length,
-                         'min length is %(min_length)s', 'min_length')
+            self._assert(len(value)>=self.min_length, 'min_length')
         return items

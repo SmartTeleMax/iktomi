@@ -8,16 +8,13 @@ from insanities.forms import fields, convs, form, widgets, media, perms
 from insanities.web import Map
 from insanities.web.http import Request, RequestContext
 
-from insanities.ext.jinja2 import JinjaEnv, FormEnvironment
-from insanities.ext.gettext import LanguageSupport, set_lang, \
-                                   FormEnvironmentMixin, N_, M_
-from insanities.ext.gettext.commands import gettext_commands
+from insanities.ext.jinja2 import jinja_env, FormEnvironment
+from insanities.ext.gettext import LanguageSupport, set_lang
+from insanities.utils.i18n import N_, M_
 import insanities
 
 from gettext import GNUTranslations
 
-
-class TranslationFormEnv(FormEnvironmentMixin, FormEnvironment): pass
 
 INSANITIES_ROOT = CURDIR = os.path.dirname(os.path.abspath(insanities.__file__))
 CURDIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,21 +26,21 @@ RU_PLURAL_1 = u"Длина должна быть не менее %s символ
 class TranslationTestCase(unittest.TestCase):
     def setUp(self):
         pass
-    
+
     def tearDown(self):
         modir = os.path.join(CURDIR, 'mo')
         if os.path.isdir(modir):
             shutil.rmtree(modir)
-    
+
     def get_app(self, chains=[], languages=['en', 'ru']):
         app = Map(
             LanguageSupport(languages, os.path.join(CURDIR, 'locale')),
-            JinjaEnv(paths=[os.path.join(CURDIR, 'templates')],
-                     EnvCls=TranslationFormEnv),
+            jinja_env(paths=[os.path.join(CURDIR, 'templates')],
+                     EnvCls=FormEnvironment),
             *chains)
-        
+
         return app
-    
+
     def run_app(self, app, url='/'):
         rctx = RequestContext(Request.blank(url).environ)
         #rctx.response.status = httplib.NOT_FOUND
@@ -56,7 +53,7 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(rctx.language, 'en')
         assert isinstance(rctx.translation, GNUTranslations)
         #self.assertEqual(rctx.translation.plural, 'en')
-    
+
     def test_set_lang(self):
         app = self.get_app(languages=['en', 'ru'], chains=[
                 set_lang('ru'),
@@ -65,7 +62,7 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(rctx.languages, ['en', 'ru'])
         self.assertEqual(rctx.language, 'ru')
         assert isinstance(rctx.translation, GNUTranslations)
-    
+
     def test_ntranslation(self):
         app = self.get_app(languages=['ru'])
         rctx = self.run_app(app)
@@ -74,47 +71,47 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(rctx.translation.plural(51), 0)
         self.assertEqual(rctx.translation.plural(52), 1)
         self.assertEqual(rctx.translation.plural(55), 2)
-        
+
         args = (EN_SINGLE, EN_PLURAL, 2)
         t_rctx = rctx.translation.ungettext(*args)
         t_form = rctx.data['form_env'].ngettext(*args)
-        
+
         self.assertEqual(t_rctx, t_form)
         self.assertEqual(t_rctx, RU_PLURAL_1)
-       
+
     def test_translation_forms(self):
         from insanities.forms import form, fields, widgets, convs
-        from webob import MultiDict
-        
+        from webob.multidict import MultiDict
+
         class SampleForm(form.Form):
             fields=[fields.Field('name', label=M_(EN_SINGLE, EN_PLURAL, 'n'),
                                  n=22, conv=convs.Int(min=10)),
                     fields.Field('name2', label=N_('required field'),
                                  widget=widgets.Widget(template='myinput')),
-                    ]        
-        
+                    ]
+
         app = self.get_app(languages=['ru'])
         rctx = self.run_app(app)
-        
+
         frm = SampleForm(rctx.data['form_env'])
         frm.accept(MultiDict({'name': 0}))
         rendered = frm.render()
-        
+
         assert RU_PLURAL_1 in rendered
         assert u'обязательное поле' in rendered
         assert u'удалить' in rendered
         assert u'минимальное допустимое значение: 10' in rendered
 
 
-    def test_translation_templates(self):
-        raise NotImplementedError()
-    
-    def test_make(self):
-        class Config(object):
-            pass
-        command = gettext_commands(Config())
-        raise NotImplementedError()
-    
+    #def test_translation_templates(self):
+    #    raise NotImplementedError()
+
+    #def test_make(self):
+    #    class Config(object):
+    #        pass
+    #    command = gettext_commands(Config())
+    #    raise NotImplementedError()
+
     def test_compile(self):
         class Config(object):
             LOCALE_FILES = [
@@ -125,7 +122,7 @@ class TranslationTestCase(unittest.TestCase):
         command.command_compile(locale='ru',
                                 localedir=os.path.join(CURDIR, 'mo'),
                                 dbg=True, domain='test')
-        
+
         outfile_dbg = os.path.join(CURDIR, 'mo/ru/LC_MESSAGES/_dbg.po')
         with open(outfile_dbg) as pofile:
             string = pofile.read().decode('utf-8')

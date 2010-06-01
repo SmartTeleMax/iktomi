@@ -31,6 +31,7 @@ class BaseFormEnvironment(object):
 
     @cached_property
     def translation(self):
+        if not self.rctx: return NullTranslations()
         return self.rctx.vals.get('translation', NullTranslations())
 
     def gettext(self, msg, count=None):

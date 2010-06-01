@@ -102,6 +102,142 @@ class gettext_commands(CommandDigest):
     plural_forms_re = re.compile(r'^(?P<value>"Plural-Forms.+?\\n")\s*$',
                                  re.MULTILINE | re.DOTALL)
 
+    def __init__(self, localedir, searchdir, modir=None, domain='insanities',
+                 extensions=('html',),   ignore=[], pofiles=None):
+        """
+        --localedir     Directory containig locale files
+        --searchdir     Directory containig source code files
+        --domain        The domain of the message files (default: "insanities").
+        --extensions    The file extension(s) to examine (default: ".html", separate multiple extensions with commas).
+        --ignore        Ignore files or directories matching this glob-style pattern. Use multiple times to ignore more.
+        """
+        self.extensions = [x.lstrip('.') for x in extensions]
+        self.domain = domain
+        self.localedir = localedir
+        self.modir = modir or localedir
+        self.searchdir = searchdir
+        self.ignore = ignore
+        self.pofiles = pofiles
+
+    def command_make(self, locale=None, domain=None, verbosity='1'):
+        """
+        --locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
+        --verbosity     Verbosity.
+        """
+        domain = domain or self.domain
+
+        ignore_patterns = ['*/.*', '*~'] + self.ignore
+
+        if locale is None:
+            sys.stdout.write(self.__class__.command_make.__doc__)
+            raise Exception() # what exception we need to raise?
+
+        self.check_gettext()
+
+        basedir = os.path.join(self.localedir, locale, 'LC_MESSAGES')
+        if not os.path.isdir(basedir):
+            os.makedirs(basedir)
+
+        pofile = os.path.join(basedir, '%s.po' % domain)
+        potfile = os.path.join(basedir, '%s.pot' % domain)
+
+        if os.path.exists(potfile):
+            os.unlink(potfile)
+
+        for dirpath, file in self.find_files(self.searchdir, ignore_patterns, verbosity):
+            file_base, file_ext = os.path.splitext(file)
+
+            if file_ext == '.py' or file_ext[1:] in self.extensions:
+                if verbosity > 1:
+                    sys.stdout.write('processing file %s in %s\n' % (file, dirpath))
+
+                cmd = 'xgettext -d %s -L Python --keyword=N_ --keyword=M_:1,2 --from-code UTF-8 -o - "%s"' % (
+                    domain, os.path.join(dirpath, file))
+                msgs, errors = self._popen(cmd)
+                if errors:
+                    raise Exception("errors happened while running xgettext on %s\n%s" % (file, errors))
+
+                if os.path.exists(potfile):
+                    # Strip the header
+                    msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
+                else:
+                    msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
+                if msgs:
+                    open(potfile, 'ab').write(msgs)
+
+        if os.path.exists(potfile):
+            msgs, errors = self._popen('msguniq --to-code=utf-8 "%s"' % potfile)
+            if errors:
+                raise Exception("errors happened while running msguniq\n%s" % errors)
+            open(potfile, 'w').write(msgs)
+            if os.path.exists(pofile):
+                msgs, errors = self._popen('msgmerge -q "%s" "%s"' % (pofile, potfile))
+                if errors:
+                    raise Exception("errors happened while running msgmerge\n%s" % errors)
+            open(pofile, 'wb').write(msgs)
+            os.unlink(potfile)
+
+    def command_compile(self, locale=None, dbg=False):
+        """
+        --locale        Compiles the message files only for the given locale.
+        --domain        Domain to output. Default is 'insanities'
+        --dbg           Set if you want to debug .po file wil be outputted
+                        to LC_MESSAGES/_dbg.po.
+        """
+        import polib
+        domain = domain or self.domain
+
+        assert self.pofiles
+
+        if locale is None:
+            sys.stdout.write(self.__class__.command_compile.__doc__)
+            raise Exception() # what exception we need to raise?
+
+        result = None
+        if '_' in locale:
+            # for example: en translations are merged into en_GB
+            locales = (locale, locale.split('_')[0])
+        else:
+            locales = [locale]
+
+        for lcl in locales:
+            for fpath in self.pofiles[1:]:
+
+                file = fpath % lcl
+                if not os.path.isfile(file):
+                    sys.stdout.write('skipping file %s\n' % file)
+                    continue
+                if result is None:
+                    # first found file
+                    result = polib.pofile(self.pofiles[0] % locale)
+                    plural = result.metadata.get('Plural-Forms')
+                    continue
+
+                pofile = polib.pofile(file)
+
+                for entry in pofile:
+                    old_entry = result.find(entry.msgid, by='msgid')
+
+                    if old_entry is None:
+                        result.append(entry)
+                    elif not old_entry.msgstr and entry.msgstr:
+                        # XXX check if it is correct
+                        old_entry.msgstr = entry.msgstr
+
+                new_plural = pofile.metadata.get('Plural-Forms')
+                if not plural and new_plural:
+                    result.metadata['Plural-Forms'] = new_plural
+
+        out_path = os.path.join(self.modir, locale, 'LC_MESSAGES/%s.mo' % domain)
+        if not os.path.isdir(os.path.dirname(out_path)):
+            os.makedirs(os.path.dirname(out_path))
+        result.save_as_mofile(out_path) #are plural expressions saved correctly?
+
+        if dbg:
+            out_path = os.path.join(localedir, locale, 'LC_MESSAGES/_dbg.po')
+            result.save(out_path)
+
+    # ============ Helper methods ===============
     # XXX staff from Django. need to be refactored
     def _popen(self, cmd):
         """
@@ -148,128 +284,4 @@ class gettext_commands(CommandDigest):
         all_files.sort()
         return all_files
 
-    def command_make(self, locale=None, localedir=None, domain='insanities', verbosity='1',
-            extensions='html', ignore='', searchdir='.'):
-        """
-        --locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
-        --localedir     Directory containig locale files
-        --searchdir     Directory containig source code files
-        --domain        The domain of the message files (default: "insanities").
-        --extensions    The file extension(s) to examine (default: ".html", separate multiple extensions with commas).
-        --ignore        Ignore files or directories matching this glob-style pattern. Use multiple times to ignore more.
-        --verbosity     Verbosity.
-        """
-        extensions = [x.lstrip('.') for x in extensions.split(',')]
-        ignore_patterns = ['*/.*', '*~']
-        if ignore:
-            ignore_patterns += ignore.split(';')
-
-        if localedir is None:
-            localedir = os.path.abspath('locale')
-
-        if locale is None or domain is None:
-            sys.stdout.write(self.__class__.command_make.__doc__)
-            raise Exception() # what exception we need to raise?
-
-        self.check_gettext()
-
-        basedir = os.path.join(localedir, locale, 'LC_MESSAGES')
-        if not os.path.isdir(basedir):
-            os.makedirs(basedir)
-
-        pofile = os.path.join(basedir, '%s.po' % domain)
-        potfile = os.path.join(basedir, '%s.pot' % domain)
-
-        if os.path.exists(potfile):
-            os.unlink(potfile)
-
-        for dirpath, file in self.find_files(searchdir, ignore_patterns, verbosity):
-            file_base, file_ext = os.path.splitext(file)
-
-            if file_ext == '.py' or file_ext[1:] in extensions:
-                if verbosity > 1:
-                    sys.stdout.write('processing file %s in %s\n' % (file, dirpath))
-
-                cmd = 'xgettext -d %s -L Python --keyword=N_ --keyword=M_:1,2 --from-code UTF-8 -o - "%s"' % (
-                    domain, os.path.join(dirpath, file))
-                msgs, errors = self._popen(cmd)
-                if errors:
-                    raise Exception("errors happened while running xgettext on %s\n%s" % (file, errors))
-
-                if os.path.exists(potfile):
-                    # Strip the header
-                    msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
-                else:
-                    msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
-                if msgs:
-                    open(potfile, 'ab').write(msgs)
-
-        if os.path.exists(potfile):
-            msgs, errors = self._popen('msguniq --to-code=utf-8 "%s"' % potfile)
-            if errors:
-                raise Exception("errors happened while running msguniq\n%s" % errors)
-            open(potfile, 'w').write(msgs)
-            if os.path.exists(pofile):
-                msgs, errors = self._popen('msgmerge -q "%s" "%s"' % (pofile, potfile))
-                if errors:
-                    raise Exception("errors happened while running msgmerge\n%s" % errors)
-            open(pofile, 'wb').write(msgs)
-            os.unlink(potfile)
-
-    def command_compile(self, locale=None, localedir=None, dbg=False,
-                        domain='insanities'):
-        """
-        --locale        Compiles the message files only for the given locale.
-        --localedir     Directory containig locale files.
-        --domain        Default is 'insanities'
-        --dbg           Set if you want to debug .po file wil be outputted
-                        to LC_MESSAGES/_dbg.po.
-        """
-        import polib
-        cfg = self.cfg
-
-        if localedir is None:
-            localedir = os.path.abspath('locale')
-
-        if locale is None:
-            sys.stdout.write(self.__class__.command_compile.__doc__)
-            raise Exception() # what exception we need to raise?
-
-        result = polib.pofile(cfg.LOCALE_FILES[0] % locale)
-        plural = result.metadata.get('Plural-Forms')
-
-        if '_' in locale:
-            locales = (locale, locale.split('_')[0])
-        else:
-            locales = [locale]
-
-        for fpath in cfg.LOCALE_FILES[1:]:
-            for lcl in locales:
-                file = fpath % lcl
-                if not os.path.isfile(file):
-                    sys.stdout.write('skipping file %s\n' % file)
-                    continue
-                pofile = polib.pofile(file)
-
-                for entry in pofile:
-                    old_entry = result.find(entry.msgid, by='msgid')
-
-                    if old_entry is None:
-                        result.append(entry)
-                    elif not old_entry.msgstr and entry.msgstr:
-                        # XXX check if it is correct
-                        old_entry.msgstr = entry.msgstr
-
-                new_plural = pofile.metadata.get('Plural-Forms')
-                if not plural and new_plural:
-                    result.metadata['Plural-Forms'] = new_plural
-
-        out_path = os.path.join(localedir, locale, 'LC_MESSAGES/%s.mo' % domain)
-        if not os.path.isdir(os.path.dirname(out_path)):
-            os.makedirs(os.path.dirname(out_path))
-        result.save_as_mofile(out_path) #are plural expressions saved correctly?
-
-        if dbg:
-            out_path = os.path.join(localedir, locale, 'LC_MESSAGES/_dbg.po')
-            result.save(out_path)
-
+ 
