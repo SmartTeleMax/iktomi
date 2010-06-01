@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'ContinueRoute', 'Map', 'Wrapper']
+__all__ = ['RequestHandler', 'STOP', 'Map', 'Wrapper']
 
 import logging
 import types
@@ -13,16 +13,6 @@ from ..utils.url import URL
 logger = logging.getLogger(__name__)
 
 
-class ContinueRoute(Exception):
-
-    @property
-    def who(self):
-        return self.args[0]
-
-    def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.who)
-
-
 def prepaire_handler(handler):
     '''Wrappes functions, that they can be usual RequestHandler's'''
     if type(handler) in (types.FunctionType, types.LambdaType,
@@ -31,21 +21,12 @@ def prepaire_handler(handler):
     return handler
 
 
-def process_http_exception(rctx, e):
-    rctx.response.status = e.status
-    if e.status in (httplib.MOVED_PERMANENTLY,
-                    httplib.SEE_OTHER):
-        if isinstance(e.url, unicode):
-            url = e.url.encode('utf-8')
-        else:
-            url = str(e.url)
-        rctx.response.headers.add('Location', url)
+
+class STOP(object): pass
 
 
 class RequestHandler(object):
-    '''
-        Base class for all request handlers.
-    '''
+    '''Base class for all request handlers.'''
 
 
     def __init__(self):
@@ -74,15 +55,14 @@ class RequestHandler(object):
         while next is not None:
             logger.debug('Handled by %r' % next)
             rctx = next.handle(rctx)
+            if rctx is STOP:
+                break
             next = next.next()
         return rctx
 
     def handle(self, rctx):
-        '''
-        This method should be overridden in subclasses.
-
-        It always takes rctx object as only argument and returns it
-        '''
+        '''This method should be overridden in subclasses.
+        It always takes rctx object as only argument and returns it'''
         return rctx
 
     def next(self):
@@ -137,14 +117,11 @@ class Wrapper(RequestHandler):
         next = self._next_handler
         while next is not None:
             logger.debug('Handled by %r' % next)
-            try:
-                rctx = next.handle(rctx)
-            except ContinueRoute:
+            rctx = next.handle(rctx)
+            if rctx is STOP:
                 break
             next = next.next()
-        if rctx.response.status_int != httplib.NOT_FOUND:
-            return rctx
-        raise ContinueRoute(self)
+        return rctx
 
     def handle(self, rctx):
         '''Should be overriden in subclasses.'''
@@ -196,10 +173,6 @@ class Map(RequestHandler):
     def handle(self, rctx):
         logger.debug('Map begin %r' % self)
 
-        # put main map link to rctx
-        #if rctx.main_map is None:
-            #rctx.main_map = self
-
         # construct url_for
         last_url_for = getattr(rctx.vals, 'url_for', None)
         if last_url_for is None:
@@ -215,26 +188,13 @@ class Map(RequestHandler):
 
         for i in xrange(len(self.handlers)):
             handler = self.handlers[i]
-            try:
-                rctx = handler(rctx)
-            except ContinueRoute:
-                print handler
-                pass
-            except HttpException, e:
-                # here we process all HttpExceptions thrown by our chains
-                logger.debug('HttpException in map %r by "%s"' % (self, handler))
-                process_http_exception(rctx, e)
-                return rctx
-            else:
-                rctx.response.status_int = httplib.OK
-                return rctx
+            result = handler(rctx)
+            if result is STOP:
+                continue
+            return result
 
         rctx.vals['url_for'] = rctx.data['url_for'] = last_url_for
-        # all handlers raised ContinueRoute
-        # we ensures that status is 404
-        rctx.response.status_int = httplib.NOT_FOUND
-        # and raise ContinueRoute
-        raise ContinueRoute(self)
+        return STOP
 
     def compile_urls_map(self):
         tracer = Tracer()
@@ -282,6 +242,8 @@ class FunctionWrapper(RequestHandler):
         # form list of arguments values
         args = [rctx] + [rctx.data[arg_name] for arg_name in args[1:]]
         result = self.func(*args, **kwargs)
+        if result is STOP:
+            return STOP
         if isinstance(result, dict):
             rctx.data.update(result)
         return rctx

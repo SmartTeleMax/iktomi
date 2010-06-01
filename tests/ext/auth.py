@@ -2,6 +2,7 @@
 
 import unittest
 from insanities.web import *
+from insanities.web.core import HttpException
 from insanities.web.filters import *
 from insanities.web.http import RequestContext
 from insanities.ext.cache import cache_dict
@@ -42,12 +43,22 @@ class AuthTest(unittest.TestCase):
             )
         )
         rctx = RequestContext.blank('/login', login='user name', password='12345')
-        rctx = app(rctx)
+        self.assertRaises(HttpException, lambda: app(rctx))
 
         self.assert_(rctx.response.headers.get('Set-Cookie'))
 
-        rctx = RequestContext.blank('/logout', login='user name')
-        rctx = app(rctx)
+        try:
+            app(rctx)
+        except HttpException, e:
+            self.assertEqual(e.status, 303)
+
+        r = RequestContext.blank('/logout', login='user name')
+        r.request.headers['Cookie'] = rctx.response.headers['Set-Cookie']
+        self.assertRaises(HttpException, lambda: app(r))
+        try:
+            app(r)
+        except HttpException, e:
+            self.assertEqual(e.status, 303)
 
     def test_anonym_unauth(self):
         'Anonym and unathorized access'
@@ -78,8 +89,11 @@ class AuthTest(unittest.TestCase):
             )
         )
         rctx = RequestContext.blank('/')
-        self.assertEqual(app(rctx).response.status_int, 303)
-        self.assertEqual(app(rctx).response.headers.get('Location'), '/login?next=/')
+        self.assertRaises(HttpException, lambda: app(rctx))
+        try:
+            app(rctx)
+        except HttpException, e:
+            self.assertEqual(str(e.url), '/login?next=/')
 
     def test_auth(self):
         'Authorized access'
@@ -94,8 +108,11 @@ class AuthTest(unittest.TestCase):
             )
         )
 
-        rctx = app(RequestContext.blank('/login', login='user name', password='12345'))
+        try:
+            rctx = RequestContext.blank('/login', login='user name', password='12345')
+            app(rctx)
+        except HttpException:
+            pass
         r = RequestContext.blank('/')
         r.request.headers['Cookie'] = rctx.response.headers['Set-Cookie']
-        print rctx.response.headers['Set-Cookie']
         self.assertEqual(app(r).response.status_int, 200)

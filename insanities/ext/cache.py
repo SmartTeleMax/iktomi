@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from insanities.web.core import ContinueRoute, RequestHandler
+from insanities.web.core import RequestHandler
 
 
 class cache_dict(RequestHandler):

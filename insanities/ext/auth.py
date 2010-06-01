@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from ..web.core import ContinueRoute, Wrapper, RequestHandler, FunctionWrapper
+from ..web.core import STOP, Wrapper, RequestHandler, FunctionWrapper
 from ..web.http import HttpException
 from ..web.filters import *
 from ..forms import *
@@ -97,10 +97,10 @@ class CookieAuth(Wrapper):
         logger.debug('Got user: %r' % user)
         rctx.vals['user'] = user
         try:
-            rctx = self.exec_wrapped(rctx)
+            result = self.exec_wrapped(rctx)
         finally:
             del rctx.vals['user']
-        return rctx
+        return result
 
     @property
     def login_handler(self):

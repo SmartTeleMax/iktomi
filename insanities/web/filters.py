@@ -6,7 +6,7 @@ import logging
 import re
 import httplib
 from os import path
-from .core import RequestHandler, ContinueRoute
+from .core import RequestHandler, STOP
 from .http import HttpException
 from ..utils.url import UrlTemplate
 
@@ -31,7 +31,7 @@ class match(RequestHandler):
         if matched:
             rctx.data.update(kwargs)
             return rctx
-        raise ContinueRoute(self)
+        return STOP
 
     def __repr__(self):
         return '%s(\'%s\', \'%s\')' % \
@@ -47,7 +47,7 @@ class method(RequestHandler):
     def handle(self, rctx):
         if rctx.request.method in self._names:
             return rctx
-        raise ContinueRoute(self)
+        return STOP
 
     def __repr__(self):
         return 'method(*%r)' % self._names
@@ -67,7 +67,7 @@ class ctype(RequestHandler):
     def handle(self, rctx):
         if rctx.request.content_type in self._types:
             return rctx
-        raise ContinueRoute(self)
+        return STOP
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self._types)
@@ -88,4 +88,4 @@ def static(rctx):
             return rctx
         else:
             raise HttpException(httplib.NOT_FOUND)
-    raise ContinueRoute('static')
+    return STOP

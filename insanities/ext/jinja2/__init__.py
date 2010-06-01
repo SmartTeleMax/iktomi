@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from jinja2 import Environment, FileSystemLoader
-from insanities.web.core import ContinueRoute, RequestHandler
+from insanities.web.core import RequestHandler
 
 __all__ = ('FormEnvironment', 'render_to', 'jinja_env')
 

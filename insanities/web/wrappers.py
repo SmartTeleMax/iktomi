@@ -6,7 +6,7 @@ import logging
 import re
 import httplib
 from os import path
-from .core import Wrapper, ContinueRoute
+from .core import Wrapper, STOP
 from ..utils.url import UrlTemplate
 from .filters import match
 
@@ -30,7 +30,7 @@ class prefix(Wrapper):
             rctx.request.add_prefix(self.builder(**kwargs))
             rctx = self.exec_wrapped(rctx)
             return rctx
-        raise ContinueRoute(self)
+        return STOP
 
     def __repr__(self):
         return '%s(\'%r\')' % (self.__class__.__name__, self.builder)
@@ -59,7 +59,7 @@ class subdomain(Wrapper):
             rctx.request.add_subdomain(self.subdomain)
             rctx = self.exec_wrapped(rctx)
             return rctx
-        raise ContinueRoute(self)
+        return STOP
 
     def __repr__(self):
         return '%s(\'%s\')' % (self.__class__.__name__, self.subdomain)

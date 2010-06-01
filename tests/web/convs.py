@@ -5,7 +5,7 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler, ContinueRoute
+from insanities.web.core import Map, RequestHandler
 from insanities.web.filters import *
 from insanities.web.http import Request, RequestContext
 from insanities.web.urlconvs import *

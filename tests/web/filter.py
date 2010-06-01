@@ -5,7 +5,7 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler, ContinueRoute
+from insanities.web.core import Map, RequestHandler, STOP
 from insanities.web.filters import *
 from insanities.web.filters import UrlTemplate
 from insanities.web.urlconvs import ConvertError
@@ -79,15 +79,11 @@ class Prefix(unittest.TestCase):
             rctx = RequestContext.blank(url)
             self.assertEqual(app(rctx).response.status_int, status)
 
-        #assertStatus('/docs', 404)
-        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('/docs')))
+        self.assert_(app(RequestContext.blank('/docs')) is STOP)
         assertStatus('/docs/', 200)
-        #assertStatus('/docs/tags', 404)
-        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('/docs/tags')))
+        self.assert_(app(RequestContext.blank('/docs/tags')) is STOP)
         assertStatus('/docs/tags/',200)
-        # assert assertStatus works correct
-        #assertStatus('/docs/tags/asdasd', 404)
-        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('/docs/tags/asasd')))
+        self.assert_(app(RequestContext.blank('/docs/tags/asdasd')) is STOP)
 
     def test_prefix_leaf(self):
         '''Simple prefix'''
@@ -138,9 +134,9 @@ class Subdomain(unittest.TestCase):
         assertStatus('http://k.host/', 200)
         assertStatus('http://l.k.host/', 200)
         assertStatus('http://x.l.k.host/', 200) # XXX: Is it right?
-        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('http://x.k.host/')))
-        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('http://lk.host/')))
-        self.assertRaises(ContinueRoute, lambda : app(RequestContext.blank('http://mhost/')))
+        self.assert_(app(RequestContext.blank('http://x.k.host/')) is STOP)
+        self.assert_(app(RequestContext.blank('http://lk.host/')) is STOP)
+        self.assert_(app(RequestContext.blank('http://mhost/')) is STOP)
 
 
 class Match(unittest.TestCase):
@@ -152,9 +148,10 @@ class Match(unittest.TestCase):
 
         rctx = RequestContext(Request.blank('/first').environ)
         rctx = m(rctx)
-        self.assertEqual(rctx.response.status_int, 404)
+        self.assert_(rctx.response.status_int, 200)
         rctx = RequestContext(Request.blank('/second').environ)
-        self.assertRaises(ContinueRoute, lambda : m(rctx))
+        rctx = m(rctx)
+        self.assert_(rctx is STOP)
 
     def test_int_converter(self):
         '''Check int converter'''
@@ -210,11 +207,7 @@ class Match(unittest.TestCase):
             match('/second/<int:id>', 'second') | handler
         )
 
-        rctx = RequestContext.blank('/second/42/')
-        #app(rctx)
-        #self.assertEqual(rctx.response.status_int, 404)
-        self.assertRaises(ContinueRoute, lambda : app(rctx))
-        rctx = RequestContext.blank('/second/42s')
-        self.assertRaises(ContinueRoute, lambda : app(rctx))
-        #app(rctx)
-        #self.assertEqual(rctx.response.status_int, 404)
+        rctx = app(RequestContext.blank('/second/42/'))
+        self.assert_(rctx is STOP)
+        rctx = app(RequestContext.blank('/second/42s'))
+        self.assert_(rctx is STOP)

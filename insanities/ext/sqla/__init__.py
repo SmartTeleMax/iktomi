@@ -5,7 +5,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy import create_engine
 
 from insanities.utils import cached_property
-from insanities.web import HttpException, ContinueRoute, Wrapper
+from insanities.web import HttpException, Wrapper
 
 
 class DBSession(orm.session.Session):

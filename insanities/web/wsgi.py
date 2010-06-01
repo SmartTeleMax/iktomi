@@ -5,9 +5,20 @@ __all__ = ['WSGIHandler']
 import logging
 import httplib
 from .http import HttpException, RequestContext
-from .core import ContinueRoute
+from .core import STOP
 
 logger = logging.getLogger(__name__)
+
+
+def process_http_exception(rctx, e):
+    rctx.response.status = e.status
+    if e.status in (httplib.MOVED_PERMANENTLY,
+                    httplib.SEE_OTHER):
+        if isinstance(e.url, unicode):
+            url = e.url.encode('utf-8')
+        else:
+            url = str(e.url)
+        rctx.response.headers.add('Location', url)
 
 
 class WSGIHandler(object):
@@ -21,9 +32,13 @@ class WSGIHandler(object):
     def __call__(self, env, start_response):
         rctx = RequestContext(env)
         try:
-            rctx = self.app(rctx)
-        except ContinueRoute, e:
-            pass
+            result = self.app(rctx)
+            if result is STOP:
+                rctx.response.status = httplib.NOT_FOUND
+            else:
+                rctx = result
+        except HttpException, e:
+            process_http_exception(rctx, e)
         headers = rctx.response.headers.items()
         start_response(rctx.response.status, headers)
         return [rctx.response.body]

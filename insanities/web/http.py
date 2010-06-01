@@ -153,7 +153,6 @@ class RequestContext(object):
     def __init__(self, wsgi_environ):
         self.request = Request(environ=wsgi_environ, charset='utf8')
         self.response = Response()
-        self.response.status = httplib.NOT_FOUND
         self.wsgi_env = wsgi_environ.copy()
 
         #: this attribute is for views and template data,
@@ -166,9 +165,6 @@ class RequestContext(object):
         #: this storage is for nesecary objects like db session, templates env,
         #: cache, url_for. something like dynamic config values.
         self.vals = DictWithNamespace()
-
-        # this is mark of main map
-        #self.main_map = None
 
     @classmethod
     def blank(cls, url, **data):
