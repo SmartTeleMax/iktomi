@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
+# XXX
+from __future__ import absolute_import
+
 import os
 import re
 import sys
 import locale
 import gettext
+import pprint
 from itertools import dropwhile
 from subprocess import PIPE, Popen
 
 from insanities.management.commands import CommandDigest
 from insanities.web import RequestHandler, ContinueRoute
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class LanguageSupport(RequestHandler):
@@ -25,6 +33,7 @@ class LanguageSupport(RequestHandler):
 
     def __init__(self, languages, localepath, domain='insanities'):
         super(LanguageSupport, self).__init__()
+        # XXX or lookup languages, localepath and domain in rctx.conf?
         self.languages = languages
         self.default_language = languages[0]
         self.localepath = localepath
@@ -32,9 +41,10 @@ class LanguageSupport(RequestHandler):
         self.translation_set = {}
 
     def handle(self, rctx):
-        rctx.vals['_language_handler'] = self
+        rctx.vals['language_handler'] = self
+        rctx.conf['languages'] = self.languages
         self.activate(rctx, self.default_language)
-        raise ContinueRoute(self)
+        return rctx
 
     def get_translation(self, language):
         """
@@ -69,12 +79,12 @@ class LanguageSupport(RequestHandler):
         return res
 
     def activate(self, rctx, language):
-        rctx.vals['translation'] = self.get_translation(self.language)
+        rctx.vals['translation'] = self.get_translation(language)
         rctx.conf['language'] = language
         # XXX what's better: rctx.vals.N_ or rctx.vals.gettext?
         # Or maybe it's more useful to make shortcuts from rctx like: rctx.N_?
-        rctx.vals['gettext'] = rctx.data['N_'] = rctx.translation.ugettext
-        rctx.vals['ngettext'] = rctx.data['M_'] = rctx.translation.ungettext
+        rctx.vals['gettext'] = rctx.data['N_'] = rctx.vals.translation.ugettext
+        rctx.vals['ngettext'] = rctx.data['M_'] = rctx.vals.translation.ungettext
 
 
 class set_lang(RequestHandler):
@@ -92,7 +102,7 @@ class set_lang(RequestHandler):
         self.language = language
 
     def handle(self, rctx):
-        rctx.vals_language_handler.activate(rctx, self.language)
+        rctx.vals.language_handler.activate(rctx, self.language)
         return rctx
 
 
@@ -102,7 +112,7 @@ class gettext_commands(CommandDigest):
     plural_forms_re = re.compile(r'^(?P<value>"Plural-Forms.+?\\n")\s*$',
                                  re.MULTILINE | re.DOTALL)
 
-    def __init__(self, localedir, searchdir, modir=None, domain='insanities',
+    def __init__(self, localedir=None, searchdir=None, modir=None, domain='insanities',
                  extensions=('html',),   ignore=[], pofiles=None):
         """
         --localedir     Directory containig locale files
@@ -177,7 +187,7 @@ class gettext_commands(CommandDigest):
             open(pofile, 'wb').write(msgs)
             os.unlink(potfile)
 
-    def command_compile(self, locale=None, dbg=False):
+    def command_compile(self, locale=None, domain=None, dbg=False):
         """
         --locale        Compiles the message files only for the given locale.
         --domain        Domain to output. Default is 'insanities'
@@ -193,7 +203,7 @@ class gettext_commands(CommandDigest):
             sys.stdout.write(self.__class__.command_compile.__doc__)
             raise Exception() # what exception we need to raise?
 
-        result = None
+        result = plural = None
         if '_' in locale:
             # for example: en translations are merged into en_GB
             locales = (locale, locale.split('_')[0])
@@ -211,8 +221,12 @@ class gettext_commands(CommandDigest):
                     # first found file
                     result = polib.pofile(self.pofiles[0] % locale)
                     plural = result.metadata.get('Plural-Forms')
+                    logger.debug('First found file: %s' % file)
+                    logger.debug('Plural forms is: %s' % plural)
+                    logger.debug('Metadata: %s' % pprint.pformat(result.metadata))
                     continue
 
+                logger.debug('Merging file: %s' % file)
                 pofile = polib.pofile(file)
 
                 for entry in pofile:
@@ -226,6 +240,7 @@ class gettext_commands(CommandDigest):
 
                 new_plural = pofile.metadata.get('Plural-Forms')
                 if not plural and new_plural:
+                    logger.debug('Plural forms is: %s' % plural)
                     result.metadata['Plural-Forms'] = new_plural
 
         out_path = os.path.join(self.modir, locale, 'LC_MESSAGES/%s.mo' % domain)
@@ -234,7 +249,7 @@ class gettext_commands(CommandDigest):
         result.save_as_mofile(out_path) #are plural expressions saved correctly?
 
         if dbg:
-            out_path = os.path.join(localedir, locale, 'LC_MESSAGES/_dbg.po')
+            out_path = os.path.join(self.modir, locale, 'LC_MESSAGES/_dbg.po')
             result.save(out_path)
 
     # ============ Helper methods ===============

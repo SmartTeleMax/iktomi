@@ -114,6 +114,9 @@ class DictWithNamespace(object):
             return self._current_data[name]
         raise AttributeError(name)
 
+    def get(self, name, default=None):
+        return self._current_data.get(name, default)
+
     def as_dict(self):
         return self._current_data.copy()
 

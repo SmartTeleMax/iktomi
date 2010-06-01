@@ -72,12 +72,16 @@ class jinja_env(RequestHandler):
     This handler adds Jinja Environment.
     '''
 
-    def __init__(self, param='TEMPLATES', paths=None, autoescape=False):
+    def __init__(self, param='TEMPLATES', paths=None, autoescape=False,
+                 FormEnvCls=FormEnvironment):
         super(jinja_env, self).__init__()
         self.param = param
         self.paths = paths
         self.autoescape = autoescape
         self.env = None
+        # form rendering is not the only thing FormEnvironment does.
+        # so we need a way to redefine other methods of it (i.e. i18n)
+        self.FormEnvCls = FormEnvCls
 
     def handle(self, rctx):
         kw = rctx.conf.as_dict()
@@ -94,7 +98,7 @@ class jinja_env(RequestHandler):
                 loader=FileSystemLoader(paths_list),
                 autoescape=self.autoescape,
             )
-        form_env = FormEnvironment(env=self.env, **kw)
+        form_env = self.FormEnvCls(env=self.env, **kw)
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
         return rctx
 
