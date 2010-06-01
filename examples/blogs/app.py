@@ -5,7 +5,7 @@ from insanities.web.filters import *
 from insanities.web.wrappers import *
 
 from insanities.ext.jinja2 import render_to, jinja_env
-from insanities.ext.cache import cache_dict
+from insanities.ext.cache import cache_dict, cache_memcache
 from insanities.ext.auth import CookieAuth
 from insanities.ext.sqla import sqla_session
 from insanities.utils import conf_to_dict
@@ -19,6 +19,8 @@ auth = CookieAuth(models.User.by_credential, models.User.by_id)
 
 
 env = Conf('', **conf_to_dict(cfg)) | jinja_env() | cache_dict() | sqla_session(cfg.DATABASES[''])
+
+#env_memcache = Conf('', **conf_to_dict(cfg)) | jinja_env() | cache_memcache(cfg.MEMCACHED) | sqla_session(cfg.DATABASES[''])
 
 
 app = env | Map(

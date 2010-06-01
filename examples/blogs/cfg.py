@@ -17,3 +17,5 @@ STATIC = rel('static')
 DATABASES = {
     '':'sqlite+pysqlite:///'+rel('data.db')
 }
+
+MEMCACHED = ['localhost:11211']
