@@ -1,0 +1,86 @@
+# Russian translation of insanities package.
+# This file is distributed under the same license as the insanities package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.5\n"
+"POT-Creation-Date: 2010-04-20 13:52+0400\n"
+"Last-Translator: Harut <genotip7@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/fileinput.html:4
+msgid "current file"
+msgstr "текущий файл"
+
+#: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/fileinput.html:8
+msgid "temporary file"
+msgstr "временный файл"
+
+#: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/fileinput.html:15
+#: /home/harut/python/apps/insanities-testing/insanities/ext/jinja2/templates/widgets/imageinput.html:13
+msgid "delete"
+msgstr "удалить"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:184
+#, python-format
+msgid "The length should be exactly one symbol"
+msgid_plural "The length should be exactly %(max_length)s symbols"
+msgstr[0] "Длина должна быть ровно %(max_length)s символ"
+msgstr[1] "Длина должна быть ровно %(max_length)s символа"
+msgstr[2] "Длина должна быть ровно %(max_length)s символов"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:186
+#, python-format
+msgid "The length should be at most one symbol"
+msgid_plural "The length should be at most %(max_length)s symbols"
+msgstr[0] "Длина должна быть не более %(max_length)s символа"
+msgstr[1] "Длина должна быть не более %(max_length)s символов"
+msgstr[2] "Длина должна быть не более %(max_length)s символов"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:188
+#, python-format
+msgid "The length should be at least one symbol"
+msgid_plural "The length should be at least %(min_length)s symbols"
+msgstr[0] "Длина должна быть не менее %(min_length)s символа"
+msgstr[1] "Длина должна быть не менее %(min_length)s символов"
+msgstr[2] "Длина должна быть не менее %(min_length)s символов"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:191
+msgid "field can not be empty"
+msgstr "поле не может быть пустым"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:192
+#, python-format
+msgid "field should match %(regex)s"
+msgstr "поле должно удовлетворять регулярному выражению: %(regex)s"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:248
+msgid "it is not valid integer"
+msgstr "значение не является целым числом"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:249
+#, python-format
+msgid "min value is %(min)s"
+msgstr "минимальное допустимое значение: %(min)s"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:250
+#, python-format
+msgid "max value is %(max)s"
+msgstr "миаксимальное допустимое значение: %(max)s"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:307
+msgid "you must select a value"
+msgstr "необходимо выбрать значение"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:348
+msgid "is not set"
+msgstr "не задано"
+
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:356
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:377
+#: /home/harut/python/apps/insanities-testing/insanities/forms/convs.py:400
+msgid "required field"
+msgstr "обязательное поле"
