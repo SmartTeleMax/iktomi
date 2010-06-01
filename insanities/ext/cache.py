@@ -39,3 +39,20 @@ class cache_dict(RequestHandler):
             except KeyError:
                 pass
         return True
+
+
+class cache_memcache(RequestHandler):
+    '''
+    This class wrapps all invocations of memcache.Client methods.
+    Only for development purpose.
+    '''
+
+    def __init__(self, hosts, name='session_storage'):
+        super(cache_memcache, self).__init__()
+        from memcache import Client
+        self.cache = Client(hosts)
+        self.name = name
+
+    def handle(self, rctx):
+        rctx.vals[self.name] = self.cache
+        return rctx

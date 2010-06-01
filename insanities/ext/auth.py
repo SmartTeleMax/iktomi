@@ -91,7 +91,7 @@ class CookieAuth(Wrapper):
         user = None
         if self._cookie_name in rctx.request.cookies:
             key = rctx.request.cookies[self._cookie_name]
-            value = rctx.vals.session_storage.get(key)
+            value = rctx.vals.session_storage.get(key.encode('utf-8'))
             if value is not None:
                 user = self._user_by_id(rctx, int(value))
         logger.debug('Got user: %r' % user)
@@ -117,7 +117,10 @@ class CookieAuth(Wrapper):
                     if user_id is not None:
                         key = os.urandom(10).encode('hex')
                         rctx.response.set_cookie(self._cookie_name, key, path='/')
-                        rctx.vals.session_storage.set(key, user_id)
+                        if rctx.vals.session_storage.set(key.encode('utf-8'), str(user_id)):
+                            pass
+                        else:
+                            logger.info('session_storage "%r" is unrichable' % rctx.vals.session_storage)
                         next = rctx.request.GET.get('next', '/')
                         raise HttpException(303, url=next)
             return dict(form=form)
@@ -136,7 +139,7 @@ class CookieAuth(Wrapper):
             if self._cookie_name in rctx.request.cookies:
                 key = rctx.request.cookies[self._cookie_name]
                 if key is not None:
-                    rctx.vals.session_storage.delete(key)
+                    rctx.vals.session_storage.delete(key.encode('utf-8'))
                 raise HttpException(303, url=rctx.vals.url_for(self._login))
             raise HttpException(404)
         return match('/%s' % self._logout, self._logout) | logout
