@@ -43,8 +43,8 @@ class TranslationTestCase(unittest.TestCase):
 
     def run_app(self, app, url='/'):
         rctx = RequestContext(Request.blank(url).environ)
-        #rctx.response.status = httplib.NOT_FOUND
-        return app(rctx)
+        app(rctx) # XXX is it right?
+        return rctx
 
     def test_language_support(self):
         app = self.get_app(languages=['en', 'ru'])
