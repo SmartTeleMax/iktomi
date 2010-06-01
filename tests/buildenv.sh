@@ -1,6 +1,6 @@
 #!/bin/sh
 echo Creating venv environment
-virtualenv --no-site-packages venv
+virtualenv venv
 
 echo Install PIP inside virtual environment
 ./venv/bin/easy_install pip

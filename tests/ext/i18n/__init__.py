@@ -48,7 +48,8 @@ class TranslationTestCase(unittest.TestCase):
 
     def test_language_support(self):
         app = self.get_app(languages=['en', 'ru'])
-        rctx = self.run_app(app)
+        rctx = RequestContext.blank('/')
+        app(rctx)
         self.assertEqual(rctx.conf.languages, ['en', 'ru'])
         self.assertEqual(rctx.conf.language, 'en')
         assert isinstance(rctx.vals.translation, GNUTranslations)
@@ -68,7 +69,8 @@ class TranslationTestCase(unittest.TestCase):
 
     def test_ntranslation(self):
         app = self.get_app(languages=['ru'])
-        rctx = self.run_app(app)
+        rctx = RequestContext.blank('/')
+        app(rctx)
 
         # assert that plural forms are Russian
         self.assertEqual(rctx.vals.translation.plural(51), 0)
@@ -94,7 +96,8 @@ class TranslationTestCase(unittest.TestCase):
                     ]
 
         app = self.get_app(languages=['ru'])
-        rctx = self.run_app(app)
+        rctx = RequestContext.blank('/')
+        app(rctx)
 
         frm = SampleForm(rctx.vals.form_env)
         frm.accept(MultiDict({'name': 0}))

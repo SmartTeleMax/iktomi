@@ -5,7 +5,7 @@ from insanities.web import *
 from insanities.web.core import HttpException
 from insanities.web.filters import *
 from insanities.web.http import RequestContext
-from insanities.ext.cache import cache_dict
+from insanities.ext.cache import local_cache_env
 from insanities.ext.auth import CookieAuth
 from insanities.ext.jinja2 import jinja_env
 
@@ -35,7 +35,7 @@ class AuthTest(unittest.TestCase):
         def login(r):
             self.assertEqual(len(r.vals.session_storage.cache), 1)
 
-        app = cache_dict() | jinja_env() | Map(
+        app = local_cache_env() | jinja_env() | Map(
             auth.login_handler | login,
             auth.logout_handler | logout,
             auth | Map(
@@ -67,7 +67,7 @@ class AuthTest(unittest.TestCase):
             self.assert_(r.vals.user is None)
 
         auth = CookieAuth(user_by_credential, user_by_id)
-        app = cache_dict() | jinja_env() | Map(
+        app = local_cache_env() | jinja_env() | Map(
             auth.login_handler,
             auth.logout_handler,
             auth | Map(
@@ -81,7 +81,7 @@ class AuthTest(unittest.TestCase):
         def view(r):
             r.response.write('aaaa')
 
-        app = cache_dict() | jinja_env() | Map(
+        app = local_cache_env() | jinja_env() | Map(
             auth.login_handler,
             auth.logout_handler,
             auth | auth.login_required | Map(
@@ -100,7 +100,7 @@ class AuthTest(unittest.TestCase):
         auth = CookieAuth(user_by_credential, user_by_id)
         def user(r):
             self.assertEqual(r.vals.user.name, 'user name')
-        app = cache_dict() | jinja_env() | Map(
+        app = local_cache_env() | jinja_env() | Map(
             auth.login_handler,
             auth.logout_handler,
             auth | auth.login_required | Map(
