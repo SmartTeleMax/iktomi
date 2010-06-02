@@ -91,10 +91,11 @@ class i18n_support(RequestHandler):
         if self.languages is not None and language not in self.languages:
             # XXX what should we return here?
             return STOP
-        rctx.vals['translation'] = self.get_translation(language)
+        trans = self.get_translation(language)
+        rctx.vals['translation'] = trans
         rctx.data['language'] = rctx.conf['language'] = language
-        rctx.vals['gettext'] = rctx.data['N_'] = rctx.vals.translation.ugettext
-        rctx.vals['ngettext'] = rctx.data['M_'] = rctx.vals.translation.ungettext
+        rctx.data['gettext'] = trans.ugettext
+        rctx.data['ngettext'] = trans.ungettext
         return rctx
 
 
@@ -173,21 +174,13 @@ class gettext_commands(CommandDigest):
                 if verbosity > 1:
                     sys.stdout.write('processing file %s in %s\n' % (file, dirpath))
 
-                cmd = 'xgettext -d %s -L Python --keyword=N_ --keyword=M_:1,2 --from-code UTF-8 -o - "%s"' % (
-                    domain, os.path.join(dirpath, file))
-                msgs, errors = self._popen(cmd)
-                if errors:
-                    raise Exception("errors happened while running xgettext on %s\n%s" % (file, errors))
-
-                if os.path.exists(potfile):
-                    # Strip the header
-                    msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
-                else:
-                    msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
+                msgs = self.extract_messages(domain, dirpath, file, 
+                                             header=not os.path.exists(potfile))
                 if msgs:
                     open(potfile, 'ab').write(msgs)
 
         if os.path.exists(potfile):
+            # make messages unique
             msgs, errors = self._popen('msguniq --to-code=utf-8 "%s"' % potfile)
             if errors:
                 raise Exception("errors happened while running msguniq\n%s" % errors)
@@ -311,4 +304,17 @@ class gettext_commands(CommandDigest):
         all_files.sort()
         return all_files
 
+    def extract_messages(self, domain, dirpath, file, header=True):
+        cmd = 'xgettext -d %s -L Python --keyword=N_ --keyword=M_:1,2 --from-code UTF-8 -o - "%s"' % (
+            domain, os.path.join(dirpath, file))
+        msgs, errors = self._popen(cmd)
+        if errors:
+            raise Exception("errors happened while running xgettext on %s\n%s" % (file, errors))
+
+        if not header:
+            # Strip the header
+            msgs = '\n'.join(dropwhile(len, msgs.split('\n')))
+        else:
+            msgs = msgs.replace('charset=CHARSET', 'charset=UTF-8')
+        return msgs
 

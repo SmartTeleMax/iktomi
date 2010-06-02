@@ -20,8 +20,8 @@ import handlers as h
 auth = CookieAuth(models.User.by_credential, models.User.by_id)
 
 
-env = (Conf('', **conf_to_dict(cfg)) | jinja_env() | local_cache_env() |
-       sqla_session(cfg.DATABASES['']) |
+env = (Conf('', **conf_to_dict(cfg)) | jinja_env(extensions=['jinja2.ext.i18n']) |
+       local_cache_env() | sqla_session(cfg.DATABASES['']) |
        i18n_support(cfg.MODIR, languages=cfg.LANGUAGES, load_from_cookie='language'))
 
 #env_memcache = Conf('', **conf_to_dict(cfg)) | jinja_env() | memcache_env(cfg.MEMCACHED) | sqla_session(cfg.DATABASES[''])

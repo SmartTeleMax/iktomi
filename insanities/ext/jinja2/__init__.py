@@ -38,23 +38,18 @@ class FormEnvironment(BaseFormEnvironment):
 
 
 
-class template_name_from_data(object):
-    
-    def __init__(self, var):
-        self.var = var
-
 
 class render_to(RequestHandler):
 
-    def __init__(self, template, **kwargs):
+    def __init__(self, template=None, param=None, **kwargs):
+        assert template or param
         super(render_to, self).__init__()
         self.template = template
+        self.param = param
         self._kwargs = kwargs
 
     def handle(self, rctx):
-        template = self.template
-        if isinstance(template, template_name_from_data):
-            template = rctx.data[template.var]
+        template = self.template or rctx.data[self.param]
         if isinstance(template, basestring):
             template = rctx.vals.jinja_env.get_template(template)
 
@@ -73,12 +68,13 @@ class jinja_env(RequestHandler):
     '''
 
     def __init__(self, param='TEMPLATES', paths=None, autoescape=False,
-                 FormEnvCls=FormEnvironment):
+                 FormEnvCls=FormEnvironment, extensions=None):
         super(jinja_env, self).__init__()
         self.param = param
         self.paths = paths
         self.autoescape = autoescape
         self.env = None
+        self.extensions = extensions or []
         # form rendering is not the only thing FormEnvironment does.
         # so we need a way to redefine other methods of it (i.e. i18n)
         self.FormEnvCls = FormEnvCls
@@ -97,6 +93,7 @@ class jinja_env(RequestHandler):
             self.env = Environment(
                 loader=FileSystemLoader(paths_list),
                 autoescape=self.autoescape,
+                extensions=self.extensions,
             )
         form_env = self.FormEnvCls(env=self.env, **kw)
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
