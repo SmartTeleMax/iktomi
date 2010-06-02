@@ -7,14 +7,14 @@ logger = logging.getLogger(__name__)
 from insanities.web.core import RequestHandler
 
 
-class cache_dict(RequestHandler):
+class local_cache_env(RequestHandler):
     '''
     This class implements simple cache interface API.
     Only for development purpose.
     '''
 
     def __init__(self, name='session_storage'):
-        super(cache_dict, self).__init__()
+        super(local_cache_env, self).__init__()
         self.cache = {}
         self.name = name
 
@@ -41,14 +41,14 @@ class cache_dict(RequestHandler):
         return True
 
 
-class cache_memcache(RequestHandler):
+class memcache_env(RequestHandler):
     '''
     This class wrapps all invocations of memcache.Client methods.
     Only for development purpose.
     '''
 
     def __init__(self, hosts, name='session_storage'):
-        super(cache_memcache, self).__init__()
+        super(memcache_env, self).__init__()
         from memcache import Client
         self.cache = Client(hosts)
         self.name = name
