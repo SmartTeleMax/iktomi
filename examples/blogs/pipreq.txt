@@ -4,4 +4,5 @@ simplejson
 pytils
 webob
 sqlalchemy
+polib
 git+git://github.com/riffm/python-memcached.git

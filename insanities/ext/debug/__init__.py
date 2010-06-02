@@ -11,6 +11,8 @@ class Debug(Wrapper):
     def handle(self, rctx):
         try:
             rctx = self.exec_wrapped(rctx)
+        except HttpException, e:
+            raise e
         except Exception, e:
             import httplib
             import logging

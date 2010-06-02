@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 from ..web.core import STOP, Wrapper, RequestHandler, FunctionWrapper
 from ..web.http import HttpException
 from ..web.filters import *
+from ..utils.i18n import N_
 from ..forms import *
 
 
@@ -39,11 +40,11 @@ class LoginForm(Form):
     fields = (
         Field('login', conv=convs.Char(min_length=3),
               widget=widgets.TextInput(),
-              label=u'Логин'),
+              label=N_('Username')),
         Field('password',
               conv=convs.Char(min_length=3),
               widget=widgets.PasswordInput(),
-              label=u'Пароль'),
+              label=N_(u'Password')),
     )
 
 

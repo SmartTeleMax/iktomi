@@ -9,7 +9,7 @@ from insanities.web import Map
 from insanities.web.http import Request, RequestContext
 
 from insanities.ext.jinja2 import jinja_env, FormEnvironment
-from insanities.ext.gettext import LanguageSupport, set_lang, gettext_commands
+from insanities.ext.gettext import i18n_support, set_lang, gettext_commands
 from insanities.utils.i18n import N_, M_
 import insanities
 
@@ -36,7 +36,7 @@ class TranslationTestCase(unittest.TestCase):
             shutil.rmtree(modir)
 
     def get_app(self, chains=[], languages=['en', 'ru']):
-        app = LanguageSupport(languages, os.path.join(CURDIR, 'locale')) | \
+        app = i18n_support(languages, os.path.join(CURDIR, 'locale')) | \
               jinja_env(paths=[os.path.join(CURDIR, 'templates')],
                         FormEnvCls=FormEnvironment) | Map(*chains)
         return app

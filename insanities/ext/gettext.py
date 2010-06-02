@@ -12,14 +12,14 @@ from itertools import dropwhile
 from subprocess import PIPE, Popen
 
 from insanities.management.commands import CommandDigest
-from insanities.web import RequestHandler
+from insanities.web import RequestHandler, STOP
 
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class LanguageSupport(RequestHandler):
+class i18n_support(RequestHandler):
     """
     Request handler addding support of i18n
 
@@ -31,19 +31,28 @@ class LanguageSupport(RequestHandler):
     :*domain* - gettext domain of translation
     """
 
-    def __init__(self, languages, localepath, domain='insanities'):
-        super(LanguageSupport, self).__init__()
-        # XXX or lookup languages, localepath and domain in rctx.conf?
-        self.languages = languages
-        self.default_language = languages[0]
+    def __init__(self, localepath, default_language=None, languages=None,
+                 domain='insanities', load_from_cookie=None):
+        RequestHandler.__init__(self)
+        # We cache translations, so we can't read config and build them 
+        # dynamically on each request.
+        # Default language is required
+        self.default_language = default_language or languages[0]
         self.localepath = localepath
         self.domain = domain
+        self.languages = languages
+        self.load_from_cookie = load_from_cookie
         self.translation_set = {}
 
     def handle(self, rctx):
         rctx.vals['language_handler'] = self
-        rctx.conf['languages'] = self.languages
-        self.activate(rctx, self.default_language)
+        if self.load_from_cookie:
+            # XXX is it right to load language here?
+            lang = rctx.request.cookies.get(self.load_from_cookie,
+                                            self.default_language)
+        else:
+            lang = self.default_language
+        self.activate(rctx, lang)
         return rctx
 
     def get_translation(self, language):
@@ -79,12 +88,14 @@ class LanguageSupport(RequestHandler):
         return res
 
     def activate(self, rctx, language):
+        if self.languages is not None and language not in self.languages:
+            # XXX what should we return here?
+            return STOP
         rctx.vals['translation'] = self.get_translation(language)
-        rctx.conf['language'] = language
-        # XXX what's better: rctx.vals.N_ or rctx.vals.gettext?
-        # Or maybe it's more useful to make shortcuts from rctx like: rctx.N_?
+        rctx.data['language'] = rctx.conf['language'] = language
         rctx.vals['gettext'] = rctx.data['N_'] = rctx.vals.translation.ugettext
         rctx.vals['ngettext'] = rctx.data['M_'] = rctx.vals.translation.ungettext
+        return rctx
 
 
 class set_lang(RequestHandler):
@@ -102,8 +113,7 @@ class set_lang(RequestHandler):
         self.language = language
 
     def handle(self, rctx):
-        rctx.vals.language_handler.activate(rctx, self.language)
-        return rctx
+        return rctx.vals.language_handler.activate(rctx, self.language)
 
 
 class gettext_commands(CommandDigest):
@@ -115,11 +125,12 @@ class gettext_commands(CommandDigest):
     def __init__(self, localedir=None, searchdir=None, modir=None, domain='insanities',
                  extensions=('html',),   ignore=[], pofiles=None):
         """
-        --localedir     Directory containig locale files
-        --searchdir     Directory containig source code files
-        --domain        The domain of the message files (default: "insanities").
-        --extensions    The file extension(s) to examine (default: ".html", separate multiple extensions with commas).
-        --ignore        Ignore files or directories matching this glob-style pattern. Use multiple times to ignore more.
+        *localedir*     Directory containig locale files
+        *searchdir*     Directory containig source code files
+        *domain*        The domain of the message files (default: "insanities").
+        *extensions*    The file extension(s) to examine (default: ".html",
+                        separate multiple extensions with commas).
+        *ignore*        Ignore files or directories matching this glob-style pattern.
         """
         self.extensions = [x.lstrip('.') for x in extensions]
         self.domain = domain
@@ -130,9 +141,10 @@ class gettext_commands(CommandDigest):
         self.pofiles = pofiles
 
     def command_make(self, locale=None, domain=None, verbosity='1'):
-        """
-        --locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
-        --verbosity     Verbosity.
+        """make
+        locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
+        verbosity     Verbosity.
+        domain        Set if you want to write output .po file to nan-default domain
         """
         domain = domain or self.domain
 
@@ -188,11 +200,11 @@ class gettext_commands(CommandDigest):
             os.unlink(potfile)
 
     def command_compile(self, locale=None, domain=None, dbg=False):
-        """
-        --locale        Compiles the message files only for the given locale.
-        --domain        Domain to output. Default is 'insanities'
-        --dbg           Set if you want to debug .po file wil be outputted
-                        to LC_MESSAGES/_dbg.po.
+        """compile
+        locale        Compiles the message files only for the given locale.
+        domain        Set if you want to write output .mo file to nan-default domain
+        dbg           Set if you want to debug .po file wil be outputted
+                      to LC_MESSAGES/_dbg.po.
         """
         import polib
         domain = domain or self.domain
@@ -201,7 +213,7 @@ class gettext_commands(CommandDigest):
 
         if locale is None:
             sys.stdout.write(self.__class__.command_compile.__doc__)
-            raise Exception() # what exception we need to raise?
+            raise ValueError('locale parameter is required') # XXX what exception we need to raise?
 
         result = plural = None
         if '_' in locale:

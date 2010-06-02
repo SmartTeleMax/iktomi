@@ -13,10 +13,10 @@
 
 {% block content %}
 
-<h3>This is my small blog</h3>
+<h3>{{ N_('This is my small blog') }}</h3>
 
 {% if not paginator.items %}
-<p>There is no posts yet</p>
+<p>{{ N_('There is no posts yet') }}</p>
 {% endif %}
 
 <ul>
@@ -24,8 +24,8 @@
     <li>
         <a href="{{ url_for('post', id=post.id) }}">{{ post.title }}</a>
         {% if rctx.vals.user %}
-        <a class="action" href="{{ url_for('edit-post', id=post.id) }}">edit</a>
-        <a class="action" href="{{ url_for('del-post', id=post.id) }}">delete</a>
+        <a class="action" href="{{ url_for('edit-post', id=post.id) }}">{{ N_('edit') }}</a>
+        <a class="action" href="{{ url_for('del-post', id=post.id) }}">{{ N_('delete') }}</a>
         {% endif %}
     </li>
     {% endfor %}
@@ -41,10 +41,10 @@
 
 <div clas="actoins">
     {% if rctx.vals.user %}
-    <a href="{{ url_for('add-post') }}">add post</a>
-    <a href="{{ url_for('logout') }}">logout</a>
+    <a href="{{ url_for('add-post') }}">{{ N_('add post') }}</a>
+    <a href="{{ url_for('logout') }}">{{ N_('logout') }}</a>
     {% else %}
-    <a href="{{ url_for('login') }}">login</a>
+    <a href="{{ url_for('login') }}">{{ N_('login') }}</a>
     {% endif %}
 </div>
 

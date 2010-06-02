@@ -19,3 +19,18 @@ DATABASES = {
 }
 
 MEMCACHED = ['localhost:11211']
+
+DEBUG = True
+
+# =========== I18N =======
+LOCALEDIR = rel('locale')
+MODIR = rel('mo')
+
+import insanities
+insanities_dir = path.dirname(insanities.__file__)
+POFILES = [
+    # first language is prior
+    path.join(LOCALEDIR, '%s/LC_MESSAGES/insanities.po'),
+    path.join(insanities_dir, 'locale/%s/LC_MESSAGES/insanities-core.po')
+]
+LANGUAGES = ['en', 'ru']

@@ -112,3 +112,11 @@ def to_json(rctx, paginator):
                          id=i.id,
                          date=i.date.strftime('%d:%m:%Y')) for i in paginator.items])
     ))
+
+def change_language(rctx):
+    lang = rctx.request.POST.get('language')
+    if lang in rctx.conf.LANGUAGES:
+        rctx.vals.language_handler.activate(rctx, lang)
+        rctx.response.set_cookie('language', lang, path='/')
+    # XXX HTTP_REFERER
+    raise HttpException(303, url=rctx.vals.url_for('posts'))
