@@ -36,7 +36,7 @@ class TranslationTestCase(unittest.TestCase):
             shutil.rmtree(modir)
 
     def get_app(self, chains=[], languages=['en', 'ru']):
-        app = i18n_support(languages, os.path.join(CURDIR, 'locale')) | \
+        app = i18n_support(os.path.join(CURDIR, 'locale'), languages=languages) | \
               jinja_env(paths=[os.path.join(CURDIR, 'templates')],
                         FormEnvCls=FormEnvironment) | Map(*chains)
         return app
@@ -47,15 +47,16 @@ class TranslationTestCase(unittest.TestCase):
         return rctx
 
     def test_language_support(self):
+        '''Test if i18n_support handler sets language and creates GNUTranslation object'''
         app = self.get_app(languages=['en', 'ru'])
         rctx = RequestContext.blank('/')
         app(rctx)
-        self.assertEqual(rctx.conf.languages, ['en', 'ru'])
         self.assertEqual(rctx.conf.language, 'en')
         assert isinstance(rctx.vals.translation, GNUTranslations)
         #self.assertEqual(rctx.translation.plural, 'en')
 
     def test_set_lang(self):
+        '''Assert that set_lang request handler works properly'''
         def test_backdoor(rctx):
             rctx.language = rctx.conf.language
 
@@ -63,11 +64,12 @@ class TranslationTestCase(unittest.TestCase):
                 set_lang('ru') | test_backdoor,
             ])
         rctx = self.run_app(app)
-        self.assertEqual(rctx.conf.languages, ['en', 'ru'])
         self.assertEqual(rctx.language, 'ru')
         assert isinstance(rctx.vals.translation, GNUTranslations)
 
     def test_ntranslation(self):
+        '''Assert that plural forms translation work properly'''
+        # TODO compile .mo file dinamically
         app = self.get_app(languages=['ru'])
         rctx = RequestContext.blank('/')
         app(rctx)
@@ -85,6 +87,7 @@ class TranslationTestCase(unittest.TestCase):
         self.assertEqual(t_rctx, RU_PLURAL_1)
 
     def test_translation_forms(self):
+        '''Assert that FormEnvironment translation methods works in templates'''
         from insanities.forms import form, fields, widgets, convs
         from webob.multidict import MultiDict
 
@@ -119,6 +122,7 @@ class TranslationTestCase(unittest.TestCase):
     #    raise NotImplementedError()
 
     def test_compile(self):
+        '''Testing gettext message compiling'''
         command = gettext_commands(modir=os.path.join(CURDIR, 'mo'),
                                    domain='test', pofiles= [
                 os.path.join(CURDIR, 'locale/%s/LC_MESSAGES/test.po'),

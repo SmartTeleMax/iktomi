@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<a href="{{ url_for('posts') }}">{{ N('back to posts page') }}</a>
+<a href="{{ url_for('posts') }}">{{ N_('back to posts page') }}</a>
 <form action="" method="post">
     {{ form.render() }}
     <input type="submit" value="add post" />

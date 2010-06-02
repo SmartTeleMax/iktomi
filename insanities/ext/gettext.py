@@ -223,7 +223,7 @@ class gettext_commands(CommandDigest):
             locales = [locale]
 
         for lcl in locales:
-            for fpath in self.pofiles[1:]:
+            for fpath in self.pofiles:
 
                 file = fpath % lcl
                 if not os.path.isfile(file):
@@ -311,4 +311,4 @@ class gettext_commands(CommandDigest):
         all_files.sort()
         return all_files
 
- 
+
