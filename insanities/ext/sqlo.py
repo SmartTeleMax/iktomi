@@ -4,7 +4,7 @@ from .. import CommandDigest
 
 __all__ = ['sqlobject']
 
-class sqlobject(CommandDigest):
+class SqlObjectCommands(CommandDigest):
     '''
     SQLObject operations:
     '''

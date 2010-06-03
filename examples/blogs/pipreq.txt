@@ -5,4 +5,5 @@ pytils
 webob
 sqlalchemy
 polib
+PIL
 git+git://github.com/riffm/python-memcached.git
