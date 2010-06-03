@@ -42,7 +42,7 @@ OrderedDict Interface
 .. _Sanitarization:
 
 HTML Sanitarization
------------
+-------------------
 
 .. automodule:: insanities.utils.html
 

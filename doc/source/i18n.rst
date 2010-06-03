@@ -8,7 +8,7 @@ Internationalization
 
 * :ref:`Description <insanities-i18n>`
 * :ref:`Marking strings to be translated <insanities-N_-M_>`
-* :ref:`i18n_support handler <insanities-i18n_support>`
+* :ref:`I18n support handlers <insanities-i18n_support>`
 * :ref:`set_lang handler <insanities-set_lang>`
 * :ref:`Gettext commands <insanities-gettext_commands>`
 * :ref:`Integration with forms <insanities-forms-i18n`
@@ -19,6 +19,7 @@ Description
 
 .. automodule:: insanities.utils.i18n
 
+
 .. _insanities-N_-M_:
 
 Marking strings as safe
@@ -26,4 +27,42 @@ Marking strings as safe
 .. autofunction:: insanities.utils.N_
 
 .. autoclass:: insanities.utils.M_
+
+
+.. _insanities-i18n_support:
+
+Internationalization support request handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: insanities.utils.i18n.BaseI18nSupport_
+    :members:
+
+.. autoclass:: insanities.utils.i18n.gettext_support
+   :members:
+
+
+.. _insanities-set_lang:
+
+set_lang handler
+^^^^^^^^^^^^^^^^
+.. autoclass:: insanities.utils.i18n.set_lang
+   :members:
+
+
+.. _insanities-gettext_commands:
+
+Gettext commands
+^^^^^^^^^^^^^^^^
+.. autoclass:: insanities.utils.i18n.gettext_commands
+   :members:
+
+
+.. _insanities-forms-i18n:
+
+Integration with forms
+^^^^^^^^^^^^^^^^^^^^^^
+
+The internationalization module is integrated with forms using :class:`FormEnvironment <insanities.forms.form.BaseFormEnvironment` class's :meth:`gettext<insanities.forms.form.BaseFormEnvironment.gettext>` and :meth:`ngettext<insanities.forms.form.BaseFormEnvironment.ngettext>` methods. These methods can be redefined in subclasses to customize initialization.
+
+By default, internationalization is used by :class:`Converters' <insanities.forms.convs.Converter>` error method. This method accepts name of the error, looks up it's message in converters' error_%(name)s attribute and translates the message.
+
 
