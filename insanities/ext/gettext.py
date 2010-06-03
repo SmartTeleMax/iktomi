@@ -19,7 +19,38 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class i18n_support(RequestHandler):
+class BaseI18nSupport(RequestHandler):
+    '''A base class for creating i18n handler implementations'''
+
+    def __init__(self, languages=None, default_language=None, 
+                 load_from_cookie=None):
+        RequestHandler.__init__(self)
+        # We cache translations, so we can't read config and build them 
+        # dynamically on each request.
+        # Default language is required
+        self.default_language = default_language or languages[0]
+        self.load_from_cookie = load_from_cookie
+        self.languages = languages
+
+    def handle(self, rctx):
+        '''
+        Adds self to rctx.vals as :attr:`language_handler` and activates the
+        default language (looks it up in cookies or uses default_language)
+        '''
+        rctx.vals['language_handler'] = self
+        if self.load_from_cookie:
+            lang = rctx.request.cookies.get(self.load_from_cookie,
+                                            self.default_language)
+        else:
+            lang = self.default_language
+        self.activate(rctx, lang)
+        return rctx
+
+    def activate(self, rctx, language):
+        raise NotImplementedError()
+
+
+class gettext_support(RequestHandler):
     """
     Request handler addding support of i18n
 
@@ -42,31 +73,12 @@ class i18n_support(RequestHandler):
 
     def __init__(self, localepath, default_language=None, languages=None,
                  domain='insanities', load_from_cookie=None):
-        RequestHandler.__init__(self)
-        # We cache translations, so we can't read config and build them 
-        # dynamically on each request.
-        # Default language is required
-        self.default_language = default_language or languages[0]
+        BaseI18nSupport.__init__(self, language=languages, 
+                                 default_langugae=default_language,
+                                 load_from_cookie=load_from_cookie)
         self.localepath = localepath
         self.domain = domain
-        self.languages = languages
-        self.load_from_cookie = load_from_cookie
         self.translation_set = {}
-
-    def handle(self, rctx):
-        '''
-        Adds self to rctx.vals as :attr:`language_handler` and activates
-        default language (looks it up in cookies or uses default_language)
-        '''
-        rctx.vals['language_handler'] = self
-        if self.load_from_cookie:
-            # XXX is it right to load language here?
-            lang = rctx.request.cookies.get(self.load_from_cookie,
-                                            self.default_language)
-        else:
-            lang = self.default_language
-        self.activate(rctx, lang)
-        return rctx
 
     def get_translation(self, language):
         """

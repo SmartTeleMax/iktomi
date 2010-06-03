@@ -8,7 +8,7 @@ import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
-from ..utils.i18n import N_, M_
+from ..utils import N_, M_
 
 
 class NotSubmitted(Exception): pass

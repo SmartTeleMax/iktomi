@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 from ..web.core import STOP, Wrapper, RequestHandler, FunctionWrapper
 from ..web.http import HttpException
 from ..web.filters import *
-from ..utils.i18n import N_
+from ..utils import N_
 from ..forms import *
 
 

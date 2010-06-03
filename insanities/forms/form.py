@@ -5,8 +5,7 @@ import struct, os, itertools
 from gettext import NullTranslations
 
 from webob.multidict import MultiDict
-from ..utils import weakproxy, cached_property
-from ..utils.i18n import smart_gettext
+from ..utils import weakproxy, cached_property, smart_gettext
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS

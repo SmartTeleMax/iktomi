@@ -7,7 +7,7 @@ from insanities.ext.jinja2 import render_to, jinja_env
 from insanities.ext.cache import local_cache_env, memcache_env
 from insanities.ext.auth import CookieAuth
 from insanities.ext.sqla import sqla_session
-from insanities.ext.gettext import i18n_support
+from insanities.utils.i18n import gettext_support
 from insanities.utils import conf_to_dict
 
 
@@ -20,7 +20,7 @@ auth = CookieAuth(models.User.by_credential, models.User.by_id)
 
 env = (Conf('', **conf_to_dict(cfg)) | jinja_env(extensions=['jinja2.ext.i18n']) |
        local_cache_env() | sqla_session(cfg.DATABASES['']) |
-       i18n_support(cfg.MODIR, languages=cfg.LANGUAGES, load_from_cookie='language'))
+       gettext_support(cfg.MODIR, languages=cfg.LANGUAGES, load_from_cookie='language'))
 
 #env_memcache = Conf('', **conf_to_dict(cfg)) | jinja_env() | memcache_env(cfg.MEMCACHED) | sqla_session(cfg.DATABASES[''])
 

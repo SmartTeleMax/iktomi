@@ -17,17 +17,13 @@ Internationalization
 Description
 -----------
 
-.. automodule:: insanities.ext.gettext
-
 .. automodule:: insanities.utils.i18n
 
 .. _insanities-N_-M_:
 
 Marking strings as safe
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: insanities.utils.i18n.N_
+.. autofunction:: insanities.utils.N_
 
-.. autoclass:: insanities.utils.i18n.M_
-
-.. _insanities-Field:
+.. autoclass:: insanities.utils.M_
 

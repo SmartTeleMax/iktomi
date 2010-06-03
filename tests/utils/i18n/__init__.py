@@ -9,8 +9,8 @@ from insanities.web import Map
 from insanities.web.http import Request, RequestContext
 
 from insanities.ext.jinja2 import jinja_env, FormEnvironment
-from insanities.ext.gettext import i18n_support, set_lang, gettext_commands
-from insanities.utils.i18n import N_, M_
+from insanities.utils.i18n import gettext_support, set_lang, gettext_commands
+from insanities.utils import N_, M_
 import insanities
 
 from gettext import GNUTranslations
@@ -36,7 +36,7 @@ class TranslationTestCase(unittest.TestCase):
             shutil.rmtree(modir)
 
     def get_app(self, chains=[], languages=['en', 'ru']):
-        app = i18n_support(os.path.join(CURDIR, 'locale'), languages=languages) | \
+        app = gettext_support(os.path.join(CURDIR, 'locale'), languages=languages) | \
               jinja_env(paths=[os.path.join(CURDIR, 'templates')],
                         FormEnvCls=FormEnvironment) | Map(*chains)
         return app
@@ -47,7 +47,7 @@ class TranslationTestCase(unittest.TestCase):
         return rctx
 
     def test_language_support(self):
-        '''Test if i18n_support handler sets language and creates GNUTranslation object'''
+        '''Test if gettext_support handler sets language and creates GNUTranslation object'''
         app = self.get_app(languages=['en', 'ru'])
         rctx = RequestContext.blank('/')
         app(rctx)

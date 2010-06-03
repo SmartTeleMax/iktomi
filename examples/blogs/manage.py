@@ -2,7 +2,8 @@
 
 from os import path
 
-from insanities.ext import sqla, gettext
+from insanities.ext import sqla
+from insanities.utils import i18n
 from insanities.management import commands, manage
 
 import cfg
@@ -15,17 +16,16 @@ def run(app):
         # sqlalchemy session
         sqla=sqla.SqlAlchemyCommands(cfg.DATABASES, models.ModelBase, initial=initial),
         # internationalization
-        gettext=gettext.gettext_commands(localedir=cfg.LOCALEDIR,
-                                         searchdir=cfg.cur_dir,
-                                         modir=cfg.MODIR,
-                                         pofiles=cfg.POFILES,
-                                         ignore=['*/venv/*']),
+        gettext=i18n.gettext_commands(localedir=cfg.LOCALEDIR,
+                                      searchdir=cfg.cur_dir,
+                                      modir=cfg.MODIR,
+                                      pofiles=cfg.POFILES,
+                                      ignore=['*/venv/*']),
         # command to make insanities messages
-        insanities_gettext=gettext.gettext_commands(
-                                         localedir=path.join(cfg.insanities_dir, 'locale'),
-                                         searchdir=cfg.insanities_dir,
-                                         ignore=['*/venv/*'],
-                                         domain="insanities-core"),
+        ins_gettext=i18n.gettext_commands(localedir=path.join(cfg.insanities_dir, 'locale'),
+                                          searchdir=cfg.insanities_dir,
+                                          ignore=['*/venv/*'],
+                                          domain="insanities-core"),
         # dev-server
         server=commands.server(app),
 

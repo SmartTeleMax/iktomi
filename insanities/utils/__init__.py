@@ -79,3 +79,27 @@ def conf_to_dict(cfg):
     for key in keys:
         d[key] = getattr(cfg, key)
     return d
+
+
+# i18n markers
+def N_(msg):
+    '''Single translatable string marker'''
+    return msg
+
+class M_(unicode):
+    '''Marker for translatable string with plural form'''
+    def __new__(cls, single, plural):
+        self = unicode.__new__(cls, single)
+        self.plural = plural
+        return self
+
+def smart_gettext(translation, msg, count=None):
+    '''If msg is instance of M_ returns multiple translation
+    otherwise return single translation'''
+    if count is None:
+        count = 1
+    if isinstance(msg, M_) and count is not None:
+        return translation.ungettext(msg, msg.plural, count)
+    return translation.ugettext(msg)
+
+
