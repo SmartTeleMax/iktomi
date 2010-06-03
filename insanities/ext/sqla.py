@@ -49,7 +49,7 @@ class sqla_session(Wrapper):
         return rctx
 
 
-from .. import CommandDigest
+from . import CommandDigest
 
 
 class SqlAlchemyCommands(CommandDigest):
@@ -144,7 +144,7 @@ class SqlAlchemyCommands(CommandDigest):
 
 # COLUMNS
 
-from sqlalchemy.databases.mysql import MSMediumText as MediumText
+#from sqlalchemy.databases.mysql import MSMediumText as MediumText
 from sqlalchemy import String, Integer, Text, Boolean, Date, DateTime
 from sqlalchemy import orm, types, create_engine
 
