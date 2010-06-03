@@ -46,7 +46,7 @@ class BaseI18nSupport(RequestHandler):
         raise NotImplementedError()
 
 
-class gettext_support(RequestHandler):
+class gettext_support(BaseI18nSupport):
     """
     Request handler addding support of i18n
 
@@ -69,8 +69,8 @@ class gettext_support(RequestHandler):
 
     def __init__(self, localepath, default_language=None, languages=None,
                  domain='insanities', load_from_cookie=None):
-        BaseI18nSupport.__init__(self, language=languages, 
-                                 default_langugae=default_language,
+        BaseI18nSupport.__init__(self, languages=languages, 
+                                 default_language=default_language,
                                  load_from_cookie=load_from_cookie)
         self.localepath = localepath
         self.domain = domain
