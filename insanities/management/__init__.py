@@ -8,6 +8,21 @@ class CommandNotFound(AttributeError): pass
 
 
 def manage(commands):
+    '''
+    Parses argv and runs neccessary command. Is to be used in manage.py file.
+
+    Accept a dict with digest name as keys and instances of
+    :class:`CommandDigest<insanities.management.commands.CommandDigest>`
+    objects as values.
+
+    The format of command is the following::
+
+        ./manage.py digest_name:command_name[ arg1[ arg2[...]]][ key1=kwarg1[...]]
+
+    where command_name is a part of digest instance method name, args and kwargs
+    are passed to the method. For details, see
+    :class:`CommandDigest<insanities.management.commands.CommandDigest>` docs.
+    '''
     if len(argv) > 1:
         cmd_name = argv[1]
         raw_args = argv[2:]

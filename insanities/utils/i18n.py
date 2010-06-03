@@ -165,10 +165,12 @@ class gettext_commands(CommandDigest):
         self.pofiles = pofiles
 
     def command_make(self, locale=None, domain=None, verbosity='1'):
-        """make
-        locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
-        verbosity     Verbosity.
-        domain        Set if you want to write output .po file to nan-default domain
+        """
+        make
+
+        * locale        Creates or updates the message files only for the given locale (e.g. pt_BR).
+        * verbosity     Verbosity.
+        * domain        Set if you want to write output .po file to nan-default domain
         """
         domain = domain or self.domain
 
@@ -216,11 +218,12 @@ class gettext_commands(CommandDigest):
             os.unlink(potfile)
 
     def command_compile(self, locale=None, domain=None, dbg=False):
-        """compile
-        locale        Compiles the message files only for the given locale.
-        domain        Set if you want to write output .mo file to nan-default domain
-        dbg           Set if you want to debug .po file wil be outputted
-                      to LC_MESSAGES/_dbg.po.
+        """
+        compile
+
+        * locale        Compiles the message files only for the given locale.
+        * domain        Set if you want to write output .mo file to nan-default domain
+        * dbg           Set if you want to debug .po file wil be outputted to LC_MESSAGES/_dbg.po.
         """
         import polib
         import pprint
@@ -294,9 +297,7 @@ class gettext_commands(CommandDigest):
         return p.communicate()
 
     def is_ignored(self, path, ignore_patterns):
-        """
-        Helper function to check if the given path should be ignored or not.
-        """
+        '''Helper function to check if the given path should be ignored or not.'''
         import fnmatch
         for pattern in ignore_patterns:
             if pattern and fnmatch.fnmatchcase(path, pattern):
@@ -304,7 +305,7 @@ class gettext_commands(CommandDigest):
         return False
 
     def check_gettext(self):
-        # We require gettext version 0.15 or newer.
+        '''Require gettext version 0.15 or newer.'''
         output = self._popen('xgettext --version')[0]
         match = re.search(r'(?P<major>\d+)\.(?P<minor>\d+)', output)
         if match:
@@ -315,9 +316,7 @@ class gettext_commands(CommandDigest):
                 'your gettext toolset.' % match.group())
 
     def find_files(self, root, ignore_patterns, verbosity):
-        """
-        Helper function to get all files in the given root.
-        """
+        '''Helper function to get all files in the given root.'''
         all_files = []
         for (dirpath, dirnames, filenames) in os.walk(root):
             for f in filenames:
@@ -331,6 +330,10 @@ class gettext_commands(CommandDigest):
         return all_files
 
     def extract_messages(self, domain, dirpath, file, header=True):
+        """
+        Currently not properly implemented, so it considered
+        to be overriden in subclasses.
+        """
         cmd = 'xgettext -d %s -L Python --keyword=N_ --keyword=M_:1,2 --from-code UTF-8 -o - "%s"' % (
             domain, os.path.join(dirpath, file))
         msgs, errors = self._popen(cmd)

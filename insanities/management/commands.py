@@ -15,6 +15,7 @@ class CommandDigest(object):
         print self.description()
 
     def description(self):
+        '''Description outputed to console'''
         _help = self.__class__.__doc__
         for k in dir(self):
             if k.startswith('command_'):

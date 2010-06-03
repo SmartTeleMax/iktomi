@@ -53,7 +53,7 @@ set_lang handler
 Gettext commands
 ^^^^^^^^^^^^^^^^
 .. autoclass:: insanities.utils.i18n.gettext_commands
-   :members:
+   :members: __init__, command_make, command_compile, extract_messages
 
 
 .. _insanities-forms-i18n:

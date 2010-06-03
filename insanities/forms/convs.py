@@ -116,6 +116,27 @@ class Converter(object):
         return self.__class__(**kwargs)
 
     def error(self, error_type, count=None):
+        '''
+        Raises :class:`ValidationError <insanities.forms.convs.ValidationError>` with the
+        message taken from converter's error_%(error_type) method and formatted with
+        converters' attributes as arguments.
+
+        For example::
+
+            class Conv(Converter):
+                bars = BARS
+
+                error_foo = N_('foo')
+                error_bar = M_('you need one bar', 
+                               'you need %(bars) bars')
+
+                def to_python(self, value):
+                    if not footest(value):
+                        self.error('foo')
+                    if not bartest(value, self.bars):
+                        self.error('bar', count=self.BARS)
+                    return value
+        '''
         message_template = getattr(self, 'error_'+error_type)
         if callable(message_template):
             message_template = message_template()
