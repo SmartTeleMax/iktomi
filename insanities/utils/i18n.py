@@ -50,20 +50,20 @@ class gettext_support(BaseI18nSupport):
     """
     Request handler addding support of i18n
 
-    :*default_language* - language used by default, it is activated by
+    *default_language* - language used by default, it is activated by
     this handler in :meth:`handle` method. If not passed to the constructor,
     used first item from :attr:`languages` attribute. At least
     :attr:`default_language` or :attr:`langages` must be specified.
 
-    :*languages* - languages ("en", "ru") or locales ("en_GB", "ru_RU") code.
+    *languages* - languages ("en", "ru") or locales ("en_GB", "ru_RU") code.
     If provided, only given language can be activated.
     If there is no :attr:`default_language` provided, first language is default.
 
-    :*localepath* - a path to locale directory containing .mo file.
+    *localepath* - a path to locale directory containing .mo file.
 
-    :*domain* - gettext domain of translation.
+    *domain* - gettext domain of translation.
 
-    :*load_from_cookie* - http cookie name. If provided, :meth:`handle` method
+    *load_from_cookie* - http cookie name. If provided, :meth:`handle` method
     activates language from this cookie with fallback to :attr:`default_cookie`.
     """
 
@@ -86,7 +86,7 @@ class gettext_support(BaseI18nSupport):
         Adds a fallback to the default language, if it's
         different from the requested language.
 
-        :*language* - language ("en", "ru") or locale ("en_GB", "ru_RU") code.
+        *language* - language ("en", "ru") or locale ("en_GB", "ru_RU") code.
         """
         # XXX normalize locale
 

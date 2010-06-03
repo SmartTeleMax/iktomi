@@ -26,7 +26,7 @@ Marking strings as safe
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: insanities.utils.N_
 
-.. autoclass:: insanities.utils.M_
+.. autoclass:: insanities.utils.M_(single, plural)
 
 
 .. _insanities-i18n_support:
@@ -63,6 +63,6 @@ Integration with forms
 
 The internationalization module is integrated with forms using :class:`FormEnvironment <insanities.forms.form.BaseFormEnvironment` class's :meth:`gettext<insanities.forms.form.BaseFormEnvironment.gettext>` and :meth:`ngettext<insanities.forms.form.BaseFormEnvironment.ngettext>` methods. These methods can be redefined in subclasses to customize initialization.
 
-By default, internationalization is used by :class:`Converters' <insanities.forms.convs.Converter>` error method. This method accepts name of the error, looks up it's message in converters' error_%(name)s attribute and translates the message.
+By default, internationalization is used by :class:`Converter <insanities.forms.convs.Converter>` :meth:`error <insanities.forms.convs.Converter.error>` method. This method accepts name of the error, looks up it's message in converters' error_%(name)s attribute and translates the message.
 
 
