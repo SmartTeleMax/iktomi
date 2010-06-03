@@ -23,12 +23,21 @@ class i18n_support(RequestHandler):
     """
     Request handler addding support of i18n
 
+    :*default_language* - language used by default, it is activated by
+    this handler in :meth:`handle` method. If not passed to the constructor,
+    used first item from :attr:`languages` attribute. At least
+    :attr:`default_language` or :attr:`langages` must be specified.
+
     :*languages* - languages ("en", "ru") or locales ("en_GB", "ru_RU") code.
-    The first language is default.
+    If provided, only given language can be activated.
+    If there is no :attr:`default_language` provided, first language is default.
 
     :*localepath* - a path to locale directory containing .mo file.
 
-    :*domain* - gettext domain of translation
+    :*domain* - gettext domain of translation.
+
+    :*load_from_cookie* - http cookie name. If provided, :meth:`handle` method
+    activates language from this cookie with fallback to :attr:`default_cookie`.
     """
 
     def __init__(self, localepath, default_language=None, languages=None,
@@ -45,6 +54,10 @@ class i18n_support(RequestHandler):
         self.translation_set = {}
 
     def handle(self, rctx):
+        '''
+        Adds self to rctx.vals as :attr:`language_handler` and activates
+        default language (looks it up in cookies or uses default_language)
+        '''
         rctx.vals['language_handler'] = self
         if self.load_from_cookie:
             # XXX is it right to load language here?
@@ -89,8 +102,8 @@ class i18n_support(RequestHandler):
 
     def activate(self, rctx, language):
         if self.languages is not None and language not in self.languages:
-            # XXX what should we return here?
-            return STOP
+            # check if this language is allowed
+            language = self.default_language
         trans = self.get_translation(language)
         rctx.vals['translation'] = trans
         rctx.data['language'] = rctx.conf['language'] = language
@@ -118,7 +131,9 @@ class set_lang(RequestHandler):
 
 
 class gettext_commands(CommandDigest):
-    ''''''
+    '''
+    Command used for making .po files and compiling .mo files.
+    '''
 
     plural_forms_re = re.compile(r'^(?P<value>"Plural-Forms.+?\\n")\s*$',
                                  re.MULTILINE | re.DOTALL)

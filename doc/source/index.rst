@@ -41,6 +41,7 @@ Web
 Other
 =====
 
+* :ref:`Internationalization <insanities-i18n>`
 * :ref:`Management <insanities-management>`
 * :ref:`Utilities <insanities-utils>`
 

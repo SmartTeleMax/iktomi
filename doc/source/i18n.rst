@@ -1,0 +1,33 @@
+Internationalization
+====================
+
+.. _insanities-i18n:
+
+.. toctree::
+   :maxdepth: 2
+
+* :ref:`Description <insanities-i18n>`
+* :ref:`Marking strings to be translated <insanities-N_-M_>`
+* :ref:`i18n_support handler <insanities-i18n_support>`
+* :ref:`set_lang handler <insanities-set_lang>`
+* :ref:`Gettext commands <insanities-gettext_commands>`
+* :ref:`Integration with forms <insanities-forms-i18n`
+* :ref:`Defining own i18n handlers <insanities-own-i18n>`
+
+Description
+-----------
+
+.. automodule:: insanities.ext.gettext
+
+.. automodule:: insanities.utils.i18n
+
+.. _insanities-N_-M_:
+
+Marking strings as safe
+^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: insanities.utils.i18n.N_
+
+.. autoclass:: insanities.utils.i18n.M_
+
+.. _insanities-Field:
+
