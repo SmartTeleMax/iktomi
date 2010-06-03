@@ -15,7 +15,7 @@ Contents:
 
 
 Forms
-=====
+^^^^^
 
 .. automodule:: insanities.forms
 
@@ -29,7 +29,7 @@ Forms
 
 
 Web
-===
+^^^
 
 .. automodule:: insanities.web
 
@@ -39,7 +39,7 @@ Web
 
 
 Other
-=====
+^^^^^
 
 * :ref:`Internationalization <insanities-i18n>`
 * :ref:`Management <insanities-management>`

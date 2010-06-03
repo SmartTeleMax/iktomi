@@ -16,17 +16,35 @@ class ConvertError(Exception):
 
 
 class Converter(object):
+    '''A base class for urlconverters'''
 
+    #: A key significating what converter is used in particular url template
     name=None
 
     def to_python(self, value):
+        '''
+        Accepts quoted url part and returns python object.
+
+        Should be implemented in subclasses
+        '''
         raise NotImplemented()
 
     def to_url(self, value):
+        '''
+        Accepts python object and returns string prepared to be used
+        in url building.
+
+        Should be implemented in subclasses
+        '''
         raise NotImplemented()
 
 
 class String(Converter):
+    '''
+    Unquotes urlencoded string.
+
+    The converter's name is 'string'
+    '''
 
     name='string'
 
@@ -38,6 +56,11 @@ class String(Converter):
 
 
 class Integer(Converter):
+    '''
+    Extracts integer value from url part.
+
+    The converter's name is 'int'
+    '''
 
     name='int'
 
@@ -54,6 +77,11 @@ class Integer(Converter):
 
 
 class Boolean(Converter):
+    '''
+    Translates on/off, true/false, True/False, yes/no strings to python bool.
+
+    The converter's name is 'bool'.
+    '''
 
     name='bool'
     _true = ['on', 'true', 'True', 'yes']
