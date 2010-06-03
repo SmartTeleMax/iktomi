@@ -7,6 +7,9 @@ from insanities.web.core import Wrapper
 from insanities.web.http import HttpException
 from debug_dj import technical_500_response
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Debug(Wrapper):
     def handle(self, rctx):
         try:
@@ -15,8 +18,6 @@ class Debug(Wrapper):
             raise e
         except Exception, e:
             import httplib
-            import logging
-            logger = logging.getLogger(__name__)
 
             rctx.response.status = httplib.INTERNAL_SERVER_ERROR
             exc_info = sys.exc_info()
@@ -24,3 +25,6 @@ class Debug(Wrapper):
             rctx.response.write(html)
             logger.exception(e)
         return rctx
+
+
+

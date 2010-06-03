@@ -59,7 +59,7 @@ class server(CommandDigest):
             raise ValueError('Please provide valid port value insted of "%s"' % port)
         server = make_server(host, port, WSGIHandler(self.app))
         try:
-            logging.debug('Insanities server is running on port %s\n' % port)
+            logging.info('Insanities server is running on port %s\n' % port)
             server.serve_forever()
         except KeyboardInterrupt:
             pass

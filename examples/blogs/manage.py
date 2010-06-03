@@ -1,4 +1,5 @@
 #!./venv/bin/python
+
 from os import path
 
 from insanities.ext import sqla, gettext
@@ -9,8 +10,7 @@ import models
 from app import app
 from initial import initial
 
-
-if __name__ == '__main__':
+def run(app):
     manage(dict(
         # sqlalchemy session
         sqla=sqla.SqlAlchemyCommands(cfg.DATABASES, models.ModelBase, initial=initial),
@@ -30,3 +30,6 @@ if __name__ == '__main__':
         server=commands.server(app),
 
     ))
+
+if __name__ == '__main__':
+    run(app)

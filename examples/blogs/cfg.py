@@ -20,8 +20,6 @@ DATABASES = {
 
 MEMCACHED = ['localhost:11211']
 
-DEBUG = True
-
 # =========== I18N =======
 LOCALEDIR = rel('locale')
 MODIR = rel('mo')

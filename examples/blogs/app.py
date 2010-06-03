@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from insanities.web import *
 from insanities.web.filters import *
 from insanities.web.wrappers import *
@@ -9,7 +8,6 @@ from insanities.ext.cache import local_cache_env, memcache_env
 from insanities.ext.auth import CookieAuth
 from insanities.ext.sqla import sqla_session
 from insanities.ext.gettext import i18n_support
-from insanities.ext.debug import Debug
 from insanities.utils import conf_to_dict
 
 
@@ -46,6 +44,3 @@ app = env | Map(
         )
     ),
 )
-
-if cfg.DEBUG:
-    app = Debug() | app
