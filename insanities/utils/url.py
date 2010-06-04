@@ -106,7 +106,7 @@ class URL(object):
 
 
     def __repr__(self):
-        return '<URL "%s">' % unicode(self)
+        return '<URL "%s">' % str(self)
 
 
 class UrlTemplate(object):
@@ -209,7 +209,7 @@ class UrlTemplate(object):
         return convs
 
     def __repr__(self):
-        return u'%s("%s")' % (self.__class__.__name__, self.template)
+        return '%s(%r)' % (self.__class__.__name__, self.template.encode('utf-8'))
 
 
 from ..web.urlconvs import ConvertError, convs_dict

@@ -119,6 +119,7 @@ class Prefix(unittest.TestCase):
         self.assertEqual(Reverse(app.urls, '')('percent').get_readable(), u'/հայերեն/%')
         self.assertEqual(unicode(Reverse(app.urls, '')('percent')), encoded)
 
+        self.assert_(app(rctx) is not STOP)
         self.assertEqual(app(rctx).response.status_int, 200)
 
 
@@ -162,6 +163,7 @@ class Subdomain(unittest.TestCase):
         self.assertEqual(Reverse(app.urls, '')('site').get_readable(), u'http://сайт.рф/')
         self.assertEqual(unicode(Reverse(app.urls, '')('site')), encoded)
 
+        self.assert_(app(rctx) is not STOP)
         self.assertEqual(app(rctx).response.status_int, 200)
 
 
