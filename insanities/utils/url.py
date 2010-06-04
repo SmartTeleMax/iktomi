@@ -209,7 +209,7 @@ class UrlTemplate(object):
         return convs
 
     def __repr__(self):
-        return '%s("%s")' % (self.__class__.__name__, self.template)
+        return u'%s("%s")' % (self.__class__.__name__, self.template)
 
 
 from ..web.urlconvs import ConvertError, convs_dict

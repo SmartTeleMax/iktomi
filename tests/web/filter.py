@@ -5,7 +5,7 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler, STOP
+from insanities.web.core import Map, RequestHandler, STOP, Reverse
 from insanities.web.filters import *
 from insanities.web.filters import UrlTemplate
 from insanities.web.urlconvs import ConvertError
@@ -104,6 +104,21 @@ class Prefix(unittest.TestCase):
         )
 
         rctx = RequestContext.blank('/docs/item')
+        self.assertEqual(app(rctx).response.status_int, 200)
+
+    def test_unicode(self):
+        '''Routing rules with unicode'''
+        app = Map(
+            prefix(u'/հայերեն') | Map(
+                match(u'/%', 'percent')
+            )
+        )
+        encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
+        rctx = RequestContext.blank(encoded)
+
+        self.assertEqual(Reverse(app.urls, '')('percent').get_readable(), u'/հայերեն/%')
+        self.assertEqual(unicode(Reverse(app.urls, '')('percent')), encoded)
+
         self.assertEqual(app(rctx).response.status_int, 200)
 
 

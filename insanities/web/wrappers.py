@@ -33,7 +33,7 @@ class prefix(Wrapper):
         return STOP
 
     def __repr__(self):
-        return '%s(\'%r\')' % (self.__class__.__name__, self.builder)
+        return u'%s(\'%r\')' % (self.__class__.__name__, self.builder)
 
 
 class subdomain(Wrapper):
@@ -62,7 +62,7 @@ class subdomain(Wrapper):
         return STOP
 
     def __repr__(self):
-        return '%s(\'%s\')' % (self.__class__.__name__, self.subdomain)
+        return u'%s(\'%s\')' % (self.__class__.__name__, self.subdomain)
 
 
 class Conf(Wrapper):
