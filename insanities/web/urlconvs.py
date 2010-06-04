@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from urllib import quote, unquote
 from inspect import isclass
 
 
@@ -23,7 +22,7 @@ class Converter(object):
 
     def to_python(self, value):
         '''
-        Accepts quoted url part and returns python object.
+        Accepts unicode url part and returns python object.
 
         Should be implemented in subclasses
         '''
@@ -31,7 +30,7 @@ class Converter(object):
 
     def to_url(self, value):
         '''
-        Accepts python object and returns string prepared to be used
+        Accepts python object and returns unicode prepared to be used
         in url building.
 
         Should be implemented in subclasses
@@ -49,10 +48,10 @@ class String(Converter):
     name='string'
 
     def to_python(self, value):
-        return unquote(value)
+        return value
 
     def to_url(self, value):
-        return quote(str(value))
+        return str(value)
 
 
 class Integer(Converter):
@@ -66,14 +65,14 @@ class Integer(Converter):
 
     def to_python(self, value):
         try:
-            value = int(unquote(value))
+            value = int(value)
         except ValueError:
             raise ConvertError(self.name, value)
         else:
             return value
 
     def to_url(self, value):
-        return quote(str(value))
+        return str(value)
 
 
 class Boolean(Converter):
@@ -88,7 +87,6 @@ class Boolean(Converter):
     _false = ['off', 'false', 'False', 'no']
 
     def to_python(self, value):
-        value = unquote(value)
         if value in self._true:
             return True
         elif value in self._false:

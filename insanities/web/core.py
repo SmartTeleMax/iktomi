@@ -151,9 +151,9 @@ class Reverse(object):
 
         subdomains, builders = url
 
-        host = '.'.join(subdomains)
+        host = u'.'.join(subdomains)
         absolute = (host != self.host)
-        path = ''.join([b(**kwargs) for b in builders])
+        path = u''.join([b(**kwargs) for b in builders])
         return URL(path, host=host)
 
 

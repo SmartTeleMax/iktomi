@@ -84,7 +84,10 @@ class URL(object):
         query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
                                 for k,v in self.query.iteritems()])  \
                  if self.query else '')
-        path = urlquote(self.path)
+        if isinstance(self.path, unicode):
+            path = urlquote(self.path.encode('utf-8'))
+        else:
+            path = urlquote(self.path)
 
         if self.host:
             host = self.host.encode('idna')
@@ -99,14 +102,14 @@ class URL(object):
                  if self.query else '')
 
         if self.host:
-            port = ':' + self.port if self.port else ''
+            port = u':' + self.port if self.port else u''
             return u''.join((self.schema, '://', self.host, port, self.path,  query))
         else:
             return self.path + query
 
 
     def __repr__(self):
-        return '<URL "%s">' % str(self)
+        return '<URL %r>' % str(self)
 
 
 class UrlTemplate(object):
@@ -117,7 +120,7 @@ class UrlTemplate(object):
             (?P<args>\(.*?\))?                      # converter args
             \:?                                     # delimiter
             (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?    # variable name
-            >$''', re.VERBOSE)
+            >$''', re.VERBOSE | re.U)
     _static_url_pattern = re.compile(r'^[^<]*?$')
 
     def __init__(self, template, match_whole_str=True, converters=None):
@@ -129,7 +132,7 @@ class UrlTemplate(object):
         self._pattern = re.compile(self._parse(template))
 
     def match(self, path):
-        m = self._pattern.match(unquote(path))
+        m = self._pattern.match(unquote(path).decode('utf-8'))
         if m:
             kwargs = m.groupdict()
             # convert params
@@ -138,7 +141,7 @@ class UrlTemplate(object):
                 # now we replace converter by class instance
                 conv = self._init_converter(conv_name, args)
                 try:
-                    kwargs[k] = conv.to_python(v)
+                    kwargs[k] = conv.to_python(unquote(v).decode('utf-8'))
                 except ConvertError, err:
                     logger.debug('ConvertError by "%s", value "%s"' % (err.converter, err.value.encode('utf-8')))
                     return False, {}
@@ -177,13 +180,14 @@ class UrlTemplate(object):
         return result
 
     def __call__(self, **kwargs):
-        result = ''
+        result = u''
         for part in self._builder_params:
             if isinstance(part, list):
                 var, conv_name, args = part
                 conv = self._init_converter(conv_name, args)
                 value = kwargs[var]
-                result += conv.to_url(value)
+                #XXX unicode?
+                result += unicode(conv.to_url(value))
             else:
                 result += part
         return result

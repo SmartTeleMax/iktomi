@@ -116,10 +116,13 @@ class Prefix(unittest.TestCase):
         encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
         rctx = RequestContext.blank(encoded)
 
+        self.assertEqual(str(Reverse(app.urls, '')('percent')), encoded)
         self.assertEqual(Reverse(app.urls, '')('percent').get_readable(), u'/հայերեն/%')
-        self.assertEqual(unicode(Reverse(app.urls, '')('percent')), encoded)
 
         self.assert_(app(rctx) is not STOP)
+
+        # rctx have prefixes, so we need new one
+        rctx = RequestContext.blank(encoded)
         self.assertEqual(app(rctx).response.status_int, 200)
 
 
@@ -158,11 +161,10 @@ class Subdomain(unittest.TestCase):
         '''IRI tests'''
         app = Map(subdomain(u'рф') | subdomain(u'сайт') | match('/', 'site'))
         encoded = 'http://xn--80aswg.xn--p1ai/'
-        rctx = RequestContext.blank(encoded)
-
         self.assertEqual(Reverse(app.urls, '')('site').get_readable(), u'http://сайт.рф/')
-        self.assertEqual(unicode(Reverse(app.urls, '')('site')), encoded)
+        self.assertEqual(str(Reverse(app.urls, '')('site')), encoded)
 
+        rctx = RequestContext.blank(encoded)
         self.assert_(app(rctx) is not STOP)
         self.assertEqual(app(rctx).response.status_int, 200)
 

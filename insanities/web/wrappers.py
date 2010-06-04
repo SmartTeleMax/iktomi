@@ -5,6 +5,7 @@ __all__ = ['prefix', 'subdomain', 'Conf']
 import logging
 import re
 import httplib
+from urllib import quote
 from os import path
 from .core import Wrapper, STOP
 from ..utils.url import UrlTemplate
@@ -27,7 +28,7 @@ class prefix(Wrapper):
         matched, kwargs = self.builder.match(rctx.request.path)
         if matched:
             rctx.data.update(kwargs)
-            rctx.request.add_prefix(self.builder(**kwargs))
+            rctx.request.add_prefix(quote(self.builder(**kwargs).encode('utf-8')))
             rctx = self.exec_wrapped(rctx)
             return rctx
         return STOP
@@ -40,7 +41,7 @@ class subdomain(Wrapper):
 
     def __init__(self, _subdomain):
         super(subdomain, self).__init__()
-        self.subdomain = _subdomain
+        self.subdomain = unicode(_subdomain)
 
     def trace(self, tracer):
         if self.subdomain:
@@ -48,6 +49,7 @@ class subdomain(Wrapper):
 
     def handle(self, rctx):
         subdomain = rctx.request.subdomain
+        #XXX: here we can get 'idna' encoded sequence, that is the bug
         if self.subdomain:
             slen = len(self.subdomain)
             delimiter = subdomain[-slen-1:-slen]
@@ -56,7 +58,9 @@ class subdomain(Wrapper):
             matches = not subdomain
 
         if matches:
-            rctx.request.add_subdomain(self.subdomain)
+            #XXX: here we add subdomain prefix. What codec we need 'utf-8' or 'idna'
+            rctx.request.add_subdomain(quote(self.subdomain.encode('utf-8')))
+            #rctx.request.add_subdomain(self.subdomain)
             rctx = self.exec_wrapped(rctx)
             return rctx
         return STOP
