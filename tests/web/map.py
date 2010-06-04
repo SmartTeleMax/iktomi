@@ -131,10 +131,7 @@ class MapReverse(unittest.TestCase):
         self.assertEqual(url_for('nested.item'), '/nested/')
         self.assertEqual(url_for('other'), '/other/')
 
-        def fail():
-            url_for('nested')
-
-        self.assertRaises(KeyError, fail)
+        self.assertRaises(KeyError, lambda: url_for('nested'))
 
     def test_nested_maps_with_ns(self):
         '''Nested Maps with namespace'''
@@ -164,6 +161,40 @@ class MapReverse(unittest.TestCase):
         self.assertEqual(url_for('other.item'), '/other/')
 
         self.assertRaises(KeyError, lambda: url_for('nested'))
+
+    def test_nested_namespaces(self):
+        '''Reversing urls with nested namespaces'''
+        def handler(r): pass
+
+        urls = {}
+        def write_urls(rctx):
+            urls['local'] = rctx.vals.url_for('all')
+            urls['parent'] = rctx.vals.url_for('about.contacts')
+            urls['global'] = rctx.vals.url_for('en.news.all')
+
+        site = Map(
+            prefix('/news') | Conf('news') | Map(
+                match('/test', 'test') | write_urls,
+                match('/all', 'all') | handler
+            ),
+            prefix('/about') | Conf('about') | Map(
+                match('/contacts', 'contacts') | handler
+            )
+        )
+
+        app = Map(
+            prefix('/en') | Conf('en') | site,
+            prefix('/ru') | Conf('ru') | site,
+        )
+
+        rctx = RequestContext.blank('/ru/news/test')
+        app(rctx)
+
+        self.asserEqual(urls['local'], '/ru/news/all')
+        self.asserEqual(urls['global'], '/en/news/all')
+        self.asserEqual(urls['parent'], '/ru/about/contacts')
+        # will we fix this or not?
+        # If we will we have to discover all usecases and write additional tests
 
 
     def test_subdomain(self):
