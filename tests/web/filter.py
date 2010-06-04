@@ -153,6 +153,17 @@ class Subdomain(unittest.TestCase):
         self.assert_(app(RequestContext.blank('http://lk.host/')) is STOP)
         self.assert_(app(RequestContext.blank('http://mhost/')) is STOP)
 
+    def test_unicode(self):
+        '''IRI tests'''
+        app = Map(subdomain(u'рф') | subdomain(u'сайт') | match('/', 'site'))
+        encoded = 'http://xn--80aswg.xn--p1ai/'
+        rctx = RequestContext.blank(encoded)
+
+        self.assertEqual(Reverse(app.urls, '')('site').get_readable(), u'http://сайт.рф/')
+        self.assertEqual(unicode(Reverse(app.urls, '')('site')), encoded)
+
+        self.assertEqual(app(rctx).response.status_int, 200)
+
 
 class Match(unittest.TestCase):
 
