@@ -237,3 +237,27 @@ class MapReverse(unittest.TestCase):
             match('/second', 'second') | handler,
             match('/second', 'second') | handler)
         )
+
+    def test_repeated_chaining(self):
+        '''Check second usage of handlers in chaining'''
+
+        class Write(RequestHandler):
+            def __init__(self, letter):
+                RequestHandler.__init__(self)
+                self.letter = letter
+            def handle(self, rctx):
+                rctx.log = getattr(rctx, 'log', '') + self.letter
+                return rctx
+
+        w1, w2, w3 = Write('1'), Write('2'), Write('3')
+
+        ch1 = w1 | w2
+        ch2 = w1 | w3 # this chain has side-effect!
+
+        rctx = RequestContext.blank('')
+        rctx = ch1(rctx)
+        self.assertEqual(rctx.log, '12') # got '123'. wtf?
+
+        rctx = RequestContext.blank('')
+        ch2(rctx)
+        self.assertEqual(log, '13')
