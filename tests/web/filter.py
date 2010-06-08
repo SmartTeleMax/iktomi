@@ -174,7 +174,7 @@ class Match(unittest.TestCase):
     def test_simple_match(self):
         '''Check simple case of match'''
 
-        m = match('/first', 'first')
+        m = match('/first', 'first') | (lambda x: x)
 
         rctx = RequestContext(Request.blank('/first').environ)
         rctx = m(rctx)

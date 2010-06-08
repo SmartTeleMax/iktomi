@@ -64,7 +64,7 @@ class TranslationTestCase(unittest.TestCase):
                 set_lang('ru') | test_backdoor,
             ])
         rctx = self.run_app(app)
-        self.assertEqual(rctx.language, 'ru')
+        self.assertEqual(rctx.conf.language, 'ru')
         assert isinstance(rctx.vals.translation, GNUTranslations)
 
     def test_ntranslation(self):

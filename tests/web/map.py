@@ -117,7 +117,7 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler,
-            Conf('nested') | Map(
+            namespace('nested') | Map(
                 match('/nested/', 'item') | handler
             ),
             Map(
@@ -142,10 +142,10 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler,
-            Conf('nested') | Map(
+            namespace('nested') | Map(
                 match('/nested/', 'item') | handler
             ),
-            Conf('other') | Map(
+            namespace('other') | Map(
                 match('/other/', 'item') | handler
             ),
             Map(
@@ -174,18 +174,18 @@ class MapReverse(unittest.TestCase):
             urls['global'] = rctx.vals.url_for('en.news.all')
 
         site = Map(
-            prefix('/news') | Conf('news') | Map(
+            prefix('/news') | namespace('news') | Map(
                 match('/test', 'test') | write_urls,
                 match('/all', 'all') | handler
             ),
-            prefix('/about') | Conf('about') | Map(
+            prefix('/about') | namespace('about') | Map(
                 match('/contacts', 'contacts') | handler
             )
         )
 
         app = Map(
-            prefix('/en') | Conf('en') | site,
-            prefix('/ru') | Conf('ru') | site,
+            prefix('/en') | namespace('en') | site,
+            prefix('/ru') | namespace('ru') | site,
         )
 
         rctx = RequestContext.blank('/ru/news/test')
@@ -260,4 +260,4 @@ class MapReverse(unittest.TestCase):
 
         rctx = RequestContext.blank('')
         ch2(rctx)
-        self.assertEqual(log, '13')
+        self.assertEqual(rctx.log, '13')

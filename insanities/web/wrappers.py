@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['prefix', 'subdomain', 'Conf']
+__all__ = ['prefix', 'subdomain', 'namespace', 'Conf']
 
 import logging
 import re
@@ -70,8 +70,11 @@ class namespace(RequestHandler):
         # namespace is str
         self.namespace = ns
 
-    def handle(rctx):
-        self.conf['namespace'] = self.namespace
+    def handle(self, rctx):
+        if rctx.conf['namespace']:
+            rctx.conf['namespace'] += '.' + self.namespace
+        else:
+            rctx.conf['namespace'] = self.namespace
         return rctx.next()
 
     def trace(self, tracer):

@@ -80,10 +80,13 @@ class Map(RequestHandler):
 
     def __init__(self, *handlers, **kwargs):
         self.grid = kwargs.pop('initial_grid', [])
-        assert handlers or self.grid
         for handler in handlers:
+            handler = prepare_handler(handler)
             row = map_row_from_handler(handler)
             self.grid.append(row)
+        if not self.grid:
+            # length of grid must be at least 1
+            self.grid.append([])
         self.__urls = self.compile_urls_map()
 
     def __or__(self, next_):

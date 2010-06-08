@@ -21,11 +21,12 @@ class FormEnvironment(BaseFormEnvironment):
     FormEnvironment should contain template rendering wrapper methods.
     Also it may contain any other stuff used in particular project's forms.
     '''
-    def __init__(self, env, rctx=None, globals={}, locals={}):
+    def __init__(self, env, rctx=None, globals=None, locals=None, **kw):
         self.env = env
         self.rctx = rctx
-        self.globals = globals
-        self.locals = locals
+        self.globals = globals or {}
+        self.locals = locals or {}
+        #self.__dict__.update(kw) # XXX ???
 
     def get_template(self, template):
         return self.env.get_template('%s.html' % template,
