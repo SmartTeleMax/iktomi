@@ -21,12 +21,11 @@ class FormEnvironment(BaseFormEnvironment):
     FormEnvironment should contain template rendering wrapper methods.
     Also it may contain any other stuff used in particular project's forms.
     '''
-    def __init__(self, env, rctx=None, globals={}, locals={}, **kwargs):
+    def __init__(self, env, rctx=None, globals={}, locals={}):
         self.env = env
         self.rctx = rctx
         self.globals = globals
         self.locals = locals
-        self.__dict__.update(kwargs)
 
     def get_template(self, template):
         return self.env.get_template('%s.html' % template,
@@ -35,8 +34,6 @@ class FormEnvironment(BaseFormEnvironment):
     def render(self, template, **kwargs):
         vars = dict(self.locals, **kwargs)
         return self.get_template(template).render(**vars)
-
-
 
 
 class render_to(RequestHandler):
@@ -59,7 +56,7 @@ class render_to(RequestHandler):
         logger.debug('render_to - rendering template "%s"' % self.template)
         rendered = template.render(**template_kw)
         rctx.response.write(rendered)
-        return rctx
+        return rctx.next()
 
 
 class jinja_env(RequestHandler):
@@ -69,7 +66,6 @@ class jinja_env(RequestHandler):
 
     def __init__(self, param='TEMPLATES', paths=None, autoescape=False,
                  FormEnvCls=FormEnvironment, extensions=None):
-        super(jinja_env, self).__init__()
         self.param = param
         self.paths = paths
         self.autoescape = autoescape
@@ -97,7 +93,7 @@ class jinja_env(RequestHandler):
             )
         form_env = self.FormEnvCls(env=self.env, **kw)
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
-        return rctx
+        return rctx.next()
 
     def _paths_list(self, paths):
         paths_ = []

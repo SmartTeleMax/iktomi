@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from ..web.core import STOP, Wrapper, RequestHandler, FunctionWrapper
+from ..web.core import STOP, RequestHandler, FunctionWrapper
 from ..web.http import HttpException
 from ..web.filters import *
 from ..utils import N_
@@ -50,7 +50,7 @@ class LoginForm(Form):
 
 
 
-class CookieAuth(Wrapper):
+class CookieAuth(RequestHandler):
     '''
     CookieAuth instances allows to add cookies based authentication to you web app.
     It tries to be very agile.
@@ -98,7 +98,7 @@ class CookieAuth(Wrapper):
         logger.debug('Got user: %r' % user)
         rctx.vals['user'] = user
         try:
-            result = self.exec_wrapped(rctx)
+            result = rctx.next()
         finally:
             del rctx.vals['user']
         return result

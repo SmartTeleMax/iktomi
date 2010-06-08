@@ -86,15 +86,36 @@ class Request(_Request):
                                 decode_keys=self.decode_param_names)
 
 
-class DictWithNamespace(object):
+class CopyOnUpdateDict(object):
     #TODO: add unitests
+    # XXX i don't like this realization
 
-    def __init__(self, **data):
-        self._stack = []
-        self._current_data = data
-        self._current_ns = ''
+    def __init__(self, **kwargs):
+        self._current_data = data = kwargs
+        self._stack = [[data, False]]
+        self._changed = False
+
+    def commit(self):
+        data, changed = self._stack.pop()
+        olddata, oldchanged = self._stack.pop()
+        self._changed = changed or oldchanged
+        self._stack.append([data, changed])
+
+    def rollback(self):
+        self._current_data, self._changed = self._stack.pop()
+
+    def lazy_copy(self):
+        self._stack.append([self._current_data, False])
+        self._changed = False
+
+    def _do_copy(self):
+        self._current_data = self._current_data.copy()
+        self._stack[-1][0] = self._current_data
+        self._stack[-1][1] = self._changed = True
 
     def __setitem__(self, k, v):
+        if not self._changed:
+            self._do_copy()
         self._current_data[k] = v
 
     def __contains__(self, k):
@@ -104,9 +125,13 @@ class DictWithNamespace(object):
         return self._current_data[k]
 
     def __delitem__(self, k):
+        if not self._changed:
+            self._do_copy()
         del self._current_data[k]
 
     def update(self, other):
+        if not self._changed:
+            self._do_copy()
         self._current_data.update(other)
 
     def __getattr__(self, name):
@@ -120,32 +145,9 @@ class DictWithNamespace(object):
     def as_dict(self):
         return self._current_data.copy()
 
-    def push(self, ns, **data):
-        self._stack.append((self._current_ns, self._current_data))
-        new_data = self._current_data.copy()
-        new_data.update(data)
-        self._current_data = new_data
-        self._current_ns = self._current_ns + '.' + ns if self._current_ns else ns
-
-    def pop(self):
-        ns, data = self._current_ns, self._current_data
-        self._current_ns, self._current_data = self._stack.pop()
-        return ns, data
-
-    def get_namespace(self, ns):
-        for namespace, data in self._stack:
-            if ns == namespace:
-                return data
-        if self._current_ns == ns:
-            return self._current_data
-        raise ValueError('no namespace "%s"' % ns)
-
-    @property
-    def namespace(self):
-        return self._current_ns
-
     def __repr__(self):
         return repr(self._current_data)
+
 
 
 class RequestContext(object):
@@ -161,14 +163,14 @@ class RequestContext(object):
 
         #: this attribute is for views and template data,
         #: for example filter match appends params here.
-        self.data = DictWithNamespace()
+        self.data = CopyOnUpdateDict()
 
         #: this is config, static, declarative (key, value)
-        self.conf = DictWithNamespace()
+        self.conf = CopyOnUpdateDict(namespace='')
 
         #: this storage is for nesecary objects like db session, templates env,
         #: cache, url_for. something like dynamic config values.
-        self.vals = DictWithNamespace()
+        self.vals = CopyOnUpdateDict()
 
     @classmethod
     def blank(cls, url, **data):
@@ -180,3 +182,30 @@ class RequestContext(object):
         POST = data if data else None
         env = _Request.blank(url, POST=POST).environ
         return cls(env)
+
+    def _set_map_state(self, _map, i, j):
+        self._map = _map
+        self._map_i, self._map_j = i, j
+
+    def next(self):
+        return self._map.run_handler(self, self._map_i, self._map_j)
+
+    # XXX too much code
+    def lazy_copy(self):
+        self.data.lazy_copy()
+        self.vals.lazy_copy()
+        self.conf.lazy_copy()
+
+    def commit(self):
+        self.data.commit()
+        self.vals.commit()
+        self.conf.commit()
+
+    def rollback(self):
+        self.data.rollback()
+        self.vals.rollback()
+        self.conf.rollback()
+
+    #def stop(self): cross import
+    #    return STOP
+

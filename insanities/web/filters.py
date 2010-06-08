@@ -30,7 +30,7 @@ class match(RequestHandler):
         matched, kwargs = self.builder.match(rctx.request.path)
         if matched:
             rctx.data.update(kwargs)
-            return rctx
+            return rctx.next()
         return STOP
 
     def __repr__(self):
@@ -46,7 +46,7 @@ class method(RequestHandler):
 
     def handle(self, rctx):
         if rctx.request.method in self._names:
-            return rctx
+            return rctx.next()
         return STOP
 
     def __repr__(self):
@@ -66,7 +66,7 @@ class ctype(RequestHandler):
 
     def handle(self, rctx):
         if rctx.request.content_type in self._types:
-            return rctx
+            return rctx.next()
         return STOP
 
     def __repr__(self):
@@ -85,7 +85,7 @@ def static(rctx):
         if path.exists(file_path) and path.isfile(file_path):
             with open(file_path, 'r') as f:
                 rctx.response.write(f.read())
-            return rctx
+            return rctx.next()
         else:
             raise HttpException(httplib.NOT_FOUND)
     return STOP
