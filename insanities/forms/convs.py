@@ -72,6 +72,14 @@ class Converter(object):
     #: If null is True Converter represents empty value ('' or None) as None
     null = False
 
+    #: A list of callables to make additional validation. 
+    #: Validators recieve converter and value and raising ValidationError
+    #: if there is something wrong.
+    #: Validators are attached to converter by chaining::
+    #:
+    #:    conv | myvalidator1 | myvalidator2
+    validators = None
+
     # It is defined as read-only property to avoid setting it to True where
     # converter doesn't support it.
     @property
@@ -86,15 +94,21 @@ class Converter(object):
         self.field = weakproxy(field)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
+        self.validators = self.validators or []
 
     @property
     def env(self):
         return self.field.env
 
-    def to_python_wrapper(self, value):
+    def accept(self, value):
+        '''Converts the message and validates it by chained validators'''
         if self.null and value in ('', None):
+            # are we sure we need this?
             return None
-        return self.to_python(value)
+        value = self.to_python(value)
+        for validate in ():
+            validate(self, value)
+        return value
 
     def to_python(self, value):
         """ custom converters should override this """
@@ -104,18 +118,18 @@ class Converter(object):
         """ custom converters should override this """
         return value
 
-    def __or__(self, next):
+    def __or__(self, validator):
         """ chaining converters """
-        if isinstance(next, Chain):
-            return Chain((self,) + next.convs)
-        return Chain((self, next))
+        validators = self.validators + [validator]
+        return self(validators=validators)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
 
-    def error(self, error_type, count=None):
+    def error(self, error_type, count=None,
+              default=N_('unknown error')):
         '''
         Raises :class:`ValidationError <insanities.forms.convs.ValidationError>` with the
         message taken from converter's error_%(error_type) method and formatted with
@@ -137,9 +151,9 @@ class Converter(object):
                         self.error('bar', count=self.BARS)
                     return value
         '''
-        message_template = getattr(self, 'error_'+error_type)
-        if callable(message_template):
-            message_template = message_template()
+        message_template = getattr(self, 'error_'+error_type, default)
+        #if callable(message_template):
+        #    message_template = message_template()
         message_template = self.env.gettext(message_template, count)
         message = message_template % self.__dict__
         raise ValidationError(message)
@@ -147,42 +161,6 @@ class Converter(object):
     def _assert(self, expression, error_type, count=None):
         if not expression:
             self.error(error_type, count=None)
-
-
-class Chain(Converter):
-    """
-    wrapper for chained converters
-    """
-
-    def __init__(self, convs=(), **kwargs):
-        field = kwargs.get('field', None)
-        if field is not None:
-            convs = (conv(field=field) for conv in convs)
-        self.convs = tuple(convs)
-        super(Chain, self).__init__(**kwargs)
-
-    def to_python(self, value):
-        for conv in self.convs:
-            value = conv.to_python_wrapper(value)
-        return value
-
-    def from_python(self, value):
-        for conv in reversed(self.convs):
-            value = conv.from_python(value)
-        return value
-
-    def __or__(self, next):
-        return Chain(self.convs+(next,))
-
-    def __ior__(self, next):
-        # is this ever used?
-        self.convs += (next,)
-        return self
-
-    def __call__(self, convs=None, **kwargs):
-        if convs is None:
-            convs = self.convs
-        return Converter.__call__(self, convs=convs, **kwargs)
 
 
 class Char(Converter):

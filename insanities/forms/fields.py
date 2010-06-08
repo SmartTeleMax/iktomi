@@ -131,7 +131,7 @@ class BaseField(object):
         return '%s-%s' % (self.form.id, self.input_name)
 
     def to_python(self, value):
-        return self.conv.to_python_wrapper(value)
+        return self.conv.accept(value)
 
     def from_python(self, value):
         return self.conv.from_python(value)
