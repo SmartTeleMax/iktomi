@@ -87,7 +87,6 @@ class Request(_Request):
 
 
 class CopyOnUpdateDict(object):
-    #TODO: add unitests
     # XXX i don't like this realization
 
     def __init__(self, **kwargs):

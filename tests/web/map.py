@@ -74,8 +74,6 @@ class MapInit(unittest.TestCase):
                 self.key = key
                 self.value=value
             def handle(self, rctx):
-                #if rctx.conf.x == 4:
-                #    import pdb; pdb.set_trace()
                 test.assertEqual(rctx.conf.get(self.key, None), self.value)
                 return rctx.next()
 
