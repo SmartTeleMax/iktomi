@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['HttpException', 'RequestContext', ]
+__all__ = ['HttpException', ]
 
 import logging
 import httplib
@@ -102,7 +102,8 @@ class CopyOnUpdateDict(object):
         self._stack.append([data, changed])
 
     def rollback(self):
-        self._current_data, self._changed = self._stack.pop()
+        self._stack.pop()
+        self._current_data, self._changed = self._stack[-1]
 
     def lazy_copy(self):
         self._stack.append([self._current_data, False])
@@ -148,64 +149,4 @@ class CopyOnUpdateDict(object):
     def __repr__(self):
         return repr(self._current_data)
 
-
-
-class RequestContext(object):
-    '''
-    Context of the request. A class containing request and response objects and
-    a number of data containers with request environment and processing data.
-    '''
-
-    def __init__(self, wsgi_environ):
-        self.request = Request(environ=wsgi_environ, charset='utf8')
-        self.response = Response()
-        self.wsgi_env = wsgi_environ.copy()
-
-        #: this attribute is for views and template data,
-        #: for example filter match appends params here.
-        self.data = CopyOnUpdateDict()
-
-        #: this is config, static, declarative (key, value)
-        self.conf = CopyOnUpdateDict(namespace='')
-
-        #: this storage is for nesecary objects like db session, templates env,
-        #: cache, url_for. something like dynamic config values.
-        self.vals = CopyOnUpdateDict()
-
-    @classmethod
-    def blank(cls, url, **data):
-        '''
-        Method returning blank rctx. Very useful for testing
-
-        `data` - POST parameters.
-        '''
-        POST = data if data else None
-        env = _Request.blank(url, POST=POST).environ
-        return cls(env)
-
-    def _set_map_state(self, _map, i, j):
-        self._map = _map
-        self._map_i, self._map_j = i, j
-
-    def next(self):
-        return self._map.run_handler(self, self._map_i, self._map_j)
-
-    # XXX too much code
-    def lazy_copy(self):
-        self.data.lazy_copy()
-        self.vals.lazy_copy()
-        self.conf.lazy_copy()
-
-    def commit(self):
-        self.data.commit()
-        self.vals.commit()
-        self.conf.commit()
-
-    def rollback(self):
-        self.data.rollback()
-        self.vals.rollback()
-        self.conf.rollback()
-
-    #def stop(self): cross import
-    #    return STOP
 

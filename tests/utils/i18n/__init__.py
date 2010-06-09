@@ -6,7 +6,8 @@ import shutil
 
 from insanities.forms import fields, convs, form, widgets, media, perms
 from insanities.web import Map
-from insanities.web.http import Request, RequestContext
+from insanities.web.http import Request
+from insanities.web.core import RequestContext
 
 from insanities.ext.jinja2 import jinja_env, FormEnvironment
 from insanities.utils.i18n import gettext_support, set_lang, gettext_commands

@@ -6,7 +6,7 @@ import logging
 import types
 import httplib
 from inspect import getargspec
-from .http import HttpException, RequestContext
+from .http import HttpException, Request, CopyOnUpdateDict, Response
 from ..utils.url import URL
 
 
@@ -234,3 +234,61 @@ class Tracer(object):
 
     def __getattr__(self, name):
         return lambda e: self._current_step.setdefault(name, []).append(e)
+
+
+class RequestContext(object):
+    '''
+    Context of the request. A class containing request and response objects and
+    a number of data containers with request environment and processing data.
+    '''
+
+    def __init__(self, wsgi_environ):
+        self.request = Request(environ=wsgi_environ, charset='utf8')
+        self.response = Response()
+        self.wsgi_env = wsgi_environ.copy()
+
+        #: this attribute is for views and template data,
+        #: for example filter match appends params here.
+        self.data = CopyOnUpdateDict()
+
+        #: this is config, static, declarative (key, value)
+        self.conf = CopyOnUpdateDict(namespace='')
+
+        #: this storage is for nesecary objects like db session, templates env,
+        #: cache, url_for. something like dynamic config values.
+        self.vals = CopyOnUpdateDict()
+
+    @classmethod
+    def blank(cls, url, **data):
+        '''
+        Method returning blank rctx. Very useful for testing
+
+        `data` - POST parameters.
+        '''
+        POST = data or None
+        env = Request.blank(url, POST=POST).environ
+        return cls(env)
+
+    def _set_map_state(self, _map, i, j):
+        self._map = _map
+        self._map_i, self._map_j = i, j
+
+    def next(self):
+        return self._map.run_handler(self, self._map_i, self._map_j)
+
+    def _dict_action(self, action):
+        for d in self.data, self.vals, self.conf:
+            getattr(d, action)()
+
+    def lazy_copy(self):
+        self._dict_action('lazy_copy')
+
+    def commit(self):
+        self._dict_action('commit')
+
+    def rollback(self):
+        self._dict_action('rollback')
+
+    def stop(self):
+        return STOP
+
