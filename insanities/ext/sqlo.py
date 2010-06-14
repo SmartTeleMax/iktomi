@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .. import CommandDigest
+from . import CommandDigest
 
 __all__ = ['sqlobject']
 
