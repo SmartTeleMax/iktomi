@@ -22,10 +22,10 @@
 <ul>
     {% for post in paginator.items %}
     <li>
-        <a href="{{ url_for('post', id=post.id) }}">{{ post.title }}</a>
-        {% if rctx.vals.user %}
-        <a class="action" href="{{ url_for('edit-post', id=post.id) }}">{{ _('edit') }}</a>
-        <a class="action" href="{{ url_for('del-post', id=post.id) }}">{{ _('delete') }}</a>
+        <a href="{{ VALS.url_for('post', id=post.id) }}">{{ post.title }}</a>
+        {% if VALS.user %}
+        <a class="action" href="{{ VALS.url_for('edit-post', id=post.id) }}">{{ _('edit') }}</a>
+        <a class="action" href="{{ VALS.url_for('del-post', id=post.id) }}">{{ _('delete') }}</a>
         {% endif %}
     </li>
     {% endfor %}
@@ -40,11 +40,11 @@
 {% endif %}
 
 <div clas="actoins">
-    {% if rctx.vals.user %}
-    <a href="{{ url_for('add-post') }}">{{ _('add post') }}</a>
-    <a href="{{ url_for('logout') }}">{{ _('logout') }}</a>
+    {% if VALS.user %}
+    <a href="{{ VALS.url_for('add-post') }}">{{ _('add post') }}</a>
+    <a href="{{ VALS.url_for('logout') }}">{{ _('logout') }}</a>
     {% else %}
-    <a href="{{ url_for('login') }}">{{ _('login') }}</a>
+    <a href="{{ VALS.url_for('login') }}">{{ _('login') }}</a>
     {% endif %}
 </div>
 

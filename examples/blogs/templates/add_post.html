@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<a href="{{ url_for('posts') }}">{{ _('back to posts page') }}</a>
+<a href="{{ VALS.url_for('posts') }}">{{ _('back to posts page') }}</a>
 <form action="" method="post">
     {{ form.render() }}
     <input type="submit" value="{{ _('save post') }}" />
