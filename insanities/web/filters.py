@@ -27,8 +27,9 @@ class match(RequestHandler):
         tracer.builder(self.builder)
 
     def handle(self, rctx):
-        matched, kwargs = self.builder.match(rctx.request.path)
+        matched, kwargs = self.builder.match(rctx.request.path, rctx=rctx)
         if matched:
+            rctx.conf.url_name = self.url_name
             rctx.data.update(kwargs)
             return rctx.next()
         return STOP

@@ -24,7 +24,7 @@ class prefix(RequestHandler):
         tracer.builder(self.builder)
 
     def handle(self, rctx):
-        matched, kwargs = self.builder.match(rctx.request.path)
+        matched, kwargs = self.builder.match(rctx.request.path, rctx=rctx)
         if matched:
             rctx.data.update(kwargs)
             rctx.request.add_prefix(quote(self.builder(**kwargs).encode('utf-8')))

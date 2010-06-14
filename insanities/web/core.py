@@ -257,6 +257,8 @@ class RequestContext(object):
         #: this storage is for nesecary objects like db session, templates env,
         #: cache, url_for. something like dynamic config values.
         self.vals = CopyOnUpdateDict()
+        # XXX it's big question, which dicts we have to commit after map success
+        self._local = CopyOnUpdateDict()
 
     @classmethod
     def blank(cls, url, **data):
@@ -270,11 +272,14 @@ class RequestContext(object):
         return cls(env)
 
     def _set_map_state(self, _map, i, j):
-        self._map = _map
-        self._map_i, self._map_j = i, j
+        v = self._local
+        v['_map'], v['_map_i'], v['_map_j'] = _map, i, j
 
     def next(self):
-        return self._map.run_handler(self, self._map_i, self._map_j)
+        v = self._local
+        if '_map' in self._local:
+            return v._map.run_handler(self, v._map_i, v._map_j)
+        return self
 
     def _dict_action(self, action):
         for d in self.data, self.vals, self.conf:
@@ -282,12 +287,15 @@ class RequestContext(object):
 
     def lazy_copy(self):
         self._dict_action('lazy_copy')
+        self._local.lazy_copy()
 
     def commit(self):
         self._dict_action('commit')
+        self._local.rollback()
 
     def rollback(self):
         self._dict_action('rollback')
+        self._local.rollback()
 
     def stop(self):
         return STOP

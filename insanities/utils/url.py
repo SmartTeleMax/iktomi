@@ -131,7 +131,7 @@ class UrlTemplate(object):
         self._converters = {}
         self._pattern = re.compile(self._parse(template))
 
-    def match(self, path):
+    def match(self, path, **kwargs):
         m = self._pattern.match(unquote(path).decode('utf-8'))
         if m:
             kwargs = m.groupdict()
@@ -141,7 +141,7 @@ class UrlTemplate(object):
                 # now we replace converter by class instance
                 conv = self._init_converter(conv_name, args)
                 try:
-                    kwargs[k] = conv.to_python(unquote(v).decode('utf-8'))
+                    kwargs[k] = conv.to_python(unquote(v).decode('utf-8'), **kwargs)
                 except ConvertError, err:
                     logger.debug('ConvertError by "%s", value "%s"' % (err.converter, err.value.encode('utf-8')))
                     return False, {}

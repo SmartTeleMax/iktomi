@@ -46,10 +46,14 @@ class render_to(RequestHandler):
         self.param = param
         self._kwargs = kwargs
 
-    def handle(self, rctx):
+    def get_template(self, rctx):
         template = self.template or rctx.data[self.param]
         if isinstance(template, basestring):
             template = rctx.vals.jinja_env.get_template(template)
+        return template
+
+    def handle(self, rctx):
+        template = self.get_template(rctx)
 
         template_kw = self._kwargs.copy()
         template_kw['VALS'] = rctx.vals.as_dict()
