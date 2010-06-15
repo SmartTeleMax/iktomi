@@ -37,10 +37,6 @@ class RequestHandler(object):
         next_ = prepare_handler(next_)
         return Map(initial_grid=[[self] + map_row_from_handler(next_)])
 
-    def __call__(self, rctx):
-        logger.debug('Handled by %r' % self)
-        return self.handle(rctx)
-
     def handle(self, rctx):
         '''This method should be overridden in subclasses.
         It always takes rctx object as only argument and returns it'''
@@ -77,6 +73,9 @@ class Reverse(object):
 
 
 class Map(RequestHandler):
+    '''
+        Strores combinations RequestHandler instances
+    '''
 
     def __init__(self, *handlers, **kwargs):
         self.grid = kwargs.pop('initial_grid', [])
@@ -101,8 +100,6 @@ class Map(RequestHandler):
         return self.__urls
 
     def handle(self, rctx):
-        logger.debug('Map begin %r' % self)
-
         # construct url_for
         last_url_for = getattr(rctx.vals, 'url_for', None)
         if last_url_for is None:
@@ -133,7 +130,8 @@ class Map(RequestHandler):
             return rctx
         else:
             rctx._set_map_state(self, i, j+1)
-            return handler(rctx)
+            logger.debug('Handled by %r' % handler)
+            return handler.handle(rctx)
 
     def compile_urls_map(self):
         tracer = Tracer()
@@ -145,6 +143,10 @@ class Map(RequestHandler):
                 item.trace(tracer)
             tracer.finish_step()
         return tracer.urls
+
+    def __call__(self, rctx):
+        logger.debug('Called map: %r' % self)
+        return self.handle(rctx)
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self.grid)

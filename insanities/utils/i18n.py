@@ -137,6 +137,9 @@ class set_lang(RequestHandler):
         rctx.vals.language_handler.activate(rctx, self.language)
         return rctx.next()
 
+    def __repr__(self):
+        return '%s("%s")' % (self.__class__.__name__, self.language)
+
 
 class gettext_commands(CommandDigest):
     '''
