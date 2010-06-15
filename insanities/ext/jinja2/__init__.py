@@ -16,7 +16,7 @@ DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
 
 class FormEnvironment(BaseFormEnvironment):
     '''
-    Encapsulates all data and methods needed to form in current realization.
+    Encapsulates all data and methods needed to form in current implementation.
 
     FormEnvironment should contain template rendering wrapper methods.
     Also it may contain any other stuff used in particular project's forms.

@@ -49,6 +49,7 @@ class MapInit(unittest.TestCase):
         app(rctx)
 
     def test_context_management(self):
+        '''Test context switching and handlers calling due map execution'''
         test = self
 
         class h(RequestHandler):
@@ -58,6 +59,7 @@ class MapInit(unittest.TestCase):
                 self.value=value
             def handle(self, rctx):
                 getattr(self, self.action)(rctx)
+                rctx.log = getattr(rctx, 'log', '') + '%s:%s;' % (self.action, self.value)
                 return rctx.next()
             def update(self, rctx):
                 rctx.conf.update({self.key: self.value})
@@ -74,7 +76,9 @@ class MapInit(unittest.TestCase):
                 self.key = key
                 self.value=value
             def handle(self, rctx):
+                global log
                 test.assertEqual(rctx.conf.get(self.key, None), self.value)
+                rctx.log = getattr(rctx, 'log', '') +'check:%s;' % self.value
                 return rctx.next()
 
         app = h('set', 'x', 1) | Map(
@@ -86,8 +90,11 @@ class MapInit(unittest.TestCase):
             ) | check('x', None) | stop,
             check('x', 1) | stop,
         )
-
-        app(RequestContext.blank(''))
+        rctx = RequestContext.blank('')
+        app(rctx)
+        # assert all handlers are called
+        self.assertEqual(rctx.log, 'set:1;check:1;update:4;check:4;check:1;set:2;check:2;' \
+                                   'delete:None;check:None;check:None;check:1;')
 
 
 class MapReverse(unittest.TestCase):

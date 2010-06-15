@@ -40,7 +40,7 @@ class BaseI18nSupport(RequestHandler):
         else:
             lang = self.default_language
         self.activate(rctx, lang)
-        return rctx
+        return rctx.next()
 
     def activate(self, rctx, language):
         raise NotImplementedError()
@@ -117,7 +117,6 @@ class gettext_support(BaseI18nSupport):
         rctx.data['language'] = rctx.conf['language'] = language
         rctx.data['gettext'] = trans.ugettext
         rctx.data['ngettext'] = trans.ungettext
-        return rctx
 
 
 class set_lang(RequestHandler):
@@ -135,7 +134,8 @@ class set_lang(RequestHandler):
         self.language = language
 
     def handle(self, rctx):
-        return rctx.vals.language_handler.activate(rctx, self.language)
+        rctx.vals.language_handler.activate(rctx, self.language)
+        return rctx.next()
 
 
 class gettext_commands(CommandDigest):

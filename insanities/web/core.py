@@ -276,6 +276,7 @@ class RequestContext(object):
         v['_map'], v['_map_i'], v['_map_j'] = _map, i, j
 
     def next(self):
+        '''Call next handler'''
         v = self._local
         if '_map' in self._local:
             return v._map.run_handler(self, v._map_i, v._map_j)
@@ -298,5 +299,6 @@ class RequestContext(object):
         self._local.rollback()
 
     def stop(self):
+        '''Stop chain execution and try to handle Map's next chain (if any).'''
         return STOP
 

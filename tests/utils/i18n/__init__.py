@@ -39,13 +39,13 @@ class TranslationTestCase(unittest.TestCase):
     def get_app(self, chains=[], languages=['en', 'ru']):
         app = gettext_support(os.path.join(CURDIR, 'locale'), languages=languages) | \
               jinja_env(paths=[os.path.join(CURDIR, 'templates')],
-                        FormEnvCls=FormEnvironment) | Map(*chains)
+                        FormEnvCls=FormEnvironment) | \
+              Map(*chains)
         return app
 
     def run_app(self, app, url='/'):
         rctx = RequestContext(Request.blank(url).environ)
-        app(rctx) # XXX is it right?
-        return rctx
+        return app(rctx)
 
     def test_language_support(self):
         '''Test if gettext_support handler sets language and creates GNUTranslation object'''
@@ -65,7 +65,7 @@ class TranslationTestCase(unittest.TestCase):
                 set_lang('ru') | test_backdoor,
             ])
         rctx = self.run_app(app)
-        self.assertEqual(rctx.conf.language, 'ru')
+        self.assertEqual(rctx.language, 'ru')
         assert isinstance(rctx.vals.translation, GNUTranslations)
 
     def test_ntranslation(self):
