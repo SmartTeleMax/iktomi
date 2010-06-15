@@ -18,7 +18,7 @@ import handlers as h
 auth = CookieAuth(models.User.by_credential, models.User.by_id)
 
 
-env = (Conf('', **conf_to_dict(cfg)) | jinja_env(extensions=['jinja2.ext.i18n']) |
+env = (Conf(**conf_to_dict(cfg)) | jinja_env(extensions=['jinja2.ext.i18n']) |
        local_cache_env() | sqla_session(cfg.DATABASES['']) |
        gettext_support(cfg.MODIR, languages=cfg.LANGUAGES, load_from_cookie='language'))
 

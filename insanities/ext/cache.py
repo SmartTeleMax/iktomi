@@ -20,7 +20,7 @@ class local_cache_env(RequestHandler):
 
     def handle(self, rctx):
         rctx.vals[self.name] = self
-        return rctx
+        return rctx.next()
 
     def get(self, key):
         logger.debug('cache: get(%s)' % key)
@@ -55,4 +55,4 @@ class memcache_env(RequestHandler):
 
     def handle(self, rctx):
         rctx.vals[self.name] = self.cache
-        return rctx
+        return rctx.next()

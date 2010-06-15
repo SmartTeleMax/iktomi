@@ -5,12 +5,12 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler, STOP, Reverse
+from insanities.web.core import Map, RequestHandler, STOP, Reverse, RequestContext
 from insanities.web.filters import *
 from insanities.web.filters import UrlTemplate
 from insanities.web.urlconvs import ConvertError
 from insanities.web.wrappers import *
-from insanities.web.http import Request, RequestContext
+from insanities.web.http import Request
 
 class UrlTemplateTests(unittest.TestCase):
 
@@ -174,7 +174,7 @@ class Match(unittest.TestCase):
     def test_simple_match(self):
         '''Check simple case of match'''
 
-        m = match('/first', 'first')
+        m = match('/first', 'first') | (lambda x: x)
 
         rctx = RequestContext(Request.blank('/first').environ)
         rctx = m(rctx)

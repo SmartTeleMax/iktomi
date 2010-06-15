@@ -20,7 +20,6 @@ class BaseI18nSupport(RequestHandler):
 
     def __init__(self, languages=None, default_language=None, 
                  load_from_cookie=None):
-        RequestHandler.__init__(self)
         # We cache translations, so we can't read config and build them 
         # dynamically on each request.
         # Default language is required
@@ -40,7 +39,7 @@ class BaseI18nSupport(RequestHandler):
         else:
             lang = self.default_language
         self.activate(rctx, lang)
-        return rctx
+        return rctx.next()
 
     def activate(self, rctx, language):
         raise NotImplementedError()
@@ -117,7 +116,6 @@ class gettext_support(BaseI18nSupport):
         rctx.data['language'] = rctx.conf['language'] = language
         rctx.data['gettext'] = trans.ugettext
         rctx.data['ngettext'] = trans.ungettext
-        return rctx
 
 
 class set_lang(RequestHandler):
@@ -131,11 +129,14 @@ class set_lang(RequestHandler):
     '''
 
     def __init__(self, language):
-        super(set_lang, self).__init__()
         self.language = language
 
     def handle(self, rctx):
-        return rctx.vals.language_handler.activate(rctx, self.language)
+        rctx.vals.language_handler.activate(rctx, self.language)
+        return rctx.next()
+
+    def __repr__(self):
+        return '%s("%s")' % (self.__class__.__name__, self.language)
 
 
 class gettext_commands(CommandDigest):

@@ -6,7 +6,8 @@ import shutil
 
 from insanities.forms import fields, convs, form, widgets, media, perms
 from insanities.web import Map
-from insanities.web.http import Request, RequestContext
+from insanities.web.http import Request
+from insanities.web.core import RequestContext
 
 from insanities.ext.jinja2 import jinja_env, FormEnvironment
 from insanities.utils.i18n import gettext_support, set_lang, gettext_commands
@@ -38,13 +39,13 @@ class TranslationTestCase(unittest.TestCase):
     def get_app(self, chains=[], languages=['en', 'ru']):
         app = gettext_support(os.path.join(CURDIR, 'locale'), languages=languages) | \
               jinja_env(paths=[os.path.join(CURDIR, 'templates')],
-                        FormEnvCls=FormEnvironment) | Map(*chains)
+                        FormEnvCls=FormEnvironment) | \
+              Map(*chains)
         return app
 
     def run_app(self, app, url='/'):
         rctx = RequestContext(Request.blank(url).environ)
-        app(rctx) # XXX is it right?
-        return rctx
+        return app(rctx)
 
     def test_language_support(self):
         '''Test if gettext_support handler sets language and creates GNUTranslation object'''

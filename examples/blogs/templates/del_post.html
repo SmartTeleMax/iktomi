@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<a href="{{ url_for('posts') }}">{{ _('back to posts page') }}</a>
+<a href="{{ VALS.url_for('posts') }}">{{ _('back to posts page') }}</a>
 <p>{{ _('Are you sure?') }}</p>
 <p>{{ post.title }}</p>
 <form action="" method="post">

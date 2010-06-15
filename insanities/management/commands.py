@@ -68,9 +68,18 @@ class server(CommandDigest):
     def command_debug(self, url):
         '''python manage.py server:debug url'''
         import pdb
-        from ..web.http import RequestContext
+        from ..web.core import RequestContext, STOP
         rctx = RequestContext.blank(url)
         try:
-            self.app(rctx)
+            result = self.app(rctx)
+            if result is STOP:
+                sys.exit('%r NotFound' % url)
+            else:
+                sys.stdout.write('=============================\n')
+                sys.stdout.write('%r %s\n' % (url, rctx.response.status))
+                sys.stdout.write('=============================\n')
+                sys.stdout.write('Data:\n')
+                for k,v in rctx.data.as_dict().items():
+                    sys.stdout.write('%r : %r\n' % (k, v))
         except Exception, e:
             pdb.post_mortem(e)

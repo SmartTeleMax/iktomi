@@ -2,9 +2,8 @@
 
 import unittest
 from insanities.web import *
-from insanities.web.core import HttpException
+from insanities.web.core import HttpException, RequestContext
 from insanities.web.filters import *
-from insanities.web.http import RequestContext
 from insanities.ext.cache import local_cache_env
 from insanities.ext.auth import CookieAuth
 from insanities.ext.jinja2 import jinja_env

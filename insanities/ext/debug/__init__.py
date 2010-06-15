@@ -3,17 +3,17 @@
 
 import sys
 
-from insanities.web.core import Wrapper
+from insanities.web.core import RequestHandler
 from insanities.web.http import HttpException
 from debug_dj import technical_500_response
 
 import logging
 logger = logging.getLogger(__name__)
 
-class Debug(Wrapper):
+class Debug(RequestHandler):
     def handle(self, rctx):
         try:
-            rctx = self.exec_wrapped(rctx)
+            rctx = rctx.next()
         except HttpException, e:
             raise e
         except Exception, e:

@@ -5,56 +5,38 @@ import sys
 import os
 FRAMEWORK_DIR = os.path.abspath('../..')
 sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler, Reverse
+from insanities.web.core import Map, RequestHandler, Reverse, RequestContext
 from insanities.web.filters import *
 from insanities.web.wrappers import *
-from insanities.web.http import RequestContext
 
 class MapInit(unittest.TestCase):
-
-    def test_function_handler(self):
-        '''Function as handler'''
-        def handler(r):
-            pass
-        app = Map(handler)
-        self.assert_(len(app.handlers) == 1)
-        first_item = app.handlers[0]
-        self.assert_(isinstance(first_item, RequestHandler))
 
     def test_functions_chain(self):
         '''Functions as a chain of handlers'''
         def handler1(r):
-            pass
+            rctx.testme = 'a'
 
         def handler2(r):
-            pass
+            return {'x': 'y'}
 
         app = Map(
             RequestHandler() | handler1 | handler2
         )
-        self.assert_(len(app.handlers) == 1)
-        first_item = app.handlers[0]
-        self.assert_(isinstance(first_item._next_handler, RequestHandler))
-        self.assert_(first_item._next_handler.func is handler1)
-        self.assert_(first_item._next_handler._next_handler.func is handler2)
+        rctx = RequestContext.blank('')
+        rctx = app(rctx)
 
-    def test_usual_request_handlers(self):
-        rh1 = RequestHandler()
-        rh2 = RequestHandler()
-        app = Map(
-            rh1 | rh2
-        )
-        self.assert_(len(app.handlers) == 1)
-        first_item = app.handlers[0]
-        self.assert_(first_item is rh1)
-        self.assert_(first_item._next_handler is rh2)
+        self.assertEqual(rctx.testme, 'a')
+        self.assertEqual(rctx.data.x, 'y')
 
     def test_function_argspec(self):
         'ARGSPEC'
 
         def handler(r, a, b=None):
-            self.assertEqual(a, 'a')
-            self.assert_(b in [None, 'b'])
+            if a == 'a':
+                self.assertEqual(b, None)
+            else:
+                self.assertEqual(a, 'x')
+                self.assertEqual(b, 'b')
 
         app = Map(
             match('/<string:a>', 'a') | handler,
@@ -63,8 +45,56 @@ class MapInit(unittest.TestCase):
 
         rctx = RequestContext.blank('/a')
         app(rctx)
-        rctx = RequestContext.blank('/a/b')
+        rctx = RequestContext.blank('/x/b')
         app(rctx)
+
+    def test_context_management(self):
+        '''Test context switching and handlers calling due map execution'''
+        test = self
+
+        class h(RequestHandler):
+            def __init__(self, action, key, value=None):
+                self.action=action
+                self.key = key
+                self.value=value
+            def handle(self, rctx):
+                getattr(self, self.action)(rctx)
+                rctx.log = getattr(rctx, 'log', '') + '%s:%s;' % (self.action, self.value)
+                return rctx.next()
+            def update(self, rctx):
+                rctx.conf.update({self.key: self.value})
+            def delete(self, rctx):
+                del rctx.conf[self.key]
+            def set(self, rctx):
+                rctx.conf[self.key] = self.value
+
+        def stop(rctx):
+            return rctx.stop()
+
+        class check(RequestHandler):
+            def __init__(self, key, value):
+                self.key = key
+                self.value=value
+            def handle(self, rctx):
+                global log
+                test.assertEqual(rctx.conf.get(self.key, None), self.value)
+                rctx.log = getattr(rctx, 'log', '') +'check:%s;' % self.value
+                return rctx.next()
+
+        app = h('set', 'x', 1) | Map(
+            check('x', 1) | stop,
+            h('update', 'x', 4) | check('x', 4) | stop,
+            check('x', 1) | stop,
+            h('set', 'x', 2) | check('x', 2) | Map(
+                h('delete', 'x') | check('x', None)
+            ) | check('x', None) | stop,
+            check('x', 1) | stop,
+        )
+        rctx = RequestContext.blank('')
+        app(rctx)
+        # assert all handlers are called
+        self.assertEqual(rctx.log, 'set:1;check:1;update:4;check:4;check:1;set:2;check:2;' \
+                                   'delete:None;check:None;check:None;check:1;')
 
 
 class MapReverse(unittest.TestCase):
@@ -117,7 +147,7 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler,
-            Conf('nested') | Map(
+            namespace('nested') | Map(
                 match('/nested/', 'item') | handler
             ),
             Map(
@@ -142,10 +172,10 @@ class MapReverse(unittest.TestCase):
             match('/', 'index') | handler,
             match('/docs', 'docs') | handler,
             match('/items/all', 'all') | handler,
-            Conf('nested') | Map(
+            namespace('nested') | Map(
                 match('/nested/', 'item') | handler
             ),
-            Conf('other') | Map(
+            namespace('other') | Map(
                 match('/other/', 'item') | handler
             ),
             Map(
@@ -174,18 +204,18 @@ class MapReverse(unittest.TestCase):
             urls['global'] = rctx.vals.url_for('en.news.all')
 
         site = Map(
-            prefix('/news') | Conf('news') | Map(
+            prefix('/news') | namespace('news') | Map(
                 match('/test', 'test') | write_urls,
                 match('/all', 'all') | handler
             ),
-            prefix('/about') | Conf('about') | Map(
+            prefix('/about') | namespace('about') | Map(
                 match('/contacts', 'contacts') | handler
             )
         )
 
         app = Map(
-            prefix('/en') | Conf('en') | site,
-            prefix('/ru') | Conf('ru') | site,
+            prefix('/en') | namespace('en') | site,
+            prefix('/ru') | namespace('ru') | site,
         )
 
         rctx = RequestContext.blank('/ru/news/test')
@@ -243,21 +273,20 @@ class MapReverse(unittest.TestCase):
 
         class Write(RequestHandler):
             def __init__(self, letter):
-                RequestHandler.__init__(self)
                 self.letter = letter
             def handle(self, rctx):
                 rctx.log = getattr(rctx, 'log', '') + self.letter
-                return rctx
+                return rctx.next()
 
         w1, w2, w3 = Write('1'), Write('2'), Write('3')
 
         ch1 = w1 | w2
-        ch2 = w1 | w3 # this chain has side-effect!
+        ch2 = w1 | w3
 
         rctx = RequestContext.blank('')
         rctx = ch1(rctx)
-        self.assertEqual(rctx.log, '12') # got '123'. wtf?
+        self.assertEqual(rctx.log, '12')
 
         rctx = RequestContext.blank('')
         ch2(rctx)
-        self.assertEqual(log, '13')
+        self.assertEqual(rctx.log, '13')

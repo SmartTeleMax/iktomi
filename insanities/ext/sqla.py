@@ -5,7 +5,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy import create_engine
 
 from insanities.utils import cached_property
-from insanities.web import HttpException, Wrapper
+from insanities.web import HttpException, RequestHandler
 
 
 class DBSession(orm.session.Session):
@@ -26,13 +26,12 @@ class DBSession(orm.session.Session):
         return obj
 
 
-class sqla_session(Wrapper):
+class sqla_session(RequestHandler):
 
     def __init__(self, uri, param_name='db', query_cls=Query,
                  class_=DBSession, engine_params=None):
-        super(sqla_session, self).__init__()
         self.param_name = param_name
-        engine_params = engine_params if engine_params else {}
+        engine_params = engine_params or {}
         engine = create_engine(uri, **engine_params)
         #engine.logger.name += '(%s)' % ref
         self.maker = orm.sessionmaker(class_=class_, query_cls=query_cls,
@@ -43,7 +42,7 @@ class sqla_session(Wrapper):
         db = self.maker()
         rctx.vals[self.param_name] = db
         try:
-            rctx = self.exec_wrapped(rctx)
+            rctx = rctx.next()
         finally:
             db.close()
         return rctx

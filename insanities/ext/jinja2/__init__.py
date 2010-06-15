@@ -16,17 +16,17 @@ DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
 
 class FormEnvironment(BaseFormEnvironment):
     '''
-    Encapsulates all data and methods needed to form in current realization.
+    Encapsulates all data and methods needed to form in current implementation.
 
     FormEnvironment should contain template rendering wrapper methods.
     Also it may contain any other stuff used in particular project's forms.
     '''
-    def __init__(self, env, rctx=None, globals={}, locals={}, **kwargs):
+    def __init__(self, env, rctx=None, globals=None, locals=None, **kw):
         self.env = env
         self.rctx = rctx
-        self.globals = globals
-        self.locals = locals
-        self.__dict__.update(kwargs)
+        self.globals = globals or {}
+        self.locals = locals or {}
+        self.__dict__.update(kw) # XXX ???
 
     def get_template(self, template):
         return self.env.get_template('%s.html' % template,
@@ -35,8 +35,6 @@ class FormEnvironment(BaseFormEnvironment):
     def render(self, template, **kwargs):
         vars = dict(self.locals, **kwargs)
         return self.get_template(template).render(**vars)
-
-
 
 
 class render_to(RequestHandler):
@@ -48,18 +46,24 @@ class render_to(RequestHandler):
         self.param = param
         self._kwargs = kwargs
 
-    def handle(self, rctx):
+    def get_template(self, rctx):
         template = self.template or rctx.data[self.param]
         if isinstance(template, basestring):
             template = rctx.vals.jinja_env.get_template(template)
+        return template
+
+    def handle(self, rctx):
+        template = self.get_template(rctx)
 
         template_kw = self._kwargs.copy()
-        template_kw['rctx'] = rctx
+        template_kw['VALS'] = rctx.vals.as_dict()
+        template_kw['CONF'] = rctx.conf.as_dict()
+        template_kw['REQUEST'] = rctx.request
         template_kw.update(rctx.data.as_dict())
         logger.debug('render_to - rendering template "%s"' % self.template)
         rendered = template.render(**template_kw)
         rctx.response.write(rendered)
-        return rctx
+        return rctx.next()
 
 
 class jinja_env(RequestHandler):
@@ -69,7 +73,6 @@ class jinja_env(RequestHandler):
 
     def __init__(self, param='TEMPLATES', paths=None, autoescape=False,
                  FormEnvCls=FormEnvironment, extensions=None):
-        super(jinja_env, self).__init__()
         self.param = param
         self.paths = paths
         self.autoescape = autoescape
@@ -80,14 +83,12 @@ class jinja_env(RequestHandler):
         self.FormEnvCls = FormEnvCls
 
     def handle(self, rctx):
-        kw = rctx.conf.as_dict()
-        kw['rctx'] = rctx
         # lazy jinja env
         if self.env is None:
             # paths from init
             paths_list = self._paths_list(self.paths)
             # paths from rctx.conf
-            paths_list += self._paths_list(kw.get(self.param))
+            paths_list += self._paths_list(rctx.conf.get(self.param))
             # default templates for forms
             paths_list.append(DEFAULT_TEMPLATE_DIR)
             self.env = Environment(
@@ -95,9 +96,9 @@ class jinja_env(RequestHandler):
                 autoescape=self.autoescape,
                 extensions=self.extensions,
             )
-        form_env = self.FormEnvCls(env=self.env, **kw)
+        form_env = self.FormEnvCls(env=self.env, rctx=rctx, **rctx.conf.as_dict())
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
-        return rctx
+        return rctx.next()
 
     def _paths_list(self, paths):
         paths_ = []

@@ -8,7 +8,6 @@ Routing tools
 
 * :ref:`Base classes <WebBaseClasses>`
    * :ref:`RequestHandler <RequestHandler>`
-   * :ref:`Wrapper <Wrapper>`
    * :ref:`Map <Map>`
    * :ref:`FunctionWrapper <FunctionWrapper>`
 * :ref:`Default handlers <WebDefaultHandlers>`
@@ -16,6 +15,7 @@ Routing tools
    * :ref:`method <method>`
    * :ref:`prefix <prefix>`
    * :ref:`subdomain <subdomain>`
+   * :ref:`namespace <namespace>`
    * :ref:`Conf <Conf>`
 
 
@@ -31,14 +31,6 @@ Base classes
 RequestHandler
 ^^^^^^^^^^^^^^
 .. autoclass:: insanities.web.core.RequestHandler
-   :members:
-
-
-.. _Wrapper:
-
-Wrapper
-^^^^^^^
-.. autoclass:: insanities.web.core.Wrapper
    :members:
 
 
@@ -91,6 +83,14 @@ prefix
 subdomain
 ^^^^^^^^^
 .. autoclass:: insanities.web.wrappers.subdomain
+   :members:
+
+
+.. _namespace:
+
+namespace
+^^^^^^^^^
+.. autoclass:: insanities.web.wrappers.namespace
    :members:
 
 

@@ -17,7 +17,7 @@ def manage(commands):
 
     The format of command is the following::
 
-        ./manage.py digest_name:command_name[ arg1[ arg2[...]]][ key1=kwarg1[...]]
+        ./manage.py digest_name:command_name[ arg1[ arg2[...]]][ --key1=kwarg1[...]]
 
     where command_name is a part of digest instance method name, args and kwargs
     are passed to the method. For details, see
@@ -28,12 +28,14 @@ def manage(commands):
         raw_args = argv[2:]
         args, kwargs = [], {}
         # parsing params
-        #XXX: it's good idea to use optparse
         for item in raw_args:
-            if '=' in item:
-                try:
-                    k,v = item.split('=')
-                except ValueError:
+            if item.startswith('--'):
+                splited = item[2:].split('=', 1)
+                if len(splited) == 2:
+                    k,v = splited
+                elif len(splited) == 1:
+                    k,v = splited[0], True
+                else:
                     sys.exit('Error while parsing argument "%s"' % item)
                 kwargs[k] = v
             else:

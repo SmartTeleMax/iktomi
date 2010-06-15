@@ -22,7 +22,7 @@ HTTP
 
 RequestContext
 ^^^^^^^^^^^^^^
-.. autoclass:: insanities.web.http.RequestContext
+.. autoclass:: insanities.web.core.RequestContext
    :members:
 
 

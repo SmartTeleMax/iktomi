@@ -20,7 +20,7 @@ class Converter(object):
     #: A key significating what converter is used in particular url template
     name=None
 
-    def to_python(self, value):
+    def to_python(self, value, **kwargs):
         '''
         Accepts unicode url part and returns python object.
 
@@ -47,7 +47,7 @@ class String(Converter):
 
     name='string'
 
-    def to_python(self, value):
+    def to_python(self, value, **kwargs):
         return value
 
     def to_url(self, value):
@@ -63,7 +63,7 @@ class Integer(Converter):
 
     name='int'
 
-    def to_python(self, value):
+    def to_python(self, value, **kwargs):
         try:
             value = int(value)
         except ValueError:
@@ -86,7 +86,7 @@ class Boolean(Converter):
     _true = ['on', 'true', 'True', 'yes']
     _false = ['off', 'false', 'False', 'no']
 
-    def to_python(self, value):
+    def to_python(self, value, **kwargs):
         if value in self._true:
             return True
         elif value in self._false:

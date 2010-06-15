@@ -4,8 +4,8 @@ __all__ = ['WSGIHandler']
 
 import logging
 import httplib
-from .http import HttpException, RequestContext
-from .core import STOP
+from .http import HttpException
+from .core import STOP, RequestContext
 
 logger = logging.getLogger(__name__)
 
