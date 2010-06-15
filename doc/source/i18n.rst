@@ -33,7 +33,7 @@ Marking strings as safe
 
 Internationalization support request handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: insanities.utils.i18n.BaseI18nSupport_
+.. autoclass:: insanities.utils.i18n.BaseI18nSupport
     :members:
 
 .. autoclass:: insanities.utils.i18n.gettext_support

@@ -66,8 +66,8 @@ URL
 .. autoclass:: insanities.utils.url.URL(path\[query=None][host=None][port=None][schema=None])
    :members:
 
-URLTemplate
+UrlTemplate
 ^^^^^^^^^^^
 
-.. autoclass:: insanities.utils.url.URLTemplate
+.. autoclass:: insanities.utils.url.UrlTemplate
    :members:

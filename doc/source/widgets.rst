@@ -1,5 +1,5 @@
 Forms API: Widgets
-=========
+==================
 
 .. _insanities-forms-widgets:
 

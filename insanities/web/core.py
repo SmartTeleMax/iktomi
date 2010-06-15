@@ -6,7 +6,8 @@ import logging
 import types
 import httplib
 from inspect import getargspec
-from .http import HttpException, Request, CopyOnUpdateDict, Response
+from .http import HttpException, Request, Response
+from ..utils.stacked_dict import StackedDict
 from ..utils.url import URL
 
 
@@ -281,16 +282,16 @@ class RequestContext(object):
 
         #: this attribute is for views and template data,
         #: for example filter match appends params here.
-        self.data = CopyOnUpdateDict()
+        self.data = StackedDict()
 
         #: this is config, static, declarative (key, value)
-        self.conf = CopyOnUpdateDict(namespace='')
+        self.conf = StackedDict(namespace='')
 
         #: this storage is for nesecary objects like db session, templates env,
         #: cache, url_for. something like dynamic config values.
-        self.vals = CopyOnUpdateDict()
+        self.vals = StackedDict()
         # XXX it's big question, which dicts we have to commit after map success
-        self._local = CopyOnUpdateDict()
+        self._local = StackedDict()
 
     @classmethod
     def blank(cls, url, **data):
