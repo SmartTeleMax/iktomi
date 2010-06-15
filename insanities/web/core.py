@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_handler(handler):
-    '''Wrappes functions, that they can be usual RequestHandler's'''
+    '''Wrapps functions, that they can be usual RequestHandler's'''
     if type(handler) in (types.FunctionType, types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
@@ -74,7 +74,37 @@ class Reverse(object):
 
 class Map(RequestHandler):
     '''
-        Strores combinations RequestHandler instances
+        Strores combinations RequestHandler instances: chains and maps.
+        For example::
+
+            h1 | h2 | h3
+
+        where h1, h2 and h3 are RequestHandler instances, will produce 
+        Map instance with one chain containing three handlers.
+
+        And following construction::
+
+            Map(
+                h1 | h2 | h3,
+                Map(
+                    h3 | h4,
+                    h7),
+                h5,
+            )
+
+        will produce a map with three chains: the first contains three handlers and others
+        contain one handlers.
+
+        Map tries to execute each of it's chains until success. Unsuccesfull chain execution means
+        one of the handlers in chain returns `rctx.stop()` signal. Succesful execution means either
+        all handlers return `rctx.next()`, or any of them returns `rctx.complete()` signal.
+
+        If all handlers have been finished unsuccesfully, Map returns `rctx.stop()` signal.
+
+        Map also incapsulates rctx dictionaries' (rctx.conf, rctx.vals, rctx.data) state
+        management: changes in a chain does not attract on other ones in current map.
+        If the chain has been finished succesfully, all changes are commited, otherwise
+        they are rolled back.
     '''
 
     def __init__(self, *handlers, **kwargs):
@@ -282,6 +312,10 @@ class RequestContext(object):
         v = self._local
         if '_map' in self._local:
             return v._map.run_handler(self, v._map_i, v._map_j)
+        return self
+
+    def complete(self):
+        '''Completes the chain execution without STOP signal'''
         return self
 
     def _dict_action(self, action):

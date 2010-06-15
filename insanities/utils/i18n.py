@@ -20,7 +20,6 @@ class BaseI18nSupport(RequestHandler):
 
     def __init__(self, languages=None, default_language=None, 
                  load_from_cookie=None):
-        RequestHandler.__init__(self)
         # We cache translations, so we can't read config and build them 
         # dynamically on each request.
         # Default language is required
@@ -130,7 +129,6 @@ class set_lang(RequestHandler):
     '''
 
     def __init__(self, language):
-        super(set_lang, self).__init__()
         self.language = language
 
     def handle(self, rctx):
