@@ -11,3 +11,4 @@ pip-log.txt
 venv
 *.db
 *.orig
+MANIFEST
