@@ -1,31 +1,26 @@
 # -*- coding: utf-8 -*-
 
-import ez_setup
-ez_setup.use_setuptools()
-
-from setuptools import setup
+from distutils.core import setup
 
 setup(
     name="insanities",
-    version="",
+    version="0.2",
     packages=["insanities","insanities.utils","insanities.forms",
-              "insanities.web","insanities.ext"],
+              "insanities.web","insanities.ext","insanities.ext.jinja2",
+              "insanities.ext.debug"], # is last package ok?
     package_data={
         '':["templates/*/*.html"]
     },
-    install_requires=[
-        "jinja2",# template engine
-        "simplejson",# json encode, decode tool
+    requires=[
         "webob",
-
-        #XXX Soon to be gone
-        #"sqlalchemy",
-        "pytils",
-        #"werkzeug",
+        "simplejson",# json encode, decode tool
     ],
     author="Denis Otkidach",
     author_email="denis.otkidach@gmail.com",
+    maintainer="Tim Perevezentsev",
+    maintainer_email="riffm2005@gmail.com",
     description="A set of insanities of several geeks to show ourselves our coolness.",
+    url="http://github.com/riffm/insanities-testing/",
     license="MIT",
-    keywords="forms web",
+    keywords="web forms",
 )
