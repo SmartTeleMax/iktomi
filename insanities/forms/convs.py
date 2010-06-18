@@ -351,6 +351,9 @@ class DatetimeDisplay(DisplayOnly):
         return value.strftime(self.format)
 
 
+min_datetime = datetime(1900, 1, 1)
+
+
 class Datetime(Converter):
 
     format = '%d.%m.%Y, %H:%M'
@@ -360,7 +363,10 @@ class Datetime(Converter):
     def from_python(self, value):
         if not value:
             return ''
-        return value.strftime(self.format)
+        if value > min_datetime:
+            return value.strftime(self.format)
+        else:
+            return "%s" % value
 
     def to_python(self, value):
         if not value and not self.null:
@@ -381,7 +387,10 @@ class Date(Converter):
     def from_python(self, value):
         if not value:
             return ''
-        return value.strftime(self.format)
+        if value > min_datetime.date():
+            return value.strftime(self.format)
+        else:
+            return "%s" % value
 
     def to_python(self, value):
         if not value and not self.null:
