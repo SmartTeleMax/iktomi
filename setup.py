@@ -14,6 +14,7 @@ setup(
     requires=[
         "webob",
         "simplejson",# json encode, decode tool
+        "html5lib",
     ],
     author="Denis Otkidach",
     author_email="denis.otkidach@gmail.com",
