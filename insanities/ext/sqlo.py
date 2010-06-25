@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from . import CommandDigest
+from mage import CommandDigest
 
-__all__ = ['sqlobject']
+__all__ = ['SqlObjectCommands']
 
 class SqlObjectCommands(CommandDigest):
     '''

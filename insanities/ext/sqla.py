@@ -48,7 +48,7 @@ class sqla_session(RequestHandler):
         return rctx
 
 
-from . import CommandDigest
+from mage import CommandDigest
 
 
 class SqlAlchemyCommands(CommandDigest):
