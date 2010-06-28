@@ -17,10 +17,10 @@ class server(CommandDigest):
     def __init__(self, app):
         self.app = app
 
-    def command_serve(self, host='', port='8000'):
+    def command_serve(self, host='', port='8000', level='debug'):
         '''python manage.py server:serve [host] [port]'''
         import logging
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=getattr(logging, level.upper()))
         from wsgiref.simple_server import make_server
         from insanities.web.wsgi import WSGIHandler
         try:
