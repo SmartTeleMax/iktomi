@@ -54,18 +54,20 @@ class Reverse(object):
 
     def __init__(self, urls, namespace, host=''):
         self.urls = urls
-        self.namespace = namespace
+        self.namespace = namespace or ''
         self.host = host
 
     def __call__(self, name, **kwargs):
-        if self.namespace:
-            local_name = self.namespace + '.' + name
-            # if there are no url in local namespace, we search it in global
-            url = self.urls.get(local_name) or self.urls[name]
-        else:
-            url = self.urls[name]
+        if name.startswith('.'):
+            local_name = name.lstrip('.')
+            up = len(name) - len(local_name) - 1
+            if up != 0:
+                ns = ''.join(self.namespace.split('.')[:-up])
+            else:
+                ns = self.namespace
+            name = ns + '.' + local_name
 
-        subdomains, builders = url
+        subdomains, builders = self.urls[name]
 
         host = u'.'.join(subdomains)
         absolute = (host != self.host)
