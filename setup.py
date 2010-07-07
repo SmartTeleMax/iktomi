@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name="insanities",
-    version="0.2",
+    version="0.2.1",
     packages=["insanities","insanities.utils","insanities.forms",
               "insanities.web","insanities.ext","insanities.ext.jinja2",
               "insanities.ext.debug"], # is last package ok?
