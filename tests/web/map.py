@@ -198,9 +198,8 @@ class MapReverse(unittest.TestCase):
 
         urls = {}
         def write_urls(rctx):
-            urls['local'] = rctx.vals.url_for('all')
-            #XXX: this is not normal!
-            urls['parent'] = rctx.vals.url_for('ru.about.contacts')
+            urls['local'] = rctx.vals.url_for('.all')
+            urls['parent'] = rctx.vals.url_for('..about.contacts')
             urls['global'] = rctx.vals.url_for('en.news.all')
 
         site = Map(
