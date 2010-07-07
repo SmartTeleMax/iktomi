@@ -3,6 +3,7 @@
 from os.path import dirname, abspath, join
 import logging
 logger = logging.getLogger(__name__)
+from ...utils import weakproxy
 
 from jinja2 import Environment, FileSystemLoader
 from insanities.forms.form import BaseFormEnvironment
@@ -21,20 +22,27 @@ class FormEnvironment(BaseFormEnvironment):
     FormEnvironment should contain template rendering wrapper methods.
     Also it may contain any other stuff used in particular project's forms.
     '''
-    def __init__(self, env, rctx=None, globals=None, locals=None, **kw):
-        self.env = env
-        self.rctx = rctx
-        self.globals = globals or {}
+    def __init__(self, rctx, locals=None, **kw):
+        self.rctx = rctx #weakproxy(rctx)
         self.locals = locals or {}
+        self._init_kw = kw
         self.__dict__.update(kw) # XXX ???
 
     def get_template(self, template):
-        return self.env.get_template('%s.html' % template,
-                                           globals=self.globals)
+        return self.rctx.vals.jinja_env.get_template(
+            '%s.html' % template,
+            globals=dict(VALS=self.rctx.vals,
+                         CONF=self.rctx.conf,
+                         REQUEST=self.rctx.request))
 
     def render(self, template, **kwargs):
         vars = dict(self.locals, **kwargs)
         return self.get_template(template).render(**vars)
+
+    def __call__(self, **kwargs):
+        kw = self._init_kw.copy()
+        kw.update(kwargs)
+        return FormEnvironment(self.rctx, **kw)
 
 
 class render_to(RequestHandler):
@@ -96,7 +104,7 @@ class jinja_env(RequestHandler):
                 autoescape=self.autoescape,
                 extensions=self.extensions,
             )
-        form_env = self.FormEnvCls(env=self.env, rctx=rctx, **rctx.conf.as_dict())
+        form_env = self.FormEnvCls(rctx=rctx, **rctx.conf.as_dict())
         rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
         return rctx.next()
 

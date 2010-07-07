@@ -3,6 +3,7 @@ import unittest
 from copy import copy
 
 from insanities.forms import fields, convs, form, widgets, media, perms
+from insanities.web.core import RequestContext
 
 
 class TestFormClass(unittest.TestCase):
@@ -15,10 +16,10 @@ class TestFormClass(unittest.TestCase):
         DIR = jnj.__file__
         DIR = path.dirname(path.abspath(DIR))
         TEMPLATES = [path.join(DIR, 'templates')]
-
-        template_loader = jinja2.Environment(
+        rctx = RequestContext.blank('/')
+        rctx.vals['jinja_env'] = jinja2.Environment(
                             loader=jinja2.FileSystemLoader(TEMPLATES))
-        return jnj.FormEnvironment(template_loader)
+        return jnj.FormEnvironment(rctx)
 
     def instantiate_conv(self, conv, value=None):
         class SampleForm(form.Form):
