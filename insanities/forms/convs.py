@@ -69,9 +69,6 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
-    #: If null is True Converter represents empty value ('' or None) as None
-    null = False
-
     #: A list of callables to make additional validation. 
     #: Validators recieve converter and value and raising ValidationError
     #: if there is something wrong.
@@ -79,6 +76,11 @@ class Converter(object):
     #:
     #:    conv | myvalidator1 | myvalidator2
     validators = None
+
+    #: Values are not accepted by Required validator
+    null_values = (None, )
+
+    error_required = N_('required field')
 
     # It is defined as read-only property to avoid setting it to True where
     # converter doesn't support it.
@@ -102,12 +104,11 @@ class Converter(object):
 
     def accept(self, value):
         '''Converts the message and validates it by chained validators'''
-        if self.null and value in ('', None):
-            # are we sure we need this?
-            return None
         value = self.to_python(value)
-        for validate in ():
-            validate(self, value)
+        for validate in self.validators:
+            value = validate(self, value)
+        if self.required and value in self.null_values:
+            self.error('required')
         return value
 
     def to_python(self, value):
@@ -117,6 +118,10 @@ class Converter(object):
     def from_python(self, value):
         """ custom converters should override this """
         return value
+
+    #: Property responsible to "field is None" *validation*.
+    #: Be careful and don't confuse with `null` property of Char converter.
+    required = True
 
     def __or__(self, validator):
         """ chaining converters """
@@ -181,6 +186,12 @@ class Char(Converter):
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
 
+    #: Property responsible to returned converting value to None when the value
+    #: is empty (by default, if it is in conv.empty_values)
+    #: If null is True Converter represents empty value ('' or None) as None
+    null = False
+
+
     error_length_exact = M_(u'The length should be exactly one symbol',
                             u'The length should be exactly %(max_length)s symbols')
     error_max_length = M_(u'The length should be at most one symbol',
@@ -208,7 +219,11 @@ class Char(Converter):
         return value
 
     def to_python(self, value):
+        # converting
         value = self.clean_value(value)
+        if self.null and value in ('', None):
+            return None
+        # various validations
         if self.nontext_replacement is not None:
             value = replace_nontext(value, self.nontext_replacement)
         if self.max_length==self.min_length!=None:
@@ -247,15 +262,16 @@ class Int(Converter):
     #: Max allowed valid number
     max = None
 
+    null_values = (None, '')
+
     error_notvalid = N_('it is not valid integer')
     error_min = N_('min value is %(min)s')
     error_max = N_('max value is %(max)s')
 
+
     def to_python(self, value):
-        if value is None:
-            if self.null:
-                return None
-            value = ''
+        if value in self.null_values:
+            return None
         try:
             value = int(value)
         except ValueError:
@@ -305,8 +321,9 @@ class EnumChoice(Converter):
     # choices: [(python_value, label), ...]
     choices = ()
     multiple = False
+    null_values = (None, [])
 
-    error_null = N_('you must select a value')
+    error_required = N_('you must select a value')
 
     def from_python(self, value):
         if self.multiple:
@@ -329,8 +346,6 @@ class EnumChoice(Converter):
                      if item is not None]
         else:
             value = self._safe_to_python(value)
-        if not self.null:
-            self._assert(value not in (None, []), 'null')
         return value
 
     def __iter__(self):
@@ -358,8 +373,6 @@ class Datetime(Converter):
 
     format = '%d.%m.%Y, %H:%M'
 
-    error_required = N_('required field')
-
     def from_python(self, value):
         if not value:
             return ''
@@ -369,8 +382,8 @@ class Datetime(Converter):
             return "%s" % value
 
     def to_python(self, value):
-        if not value and not self.null:
-            self.error('required')
+        if not value:
+            return None
         try:
             return datetime.strptime(value, self.format)
         except ValueError:
@@ -382,8 +395,6 @@ class Date(Converter):
 
     format = '%d.%m.%Y'
 
-    error_required = N_('required field')
-
     def from_python(self, value):
         if not value:
             return ''
@@ -393,8 +404,8 @@ class Date(Converter):
             return "%s" % value
 
     def to_python(self, value):
-        if not value and not self.null:
-            self.error('required')
+        if not value:
+            return None
         elif not value:
             return None
         try:
@@ -408,16 +419,14 @@ class Time(Converter):
 
     format = '%H:%M'
 
-    error_required = N_('required field')
-
     def from_python(self, value):
         if value in (None, ''):
             return ''
         return value.strftime(self.format)
 
     def to_python(self, value):
-        if not value and not self.null:
-            self.error('required')
+        if not value:
+            return None
         try:
             return datetime.strptime(value, self.format).time()
         except ValueError:
@@ -552,3 +561,4 @@ class List(Converter):
         if self.min_length:
             self._assert(len(value)>=self.min_length, 'min_length')
         return items
+

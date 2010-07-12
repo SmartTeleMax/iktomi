@@ -5,7 +5,25 @@ from insanities.utils.odict import OrderedDict
 from .forms import TestFormClass
 
 class TestConv(TestFormClass):
-    pass
+    def test_validators(self):
+        def v1(conv, string):
+            return string.strip('.')
+
+        conv = convs.Char() | v1
+        conv = self.instantiate_conv(conv)
+        self.assertEqual(conv.accept('..345.'), '345')
+
+        def v2(conv, string):
+            if 'abc' in string:
+                conv.error('no_abc', default='I hate abc letters!')
+            return string
+
+        conv = convs.Char() | v2
+        conv = self.instantiate_conv(conv)
+        self.assertEqual(conv.accept('345'), '345')
+        self.assertRaises(convs.ValidationError, conv.accept, '3abc4')
+
+
 #    def test_multiplicity(self):
 #        raise NotImplemented
 #        pass
@@ -39,7 +57,6 @@ class TestConv(TestFormClass):
    #    assert frm_conv.env is frm.env
    #    assert frm_conv.convs[0].env is frm.env
 
-    # XXX write tests for validators
     #def test_chain_to_from_python(self):
     #    class SomeStrangeConv(convs.Converter):
     #        def to_python(self, value): return '1' + value
@@ -152,21 +169,21 @@ class TestEnumChoice(TestFormClass):
                                     (1, 'label_1'),
                                 ],
                                 multiple=False,
-                                null=True,
+                                required=False,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertEqual(conv.to_python('0'), 0)
-        self.assertEqual(conv.to_python('3'), None)
+        self.assertEqual(conv.accept('0'), 0)
+        self.assertEqual(conv.accept('3'), None)
 
         conv = convs.EnumChoice(choices=[
                                     (0, 'label_0'),
                                     (1, 'label_1'),
                                 ],
                                 multiple=False,
-                                null=False,
+                                required=True,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertRaises(convs.ValidationError, conv.to_python, '3')
+        self.assertRaises(convs.ValidationError, conv.accept, '3')
 
     def test_clean_multiple(self):
         conv = convs.EnumChoice(choices=[
@@ -174,22 +191,22 @@ class TestEnumChoice(TestFormClass):
                                     (1, 'label_1'),
                                 ],
                                 multiple=True,
-                                null=True,
+                                required=False,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertEqual(conv.to_python(['0', '1']), [0, 1])
-        self.assertEqual(conv.to_python(['0', '3']), [0])
-        self.assertEqual(conv.to_python(['3']), [])
+        self.assertEqual(conv.accept(['0', '1']), [0, 1])
+        self.assertEqual(conv.accept(['0', '3']), [0])
+        self.assertEqual(conv.accept(['3']), [])
 
         conv = convs.EnumChoice(choices=[
                                     (0, 'label_0'),
                                     (1, 'label_1'),
                                 ],
                                 multiple=True,
-                                null=False,
+                                required=True,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertRaises(convs.ValidationError, conv.to_python, ['3'])
+        self.assertRaises(convs.ValidationError, conv.accept, ['3'])
 
     def test_iter(self):
         conv = convs.EnumChoice(choices=[
