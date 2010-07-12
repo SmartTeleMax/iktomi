@@ -93,20 +93,14 @@ class Select(Widget):
     null_label = '--------'
 
     def get_options(self, value):
-        if self.multiple:
-            options = []
-        else:
-            if value is None or self.field.conv.null:
-                options = [{'value': '',
-                            'title': self.null_label,
-                            'selected': value in (None, '')}]
-            else:
-                options = []
+        options = []
+        if not self.multiple and (value is None or not self.field.conv.required):
+            options = [{'value': '',
+                        'title': self.null_label,
+                        'selected': value in (None, '')}]
         assert isinstance(self.field.conv, convs.EnumChoice)
-        if self.multiple:
-            values = value
-        else:
-            values = [value]
+
+        values = value if self.multiple else [value]
         values = map(unicode, values)
         for choice, label in self.field.conv:
             choice = unicode(choice)
@@ -119,7 +113,7 @@ class Select(Widget):
         data = Widget.prepare_data(self, value, readonly)
         return dict(data,
                     options=self.get_options(value),
-                    required=('false' if self.field.conv.null else 'true'))
+                    required=('true' if self.field.conv.required else 'false'))
 
 
 class GroupedSelect(Select):
@@ -131,13 +125,11 @@ class GroupedSelect(Select):
     def get_options(self, value):
         assert isinstance(self.field.conv, convs.EnumChoice)
         options = []
-        if not self.multiple and (value is None or self.field.conv.null):
+        if not self.multiple and (value is None or not self.field.conv.required):
             options = [dict(value='', title=self.null_label,
-                            selected=value in (None, ''), is_group=False)]
-        if self.multiple:
-            values = value
-        else:
-            values = [value]
+                            selected=value in (None, ''),
+                            is_group=False)]
+        values = value if self.multiple else [value]
         values = map(unicode, values)
 
         # TODO fix tree generation

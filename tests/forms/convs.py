@@ -5,48 +5,66 @@ from insanities.utils.odict import OrderedDict
 from .forms import TestFormClass
 
 class TestConv(TestFormClass):
+    def test_validators(self):
+        def v1(conv, string):
+            return string.strip('.')
+
+        conv = convs.Char() | v1
+        conv = self.instantiate_conv(conv)
+        self.assertEqual(conv.accept('..345.'), '345')
+
+        def v2(conv, string):
+            if 'abc' in string:
+                conv.error('no_abc', default='I hate abc letters!')
+            return string
+
+        conv = convs.Char() | v2
+        conv = self.instantiate_conv(conv)
+        self.assertEqual(conv.accept('345'), '345')
+        self.assertRaises(convs.ValidationError, conv.accept, '3abc4')
+
 
 #    def test_multiplicity(self):
 #        raise NotImplemented
 #        pass
 
-    def test_chain(self):
-        conv1 = convs.Converter()
-        conv2 = convs.Converter()
-        conv3 = convs.Converter()
+   #def test_chain(self):
+   #    conv1 = convs.Converter()
+   #    conv2 = convs.Converter()
+   #    conv3 = convs.Converter()
 
-        chain1 = conv1 | conv2
-        chain2 = conv3 | chain1
-        chain3 = chain1 | conv3
+   #    chain1 = conv1 | conv2
+   #    chain2 = conv3 | chain1
+   #    chain3 = chain1 | conv3
 
-        # don't copy converters since they are not linked to a form
-        assert chain1.convs[0] is conv1 and chain1.convs[1] is conv2
-        assert chain2.convs[0] is conv3 and chain2.convs[2] is conv2
-        assert chain3.convs[0] is conv1 and chain3.convs[2] is conv3
+   #    # don't copy converters since they are not linked to a form
+   #    assert chain1.convs[0] is conv1 and chain1.convs[1] is conv2
+   #    assert chain2.convs[0] is conv3 and chain2.convs[2] is conv2
+   #    assert chain3.convs[0] is conv1 and chain3.convs[2] is conv3
 
-    def test_chain_instantiated(self):
-        chain = convs.Converter() | convs.Converter()
-        conv1 = chain.convs[0]
-        conv2 = chain.convs[1]
+   #def test_chain_instantiated(self):
+   #    chain = convs.Converter() | convs.Converter()
+   #    conv1 = chain.convs[0]
+   #    conv2 = chain.convs[1]
 
-        class SampleForm(form.Form):
-            fields=[fields.Field('x', conv=chain)]
+   #    class SampleForm(form.Form):
+   #        fields=[fields.Field('x', conv=chain)]
 
-        frm = SampleForm(self.env)
-        frm_conv = frm.get_field('x').conv
-        assert not frm_conv is chain, 'Chain converter should be copied'
-        assert not frm_conv.convs[0] is conv1, 'Chained converters should be copied'
-        assert frm_conv.env is frm.env
-        assert frm_conv.convs[0].env is frm.env
+   #    frm = SampleForm(self.env)
+   #    frm_conv = frm.get_field('x').conv
+   #    assert not frm_conv is chain, 'Chain converter should be copied'
+   #    assert not frm_conv.convs[0] is conv1, 'Chained converters should be copied'
+   #    assert frm_conv.env is frm.env
+   #    assert frm_conv.convs[0].env is frm.env
 
-    def test_chain_to_from_python(self):
-        class SomeStrangeConv(convs.Converter):
-            def to_python(self, value): return '1' + value
-            def from_python(self, value): return value[1:]
+    #def test_chain_to_from_python(self):
+    #    class SomeStrangeConv(convs.Converter):
+    #        def to_python(self, value): return '1' + value
+    #        def from_python(self, value): return value[1:]
 
-        chain = SomeStrangeConv() | convs.Int()
-        self.assertEqual(chain.to_python('2'), 12)
-        self.assertEqual(chain.from_python(12), '2')
+    #    chain = SomeStrangeConv() | convs.Int()
+    #    self.assertEqual(chain.to_python('2'), 12)
+    #    self.assertEqual(chain.from_python(12), '2')
 
 #    def test_messages(self):
 #        pass
@@ -151,21 +169,21 @@ class TestEnumChoice(TestFormClass):
                                     (1, 'label_1'),
                                 ],
                                 multiple=False,
-                                null=True,
+                                required=False,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertEqual(conv.to_python('0'), 0)
-        self.assertEqual(conv.to_python('3'), None)
+        self.assertEqual(conv.accept('0'), 0)
+        self.assertEqual(conv.accept('3'), None)
 
         conv = convs.EnumChoice(choices=[
                                     (0, 'label_0'),
                                     (1, 'label_1'),
                                 ],
                                 multiple=False,
-                                null=False,
+                                required=True,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertRaises(convs.ValidationError, conv.to_python, '3')
+        self.assertRaises(convs.ValidationError, conv.accept, '3')
 
     def test_clean_multiple(self):
         conv = convs.EnumChoice(choices=[
@@ -173,22 +191,22 @@ class TestEnumChoice(TestFormClass):
                                     (1, 'label_1'),
                                 ],
                                 multiple=True,
-                                null=True,
+                                required=False,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertEqual(conv.to_python(['0', '1']), [0, 1])
-        self.assertEqual(conv.to_python(['0', '3']), [0])
-        self.assertEqual(conv.to_python(['3']), [])
+        self.assertEqual(conv.accept(['0', '1']), [0, 1])
+        self.assertEqual(conv.accept(['0', '3']), [0])
+        self.assertEqual(conv.accept(['3']), [])
 
         conv = convs.EnumChoice(choices=[
                                     (0, 'label_0'),
                                     (1, 'label_1'),
                                 ],
                                 multiple=True,
-                                null=False,
+                                required=True,
                                 conv=convs.Int())
         conv = self.instantiate_conv(conv)
-        self.assertRaises(convs.ValidationError, conv.to_python, ['3'])
+        self.assertRaises(convs.ValidationError, conv.accept, ['3'])
 
     def test_iter(self):
         conv = convs.EnumChoice(choices=[
