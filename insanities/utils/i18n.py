@@ -7,7 +7,7 @@ import gettext
 from itertools import dropwhile
 from subprocess import PIPE, Popen
 
-from insanities.management.commands import CommandDigest
+from mage import CommandDigest
 from insanities.web import RequestHandler
 
 

@@ -3,39 +3,8 @@
 import sys
 from os import path
 
-from . import CommandNotFound
 
-__all__ = ['server']
-
-
-class CommandDigest(object):
-
-    def default(self, *args, **kwargs):
-        '''This method will be called if command_name in __call__ is None'''
-        print self.description()
-
-    def description(self):
-        '''Description outputed to console'''
-        _help = self.__class__.__doc__
-        for k in dir(self):
-            if k.startswith('command_'):
-                _help += '\n'
-                _help += getattr(self, k).__doc__
-        return _help
-
-    def __call__(self, command_name, *args, **kwargs):
-        if command_name is None:
-            self.default(*args, **kwargs)
-        elif command_name == 'help':
-            sys.stdout.write(self.__doc__)
-            for k in self.__dict__.keys():
-                if k.startswith('command_'):
-                    sys.stdout.write(k.__doc__)
-        elif hasattr(self, 'command_'+command_name):
-            getattr(self, 'command_'+command_name)(*args, **kwargs)
-        else:
-            sys.stdout.write(self.__class__.__doc__)
-            raise CommandNotFound()
+from mage import CommandDigest, CommandNotFound
 
 
 class server(CommandDigest):
@@ -83,3 +52,4 @@ class server(CommandDigest):
                     sys.stdout.write('%r : %r\n' % (k, v))
         except Exception, e:
             pdb.post_mortem(e)
+

@@ -1,10 +1,12 @@
 #!./venv/bin/python
 
 from os import path
+import sys
 
+from mage import manage
+from insanities.cmd import server
 from insanities.ext import sqla
 from insanities.utils import i18n
-from insanities.management import commands, manage
 
 import cfg
 import models
@@ -27,9 +29,9 @@ def run(app):
                                           ignore=['*/venv/*'],
                                           domain="insanities-core"),
         # dev-server
-        server=commands.server(app),
+        server=server(app),
 
-    ))
+    ), sys.argv)
 
 if __name__ == '__main__':
     run(app)

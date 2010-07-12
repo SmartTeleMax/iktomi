@@ -15,6 +15,7 @@ setup(
         "webob",
         "simplejson",# json encode, decode tool
         "html5lib",
+        "mage", # commands support
     ],
     author="Denis Otkidach",
     author_email="denis.otkidach@gmail.com",
