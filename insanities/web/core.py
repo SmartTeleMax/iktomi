@@ -148,23 +148,13 @@ class Map(RequestHandler):
 
         for i in xrange(len(self.grid)):
             rctx.lazy_copy()
-            result = self.run_handler(rctx, i, 0)
+            rctx._set_map_state(self, i, 0)
+            result = rctx.next()
             if result is not STOP:
                 result.commit()
                 return result.next()
             rctx.rollback()
         return STOP
-
-    def run_handler(self, rctx, i, j):
-        logger.debug('Position in map: %s %s' % (i, j))
-        try:
-            handler = self.grid[i][j]
-        except IndexError:
-            return rctx
-        else:
-            rctx._set_map_state(self, i, j+1)
-            logger.debug('Handled by %r' % handler)
-            return handler.handle(rctx)
 
     def compile_urls_map(self):
         tracer = Tracer()
@@ -311,10 +301,18 @@ class RequestContext(object):
         v['_map'], v['_map_i'], v['_map_j'] = _map, i, j
 
     def next(self):
-        '''Call next handler'''
+        '''Call next handler in chain'''
         v = self._local
-        if '_map' in self._local:
-            return v._map.run_handler(self, v._map_i, v._map_j)
+        if '_map' in v:
+            #logger.debug('Position in map: %s %s' % (i, j))
+            try:
+                handler = v._map.grid[v._map_i][v._map_j]
+            except IndexError:
+                return self
+            else:
+                v['_map_j'] += 1
+                logger.debug('Handled by %r' % handler)
+                return handler.handle(self)
         return self
 
     def complete(self):
