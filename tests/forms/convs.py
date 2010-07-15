@@ -288,6 +288,22 @@ class TestDate(TestFormClass):
         conv = self.instantiate_conv(conv)
         self.assertRaises(convs.ValidationError, conv.accept, '\x00abc')
 
+class TestDate(TestFormClass):
+
+    def test_from_python(self):
+        from datetime import time
+        conv = convs.Time()
+        conv = self.instantiate_conv(conv)
+        self.assertEqual(conv.from_python(time(12, 30)), '12:30')
+
+    def test_to_python(self):
+        from datetime import time
+
+        conv = convs.Time()
+        conv = self.instantiate_conv(conv)
+        self.assertEqual(conv.accept('12:30'), time(12, 30))
+
+
 
 # XXX DATE CONVERTERS!
 

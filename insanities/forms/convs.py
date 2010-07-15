@@ -389,6 +389,7 @@ class BaseDatetime(Converter):
     def from_python(self, value):
         if value in (None, ''):
             return ''
+        # carefull to years before 1900
         return strftime(value, self.format)
 
     def to_python(self, value):
@@ -422,6 +423,12 @@ class Date(BaseDatetime):
 class Time(BaseDatetime):
 
     format = '%H:%M'
+
+    def from_python(self, value):
+        if value in (None, ''):
+            return ''
+        # we doesn't care about year in time converter, so use native strftime
+        return value.strftime(self.format)
 
     def convert_datetime(self, value):
         return datetime.strptime(value, self.format).time()
