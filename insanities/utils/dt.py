@@ -24,7 +24,8 @@ def strftime(dt, fmt):
         return dt.strftime(fmt)
 
     fmt = fmt.replace('%c', '%a %b %d %H:%M:%S %Y')\
-             .replace('%Y', '%i').replace('%y', '%J')
+             .replace('%Y', str(dt.year))\
+             .replace('%y', ("%04d" %dt.year)[-2:])
 
     year = dt.year
     # For every non-leap year century, advance by
@@ -36,7 +37,4 @@ def strftime(dt, fmt):
     # Move to around the year 2000
     year = year + ((2000 - year)//28)*28
     timetuple = dt.timetuple()
-    formatted = time.strftime(fmt, (year,) + timetuple[1:])
-    formatted = formatted.replace('%i', str(dt.year))\
-                         .replace('%J', ("%04d" %dt.year)[-2:])
-    return formatted
+    return time.strftime(fmt, (year,) + timetuple[1:])
