@@ -59,6 +59,7 @@ class Widget(object):
         return self.__class__(**kwargs)
 
 
+# Fields got some specific attributes we want to proxy
 class FieldWidget(Widget):
     @property
     def multiple(self):
@@ -121,56 +122,10 @@ class Select(FieldWidget):
         return options
 
     def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+        data = FieldWidget.prepare_data(self, value, readonly)
         return dict(data,
                     options=self.get_options(value),
                     required=('true' if self.field.conv.required else 'false'))
-
-
-class GroupedSelect(Select):
-
-    template = 'grouped_select'
-    classname = 'grouped_select select'
-    size = None
-
-    def get_options(self, value):
-        assert isinstance(self.field.conv, convs.EnumChoice)
-        options = []
-        if not self.multiple and (value is None or not self.field.conv.required):
-            options = [dict(value='', title=self.null_label,
-                            selected=value in (None, ''),
-                            is_group=False)]
-        values = value if self.multiple else [value]
-        values = map(unicode, values)
-
-        # TODO fix tree generation
-        _group_items = []
-        _group_name = None
-        for group, choice, label in self.field.conv:
-            choice = unicode(choice)
-            if (not group and _group_name) or (_group_name and _group_name != group):
-                options.append(dict(is_group=True,
-                                    title=_group_name,
-                                    options=_group_items[0:]))
-                _group_name = None
-            if group and group != _group_name:
-                _group_name = group
-                _group_items = []
-            if group:
-                _group_items.append(dict(value=choice,
-                                         title=label,
-                                         selected=(choice in values)))
-            else:
-                options.append(dict(value=choice,
-                                    title=label,
-                                    selected=(choice in values),
-                                    is_group=False))
-        if _group_name:
-            options.append(dict(is_group=True,
-                                title=_group_name,
-                                options=_group_items[0:]))
-        return options
-
 
 
 class CheckBoxSelect(Select):
@@ -186,128 +141,6 @@ class CheckBox(FieldWidget):
 class Textarea(FieldWidget):
 
     template = 'textarea'
-
-
-class TinyMce(FieldWidget):
-
-    template = 'tinymce'
-
-    media = [FormJSRef('tiny_mce/tiny_mce_init.js')]
-
-    #: List of buttons used on widget
-    buttons = (('bold', 'italic', 'underline'),
-               ('bullist', 'numlist'),
-               ('sub', 'sup'),
-               ('indent', 'outdent'),
-               ('link', 'unlink'),
-               ('undo', 'redo'),
-               ('fullscreen', ))
-
-    #: List of attached plugins
-    plugins = ('safari', 'directionality',
-               'fullscreen', 'xhtmlxtras', 'inlinepopups')
-
-    #: Need to be documented
-    content_css = None
-
-    #: Need to be documented
-    browsers = ('safari', 'gecko', 'msie')
-
-    #: TinyMce initial config
-    cfg = {
-        'mode': 'exact',
-        'elements': '%(name)s',
-        'theme': 'advanced',
-        'browsers': '%(browsers)s',
-        'language': 'ru',
-        'plugins': '%(plugins)s',
-        'height': 200,
-        'cleanup': True,
-        'valid_elements': '%(tags)s',
-        'inline_styles': False,
-        'gecko_spellcheck': True,
-        'force_p_newlines' : True,
-        'paste_auto_cleanup_on_paste': True,
-        'remove_redundant_brs': True,
-        'fix_table_elements': True,
-        'fix_nesting': True,
-        'theme_advanced_buttons1': '%(buttons)s',
-        'theme_advanced_buttons2': '',
-        'theme_advanced_buttons3': '',
-        'theme_advanced_buttons4': '',
-        'theme_advanced_toolbar_location': 'top',
-        'theme_advanced_toolbar_align': 'left',
-        'theme_advanced_statusbar_location': 'bottom',
-        'theme_advanced_resizing': True,
-    }
-
-    #: Need to be documented
-    compress = False
-
-    def select_value(self, value, default):
-        if value is not None:
-            if callable(value):
-                return value()
-            if type(value) is dict:
-                return value.copy()
-            return value
-        return default
-
-    def __init__(self, add_plugins=None, add_buttons=None, drop_buttons=None,
-                 **kwargs):
-
-        for option in 'buttons', 'plugins', 'browsers', 'cfg', 'content_css':
-            val = kwargs.get(option, None)
-            default = getattr(self, option)
-            kwargs[option] = self.select_value(val, default)
-
-        if add_plugins:
-            kwargs['plugins'] = tuple(list(kwargs['plugins']) + list(add_plugins))
-        if add_buttons or drop_buttons:
-            btns = map(list, kwargs['buttons'])
-            if add_buttons:
-                for row, buttons in add_buttons.items():
-                    btns[row].extend(buttons)
-            if drop_buttons:
-                btns = map(lambda row: filter(lambda b: b not in drop_buttons, row), btns)
-                btns = filter(None, btns)
-            kwargs['buttons'] = tuple(map(tuple, btns))
-
-        super(TinyMce, self).__init__(**kwargs)
-
-    @cached_property
-    def js_config(self):
-        '''Serializes all TinyMce configs into JSON object'''
-        buttons = ',|,'.join([','.join(pack) for pack in self.buttons])
-        plugins = ','.join(self.plugins)
-        browsers = ','.join(self.browsers)
-        tags = ''
-        if hasattr(self.field.conv, 'allowed_attributes') and \
-        hasattr(self.field.conv, 'allowed_elements'):
-            tags = '@[%s],%s' % ('|'.join(set(self.field.conv.allowed_attributes)),
-                                 ','.join(self.field.conv.allowed_elements))
-        cfg = self.cfg.copy()
-        for key, value in cfg.items():
-            if type(value) is str and '%' in value:
-                cfg[key] = value % {'buttons': buttons, 'plugins': plugins,
-                                    'browsers': browsers, 'tags': tags,
-                                    'name': self.id}
-        if self.content_css:
-            css = self.content_css
-            if not css.startswith('/'):
-                css = self.env.cfg.STATIC_URL + css
-            cfg['content_css'] = css
-
-        cfg['field_name'] = self.field.resolve_name()
-
-        return simplejson.dumps(cfg)
-
-    def prepare_data(self, value, readonly=False):
-        data = FieldWidget.prepare_data(self, value, readonly)
-        return dict(data,
-                    config=self.js_config,
-                    plugins=','.join(self.plugins))
-
 
 
 class ReadonlySelect(Select):

@@ -25,6 +25,7 @@ class TestFormClass(unittest.TestCase):
             fields=[fields.Field(name='input', conv=conv)]
         return SampleForm(self.env, initial={'input': value}).get_field('input').conv
 
+
 class TestForm(TestFormClass):
     def test_init(self):
         class SampleForm(form.Form):
@@ -121,13 +122,6 @@ class TestForm(TestFormClass):
         frm = SampleForm(self.env)
         frm.accept(form.MultiDict([('input', 'NaN')]))
         assert not frm.is_valid
-
-    def test_get_media(self):
-        pass
-        #media = FormMedia(self.media, env=self.env)
-        #for field in self.fields:
-        #    media += field.get_media()
-        #return media
 
     def test_accept_valid(self):
         class SampleForm(form.Form):
