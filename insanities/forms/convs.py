@@ -92,15 +92,15 @@ class Converter(object):
         '''
         return False
 
-    def __init__(self, field=None, **kwargs):
-        self.field = weakproxy(field)
+    def __init__(self, element=None, **kwargs):
+        self._elem = weakproxy(element)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
         self.validators = self.validators or []
 
     @property
     def env(self):
-        return self.field.env
+        return self._elem.env
 
     def accept(self, value):
         '''Converts the message and validates it by chained validators'''
@@ -130,7 +130,7 @@ class Converter(object):
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
-        kwargs.setdefault('field', self.field)
+        kwargs.setdefault('element', self._elem)
         return self.__class__(**kwargs)
 
     def error(self, error_type, count=None,

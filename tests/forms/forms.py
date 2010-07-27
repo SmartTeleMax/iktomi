@@ -6,20 +6,19 @@ from insanities.forms import fields, convs, form, widgets, media, perms
 from insanities.web.core import RequestContext
 
 
+class MockEnvironment(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def gettext(self, template, count):
+        return template
+    def render(self, template_name, **kwargs):
+        return template_name, kwargs
+
+
 class TestFormClass(unittest.TestCase):
     @property
     def env(self):
-        from os import path
-        import jinja2
-        from insanities.ext import jinja2 as jnj
-
-        DIR = jnj.__file__
-        DIR = path.dirname(path.abspath(DIR))
-        TEMPLATES = [path.join(DIR, 'templates')]
-        rctx = RequestContext.blank('/')
-        rctx.vals['jinja_env'] = jinja2.Environment(
-                            loader=jinja2.FileSystemLoader(TEMPLATES))
-        return jnj.FormEnvironment(rctx)
+        return MockEnvironment()
 
     def instantiate_conv(self, conv, value=None):
         class SampleForm(form.Form):
@@ -104,8 +103,9 @@ class TestForm(TestFormClass):
                     ]
 
         # XXX how to test render?
-        rnd = SampleForm(self.env).render()
-        assert 'input1' in rnd and 'input2' in rnd
+        f = SampleForm(self.env)
+        template_name, data = f.render()
+        self.assert_(f in data.values())
 
     def test_is_valid(self):
         class SampleForm(form.Form):

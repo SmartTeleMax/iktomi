@@ -18,6 +18,16 @@ SAMPLE_FIELDSET_ARGS = dict(
                               fields.Field(**SAMPLE_FIELD_ARGS2)
                             ])
 
+
+class MockEnvironment(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def gettext(self, template, count):
+        return template
+    def render(self, template_name, **kwargs):
+        return template_name, kwargs
+
+
 class TestFormClass(unittest.TestCase):
     def setUp(self):
         self.field_args = SAMPLE_FIELD_ARGS.copy()
@@ -38,17 +48,7 @@ class TestFormClass(unittest.TestCase):
 
     @property
     def env(self):
-        from os import path
-        import jinja2
-        from insanities.ext import jinja2 as jnj
-
-        DIR = jnj.__file__
-        DIR = path.dirname(path.abspath(DIR))
-        TEMPLATES = [path.join(DIR, 'templates')]
-        rctx = RequestContext.blank('/')
-        rctx.vals['jinja_env'] = jinja2.Environment(
-                            loader=jinja2.FileSystemLoader(TEMPLATES))
-        return jnj.FormEnvironment(rctx)
+        return MockEnvironment()
 
     @property
     def field(self):
@@ -128,20 +128,6 @@ class TestField(TestFormClass):
         
         perm = SampleForm(self.env).fields[0].permissions
         self.assertEqual(perm, set('rw'))
-
-    def test_media(self):
-        medias = [media.FormJSRef('field_buttons.js'),
-                  media.FormCSSRef('field_buttons.ccss'),]
-
-        class SampleForm(form.Form):
-            fields=[fields.Field(media=medias, **self.field_args)]
-        
-        med = SampleForm(self.env).get_media()
-        
-        for f in medias:
-            assert f in med
-            
-        # Form and Field has no method to render_media, so we can't test it
 
     def test_accept(self):
         class SampleForm(form.Form):
@@ -279,13 +265,13 @@ class TestField(TestFormClass):
                                default='defaultvalue'),
                 ]
         frm = SampleForm(self.env)
-        
-        # XXX how to assert that it's rendered correctly
-        r1 = frm.get_field('input1').render()
-        assert "<input " in r1 and "readonly" not in r1
 
-        r2 = frm.get_field('input2').render()
-        assert "readonly" in r2 and "defaultvalue" in r2
+        temp_name, r1 = frm.get_field('input1').render()
+        self.assertEqual(r1['readonly'] , False)
+
+        temp_name, r2 = frm.get_field('input2').render()
+        self.assertEqual(r2['readonly'] , True)
+
 
 class TestFieldSet(TestFormClass):
 
@@ -354,23 +340,6 @@ class TestFieldSet(TestFormClass):
             'input2': '4',
         })
 
-    def test_media(self):
-        medias = [media.FormJSRef('field_buttons.js'),
-                  media.FormCSSRef('field_buttons.ccss'),]
-
-        class SampleForm(form.Form):
-            fields=[fields.FieldSet(
-                        name='fieldset',
-                        fields=[
-                              fields.Field(media=medias[:1], **SAMPLE_FIELD_ARGS),
-                              fields.Field(**SAMPLE_FIELD_ARGS2)
-                            ])]
-            media=medias[1:]
-        
-        med = SampleForm(self.env).get_media()
-        
-        for f in medias:
-            assert f in med
     
     def test_accept_correct(self):
         class SampleForm(form.Form):

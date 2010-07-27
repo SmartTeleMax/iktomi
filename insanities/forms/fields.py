@@ -28,19 +28,12 @@ class BaseField(object):
     #: Label of field. Can be set by field inheritance or throught constructor.
     label = None
 
-    def __init__(self, name, conv=None, widget=None, parent=None,
-                 **kwargs):
-        kw = {}
-        if parent is not None:
-            kw['field'] = self
-        conv = (conv or self.conv)(**kw)
-        widget = (widget or self.widget)(**kw)
-
+    def __init__(self, name, conv=None, widget=None, parent=None, **kwargs):
         kwargs.update(dict(
             parent=parent,
             name=name,
-            conv=conv,
-            widget=widget,
+            conv=(conv or self.conv)(element=self),
+            widget=(widget or self.widget)(element=self),
         ))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
