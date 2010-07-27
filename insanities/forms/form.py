@@ -10,6 +10,7 @@ from ..utils import weakproxy, cached_property, smart_gettext
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
 from .media import FormMedia
+from .widgets import Widget
 
 
 class BaseFormEnvironment(object):
@@ -80,8 +81,7 @@ class Form(object):
     this particular form.
     '''
 
-    template = 'table'
-    media = FormMedia()
+    widget = Widget
     permissions = DEFAULT_PERMISSIONS
 
     def __init__(self, env, initial={}, name=None, permissions=None):
@@ -119,8 +119,7 @@ class Form(object):
     def get_data(self, compact=True):
         '''
         Fills form data into new MultiDict.
-
-        If compact is True, includes only not-None values
+        If compact is True, includes only not-None values.
         '''
         data = MultiDict()
         for field in self.fields:
@@ -149,7 +148,7 @@ class Form(object):
 
     def render(self):
         '''Proxy method to form's environment render method'''
-        return self.env.render('forms/'+self.template, form=self)
+        return self.widget.render(form=self)
 
     @property
     def is_valid(self):
@@ -161,7 +160,7 @@ class Form(object):
         Returns a list of FormMedia objects related to the form and
         all of it's fields
         '''
-        media = FormMedia(self.media, env=self.env)
+        media = FormMedia(env=self.env)
         for field in self.fields:
             media += field.get_media()
         return media

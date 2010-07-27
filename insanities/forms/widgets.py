@@ -6,6 +6,7 @@ from ..utils import weakproxy, cached_property
 from . import convs
 from .media import FormMedia, FormCSSRef, FormJSRef
 
+
 class Widget(object):
 
     #: Template to render widget
@@ -16,26 +17,18 @@ class Widget(object):
     #: Value of HTML element's *class* attribute
     classname = ''
 
-    def __init__(self, field=None, **kwargs):
-        self.field = weakproxy(field)
+    def __init__(self, element=None, **kwargs):
+        self._elem = weakproxy(element)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
     @property
-    def multiple(self):
-        return self.field.multiple
-
-    @property
-    def input_name(self):
-        return self.field.input_name
-
-    @property
     def id(self):
-        return self.field.id
+        return self._elem.id
 
     @property
     def env(self):
-        return self.field.env
+        return self._elem.env
 
     def get_media(self):
         return FormMedia(self.media)
@@ -49,37 +42,55 @@ class Widget(object):
                     value=value,
                     readonly=readonly)
 
-    def render(self, value, readonly=False):
+    def prepare_data(self, **kwargs):
+        return kwargs
+
+    def render(self, **kwargs):
         '''
         Renders widget to template
         '''
-        data = self.prepare_data(value, readonly)
-        return self.env.render('widgets/'+self.template, **data)
+        data = self.prepare_data(**kwargs)
+        kwargs['widget'] = self
+        return self.env.render(self.template, **data)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
-        kwargs.setdefault('field', self.field)
+        kwargs.setdefault('element', self._elem)
         return self.__class__(**kwargs)
 
 
-class TextInput(Widget):
+class FieldWidget(Widget):
+    @property
+    def multiple(self):
+        return self._elem.multiple
+
+    @property
+    def input_name(self):
+        return self._elem.input_name
+
+    def prepare_data(self, **kwargs):
+        kwargs['field'] = self._elem
+        return kwargs
+
+
+class TextInput(FieldWidget):
 
     template = 'textinput'
     classname = 'textinput'
 
 
-class HiddenInput(Widget):
+class HiddenInput(FieldWidget):
 
     template = 'hiddeninput'
 
 
-class PasswordInput(Widget):
+class PasswordInput(FieldWidget):
 
     template = 'passwordinput'
     classname = 'textinput'
 
 
-class Select(Widget):
+class Select(FieldWidget):
     '''
     Takes options from :class:`EnumChoice<EnumChoice>` converter,
     looks up if converter allows null and passed this value as template
@@ -167,17 +178,17 @@ class CheckBoxSelect(Select):
     template = 'select-checkbox'
 
 
-class CheckBox(Widget):
+class CheckBox(FieldWidget):
 
     template = 'checkbox'
 
 
-class Textarea(Widget):
+class Textarea(FieldWidget):
 
     template = 'textarea'
 
 
-class TinyMce(Widget):
+class TinyMce(FieldWidget):
 
     template = 'tinymce'
 
@@ -292,7 +303,7 @@ class TinyMce(Widget):
         return simplejson.dumps(cfg)
 
     def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+        data = FieldWidget.prepare_data(self, value, readonly)
         return dict(data,
                     config=self.js_config,
                     plugins=','.join(self.plugins))
@@ -304,7 +315,7 @@ class ReadonlySelect(Select):
     template = 'readonlyselect'
 
 
-class CharDisplay(Widget):
+class CharDisplay(FieldWidget):
 
     template = 'span'
     classname = 'chardisplay'
@@ -315,25 +326,25 @@ class CharDisplay(Widget):
     getter = staticmethod(lambda v: v)
 
     def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+        data = FieldWidget.prepare_data(self, value, readonly)
         return dict(data,
                     value=self.getter(value),
                     should_escape=self.escape)
 
 
-class ImageView(Widget):
+class ImageView(FieldWidget):
 
     template = 'imageview'
     classname = 'imageview'
 
 
-class FileInput(Widget):
+class FileInput(FieldWidget):
     '''
     '''
     template = 'fileinput'
 
     def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+        data = FieldWidget.prepare_data(self, value, readonly)
 
         field = self.field
         value = field.parent.python_data.get(field.name, None)

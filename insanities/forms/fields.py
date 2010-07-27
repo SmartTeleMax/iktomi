@@ -21,19 +21,27 @@ class BaseField(object):
     methods for data access control, widget to render the g
     '''
 
-    #: Passed to widget and rendered as HTML element of field's classname.
-    #: Can be set by field inheritance or throught constructor.
-    classname = None
-    #: :class:`FormMedia` incstance containing media objects related to the field.
-    #: Can be set by field inheritance or throught constructor.
-    media = FormMedia()
+    widget = widgets.TextInput
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
     #: Label of field. Can be set by field inheritance or throught constructor.
     label = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, name, conv=None, widget=None, parent=None,
+                 **kwargs):
+        kw = {}
+        if parent is not None:
+            kw['field'] = self
+        conv = (conv or self.conv)(**kw)
+        widget = (widget or self.widget)(**kw)
+
+        kwargs.update(dict(
+            parent=parent,
+            name=name,
+            conv=conv,
+            widget=widget,
+        ))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
@@ -144,7 +152,7 @@ class BaseField(object):
         return self.perm_getter.get_perms(self)
 
     def get_media(self):
-        return FormMedia(self.media)
+        return self.widget.get_media()
 
 
 class Field(BaseField):
@@ -152,28 +160,9 @@ class Field(BaseField):
     Atomic field
     '''
 
-    #: :class:`Widget` subclass or instance used to render the field.
-    #: Can be set by Field inheritance or throught constructor.
-    widget = widgets.TextInput
     #: :class:`Conv` subclass or instance used to convert field data 
     #: and validate it
     conv = convs.Char
-
-    def __init__(self, name, conv=None, widget=None, parent=None,
-                 **kwargs):
-        kw = {}
-        if parent is not None:
-            kw['field'] = self
-        conv = (conv or self.conv)(**kw)
-        widget = (widget or self.widget)(**kw)
-
-        kwargs.update(dict(
-            parent=parent,
-            name=name,
-            conv=conv,
-            widget=widget,
-        ))
-        BaseField.__init__(self, **kwargs)
 
     def get_default(self):
         '''
@@ -218,21 +207,13 @@ class Field(BaseField):
             raise convs.SkipReadonly
         return self.to_python(self.grab())
 
-    def get_media(self):
-        '''
-        Returns a list of field's media objects included ones from field's widget.
-        '''
-        media = BaseField.get_media(self)
-        media += self.widget.get_media()
-        return media
-
     def render(self):
         '''
         Renders the field.
         '''
         readonly = 'w' not in self.permissions
         value = self.grab()
-        return self.widget.render(value, readonly=readonly)
+        return self.widget.render(value=value, readonly=readonly)
 
 
 class AggregateField(BaseField):
@@ -251,11 +232,6 @@ class FieldSet(AggregateField):
     '''
     Container field aggregating a couple of other different fields
     '''
-
-    #: template name used to load fieldset's template and render it.
-    #: Can be set by FieldSet inheritance or throught constructor.
-    template = 'fieldset'
-    media = FormCSSRef('fieldset-line.ccss')
 
     def __init__(self, name, conv=convs.Converter, fields=[], parent=None,
                  **kwargs):
@@ -326,7 +302,7 @@ class FieldSet(AggregateField):
         return self.to_python(result)
 
     def render(self):
-        return self.env.render('fields/'+self.template, field=self)
+        return self.widget.render(value=self)
 
     def get_media(self):
         media = BaseField.get_media(self)
@@ -341,12 +317,6 @@ class FieldList(AggregateField):
     '''
 
     order = False
-    #: template name used to load fieldlist's template and render it.
-    #: Can be set by FieldList inheritance or throught constructor.
-    template = 'fieldlist'
-    media = [FormJSRef('string.js'),
-             FormJSRef('fieldlist.js'),
-             FormCSSRef('fieldlist.ccss')]
 
     def __init__(self, name, conv=convs.List, field=Field(None),
                  parent=None, **kwargs):
@@ -421,8 +391,8 @@ class FieldList(AggregateField):
 
     def render(self):
         template = self.field(name='%'+self.input_name+'-index%').render()
-        return self.env.render('fields/'+self.template, field=self,
-                               encoded_template=quote_js(template))
+        return self.widget.render(field=self,
+                                  encoded_template=quote_js(template))
 
     def get_media(self):
         media = BaseField.get_media(self)
