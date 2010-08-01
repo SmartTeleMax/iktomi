@@ -81,7 +81,6 @@ class Form(object):
     this particular form.
     '''
 
-    #XXX: must be an instance
     widget = Widget
     permissions = DEFAULT_PERMISSIONS
 
@@ -91,6 +90,7 @@ class Form(object):
         self.data = data = MultiDict()
         self.initial = initial
         self.python_data = initial.copy()
+        # bind widget to form
         self.widget = self.widget(element=self)
         # clone all fields
         self.fields = [field(parent=self) for field in self.fields]

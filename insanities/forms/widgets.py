@@ -33,15 +33,6 @@ class Widget(object):
     def get_media(self):
         return FormMedia(self.media)
 
-    def prepare_data(self, value, readonly=False):
-        '''
-        Method returning data passed to template.
-        Subclasses can override it.
-        '''
-        return dict(widget=self,
-                    value=value,
-                    readonly=readonly)
-
     def prepare_data(self, **kwargs):
         return kwargs
 
@@ -50,7 +41,7 @@ class Widget(object):
         Renders widget to template
         '''
         data = self.prepare_data(**kwargs)
-        kwargs['widget'] = self
+        data['widget'] = self
         return self.env.render(self.template, **data)
 
     def __call__(self, **kwargs):
@@ -68,6 +59,10 @@ class FieldWidget(Widget):
     @property
     def input_name(self):
         return self._elem.input_name
+
+    @property
+    def field(self):
+        return self._elem
 
     def prepare_data(self, **kwargs):
         kwargs['field'] = self._elem
@@ -121,9 +116,8 @@ class Select(FieldWidget):
                                 selected=(choice in values)))
         return options
 
-    def prepare_data(self, value, readonly=False):
-        data = FieldWidget.prepare_data(self, value, readonly)
-        return dict(data,
+    def prepare_data(self, **kwargs):
+        return dict(kwargs,
                     options=self.get_options(value),
                     required=('true' if self.field.conv.required else 'false'))
 
@@ -158,8 +152,7 @@ class CharDisplay(FieldWidget):
     #: Function converting the value to string.
     getter = staticmethod(lambda v: v)
 
-    def prepare_data(self, value, readonly=False):
-        data = FieldWidget.prepare_data(self, value, readonly)
+    def prepare_data(self, **data):
         return dict(data,
                     value=self.getter(value),
                     should_escape=self.escape)
@@ -176,11 +169,9 @@ class FileInput(FieldWidget):
     '''
     template = 'fileinput'
 
-    def prepare_data(self, value, readonly=False):
-        data = FieldWidget.prepare_data(self, value, readonly)
-
+    def prepare_data(self, **data):
         field = self.field
-        value = field.parent.python_data.get(field.name, None)
+        value = field.value
         delete = field.form.data.get(field.input_name + '__delete', False)
         if value is None:
             value = field.parent.initial.get(field.name, None)

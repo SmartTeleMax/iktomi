@@ -2,9 +2,9 @@
 import unittest
 from insanities.forms import convs, form, fields
 from insanities.utils.odict import OrderedDict
-from .forms import TestFormClass
+from .testutils import FormTestCase
 
-class TestConv(TestFormClass):
+class TestConv(FormTestCase):
     def test_validators(self):
         def v1(conv, string):
             return string.strip('.')
@@ -69,7 +69,7 @@ class TestConv(TestFormClass):
 #    def test_messages(self):
 #        pass
 
-class TestChar(TestFormClass):
+class TestChar(FormTestCase):
     def setUp(self):
         pass
 
@@ -98,7 +98,7 @@ class TestChar(TestFormClass):
         self.assertEqual(conv.to_python('32'), '32')
 
 
-class TestInt(TestFormClass):
+class TestInt(FormTestCase):
 
     def test_clean_any_value(self):
         conv = convs.Int()
@@ -131,7 +131,7 @@ class TestInt(TestFormClass):
         self.assertEqual(conv.from_python(0), '0')
 
 
-class TestBool(TestFormClass):
+class TestBool(FormTestCase):
 
     def test_clean_any_value(self):
         conv = convs.Bool()
@@ -146,7 +146,7 @@ class TestBool(TestFormClass):
         self.assertEqual(conv.from_python(True), 'checked')
 
 
-class TestDisplayOnly(TestFormClass):
+class TestDisplayOnly(FormTestCase):
 
     def test_clean_any_value(self):
         conv = convs.DisplayOnly()
@@ -161,7 +161,7 @@ class TestDisplayOnly(TestFormClass):
         self.assertEqual(conv.from_python('checked'), 'checked')
 
 
-class TestEnumChoice(TestFormClass):
+class TestEnumChoice(FormTestCase):
 
     def test_clean_single(self):
         conv = convs.EnumChoice(choices=[
@@ -246,7 +246,7 @@ class TestEnumChoice(TestFormClass):
 
 # XXX DATE CONVERTERS!
 
-class TestHtml(TestFormClass):
+class TestHtml(FormTestCase):
     '''Tests for html converter'''
 
     def setUp(self):
@@ -322,7 +322,7 @@ class TestHtml(TestFormClass):
         self.assertEqualSets(conv.tags, ('a', 'span', 'p'))
 
 
-class TestList(TestFormClass):
+class TestList(FormTestCase):
 
     def test_clean(self):
         conv = convs.List()
