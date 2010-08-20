@@ -5,6 +5,7 @@ __all__ = ['match', 'method', 'static_files', 'ctype']
 import logging
 import re
 import httplib
+import mimetypes
 from os import path
 from .core import RequestHandler, STOP
 from .http import HttpException
@@ -95,6 +96,9 @@ class static_files(RequestHandler):
                 static_path = static_path[1:]
             file_path = path.join(self.location, static_path)
             if path.exists(file_path) and path.isfile(file_path):
+                mime = mimetypes.guess_type(file_path)[0]
+                if mime:
+                    rctx.response.content_type = mime
                 with open(file_path, 'r') as f:
                     rctx.response.write(f.read())
                 return rctx.next()
