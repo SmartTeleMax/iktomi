@@ -7,8 +7,12 @@ from inspect import isclass
 
 from utils import *
 from web import *
-from forms import *
-from ext import *
+#from forms import *
+#from ext import *
+
+from forms.convs import *
+from forms.fields import *
+from forms.forms import *
 
 suite = unittest.TestSuite()
 

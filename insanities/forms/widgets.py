@@ -71,18 +71,18 @@ class FieldWidget(Widget):
 
 class TextInput(FieldWidget):
 
-    template = 'textinput'
+    template = 'widgets/textinput'
     classname = 'textinput'
 
 
 class HiddenInput(FieldWidget):
 
-    template = 'hiddeninput'
+    template = 'widgets/hiddeninput'
 
 
 class PasswordInput(FieldWidget):
 
-    template = 'passwordinput'
+    template = 'widgets/passwordinput'
     classname = 'textinput'
 
 
@@ -92,7 +92,7 @@ class Select(FieldWidget):
     looks up if converter allows null and passed this value as template
     :obj:`required` variable.
     '''
-    template = 'select'
+    template = 'widgets/select'
     classname = 'select'
     #: HTML select element's select attribute value.
     size = None
@@ -117,34 +117,35 @@ class Select(FieldWidget):
         return options
 
     def prepare_data(self, **kwargs):
+        print kwargs
         return dict(kwargs,
-                    options=self.get_options(value),
+                    options=self.get_options(kwargs.get('value', [])),
                     required=('true' if self.field.conv.required else 'false'))
 
 
 class CheckBoxSelect(Select):
 
-    template = 'select-checkbox'
+    template = 'widgets/select-checkbox'
 
 
 class CheckBox(FieldWidget):
 
-    template = 'checkbox'
+    template = 'widgets/checkbox'
 
 
 class Textarea(FieldWidget):
 
-    template = 'textarea'
+    template = 'widgets/textarea'
 
 
 class ReadonlySelect(Select):
 
-    template = 'readonlyselect'
+    template = 'widgets/readonlyselect'
 
 
 class CharDisplay(FieldWidget):
 
-    template = 'span'
+    template = 'widgets/span'
     classname = 'chardisplay'
     #: If is True, value is escaped while rendering. 
     #: Passed to template as :obj:`should_escape` variable.
@@ -160,14 +161,14 @@ class CharDisplay(FieldWidget):
 
 class ImageView(FieldWidget):
 
-    template = 'imageview'
+    template = 'widgets/imageview'
     classname = 'imageview'
 
 
 class FileInput(FieldWidget):
     '''
     '''
-    template = 'fileinput'
+    template = 'widgets/fileinput'
 
     def prepare_data(self, **data):
         field = self.field
@@ -191,5 +192,5 @@ class FileInput(FieldWidget):
                     null=field.null)
 
 class ImageInput(FileInput):
-    template = 'imageinput'
+    template = 'widgets/imageinput'
 

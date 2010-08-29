@@ -13,12 +13,25 @@ class MockEnvironment(object):
         return template_name, kwargs
 
 
+class MockForm(object):
+    permissions = set('rw')
+    name = ''
+    prefix = ''
+    def __init__(self, *fields, **kw):
+        self.fields = [f(parent=self) for f in fields]
+        self.__dict__.update(kw)
+    @property
+    def form(self):
+        return self
+
+
+class MockField(object):
+    def __init__(self,conv, env):
+        self.conv = conv(element=self)
+        self.env = env
+
+
 class FormTestCase(unittest.TestCase):
 
     def env(self, **kwargs):
         return MockEnvironment(**kwargs)
-
-    def instantiate_conv(self, conv, value=None):
-        class SampleForm(Form):
-            fields=[Field(name='input', conv=conv)]
-        return SampleForm(self.env(), initial={'input': value}).get_field('input').conv
