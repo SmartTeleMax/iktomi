@@ -66,7 +66,7 @@ class SqlAlchemyCommands(CommandDigest):
         :*initial* - function that takes session object and populates 
                      session with models instances
         '''
-        self.cfg = databases
+        self.cfg = databases if isinstance(databases, dict) else {'':databases}
         self.base_class = base_class
         self.initial = initial
 

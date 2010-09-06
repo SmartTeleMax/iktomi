@@ -295,6 +295,9 @@ class RequestContext(object):
         # XXX it's big question, which dicts we have to commit after map success
         self._local = StackedDict()
 
+    def redirect_to(self, *args, **kwargs):
+        raise HttpException(303, url=self.vals.url_for(*args, **kwargs))
+
     @classmethod
     def blank(cls, url, **data):
         '''
