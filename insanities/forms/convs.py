@@ -78,6 +78,13 @@ class Converter(object):
 
     error_required = N_('required field')
 
+    def __init__(self, field=None, *args, **kwargs):
+        self.field = weakproxy(field)
+        self._init_kwargs = kwargs
+        self.__dict__.update(kwargs)
+        self.validators_and_filters = args
+        self.to_python = self._check(self.to_python)
+
     # It is defined as read-only property to avoid setting it to True where
     # converter doesn't support it.
     @property
@@ -88,34 +95,25 @@ class Converter(object):
         '''
         return False
 
-    def __init__(self, field=None, *args, **kwargs):
-        self.field = weakproxy(field)
-        self._init_kwargs = kwargs
-        self.__dict__.update(kwargs)
-        self.validators = []
-
     @property
     def env(self):
         return self.field.env
 
-    #TODO: remove this method, use (transparent) wrappers 
-    #      at converter initialization
-    def accept(self, value):
-        '''Converts the message and validates it by chained validators'''
-        value = self.to_python(value)
-        for validate in self.validators:
-            value = validate(self, value)
-        print value
-        if self.required and value in self.null_values:
-            self.error('required')
-        return value
+    def _check(self, method):
+        def wrapper(value):
+            #TODO: I do not get logic. What is 'null' for?
+            if self.required and not value:
+                raise ValidationError('required field')
+            value = method(value)
+            for v in self.validators_and_filters:
+                value = v(value)
+            return value
+        return wrapper
 
-    #TODO: decorate this method
     def to_python(self, value):
         """ custom converters should override this """
         return value
 
-    #TODO: decorate this method
     def from_python(self, value):
         """ custom converters should override this """
         return value
@@ -158,6 +156,57 @@ class Converter(object):
     def _assert(self, expression, error_type, count=None):
         if not expression:
             self.error(error_type, count=None)
+
+
+class validator(object):
+    'Function decorator'
+    def __init__(self, message):
+        self.message = message
+    def __call__(self, func):
+        def wrapper(value):
+            if not func(value):
+                raise ValidationError(self.message)
+            return value
+        return wrapper
+
+# Some useful validators
+
+def limit(min_length=None, max_length=None):
+    message = ''
+    if min_length:
+        message += 'minimal length is %d ' % min_length
+    if message:
+        message += ', '
+    if max_length:
+        message += 'maximum length is %d ' % max_length
+
+    @validator(message)
+    def wrapper(value):
+        if min_length and len(value) < min_length:
+            return False
+        if max_length and len(value) > max_length:
+            return False
+        return True
+    return wrapper
+
+
+def int_limit(min_value=None, max_value=None):
+    message = ''
+    if min_value:
+        message += 'minimal value is %d ' % min_value
+    if message:
+        message += ', '
+    if max_value:
+        message += 'maximum value is %d ' % max_value
+
+    @validator(message)
+    def wrapper(value):
+        if min_value and value < min_value:
+            return False
+        if max_value and value > max_value:
+            return False
+        return True
+    return wrapper
 
 
 class Char(Converter):

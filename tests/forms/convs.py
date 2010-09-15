@@ -13,7 +13,7 @@ class ConverterTests(FormTestCase):
         'Accept method of converter'
         field = MockField(convs.Converter, self.env())
         conv = field.conv
-        value = conv.accept('value')
+        value = conv.to_python('value')
         self.assertEqual(value, 'value')
 
     def test_to_python(self):
@@ -37,20 +37,20 @@ class IntConverterTests(FormTestCase):
         'Accept method of Int converter'
         field = MockField(convs.Int, self.env())
         conv = field.conv
-        value = conv.accept('12')
+        value = conv.to_python('12')
         self.assertEqual(value, 12)
 
     def test_accept_invalid(self):
         'Accept method of Int converter for invalid data'
         field = MockField(convs.Int, self.env())
         conv = field.conv
-        self.assertRaises(convs.ValidationError, conv.accept, '12c')
+        self.assertRaises(convs.ValidationError, conv.to_python, '12c')
 
     def test_accept_null_value(self):
         'Accept method of Int converter for None value'
         field = MockField(convs.Char, self.env())
         conv = field.conv
-        value = conv.accept(None)
+        value = conv.to_python(None)
         self.assertEqual(value, '')
 
     def test_to_python(self):
@@ -74,14 +74,14 @@ class CharConverterTests(FormTestCase):
         'Accept method of Char converter'
         field = MockField(convs.Char, self.env())
         conv = field.conv
-        value = conv.accept('12')
+        value = conv.to_python('12')
         self.assertEqual(value, u'12')
 
     def test_accept_null_value(self):
         'Accept method of Char converter for None value'
         field = MockField(convs.Char, self.env())
         conv = field.conv
-        value = conv.accept(None)
+        value = conv.to_python(None)
         self.assertEqual(value, '')
 
     def test_to_python(self):
