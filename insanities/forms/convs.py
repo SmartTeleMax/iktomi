@@ -69,13 +69,9 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
-    #: A list of callables to make additional validation. 
-    #: Validators recieve converter and value and raising ValidationError
-    #: if there is something wrong.
-    #: Validators are attached to converter by chaining::
-    #:
-    #:    conv | myvalidator1 | myvalidator2
-    validators = None
+    #: Property responsible to "field is None" *validation*.
+    #: Be careful and don't confuse with `null` property of Char converter.
+    required = True
 
     #: Values are not accepted by Required validator
     null_values = (None, )
@@ -92,45 +88,41 @@ class Converter(object):
         '''
         return False
 
-    def __init__(self, element=None, **kwargs):
-        self._elem = weakproxy(element)
+    def __init__(self, field=None, *args, **kwargs):
+        self.field = weakproxy(field)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
-        self.validators = self.validators or []
+        self.validators = []
 
     @property
     def env(self):
-        return self._elem.env
+        return self.field.env
 
+    #TODO: remove this method, use (transparent) wrappers 
+    #      at converter initialization
     def accept(self, value):
         '''Converts the message and validates it by chained validators'''
         value = self.to_python(value)
         for validate in self.validators:
             value = validate(self, value)
+        print value
         if self.required and value in self.null_values:
             self.error('required')
         return value
 
+    #TODO: decorate this method
     def to_python(self, value):
         """ custom converters should override this """
         return value
 
+    #TODO: decorate this method
     def from_python(self, value):
         """ custom converters should override this """
         return value
 
-    #: Property responsible to "field is None" *validation*.
-    #: Be careful and don't confuse with `null` property of Char converter.
-    required = True
-
-    def __or__(self, validator):
-        """ chaining converters """
-        validators = self.validators + [validator]
-        return self(validators=validators)
-
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
-        kwargs.setdefault('element', self._elem)
+        kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
 
     def error(self, error_type, count=None,

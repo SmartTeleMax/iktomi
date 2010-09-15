@@ -9,8 +9,6 @@ class MockEnvironment(object):
         self.__dict__.update(kwargs)
     def gettext(self, template, count):
         return template
-    def render(self, template_name, **kwargs):
-        return template_name, kwargs
 
 
 class MockForm(object):
@@ -27,7 +25,7 @@ class MockForm(object):
 
 class MockField(object):
     def __init__(self,conv, env):
-        self.conv = conv(element=self)
+        self.conv = conv(field=self)
         self.env = env
 
 

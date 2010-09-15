@@ -10,7 +10,6 @@ from ..utils import weakproxy, cached_property, smart_gettext
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
 from .media import FormMedia
-from .widgets import Widget
 
 
 class BaseFormEnvironment(object):
@@ -18,16 +17,12 @@ class BaseFormEnvironment(object):
     Mixin adding get_string method to environment
     '''
 
-    def __init__(self, rctx=None):
+    def __init__(self, **kw):
         '''
             Should be implemented in subclasses.
             The only claim is to put rctx into self.rctx
         '''
-        self.rctx = rctx
-
-    def render(self, template, form):
-        '''Should be implemented in subclasses'''
-        raise NotImplementedError()
+        self.__dict__.update(kw)
 
     @cached_property
     def translation(self):
@@ -57,9 +52,7 @@ class Form(object):
 
         class MyForm(Form):
             fields=[
-                  fields.Field(name='input2',
-                               conv=convs.Int,
-                               widget=widgets.TextInput),
+                  Field(name='input2', convs.Int),
                 ]
             template = 'form-template'
             medias = [media.FormJSRef('field_buttons.js'),
@@ -81,17 +74,14 @@ class Form(object):
     this particular form.
     '''
 
-    widget = Widget
     permissions = DEFAULT_PERMISSIONS
 
     def __init__(self, env, initial={}, name=None, permissions=None):
-        self.env = env
+        self.env = FormEnvironment(env) if isinstance(env, dict) else env
         self.name = name
         self.data = data = MultiDict()
         self.initial = initial
         self.python_data = initial.copy()
-        # bind widget to form
-        self.widget = self.widget(element=self)
         # clone all fields
         self.fields = [field(parent=self) for field in self.fields]
 
@@ -148,24 +138,10 @@ class Form(object):
         else:
             return ''
 
-    def render(self):
-        '''Proxy method to form's environment render method'''
-        return self.widget.render(form=self)
-
     @property
     def is_valid(self):
         '''Is true if validated form as no errors'''
         return not self.errors
-
-    def get_media(self):
-        '''
-        Returns a list of FormMedia objects related to the form and
-        all of it's fields
-        '''
-        media = FormMedia(env=self.env)
-        for field in self.fields:
-            media += field.get_media()
-        return media
 
     def accept(self, data, files=None):
         '''

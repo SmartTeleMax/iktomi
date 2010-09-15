@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from ..utils import weakproxy, quote_js, cached_property
-from . import convs, widgets
+from ..utils import weakproxy, cached_property
+from . import convs
 from ..utils.odict import OrderedDict
 import re, logging
-from .media import FormMedia, FormCSSRef, FormJSRef
 from .perms import FieldPerm
 
 logger = logging.getLogger(__name__)
@@ -17,23 +16,22 @@ class BaseField(object):
     '''
     Simple container class which ancestors represents various parts of Form.
 
-    Encapsulates converter, various fields attributes, media objects,
-    methods for data access control, widget to render the g
+    Encapsulates converter, various fields attributes, methods for data 
+    access control
     '''
 
-    widget = widgets.TextInput
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
-    #: Label of field. Can be set by field inheritance or throught constructor.
-    label = None
 
-    def __init__(self, name, conv=None, widget=None, parent=None, **kwargs):
+    # default converter
+    conv = convs.Char
+
+    def __init__(self, name, conv=None, parent=None, **kwargs):
         kwargs.update(dict(
             parent=parent,
             name=name,
-            conv=(conv or self.conv)(element=self),
-            widget=(widget or self.widget)(element=self),
+            conv=(conv or self.conv)(field=self),
         ))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
@@ -51,14 +49,6 @@ class BaseField(object):
         if isinstance(self.parent, form.Form):
             return name
         return self.parent.resolve_name() + '.' + name
-
-    @property
-    def i18n_label(self):
-        # XXX is it necessary?
-        gt = self.env.gettext
-        # in two lines to prevent recognition of "label"
-        # as translatable string by makemessages
-        return gt(self.label)
 
     @property
     def parent(self):
@@ -132,7 +122,7 @@ class BaseField(object):
         return '%s-%s' % (self.form.id, self.input_name)
 
     def to_python(self, value):
-        return self.conv.accept(value)
+        return self.conv.to_python(value)
 
     def from_python(self, value):
         return self.conv.from_python(value)
@@ -143,9 +133,6 @@ class BaseField(object):
         Returns field's access permissions
         '''
         return self.perm_getter.get_perms(self)
-
-    def get_media(self):
-        return self.widget.get_media()
 
 
 class Field(BaseField):
@@ -199,14 +186,6 @@ class Field(BaseField):
         if 'w' not in self.permissions:
             raise convs.SkipReadonly
         return self.to_python(self.grab())
-
-    def render(self):
-        '''
-        Renders the field.
-        '''
-        readonly = 'w' not in self.permissions
-        value = self.grab()
-        return self.widget.render(value=value, readonly=readonly)
 
 
 class AggregateField(BaseField):
@@ -294,15 +273,6 @@ class FieldSet(AggregateField):
             raise convs.NestedError
         return self.to_python(result)
 
-    def render(self):
-        return self.widget.render(value=self)
-
-    def get_media(self):
-        media = BaseField.get_media(self)
-        for field in self.fields:
-            media += field.get_media()
-        return media
-
 
 class FieldList(AggregateField):
     '''
@@ -381,13 +351,3 @@ class FieldList(AggregateField):
             indeces.append(index)
         for index in indeces:
             data.add(self.indeces_input_name, index)
-
-    def render(self):
-        template = self.field(name='%'+self.input_name+'-index%').render()
-        return self.widget.render(field=self,
-                                  encoded_template=quote_js(template))
-
-    def get_media(self):
-        media = BaseField.get_media(self)
-        media += self.field.get_media()
-        return media

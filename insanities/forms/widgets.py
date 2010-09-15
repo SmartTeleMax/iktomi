@@ -191,6 +191,7 @@ class FileInput(FieldWidget):
                     delete=delete, temp_url=self.env.rctx.conf.temp_url,
                     null=field.null)
 
+
 class ImageInput(FileInput):
     template = 'widgets/imageinput'
 
