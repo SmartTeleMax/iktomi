@@ -27,6 +27,8 @@ class MockField(object):
     def __init__(self,conv, env):
         self.conv = conv(field=self)
         self.env = env
+    def get_default(self):
+        return ''
 
 
 class FormTestCase(unittest.TestCase):

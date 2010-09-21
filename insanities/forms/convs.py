@@ -69,13 +69,9 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
-    #: Property responsible to "field is None" *validation*.
-    #: Be careful and don't confuse with `null` property of Char converter.
     required = True
 
     #: Values are not accepted by Required validator
-    null_values = (None, )
-
     error_required = N_('required field')
 
     def __init__(self, field=None, *args, **kwargs):
@@ -91,7 +87,7 @@ class Converter(object):
     def multiple(self):
         '''
         Signs if converter is multiple or not.
-        Multiple converters usually accept and return lists.
+        Multiple converters usually accept and return collections.
         '''
         return False
 
@@ -101,9 +97,8 @@ class Converter(object):
 
     def _check(self, method):
         def wrapper(value):
-            #TODO: I do not get logic. What is 'null' for?
             if self.required and not value:
-                raise ValidationError('required field')
+                self.error('required')
             value = method(value)
             for v in self.validators_and_filters:
                 value = v(value)
@@ -112,11 +107,15 @@ class Converter(object):
 
     def to_python(self, value):
         """ custom converters should override this """
+        if value == '':
+            return None
         return value
 
     def from_python(self, value):
         """ custom converters should override this """
-        return value
+        if value is None:
+            value = ''
+        return unicode(value)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
@@ -147,13 +146,12 @@ class Converter(object):
                     return value
         '''
         message_template = getattr(self, 'error_'+error_type, default)
-        #if callable(message_template):
-        #    message_template = message_template()
         message_template = self.env.gettext(message_template, count)
         message = message_template % self.__dict__
         raise ValidationError(message)
 
     def _assert(self, expression, error_type, count=None):
+        'Shortcut for assertions of certain type'
         if not expression:
             self.error(error_type, count=None)
 
@@ -211,36 +209,12 @@ def int_limit(min_value=None, max_value=None):
 
 class Char(Converter):
 
-    """
-    string converter with min length, max length and regex
-    checks support
-    """
-
-    #: Min length of valid string
-    min_length = None
-    #: Max length of valid string
-    max_length = None
     #: Regexp to match input string
     regex = None
-    #: Option showing whether strip input string or not. True by default
-    strip = True
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
+    strip=False
 
-    #: Property responsible to returned converting value to None when the value
-    #: is empty (by default, if it is in conv.empty_values)
-    #: If null is True Converter represents empty value ('' or None) as None
-    null = False
-
-
-    error_length_exact = M_(u'The length should be exactly one symbol',
-                            u'The length should be exactly %(max_length)s symbols')
-    error_max_length = M_(u'The length should be at most one symbol',
-                          u'The length should be at most %(max_length)s symbols')
-    error_min_length = M_(u'The length should be at least one symbol',
-                          u'The length should be at least %(min_length)s symbols')
-
-    error_notempty = N_(u'field can not be empty')
     error_regex = N_('field should match %(regex)s')
 
     def clean_value(self, value):
@@ -253,8 +227,6 @@ class Char(Converter):
         '''
         # We have to clean before checking min/max length. It's done in
         # separate method to allow additional clean action in subclasses.
-        if value is None:
-            value = ''
         if self.strip:
             value = value.strip()
         return value
@@ -262,24 +234,6 @@ class Char(Converter):
     def to_python(self, value):
         # converting
         value = self.clean_value(value)
-        if self.null and value in ('', None):
-            return None
-        # various validations
-        if self.nontext_replacement is not None:
-            value = replace_nontext(value, self.nontext_replacement)
-        if self.max_length==self.min_length!=None:
-            self._assert(len(value) == self.max_length, 'error_length_exact',
-                         count=self.max_length)
-        else:
-            if self.max_length:
-                self._assert(len(value) <= self.max_length, 'max_length',
-                             count=self.max_length)
-            if self.min_length:
-                if self.min_length == 1:
-                    self._assert(len(value) >= self.min_length, 'notempty')
-                else:
-                    self._assert(len(value) >= self.min_length, 'min_length',
-                                 count=self.min_length)
         if self.regex:
             regex = self.regex
             if isinstance(self.regex, basestring):
@@ -298,40 +252,21 @@ class Int(Converter):
     integer converter with max and min values support
     """
 
-    #: Min allowed valid number
-    min = None
-    #: Max allowed valid number
-    max = None
-
-    null_values = (None, '')
-
     error_notvalid = N_('it is not valid integer')
-    error_min = N_('min value is %(min)s')
-    error_max = N_('max value is %(max)s')
-
 
     def to_python(self, value):
-        if value in self.null_values:
+        if value == '':
             return None
         try:
             value = int(value)
         except ValueError:
             self.error('notvalid')
-        if self.min is not None:
-            self._assert(self.min <= value, 'min')
-        if self.max is not None:
-            self._assert(self.max >= value, 'max')
         return value
 
     def from_python(self, value):
         if value is None:
             return ''
         return unicode(value)
-
-    def __call__(self, **kwargs):
-        kwargs.setdefault('min', self.min)
-        kwargs.setdefault('max', self.max)
-        return Converter.__call__(self, **kwargs)
 
 
 class Bool(Converter):
@@ -358,12 +293,10 @@ class EnumChoice(Converter):
     '''In addition to Converter interface it must provide methods __iter__ and
     get_label.'''
 
-    conv = Converter()
+    conv = Char()
     # choices: [(python_value, label), ...]
     choices = ()
     multiple = False
-    null_values = (None, [])
-
     error_required = N_('you must select a value')
 
     def from_python(self, value):
@@ -382,6 +315,8 @@ class EnumChoice(Converter):
         return value
 
     def to_python(self, value):
+        if value == '':
+            return []
         if self.multiple:
             value = [item for item in map(self._safe_to_python, value or [])
                      if item is not None]
@@ -581,11 +516,6 @@ class Html(Char):
 class List(Converter):
 
     filter = None
-    min_length = None
-    max_length = None
-
-    error_min_length = N_('min length is %(min_length)s')
-    error_max_length = N_('max length is %(max_length)s')
 
     def from_python(self, value):
         result = OrderedDict()
@@ -597,9 +527,4 @@ class List(Converter):
         items = value.values()
         if self.filter is not None:
             items = filter(self.filter, items)
-        if self.max_length:
-            self._assert(len(items)<=self.max_length, 'max_length')
-        if self.min_length:
-            self._assert(len(value)>=self.min_length, 'min_length')
         return items
-

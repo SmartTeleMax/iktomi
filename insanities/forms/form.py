@@ -18,10 +18,6 @@ class BaseFormEnvironment(object):
     '''
 
     def __init__(self, **kw):
-        '''
-            Should be implemented in subclasses.
-            The only claim is to put rctx into self.rctx
-        '''
         self.__dict__.update(kw)
 
     @cached_property
@@ -77,7 +73,7 @@ class Form(object):
     permissions = DEFAULT_PERMISSIONS
 
     def __init__(self, env, initial={}, name=None, permissions=None):
-        self.env = FormEnvironment(env) if isinstance(env, dict) else env
+        self.env = BaseFormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.data = data = MultiDict()
         self.initial = initial
