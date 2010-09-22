@@ -8,6 +8,7 @@ import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
+from ..utils.dt import strftime
 from ..utils import N_, M_
 
 
@@ -344,70 +345,69 @@ class DatetimeDisplay(DisplayOnly):
 
 min_datetime = datetime(1900, 1, 1)
 
+class BaseDatetime(Converter):
 
-class Datetime(Converter):
+    format = None
+    readable_format = None
+    replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
+                    ('%m', 'MM'), ('%Y', 'YYYY'))
+    error_wrong_format = N_('Wrong format (%(readable_format)s)')
+
+    def __init__(self, *args, **kwargs):
+        if not 'readable_format' in kwargs or 'format' in kwargs:
+            replacements = self.replacements # XXX make language-dependent
+            fmt = kwargs.get('format', self.format)
+            for repl in replacements:
+                fmt = fmt.replace(*repl)
+            kwargs['readable_format'] = fmt
+        Converter.__init__(self, *args, **kwargs)
+
+    def from_python(self, value):
+        if value in (None, ''):
+            return ''
+        # carefull to years before 1900
+        return strftime(value, self.format)
+
+    def to_python(self, value):
+        if not value:
+            return None
+        try:
+            return self.convert_datetime(value)
+        except ValueError:
+            self.readable_format
+            raise self.error('wrong_format')
+        except TypeError, e:
+            raise ValidationError, e.message
+
+
+class Datetime(BaseDatetime):
 
     format = '%d.%m.%Y, %H:%M'
 
-    def from_python(self, value):
-        if not value:
-            return ''
-        if value > min_datetime:
-            return value.strftime(self.format)
-        else:
-            return "%s" % value
-
-    def to_python(self, value):
-        if not value:
-            return None
-        try:
-            return datetime.strptime(value, self.format)
-        except ValueError:
-            # XXX Message is format dependent
-            raise ValidationError, u'неверный формат (ДД.ММ.ГГГГ, ЧЧ:ММ)'
+    def convert_datetime(self, value):
+        return datetime.strptime(value, self.format)
 
 
-class Date(Converter):
+class Date(BaseDatetime):
 
     format = '%d.%m.%Y'
 
-    def from_python(self, value):
-        if not value:
-            return ''
-        if value > min_datetime.date():
-            return value.strftime(self.format)
-        else:
-            return "%s" % value
-
-    def to_python(self, value):
-        if not value:
-            return None
-        elif not value:
-            return None
-        try:
-            return datetime.strptime(value, self.format).date()
-        except ValueError:
-            # XXX Message is format dependent
-            raise ValidationError, u'неверный формат (ДД.ММ.ГГГГ)'
+    def convert_datetime(self, value):
+        return datetime.strptime(value, self.format).date()
 
 
-class Time(Converter):
+class Time(BaseDatetime):
 
     format = '%H:%M'
 
     def from_python(self, value):
         if value in (None, ''):
             return ''
+        # we doesn't care about year in time converter, so use native strftime
         return value.strftime(self.format)
 
-    def to_python(self, value):
-        if not value:
-            return None
-        try:
-            return datetime.strptime(value, self.format).time()
-        except ValueError:
-            # XXX Message is format dependent
-            raise ValidationError, u'неверный формат (ЧЧ:ММ)'
+    def convert_datetime(self, value):
+        return datetime.strptime(value, self.format).time()
 
 
 class SplitDateTime(Converter):
