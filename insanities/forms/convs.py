@@ -319,16 +319,6 @@ class EnumChoice(Converter):
         return dict(self.choices).get(self.conv.to_python(value))
 
 
-class DatetimeDisplay(DisplayOnly):
-
-    format = '%d.%m.%Y, %H:%M'
-
-    def from_python(self, value):
-        if not value:
-            return self.env.get_string(N_(u'is not set'))
-        return value.strftime(self.format)
-
-
 class BaseDatetime(Converter):
 
     format = None
