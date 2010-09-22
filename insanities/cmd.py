@@ -33,13 +33,16 @@ class server(CommandDigest):
                 server_thread.running = False
                 server_thread.join()
                 logger.info('File "%s" is changed. Reloading...' % filename)
+                # Smart reload of current process.
+                # Main goal is to reload all modules
+                os.execvp(sys.executable, [sys.executable] + sys.argv)
                 server_thread = DevServerThread(host, port, self.app_name)
                 server_thread.start()
         except KeyboardInterrupt:
             logger.info('shuting down')
             server_thread.running = False
             server_thread.join()
-            exit()
+            sys.exit()
 
     def command_debug(self, url):
         '''python manage.py server:debug url'''
