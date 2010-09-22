@@ -23,17 +23,22 @@ class NestedError(NotSubmitted): pass
 
 class ValidationError(Exception):
 
-    def __init__(self, message):
+    def __init__(self, message, count=None, i18n=True, **kwargs):
+        self.count = count
+        self.i18n = i18n
+        self.values = kwargs
         Exception.__init__(self, message)
 
-    @property
-    def message(self):
-        return self.args[0]
+    def get_message(self, form=None):
+        message = self.args[0]
+        if form is not None and self.i18n: # or check if isinstance(message, N_)
+            message = form.env.gettext(message, count)
+        return message % self.values
 
     def __str__(self):
         # This method is called by logging, we need it to avoid
         # <unprintable ValidationError object> messages.
-        return self.message.encode('utf-8')
+        return self.get_message().encode('utf-8')
 
 
 class Converter(object):
@@ -99,7 +104,7 @@ class Converter(object):
     def _check(self, method):
         def wrapper(value):
             if self.required and not value:
-                self.error('required')
+                raise ValidationError(self.error_required)
             value = method(value)
             for v in self.validators_and_filters:
                 value = v(value)
@@ -123,63 +128,41 @@ class Converter(object):
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
 
-    def error(self, error_type, count=None,
-              default=N_('unknown error')):
-        '''
-        Raises :class:`ValidationError <insanities.forms.convs.ValidationError>` with the
-        message taken from converter's error_%(error_type) method and formatted with
-        converters' attributes as arguments.
-
-        For example::
-
-            class Conv(Converter):
-                bars = BARS
-
-                error_foo = N_('foo')
-                error_bar = M_('you need one bar', 
-                               'you need %(bars) bars')
-
-                def to_python(self, value):
-                    if not footest(value):
-                        self.error('foo')
-                    if not bartest(value, self.bars):
-                        self.error('bar', count=self.BARS)
-                    return value
-        '''
-        message_template = getattr(self, 'error_'+error_type, default)
-        message_template = self.env.gettext(message_template, count)
-        message = message_template % self.__dict__
-        raise ValidationError(message)
-
-    def _assert(self, expression, error_type, count=None):
+    def assert_(self, expression, msg, **kwargs):
         'Shortcut for assertions of certain type'
         if not expression:
-            self.error(error_type, count=None)
+            raise ValidationError(msg, **kwargs)
 
 
 class validator(object):
     'Function decorator'
-    def __init__(self, message):
+    def __init__(self, message, args=None):
         self.message = message
+        self.args = args or {}
     def __call__(self, func):
         def wrapper(value):
             if not func(value):
-                raise ValidationError(self.message)
+                raise ValidationError(self.message, **self.args)
             return value
         return wrapper
 
 # Some useful validators
 
 def limit(min_length=None, max_length=None):
-    message = ''
-    if min_length:
-        message += 'minimal length is %d ' % min_length
-    if message:
-        message += ', '
-    if max_length:
-        message += 'maximum length is %d ' % max_length
+    args = {'min': min_length, 'max': max_length}
+    if min_length == max_length:
+        message = N_('length should be exactly %(min) symbols')
+        args['count'] = max_length
+    elif min_length and max_length:
+        message = N_('length should be between %(min) and %(max) symbols')
+    elif max_length:
+        message = N_('maximal length is %(max)')
+        args['count'] = max_length
+    else:
+        message = N_('minimal length is %(min)')
+        args['count'] = min_length
 
-    @validator(message)
+    @validator(message, args)
     def wrapper(value):
         if min_length and len(value) < min_length:
             return False
@@ -190,15 +173,17 @@ def limit(min_length=None, max_length=None):
 
 
 def int_limit(min_value=None, max_value=None):
-    message = ''
-    if min_value:
-        message += 'minimal value is %d ' % min_value
-    if message:
-        message += ', '
-    if max_value:
-        message += 'maximum value is %d ' % max_value
+    args = {'min': min_value, 'max': max_length}
+    if min_length and max_length:
+        message = N_('value should be between %(min) and %(max)')
+    elif max_length:
+        message = N_('maximal value is %(max)')
+        args['count'] = max_value
+    else:
+        message = N_('minimal value is %(min)')
+        args['count'] = min_value
 
-    @validator(message)
+    @validator(message, args)
     def wrapper(value):
         if min_value and value < min_value:
             return False
@@ -239,7 +224,8 @@ class Char(Converter):
             regex = self.regex
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
-            self._assert(regex.match(value), 'regex')
+            if not regex.match(value):
+                raise ValidationError(self.error_regex, regex=self.regex)
         return value
 
     def from_python(self, value):
@@ -261,7 +247,7 @@ class Int(Converter):
         try:
             value = int(value)
         except ValueError:
-            self.error('notvalid')
+            raise ValidationError(self.error_notvalid)
         return value
 
     def from_python(self, value):
@@ -372,8 +358,8 @@ class BaseDatetime(Converter):
         try:
             return self.convert_datetime(value)
         except ValueError:
-            self.readable_format
-            raise self.error('wrong_format')
+            raise ValidationError(self.error_wrong_format,
+                                  readable_format=self.readable_format)
         except TypeError, e:
             raise ValidationError, unicode(e)
 
