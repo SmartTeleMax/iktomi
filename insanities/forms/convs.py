@@ -343,8 +343,6 @@ class DatetimeDisplay(DisplayOnly):
         return value.strftime(self.format)
 
 
-min_datetime = datetime(1900, 1, 1)
-
 class BaseDatetime(Converter):
 
     format = None
@@ -363,7 +361,7 @@ class BaseDatetime(Converter):
         Converter.__init__(self, *args, **kwargs)
 
     def from_python(self, value):
-        if value in (None, ''):
+        if value is None:
             return ''
         # carefull to years before 1900
         return strftime(value, self.format)
@@ -401,9 +399,9 @@ class Time(BaseDatetime):
     format = '%H:%M'
 
     def from_python(self, value):
-        if value in (None, ''):
+        if value is None:
             return ''
-        # we doesn't care about year in time converter, so use native strftime
+        # we don't care about year in time converter, so use native strftime
         return value.strftime(self.format)
 
     def convert_datetime(self, value):
