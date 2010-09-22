@@ -375,7 +375,7 @@ class BaseDatetime(Converter):
             self.readable_format
             raise self.error('wrong_format')
         except TypeError, e:
-            raise ValidationError, e.message
+            raise ValidationError, unicode(e)
 
 
 class Datetime(BaseDatetime):
