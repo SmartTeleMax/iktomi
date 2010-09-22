@@ -51,8 +51,6 @@ class Form(object):
                   Field(name='input2', convs.Int),
                 ]
             template = 'form-template'
-            medias = [media.FormJSRef('field_buttons.js'),
-                      media.FormCSSRef('field_buttons.css'),]
             permissions = 'rw'
 
     The constructor accepts folowing parameters:
@@ -168,7 +166,7 @@ class Form(object):
             try:
                 self.python_data[field.name] = field.accept()
             except convs.ValidationError, e:
-                self.errors[field.input_name] = e.message
+                self.errors[field.input_name] = e.get_message(self)
             except convs.NestedError:
                 pass
             except convs.SkipReadonly:
@@ -178,7 +176,7 @@ class Form(object):
                     if hasattr(field, 'grab'):
                         field.to_python(field.grab())
                 except convs.ValidationError, e:
-                    self.errors[field.input_name] = e.message
+                    self.errors[field.input_name] = e.get_message(self)
                 except convs.NotSubmitted:
                     pass
 
@@ -192,7 +190,7 @@ class Form(object):
                     self.python_data[field.name] = \
                         validate(self.python_data.get(field.name, None))
                 except convs.ValidationError, e:
-                    self.errors[field.input_name] = e.message
+                    self.errors[field.input_name] = e.get_message(self)
                     del self.python_data[field.name]
 
         return self.is_valid
