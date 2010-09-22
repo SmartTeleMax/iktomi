@@ -20,14 +20,14 @@ class server(CommandDigest):
 
     format = '[%(name)s::%(levelname)s] %(message)s'
 
-    def __init__(self, app_name):
-        self.app_name = app_name
+    def __init__(self, app):
+        self.app = app
 
     def command_serve(self, host='', port='8000', level='debug'):
         '''python manage.py server:serve [host] [port]'''
         logging.basicConfig(level=getattr(logging, level.upper()), format=self.format)
         try:
-            server_thread = DevServerThread(host, port, self.app_name)
+            server_thread = DevServerThread(host, port, self.app)
             server_thread.start()
             for filename in reloader_loop():
                 server_thread.running = False
@@ -36,10 +36,10 @@ class server(CommandDigest):
                 # Smart reload of current process.
                 # Main goal is to reload all modules
                 os.execvp(sys.executable, [sys.executable] + sys.argv)
-                server_thread = DevServerThread(host, port, self.app_name)
+                server_thread = DevServerThread(host, port, self.app)
                 server_thread.start()
         except KeyboardInterrupt:
-            logger.info('shuting down')
+            logger.info('Stoping dev-server...')
             server_thread.running = False
             server_thread.join()
             sys.exit()
@@ -66,11 +66,9 @@ class server(CommandDigest):
 
 class DevServerThread(threading.Thread):
 
-    def __init__(self, host, port, app_name):
+    def __init__(self, host, port, app):
         from wsgiref.simple_server import make_server, WSGIServer
         from insanities.web.wsgi import WSGIHandler
-        names = app_name.split('.')
-        app = getattr(__import__('.'.join(names[:-1]), None, None, ['*']), names[-1])
         self.host = host
         self.port = port
         class DevServer(WSGIServer):
