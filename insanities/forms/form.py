@@ -9,7 +9,6 @@ from ..utils import weakproxy, cached_property, smart_gettext
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
-from .media import FormMedia
 
 
 class BaseFormEnvironment(object):

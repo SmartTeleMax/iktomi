@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from ..utils import cached_property
+from ...utils import cached_property
 
 
 class FormMedia(object):

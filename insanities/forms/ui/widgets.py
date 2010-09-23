@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from copy import deepcopy
-import simplejson
-from ..utils import weakproxy, cached_property
-from . import convs
-from .media import FormMedia, FormCSSRef, FormJSRef
+from ...utils import weakproxy, cached_property
+from .. import convs
+from media import FormMedia, FormCSSRef, FormJSRef
 
 
 class Widget(object):
@@ -117,7 +116,6 @@ class Select(FieldWidget):
         return options
 
     def prepare_data(self, **kwargs):
-        print kwargs
         return dict(kwargs,
                     options=self.get_options(kwargs.get('value', [])),
                     required=('true' if self.field.conv.required else 'false'))

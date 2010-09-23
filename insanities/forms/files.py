@@ -6,7 +6,7 @@ import os, struct, tempfile, time
 from PIL import Image
 from ..utils import weakproxy, cached_property
 from .fields import Field
-from .widgets import FileInput, ImageInput
+from .ui.widgets import FileInput, ImageInput
 from . import convs
 
 
