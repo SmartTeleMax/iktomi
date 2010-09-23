@@ -60,7 +60,6 @@ class server(CommandDigest):
                 # NOTE: For exec syscall we need to flush and close all fds manually
                 flush_fds()
                 close_fds()
-                # NOTE: server socket is closing manually in DevServerThread
                 os.execvp(sys.executable, [sys.executable] + sys.argv)
         except KeyboardInterrupt:
             logger.info('Stoping dev-server...')
@@ -109,9 +108,6 @@ class DevServerThread(threading.Thread):
         logger.info('Insanities server is running on port %s\n' % self.port)
         while self.running:
             self.server.handle_request()
-        # Server.shutdown() works only for server.serve_forever()
-        # So we just need to close socket
-        self.server.socket.close()
 
 
 # All reloader utils are taken from werkzeug
