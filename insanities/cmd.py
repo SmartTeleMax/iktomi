@@ -10,6 +10,27 @@ from os import path
 
 from mage import CommandDigest, CommandNotFound
 
+try:
+    MAXFD = os.sysconf("SC_OPEN_MAX")
+except:
+    MAXFD = 256
+
+
+def close_fds(but=None):
+    if but is None:
+        os.closerange(3, MAXFD)
+        return
+    os.closerange(3, but)
+    os.closerange(but + 1, MAXFD)
+
+
+def flush_fds():
+    for fd in range(3, MAXFD + 1):
+        try:
+            os.fsync(fd)
+        except OSError:
+            pass
+
 
 class server(CommandDigest):
     '''
@@ -32,12 +53,15 @@ class server(CommandDigest):
             for filename in reloader_loop():
                 server_thread.running = False
                 server_thread.join()
-                logger.info('File "%s" is changed. Reloading...' % filename)
+                logger.info('Changes in file "%s"' % filename)
+                logger.info('Reloading...')
                 # Smart reload of current process.
                 # Main goal is to reload all modules
+                # NOTE: For exec syscall we need to flush and close all fds manually
+                flush_fds()
+                close_fds()
+                # NOTE: server socket is closing manually in DevServerThread
                 os.execvp(sys.executable, [sys.executable] + sys.argv)
-                server_thread = DevServerThread(host, port, self.app)
-                server_thread.start()
         except KeyboardInterrupt:
             logger.info('Stoping dev-server...')
             server_thread.running = False
@@ -85,6 +109,8 @@ class DevServerThread(threading.Thread):
         logger.info('Insanities server is running on port %s\n' % self.port)
         while self.running:
             self.server.handle_request()
+        # Server.shutdown() works only for server.serve_forever()
+        # So we just need to close socket
         self.server.socket.close()
 
 
