@@ -91,7 +91,6 @@ class DevServerThread(threading.Thread):
 
     def __init__(self, host, port, app):
         from wsgiref.simple_server import make_server, WSGIServer
-        from insanities.web.wsgi import WSGIHandler
         self.host = host
         self.port = port
         class DevServer(WSGIServer):
@@ -101,7 +100,7 @@ class DevServerThread(threading.Thread):
         except ValueError:
             raise ValueError('Please provide valid port value insted of "%s"' % port)
         self.running = True
-        self.server = make_server(self.host, self.port, WSGIHandler(app), server_class=DevServer)
+        self.server = make_server(self.host, self.port, app, server_class=DevServer)
         super(DevServerThread, self).__init__()
 
     def run(self):
