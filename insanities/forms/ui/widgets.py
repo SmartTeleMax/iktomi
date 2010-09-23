@@ -16,18 +16,15 @@ class Widget(object):
     #: Value of HTML element's *class* attribute
     classname = ''
 
-    def __init__(self, element=None, **kwargs):
+    def __init__(self, env=None, element=None, **kwargs):
         self._elem = weakproxy(element)
+        self.env = env
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
     @property
     def id(self):
         return self._elem.id
-
-    @property
-    def env(self):
-        return self._elem.env
 
     def get_media(self):
         return FormMedia(self.media)
@@ -66,6 +63,21 @@ class FieldWidget(Widget):
     def prepare_data(self, **kwargs):
         kwargs['field'] = self._elem
         return kwargs
+
+
+class init_widgets(object):
+    def __init__(self, module, env):
+        self.env = env
+        self.module = module
+
+    def render(self, template_name, **data):
+        self.env.get_template(template_name).render(**data)
+
+    def __getattr__(self, name):
+        widget = getattr(self.module, name)
+        if not widget:
+            raise AttributeError
+        return widget(env=self)
 
 
 class TextInput(FieldWidget):

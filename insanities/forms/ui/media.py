@@ -11,8 +11,7 @@ class FormMedia(object):
     :class:`Widget <insanities.forms.widgets.Widget>`
     '''
 
-    def __init__(self, items=[], env=None):
-        self.env = env
+    def __init__(self, items=[]):
         self._media = []
         map(self._append, items)
 
@@ -35,12 +34,6 @@ class FormMedia(object):
 
     def __iter__(self):
         return iter(self._media)
-
-    @cached_property
-    def macros(self):
-        # XXX specific interface for jinja2?
-        tmpl = self.env.get_template('forms/media')
-        return tmpl.make_module(vars=self.env.locals)
 
 
 class FormMediaAtom(object):
@@ -69,19 +62,15 @@ class FormMediaAtom(object):
         media += other
         return media
 
-    def render(self):
-        '''Renders media item to HTML'''
-        return getattr(self.holder.macros, self.macro)(data=self.data)
-
 
 class FormCSSRef(FormMediaAtom):
 
-    macro = 'css_ref'
+    macro = 'media/css_ref'
 
 
 class FormCSSInline(FormMediaAtom):
 
-    macro = 'css_inline'
+    macro = 'media/css_inline'
 
 
 class FormJSRef(FormMediaAtom):
