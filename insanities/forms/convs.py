@@ -126,33 +126,28 @@ class Converter(object):
 
 class validator(object):
     'Function decorator'
-    def __init__(self, message, args=None):
+    def __init__(self, message):
         self.message = message
-        self.args = args or {}
     def __call__(self, func):
         def wrapper(value):
             if not func(value):
-                raise ValidationError(self.message, **self.args)
+                raise ValidationError(self.message)
             return value
         return wrapper
 
 # Some useful validators
 
 def limit(min_length=None, max_length=None):
-    args = {'min': min_length, 'max': max_length}
     if min_length == max_length:
         message = N_('length should be exactly %(min) symbols')
-        args['count'] = max_length
     elif min_length and max_length:
         message = N_('length should be between %(min) and %(max) symbols')
     elif max_length:
         message = N_('maximal length is %(max)')
-        args['count'] = max_length
     else:
         message = N_('minimal length is %(min)')
-        args['count'] = min_length
 
-    @validator(message, args)
+    @validator(message)
     def wrapper(value):
         if min_length and len(value) < min_length:
             return False
@@ -162,18 +157,15 @@ def limit(min_length=None, max_length=None):
     return wrapper
 
 
-def int_limit(min_value=None, max_value=None):
-    args = {'min': min_value, 'max': max_length}
+def num_limit(min_value=None, max_value=None):
     if min_length and max_length:
         message = N_('value should be between %(min) and %(max)')
     elif max_length:
         message = N_('maximal value is %(max)')
-        args['count'] = max_value
     else:
         message = N_('minimal value is %(min)')
-        args['count'] = min_value
 
-    @validator(message, args)
+    @validator(message)
     def wrapper(value):
         if min_value and value < min_value:
             return False

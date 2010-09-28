@@ -58,11 +58,8 @@ class render_to(RequestHandler):
         template = self.get_template(rctx)
 
         template_kw = self._kwargs.copy()
-        template_kw['VALS'] = rctx.vals
-        template_kw['CONF'] = rctx.conf
-        template_kw['REQUEST'] = rctx.request
         template_kw.update(rctx.data.as_dict())
-        logger.debug('render_to - rendering template "%s"' % self.template)
+        logger.debug('mint rendering template "%s"' % self.template)
         rendered = template.render(**template_kw)
         rctx.response.write(rendered)
         return rctx.next()
@@ -81,6 +78,10 @@ class mint_env(RequestHandler):
 
     def handle(self, rctx):
         if self.env is None:
-            self.env = Loader(rctx.conf.TEMPLATES, cache=self.cache)
+            self.env = Loader(rctx.conf.TEMPLATES, cache=self.cache, 
+                              globals=dict(
+                                  VALS=rctx.vals,
+                                  CONF=rctx.conf,
+                                  REQUEST=rctx.request))
         rctx.vals.update(dict(mint_env=self.env))
         return rctx.next()

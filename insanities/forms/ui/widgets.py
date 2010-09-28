@@ -27,33 +27,17 @@ class Widget(object):
     def prepare_data(self, **kwargs):
         return kwargs
 
-    def render(self, field, **kwargs):
+    def render(self, **kwargs):
         '''
         Renders widget to template
         '''
         data = self.prepare_data(**kwargs)
         data['widget'] = self
-        data['field'] = field
         return self.env.render(self.template, **data)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
         return self.__class__(**kwargs)
-
-
-class init_widgets(object):
-    def __init__(self, module, env):
-        self.env = env
-        self.module = module
-
-    def render(self, template_name, **data):
-        self.env.get_template(template_name).render(**data)
-
-    def __getattr__(self, name):
-        widget = getattr(self.module, name)
-        if not widget:
-            raise AttributeError
-        return widget(env=self.env)
 
 
 class TextInput(Widget):
