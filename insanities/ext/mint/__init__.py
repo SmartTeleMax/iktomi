@@ -73,14 +73,14 @@ class mint_env(RequestHandler):
     This handler adds mint Loader.
     '''
 
-    def __init__(self, param='TEMPLATES', paths=None):
+    def __init__(self, param='TEMPLATES', paths=None, cache=True):
         self.param = param
         self.paths = paths
         self.env = None
+        self.cache = cache
 
     def handle(self, rctx):
-        # lazy jinja env
         if self.env is None:
-            self.env = Loader(rctx.conf.TEMPLATES)
+            self.env = Loader(rctx.conf.TEMPLATES, cache=self.cache)
         rctx.vals.update(dict(mint_env=self.env))
         return rctx.next()
