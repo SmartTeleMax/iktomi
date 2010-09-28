@@ -23,22 +23,12 @@ class NestedError(NotSubmitted): pass
 
 class ValidationError(Exception):
 
-    def __init__(self, message, count=None, i18n=True, **kwargs):
-        self.count = count
-        self.i18n = i18n
-        self.values = kwargs
-        Exception.__init__(self, message)
+    @property
+    def message(self):
+        return self.args[0]
 
-    def get_message(self, form=None):
-        message = self.args[0]
-        if form is not None and self.i18n: # or check if isinstance(message, N_)
-            message = form.env.gettext(message, count)
-        return message % self.values
-
-    def __str__(self):
-        # This method is called by logging, we need it to avoid
-        # <unprintable ValidationError object> messages.
-        return self.get_message().encode('utf-8')
+    def __repr__(self):
+        return self.messages.encode('utf-8')
 
 
 class Converter(object):
@@ -128,10 +118,10 @@ class Converter(object):
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
 
-    def assert_(self, expression, msg, **kwargs):
+    def assert_(self, expression, msg):
         'Shortcut for assertions of certain type'
         if not expression:
-            raise ValidationError(msg, **kwargs)
+            raise ValidationError(msg)
 
 
 class validator(object):
@@ -475,7 +465,7 @@ class Html(Char):
         try:
             clean = sanitizer.sanitize(value)
         except ParseError:
-            raise ValidationError, u'not valid html'
+            raise ValidationError(u'not valid html')
         else:
             return self.Markup(clean)
 

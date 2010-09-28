@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+__all__ = ['HtmlUI']
+
 from StringIO import StringIO
+from .media import FormMedia
 
 
 def collect_widgets(fields, update, default=None, from_fields=False):
@@ -21,20 +24,21 @@ def collect_widgets(fields, update, default=None, from_fields=False):
 
 class HtmlUI(object):
 
-    def __init__(self, form_class, form_widget=None, default=None, fields_widgets=None, from_fields=False):
+    def __init__(self, form_instance, form_widget=None, default=None, fields_widgets=None, from_fields=False):
         self.form_widget = form_widget
+        self.form = form_instance
         fields_widgets = fields_widgets or {}
-        self.widgets = collect_widgets(form_class.fields, fields_widgets, default=default, from_fields=from_fields)
+        self.widgets = collect_widgets(form_instance.fields, fields_widgets, default=default, from_fields=from_fields)
         self.media = FormMedia()
         for w in self.widgets.values():
-            self.media += FormMedia(w.media)
+            self.media += w.get_media()
 
-    def render(self, form):
+    def render(self):
         if self.form_widget:
-            return self.form_widget.render(form=form, ui=self)
+            return self.form_widget.render(form=self.form, ui=self)
         result = StringIO()
-        for field in form.fields:
+        for field in self.form.fields:
             widget = self.widgets.get(field.resolve_name())
             if widget:
-                result.write(widget.render(field=field, ui=self))
+                result.write(widget.render(field, ui=self))
         return result.getvalue()

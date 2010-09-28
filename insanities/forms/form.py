@@ -2,40 +2,17 @@
 
 from time import time
 import struct, os, itertools
-from gettext import NullTranslations
 
 from webob.multidict import MultiDict
-from ..utils import weakproxy, cached_property, smart_gettext
+from ..utils import weakproxy, cached_property
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
 
 
 class BaseFormEnvironment(object):
-    '''
-    Mixin adding get_string method to environment
-    '''
-
     def __init__(self, **kw):
         self.__dict__.update(kw)
-
-    @cached_property
-    def translation(self):
-        if not self.rctx: return NullTranslations()
-        return self.rctx.vals.get('translation', NullTranslations())
-
-    def gettext(self, msg, count=None):
-        '''Smart gettext method. If the given message is instance of
-        :class:`M_ <insanities.utils.i18.M_>` subclass, returns a plural
-        form of message translation. Otherwhise, returns single form.
-
-        Can be overriden in subclasses (f.e. to use babel instead of gettext)'''
-        return smart_gettext(self.translation, msg, count=None)
-
-    def ngettext(self, single, plural, count):
-        '''A proxy method to gettext ungettext method.
-        Can be overriden in subclasses (f.e. to use babel instead of gettext)'''
-        return self.translation.ungettext(single, plural, count)
 
 
 class Form(object):
@@ -165,7 +142,7 @@ class Form(object):
             try:
                 self.python_data[field.name] = field.accept()
             except convs.ValidationError, e:
-                self.errors[field.input_name] = e.get_message(self)
+                self.errors[field.input_name] = e.message
             except convs.NestedError:
                 pass
             except convs.SkipReadonly:
@@ -175,7 +152,7 @@ class Form(object):
                     if hasattr(field, 'grab'):
                         field.to_python(field.grab())
                 except convs.ValidationError, e:
-                    self.errors[field.input_name] = e.get_message(self)
+                    self.errors[field.input_name] = e.message
                 except convs.NotSubmitted:
                     pass
 
@@ -189,7 +166,7 @@ class Form(object):
                     self.python_data[field.name] = \
                         validate(self.python_data.get(field.name, None))
                 except convs.ValidationError, e:
-                    self.errors[field.input_name] = e.get_message(self)
+                    self.errors[field.input_name] = e.message
                     del self.python_data[field.name]
 
         return self.is_valid
