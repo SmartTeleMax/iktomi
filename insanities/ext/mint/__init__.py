@@ -25,7 +25,7 @@ class FormEnvironment(BaseFormEnvironment):
         self.__dict__.update(kw) # XXX ???
 
     def get_template(self, template):
-        return self.rctx.vals.mint_env.get_template('%s.html' % template)
+        return self.rctx.vals.mint_env.get_template('%s.mint' % template)
 
     def render(self, template, **kwargs):
         vars = dict(self.locals, **kwargs)

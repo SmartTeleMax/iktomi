@@ -156,14 +156,14 @@ class Map(RequestHandler):
         return STOP
 
     def run_handler(self, rctx, i, j):
-        logger.debug('Position in map: %s %s' % (i, j))
+        #logger.debug('Position in map: %s %s' % (i, j))
         try:
             handler = self.grid[i][j]
         except IndexError:
             return rctx
         else:
             rctx._set_map_state(self, i, j+1)
-            logger.debug('Handled by %r' % handler)
+            #logger.debug('Handled by %r' % handler)
             return handler.handle(rctx)
 
     def compile_urls_map(self):
@@ -178,7 +178,7 @@ class Map(RequestHandler):
         return tracer.urls
 
     def __call__(self, rctx):
-        logger.debug('Called map: %r' % self)
+        #logger.debug('Called map: %r' % self)
         return self.handle(rctx)
 
     def __repr__(self):

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from copy import deepcopy
-import simplejson
-from ..utils import weakproxy, cached_property
-from . import convs
-from .media import FormMedia, FormCSSRef, FormJSRef
+from ...utils import weakproxy, cached_property
+from .. import convs
+from media import FormMedia, FormCSSRef, FormJSRef
 
 
 class Widget(object):
@@ -16,19 +15,11 @@ class Widget(object):
     media = []
     #: Value of HTML element's *class* attribute
     classname = ''
+    label = ''
 
-    def __init__(self, element=None, **kwargs):
-        self._elem = weakproxy(element)
+    def __init__(self, **kwargs):
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
-
-    @property
-    def id(self):
-        return self._elem.id
-
-    @property
-    def env(self):
-        return self._elem.env
 
     def get_media(self):
         return FormMedia(self.media)
@@ -36,57 +27,53 @@ class Widget(object):
     def prepare_data(self, **kwargs):
         return kwargs
 
-    def render(self, **kwargs):
+    def render(self, field, **kwargs):
         '''
         Renders widget to template
         '''
         data = self.prepare_data(**kwargs)
         data['widget'] = self
+        data['field'] = field
         return self.env.render(self.template, **data)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
-        kwargs.setdefault('element', self._elem)
         return self.__class__(**kwargs)
 
 
-# Fields got some specific attributes we want to proxy
-class FieldWidget(Widget):
-    @property
-    def multiple(self):
-        return self._elem.multiple
+class init_widgets(object):
+    def __init__(self, module, env):
+        self.env = env
+        self.module = module
 
-    @property
-    def input_name(self):
-        return self._elem.input_name
+    def render(self, template_name, **data):
+        self.env.get_template(template_name).render(**data)
 
-    @property
-    def field(self):
-        return self._elem
-
-    def prepare_data(self, **kwargs):
-        kwargs['field'] = self._elem
-        return kwargs
+    def __getattr__(self, name):
+        widget = getattr(self.module, name)
+        if not widget:
+            raise AttributeError
+        return widget(env=self.env)
 
 
-class TextInput(FieldWidget):
+class TextInput(Widget):
 
     template = 'widgets/textinput'
     classname = 'textinput'
 
 
-class HiddenInput(FieldWidget):
+class HiddenInput(Widget):
 
     template = 'widgets/hiddeninput'
 
 
-class PasswordInput(FieldWidget):
+class PasswordInput(Widget):
 
     template = 'widgets/passwordinput'
     classname = 'textinput'
 
 
-class Select(FieldWidget):
+class Select(Widget):
     '''
     Takes options from :class:`EnumChoice<EnumChoice>` converter,
     looks up if converter allows null and passed this value as template
@@ -127,12 +114,12 @@ class CheckBoxSelect(Select):
     template = 'widgets/select-checkbox'
 
 
-class CheckBox(FieldWidget):
+class CheckBox(Widget):
 
     template = 'widgets/checkbox'
 
 
-class Textarea(FieldWidget):
+class Textarea(Widget):
 
     template = 'widgets/textarea'
 
@@ -142,7 +129,7 @@ class ReadonlySelect(Select):
     template = 'widgets/readonlyselect'
 
 
-class CharDisplay(FieldWidget):
+class CharDisplay(Widget):
 
     template = 'widgets/span'
     classname = 'chardisplay'
@@ -158,13 +145,13 @@ class CharDisplay(FieldWidget):
                     should_escape=self.escape)
 
 
-class ImageView(FieldWidget):
+class ImageView(Widget):
 
     template = 'widgets/imageview'
     classname = 'imageview'
 
 
-class FileInput(FieldWidget):
+class FileInput(Widget):
     '''
     '''
     template = 'widgets/fileinput'
