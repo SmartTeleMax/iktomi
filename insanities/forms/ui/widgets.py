@@ -27,33 +27,17 @@ class Widget(object):
     def prepare_data(self, **kwargs):
         return kwargs
 
-    def render(self, field, **kwargs):
+    def render(self, **kwargs):
         '''
         Renders widget to template
         '''
         data = self.prepare_data(**kwargs)
         data['widget'] = self
-        data['field'] = field
         return self.env.render(self.template, **data)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
         return self.__class__(**kwargs)
-
-
-class init_widgets(object):
-    def __init__(self, module, env):
-        self.env = env
-        self.module = module
-
-    def render(self, template_name, **data):
-        self.env.get_template(template_name).render(**data)
-
-    def __getattr__(self, name):
-        widget = getattr(self.module, name)
-        if not widget:
-            raise AttributeError
-        return widget(env=self.env)
 
 
 class TextInput(Widget):
@@ -86,17 +70,18 @@ class Select(Widget):
     #: Label assigned to None value if field is not required
     null_label = '--------'
 
-    def get_options(self, value):
+    def get_options(self, value, field):
+        print value, field
         options = []
-        if not self.multiple and (value is None or not self.field.conv.required):
+        if not field.multiple and (value is None or not field.conv.required):
             options = [{'value': '',
                         'title': self.null_label,
                         'selected': value in (None, '')}]
-        assert isinstance(self.field.conv, convs.EnumChoice)
+        assert isinstance(field.conv, convs.EnumChoice)
 
-        values = value if self.multiple else [value]
+        values = value if field.multiple else [value]
         values = map(unicode, values)
-        for choice, label in self.field.conv:
+        for choice, label in field.conv:
             choice = unicode(choice)
             options.append(dict(value=choice,
                                 title=label,
@@ -104,9 +89,12 @@ class Select(Widget):
         return options
 
     def prepare_data(self, **kwargs):
+        field = kwargs['field']
         return dict(kwargs,
-                    options=self.get_options(kwargs.get('value', [])),
-                    required=('true' if self.field.conv.required else 'false'))
+                    options=self.get_options(kwargs.get('value', []), field),
+                    multiple='multiple' if field.multiple else '',
+                    readonly='readonly' if 'w' not in field.permissions else '',
+                    required=('true' if field.conv.required else 'false'))
 
 
 class CheckBoxSelect(Select):

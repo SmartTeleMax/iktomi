@@ -46,7 +46,9 @@ class Form(object):
 
     permissions = DEFAULT_PERMISSIONS
 
-    def __init__(self, env, initial={}, name=None, permissions=None):
+    def __init__(self, env=None, initial=None, name=None, permissions=None):
+        env = env or {}
+        initial = initial or {}
         self.env = BaseFormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.data = data = MultiDict()

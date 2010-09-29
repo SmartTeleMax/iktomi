@@ -256,7 +256,7 @@ class FieldSet(AggregateField):
                 result[field.name] = field.accept()
             except convs.ValidationError, e:
                 is_valid = False
-                self.form.errors[field.input_name] = e.get_message(self)
+                self.form.errors[field.input_name] = e.message
             except convs.NestedError:
                 is_valid = False
             except convs.SkipReadonly:
@@ -266,7 +266,7 @@ class FieldSet(AggregateField):
                     try:
                         field.to_python(field.grab())
                     except convs.ValidationError, e:
-                        self.form.errors[field.input_name] = e.get_message(self)
+                        self.form.errors[field.input_name] = e.message
                     except convs.NotSubmitted:
                         pass
         if not is_valid:
@@ -345,7 +345,7 @@ class FieldList(AggregateField):
                 result[field.name] = field.accept()
             except convs.ValidationError, e:
                 is_valid = False
-                self.form.errors[field.input_name] = e.get_message(self)
+                self.form.errors[field.input_name] = e.message
                 if index in old:
                     result[field.name] = old[field.name]
             except convs.NotSubmitted:
