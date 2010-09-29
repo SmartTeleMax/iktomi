@@ -117,7 +117,6 @@ class Select(FieldWidget):
         return options
 
     def prepare_data(self, **kwargs):
-        print kwargs
         return dict(kwargs,
                     options=self.get_options(kwargs.get('value', [])),
                     required=('true' if self.field.conv.required else 'false'))

@@ -5,8 +5,6 @@ from os import path
 import os, struct, tempfile, time
 from PIL import Image
 from ..utils import weakproxy, cached_property
-from .fields import Field
-from .widgets import FileInput, ImageInput
 from . import convs
 
 
@@ -29,15 +27,8 @@ class BaseFile(object):
 
 class TempUploadedFile(BaseFile):
 
-    def __init__(self, tempdir_or_field=None, name=None, ext=None, uid=None):
-        if tempdir_or_field is None:
-            self.temp_path = tempfile.gettempdir()
-        elif isinstance(tempdir_or_field, FileField):
-            self.temp_path = tempdir_or_field.env.temp_path
-        elif isinstance(tempdir_or_field, basestring):
-            self.temp_path = tempdir_or_field
-        else:
-            raise TypeError('Bad tempdir param: %r %s; expected None, a string (path) or a FileField' % (type(tempdir_or_field), tempdir_or_field))
+    def __init__(self, tempdir=None, name=None, ext=None, uid=None):
+        self.temp_path = tempdir or tempfile.gettempdir()
         super(TempUploadedFile, self).__init__(self.temp_path, name, ext)
         self.uid = uid or time_uid()
 
@@ -126,6 +117,7 @@ class StoredImageFile(StoredFile):
     def image(self):
         return Image.open(self.full_path)
 
+
 def check_file_path(value):
     if value and '/' in value:
         logger.warning('Hacking attempt: submitted temp_name '\
@@ -133,7 +125,7 @@ def check_file_path(value):
         raise ValidationError('Invalid filename')
     return value
 
-class TempFile(Converter):
+class TempFile(convs.Converter):
 
     hacking = u'Что-то пошло не так'
     temp_file_cls = TempUploadedFile
@@ -141,14 +133,25 @@ class TempFile(Converter):
     null = True
 
     subfields = [
-        Field('mode', conv=convs.EnumChoice(choices=[('existing', ''),
-                                                     ('temp', ''),
-                                                     ('empty', ''),],
-                                            required=True)),
-        Field('temp_name', conv=convs.Char(check_file_path, required=False)),
-        Field('original_name', conv=convs.Char(required=False)),
+        Field('mode',
+              conv=convs.EnumChoice(choices=[('existing', ''),
+                                             ('temp', ''),
+                                             ('empty', ''),],
+                                    required=True),
+              widget=widgets.HiddenInput),
+        Field('temp_name',
+              conv=convs.Char(check_file_path, required=False),
+              widget=widgets.HiddenInput),
+        Field('original_name',
+              conv=convs.Char(required=False)
+              widget=widgets.HiddenInput),
         Field('delete', conv=convs.Bool()),
     ]
+
+    @cached_property
+    def tempdir(self):
+        # Can be overwritten
+        return self.form.env.temp_path
 
     def from_python(self, value):
         data = {'temp_name': '', 'original_name': '', 'delete': False}
@@ -160,13 +163,9 @@ class TempFile(Converter):
             data['original_name'] = value.name
         else:
             data['mode'] = 'empty'
+        return (value, data)
 
-    def to_python(self, value):
-        file = value[0]
-        mode = value[1]['mode']
-        temp_name = value[1]['temp_name']
-        original_name = value[1]['original_name']
-        delete = value[1]['delete']
+    def to_python(self, file, mode=None, temp_name=None, original_name=None, delete=False):
 
 #        if file and file.filename == '<fdopen>':
 #            file.filename = None
@@ -208,20 +207,13 @@ class TempFile(Converter):
 
 
     def save_temp_file(self, file):
-        tmp = self.temp_file_cls(self)
+        tmp = self.temp_file_cls(self.tempdir)
         #XXX: file.file - due to FieldStorage interface
         tmp.save(file.file)
         return tmp
 
     def delete_temp_file(self, temp_name):
         uid, ext = path.splitext(temp_name)
-        tmp = self.temp_file_cls(self, name=None, ext=ext, uid=uid)
+        tmp = self.temp_file_cls(self.tempdir, name=None, ext=ext, uid=uid)
         tmp.delete()
 
-
-class ImageField(FileField):
-
-    widget = ImageInput
-    temp_file_cls = TempImageFile
-    thumb_size = None
-    thumb_sufix = '__thumb'

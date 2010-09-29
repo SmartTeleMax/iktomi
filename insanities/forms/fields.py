@@ -188,31 +188,6 @@ class Field(BaseField):
         return self.to_python(self.grab())
 
 
-#lass FileField(Field):
-#   '''
-#   File field
-#   '''
-
-#   #: :class:`Conv` subclass or instance used to convert field data 
-#   #: and validate it
-#   conv = convs.TempFile
-
-#   def grab(self):
-#       file = self.form.files.get(self.input_name, None)
-#       if hasattr(self.conv, 'grabs'):
-#           data = {}
-#           for subfield in self.conv.grabs:
-#               name = self.input_name + '__' + subfield
-#               data[name] = self.form.data.get(self.input_name, '')
-#           return data, file
-#       return file
-
-#   def fill(self, data, value):
-#       for val in value:
-#           name = self.input_name + '__' + subfield
-#           data[name] = value
-
-
 class AggregateField(BaseField):
 
     @property
@@ -296,7 +271,7 @@ class FieldSet(AggregateField):
                         pass
         if not is_valid:
             raise convs.NestedError
-        return self.to_python(result)
+        return self._to_python(result)
 
 
 class FileField(FieldSet):
@@ -304,14 +279,14 @@ class FileField(FieldSet):
     Container field aggregating a couple of other different fields
     '''
 
-    def __init__(self, name, conv=convs.TempFile, parent=None,
+    def __init__(self, name, conv=convs.SimpleFile, parent=None,
                  **kwargs):
         kwargs['fields'] = getattr(conv, 'subfields', [])
         FieldSet.__init__(self, **kwargs)
 
     def to_python(self, value):
         file = self.form.files.get(self.input_name, None)
-        return self.conv.to_python((file, value))
+        return self.conv.to_python(file, **value)
 
 
 class FieldList(AggregateField):
