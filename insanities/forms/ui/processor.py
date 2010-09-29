@@ -24,13 +24,25 @@ def collect_widgets(fields, update, default=None, from_fields=False):
 
 class HtmlUI(object):
 
-    def __init__(self, form_widget=None, default=None, fields_widgets=None, from_fields=False, engine=None):
-        self.form_widget = form_widget
-        self.fields_widgets = fields_widgets or {}
-        self.media = FormMedia()
-        self.from_fields = from_fields
-        self.default = default
+    def __init__(self, **kw):
+        '''
+        form_widget - widget which will be rendered, if appears.
+        fields_widgets - dict [field_name:widget] which will be used to render field.
+        from_fields - bool make HtmlUI take widgets from fields.
+        default - widget, default widget if other is absent.
+        engine - template engine (jinja2, mint, ...).
+        engine_ext - template files extensions.
+        '''
+        self.form_widget = kw.get('form_widget')
+        self.fields_widgets = kw.get('fields_widgets', {})
+        self.from_fields = kw.get('from_fields')
+        self.default = kw.get('default')
+        engine = kw.get('engine')
+        if engine:
+            engine = engine_wrapper(engine, ext=kw.get('engine_ext', 'html'))
         self.engine = engine
+        self.media = FormMedia()
+        self._init_kw = kw
 
     def collect_widgets(self, form_instance):
         widgets = collect_widgets(form_instance.fields, self.fields_widgets, 
@@ -40,8 +52,10 @@ class HtmlUI(object):
         return widgets
 
     def bind(self, engine, ext='html'):
-        self.env = engine_wrapper(engine, ext=ext)
-        return self
+        'Creates new HtmlUI instance binded to engine'
+        vars = self._init_kw.copy()
+        vars.update(dict(engine=engine, engine_ext=ext))
+        return self.__class__(**vars)
 
     def render(self, form):
         if self.form_widget:
@@ -51,7 +65,7 @@ class HtmlUI(object):
         for field in form.fields:
             widget = widgets.get(field.resolve_name())
             if widget:
-                result.write(widget(env=self.env).render(field=field, ui=self))
+                result.write(widget(env=self.engine).render(field=field, ui=self))
         return result.getvalue()
 
 
