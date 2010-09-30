@@ -9,40 +9,10 @@ from jinja2 import Environment, FileSystemLoader
 from insanities.forms.form import BaseFormEnvironment
 from insanities.web.core import RequestHandler
 
-__all__ = ('FormEnvironment', 'render_to', 'jinja_env')
+__all__ = ('render_to', 'jinja_env')
 
 CURDIR = dirname(abspath(__file__))
 DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
-
-
-class FormEnvironment(BaseFormEnvironment):
-    '''
-    Encapsulates all data and methods needed to form in current implementation.
-
-    FormEnvironment should contain template rendering wrapper methods.
-    Also it may contain any other stuff used in particular project's forms.
-    '''
-    def __init__(self, rctx, locals=None, **kw):
-        self.rctx = rctx #weakproxy(rctx)
-        self.locals = locals or {}
-        self._init_kw = kw
-        self.__dict__.update(kw) # XXX ???
-
-    def get_template(self, template):
-        return self.rctx.vals.jinja_env.get_template(
-            '%s.html' % template,
-            globals=dict(VALS=self.rctx.vals,
-                         CONF=self.rctx.conf,
-                         REQUEST=self.rctx.request))
-
-    def render(self, template, **kwargs):
-        vars = dict(self.locals, **kwargs)
-        return self.get_template(template).render(**vars)
-
-    def __call__(self, **kwargs):
-        kw = self._init_kw.copy()
-        kw.update(kwargs)
-        return FormEnvironment(self.rctx, **kw)
 
 
 class render_to(RequestHandler):

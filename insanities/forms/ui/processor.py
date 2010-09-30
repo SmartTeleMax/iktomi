@@ -62,8 +62,7 @@ class HtmlUI(object):
 
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
-        vars = self._init_kw.copy()
-        vars.update(dict(engine=engine, engine_ext=ext))
+        vars = dict(self._init_kw, engine=engine, engine_ext=ext)
         return self.__class__(**vars)
 
     def render(self, form):
