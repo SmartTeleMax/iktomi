@@ -7,17 +7,16 @@ from .media import FormMedia
 
 
 def collect_widgets(fields, update, default=None, from_fields=False):
+    #XXX: why this is separated from HtmlUI?
     widgets = {}
     for field in fields:
         if hasattr(field, 'fields'):
             widgets.update(collect_widgets(field.fields, update))
-            continue
-        widget = None
-        if from_fields and hasattr(field, 'widget'):
-            widget = field.widget
-        else:
-            widget = update.get(field.resolve_name(), default)
-        if widget:
+        widget = update.get(field.resolve_name())
+        if widget is None and from_fields:
+            widget = getattr(field, 'widget', None)
+        widget = widget or default
+        if widget is not None:
             widgets[field.resolve_name()] = widget(element=field)
     return widgets
 
@@ -73,8 +72,9 @@ class HtmlUI(object):
         #     atribute
         #     It is all about "ui"
         self.widgets = self.collect_widgets(form)
-        if self.form_widget:
-            return self.form_widget(engine=self.engine).render(form=form, ui=self)
+        form_widget = self.form_widget or getattr(form, widget, None)
+        if form_widget:
+            return form_widget(engine=self.engine).render(form=form, ui=self)
         result = StringIO()
         for field in form.fields:
             widget = self.ui_for(field)
