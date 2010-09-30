@@ -89,7 +89,7 @@ class HtmlUI(object):
             result.write(self.render_field(field))
         return result.getvalue()
 
-    def render_field(self, field)
+    def render_field(self, field):
         widget = self.widget_for(field)
         if widget:
             return widget.render(field=field, ui=self)
