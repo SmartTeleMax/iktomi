@@ -4,7 +4,7 @@ __all__ = ['HtmlUI']
 
 from StringIO import StringIO
 from .media import FormMedia
-
+from ..form import Form
 
 def collect_widgets(fields, update, default=None, from_fields=False):
     #XXX: why this is separated from HtmlUI?
@@ -17,7 +17,7 @@ def collect_widgets(fields, update, default=None, from_fields=False):
             widget = getattr(field, 'widget', None)
         widget = widget or default
         if widget is not None:
-            widgets[field.resolve_name()] = widget(element=field)
+            widgets[field.resolve_name()] = widget
     return widgets
 
 
@@ -52,8 +52,10 @@ class HtmlUI(object):
             self.media += w.get_media()
         return widgets
 
-    def ui_for(self, field):
+    def widget_for(self, field):
         'Returns widget for field or default if former is absend or None'
+        #XXX rename to widget_for?
+        #    Or implement rendering of subfields by render method
         widget = self.widgets.get(field.resolve_name())
         if widget:
             return widget(engine=self.engine)
@@ -65,7 +67,14 @@ class HtmlUI(object):
         vars = dict(self._init_kw, engine=engine, engine_ext=ext)
         return self.__class__(**vars)
 
-    def render(self, form):
+    def render(self, form_or_field):
+        #just a shortcut
+        if isinstance(form_or_field, Form):
+            return self.render_form(form_or_field)
+        else:
+            return self.render_field(form_or_field)
+
+    def render_form(self, form):
         #XXX: here we can
         #     - make a copy of self with binded form
         #     - make instance of class (implement it first) with HtmlUI as
@@ -77,10 +86,14 @@ class HtmlUI(object):
             return form_widget(engine=self.engine).render(form=form, ui=self)
         result = StringIO()
         for field in form.fields:
-            widget = self.ui_for(field)
-            if widget:
-                result.write(widget.render(field=field, ui=self))
+            result.write(self.render_field(field))
         return result.getvalue()
+
+    def render_field(self, field)
+        widget = self.widget_for(field)
+        if widget:
+            return widget.render(field=field, ui=self)
+        return '' # XXX?
 
 
 class engine_wrapper(object):
