@@ -269,7 +269,7 @@ class FieldSet(AggregateField):
                         pass
         if not is_valid:
             raise convs.NestedError
-        return self._to_python(result)
+        return self.to_python(result)
 
 
 class FileField(FieldSet):
@@ -278,7 +278,7 @@ class FileField(FieldSet):
     '''
 
     def __init__(self, name, conv=convs.SimpleFile, **kwargs):
-        kwargs['fields'] = getattr(conv, 'subfields', [])
+        kwargs.setdefault('fields', getattr(conv, 'subfields', []))
         FieldSet.__init__(self, name, conv=conv, **kwargs)
 
     def to_python(self, value):

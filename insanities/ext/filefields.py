@@ -2,13 +2,15 @@
 import cgi
 import string
 from os import path
-import os, struct, tempfile, time
+import os, struct, tempfile, time, logging
 from PIL import Image
 
 from ..utils import weakproxy, cached_property
 from ..forms import convs
 from ..forms.fields import Field
 from ..forms.ui import widgets
+
+logger = logging.getLogger(__name__)
 
 
 def time_uid():
@@ -39,9 +41,9 @@ class TempUploadedFile(BaseFile):
     def full_path(self):
         return path.join(self.temp_path, self.uid + self.ext)
 
-    def save(self, file):
+    def save(self, file, filename):
         if not self.name or not self.ext:
-            self.name, self.ext = path.splitext(file.name)
+            self.name, self.ext = path.splitext(filename)
         if not path.isdir(self.temp_path):
             os.makedirs(self.temp_path)
         try:
@@ -72,13 +74,13 @@ class TempImageFile(TempUploadedFile):
     def thumb_filename(self):
         return path.join(self.temp_path, self.uid + self.thumb_sufix + '.png')
 
-    def save(self, file):
+    def save(self, file, filename):
         try:
             image = Image.open(file)
         except IOError, e:
             raise convs.ValidationError(self.invalid_image)
         file.seek(0)
-        super(TempImageFile, self).save(file)
+        super(TempImageFile, self).save(file, filename)
         if self.thumb_size:
             image.thumbnail(self.thumb_size, Image.ANTIALIAS)
             image.save(self.thumb_filename, quality=85)
@@ -148,7 +150,8 @@ class TempFile(convs.Converter):
         Field('original_name',
               conv=convs.Char(required=False),
               widget=widgets.HiddenInput),
-        Field('delete', conv=convs.Bool(), label='Delete'),
+        Field('delete', conv=convs.Bool(), label='Delete',
+              widget=widgets.CheckBox),
     ]
 
     @cached_property
@@ -173,7 +176,10 @@ class TempFile(convs.Converter):
             data['mode'] = 'empty'
         return data
 
-    def to_python(self, file, mode=None, temp_name=None, original_name=None, delete=False):
+    def _is_empty(self, value):
+        return None # disable require check in converter
+
+    def _to_python(self, file, mode=None, temp_name=None, original_name=None, delete=False):
 
 #        if file and file.filename == '<fdopen>':
 #            file.filename = None
@@ -181,7 +187,7 @@ class TempFile(convs.Converter):
         if mode == 'empty':
             if file == u'' or file is None: #XXX WEBOB ONLY !!!
                 if self.required:
-                    raise convs.ValidationError(self.required)
+                    raise convs.ValidationError(self.error_required)
                 raise convs.SkipReadonly # XXX This is incorrect
             return self.save_temp_file(file)
 
@@ -189,11 +195,11 @@ class TempFile(convs.Converter):
             if not original_name:
                 logger.warning('Missing original_name for FileField')
             if temp_name:
-                if not path.isfile(path.join(self.env.temp_path, temp_name)):
+                if not path.isfile(path.join(self.temp_dir, temp_name)):
                     raise convs.ValidationError(u'Временный файл утерян')
                 if not (file and file.filename):
                     uid, ext = path.splitext(temp_name)
-                    return self.temp_file_cls(self, original_name, ext, uid)
+                    return self.temp_file_cls(self.temp_dir, original_name, ext, uid)
                 self.delete_temp_file(temp_name)
                 if delete:
                     return None
@@ -213,10 +219,16 @@ class TempFile(convs.Converter):
             logger.warning('Unknown mode submitted for FileField: %r', mode)
             raise convs.SkipReadonly
 
+    def to_python(self, file, **kwargs):
+        #XXX Hack
+        value = self._to_python(file, **kwargs)
+        self.field.fill(self.field.form.data, self.from_python(value))
+        return value
+
     def save_temp_file(self, file):
         tmp = self.temp_file_cls(self.temp_dir)
         #XXX: file.file - due to FieldStorage interface
-        tmp.save(file.file)
+        tmp.save(file.file, file.filename)
         return tmp
 
     def delete_temp_file(self, temp_name):
@@ -226,10 +238,16 @@ class TempFile(convs.Converter):
 
 class TempFileWidget(widgets.Widget):
 
-    template = 'widgets/fileinput.html'
+    template = 'widgets/fileinput'
 
-    def prepare_data(self, **kwargs):
-        data = widgets.Widget.prepare_data(self, **kwargs)
-        data['value'] = value = data['field'].value
-        data['mode'] = value['mode']
+    def prepare_data(self, field=None, **kwargs):
+        data = widgets.Widget.prepare_data(self, field=field, **kwargs)
+        value = field.value
+
+        data['mode'] = field.get_field('mode').value
+        if data['mode'] == 'existing':
+            value.base_url + value.filename
+        elif data['mode'] == 'temp':
+            data['file_url'] = field.conv.temp_url + value.uid + value.ext
         return data
+

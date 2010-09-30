@@ -91,9 +91,12 @@ class Converter(object):
     def env(self):
         return self.field.env
 
+    def _is_empty(self, value):
+        return value in ('', [])
+
     def _check(self, method):
         def wrapper(value, **kwargs):
-            if self.required and not value:
+            if self.required and self._is_empty(value):
                 raise ValidationError(self.error_required)
             value = method(value, **kwargs)
             for v in self.validators_and_filters:
@@ -239,6 +242,8 @@ class Int(Converter):
 
 
 class Bool(Converter):
+
+    required = False
 
     def to_python(self, value):
         return bool(value)
@@ -487,10 +492,13 @@ class List(Converter):
         return items
 
 class SimpleFile(Converter):
+
+    def _is_empty(self, file):
+        return file == u'' or file is None #XXX WEBOB ONLY !!!
+
     def to_python(self, file):
-        if file == u'' or file is None: #XXX WEBOB ONLY !!!
-            return None
-        return file
+        if not self._is_empty(file):
+            return file
 
     def from_python(self, value):
         return None
