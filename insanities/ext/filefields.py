@@ -230,5 +230,6 @@ class TempFileWidget(widgets.Widget):
 
     def prepare_data(self, **kwargs):
         data = widgets.Widget.prepare_data(self, **kwargs)
-        data['mode'] = data['value']['mode']
+        data['value'] = value = data['field'].value
+        data['mode'] = value['mode']
         return data
