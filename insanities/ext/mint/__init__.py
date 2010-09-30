@@ -41,18 +41,21 @@ class mint_env(RequestHandler):
     This handler adds mint Loader.
     '''
 
-    def __init__(self, param='TEMPLATES', paths=None, cache=True):
+    def __init__(self, param='TEMPLATES', paths=None, cache=True, globals=None):
         self.param = param
         self.paths = paths
         self.env = None
         self.cache = cache
+        self.globals = globals or {}
 
     def handle(self, rctx):
         if self.env is None:
+            gl=dict(
+                VALS=rctx.vals,
+                CONF=rctx.conf,
+                REQUEST=rctx.request)
+            gl.update(self.globals)
             self.env = Loader(rctx.conf.TEMPLATES, cache=self.cache, 
-                              globals=dict(
-                                  VALS=rctx.vals,
-                                  CONF=rctx.conf,
-                                  REQUEST=rctx.request))
+                              globals=gl)
         rctx.vals.update(dict(mint_env=self.env))
         return rctx.next()

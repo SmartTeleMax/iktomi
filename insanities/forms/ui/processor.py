@@ -6,7 +6,7 @@ from StringIO import StringIO
 from .media import FormMedia
 
 
-def collect_widgets(fields, update, default=None, from_fields=False, engine=None):
+def collect_widgets(fields, update, default=None, from_fields=False):
     widgets = {}
     for field in fields:
         if hasattr(field, 'fields'):
@@ -18,7 +18,7 @@ def collect_widgets(fields, update, default=None, from_fields=False, engine=None
         else:
             widget = update.get(field.resolve_name(), default)
         if widget:
-            widgets[field.resolve_name()] = widget(element=field, engine=engine)
+            widgets[field.resolve_name()] = widget(element=field)
     return widgets
 
 
@@ -43,14 +43,23 @@ class HtmlUI(object):
         self.engine = engine
         self.media = FormMedia()
         self._init_kw = kw
+        #XXX: not good due to one ui may process multiple forms
+        self.widgets = {}
 
     def collect_widgets(self, form_instance):
         widgets = collect_widgets(form_instance.fields, self.fields_widgets, 
-                                  default=self.default, from_fields=self.from_fields,
-                                  engine=engine)
+                                  default=self.default, from_fields=self.from_fields)
         for w in widgets.values():
             self.media += w.get_media()
         return widgets
+
+    def ui_for(self, field):
+        'Returns widget for field or default if former is absend or None'
+        widget = self.widgets.get(field.resolve_name())
+        if widget:
+            return widget(engine=self.engine)
+        if self.default:
+            return self.default(engine=self.engine)
 
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
@@ -58,23 +67,26 @@ class HtmlUI(object):
         return self.__class__(**vars)
 
     def render(self, form):
-        form_widget = self.form_widget or getattr(form, widget)
-        if form_widget:
-            return form_widget.render(form=form, ui=self)
+        #XXX: here we can
+        #     - make a copy of self with binded form
+        #     - make instance of class (implement it first) with HtmlUI as
+        #     atribute
+        #     It is all about "ui"
+        self.widgets = self.collect_widgets(form)
+        if self.form_widget:
+            return self.form_widget(engine=self.engine).render(form=form, ui=self)
         result = StringIO()
-        widgets = self.collect_widgets(form)
         for field in form.fields:
-            widget = widgets.get(field.resolve_name())
+            widget = self.ui_for(field)
             if widget:
                 result.write(widget.render(field=field, ui=self))
         return result.getvalue()
 
 
 class engine_wrapper(object):
+    'This wrapper is temporary, for use only with jinja2 or mint'
     def __init__(self, env, ext='html'):
         self.env = env
         self.ext = ext
-
     def render(self, template_name, **data):
         return self.env.get_template('%s.%s' % (template_name, self.ext)).render(**data)
-
