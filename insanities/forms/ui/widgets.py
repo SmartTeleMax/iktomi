@@ -71,7 +71,6 @@ class Select(Widget):
     null_label = '--------'
 
     def get_options(self, value, field):
-        print value, field
         options = []
         if not field.multiple and (value is None or not field.conv.required):
             options = [{'value': '',
@@ -91,7 +90,7 @@ class Select(Widget):
     def prepare_data(self, **kwargs):
         field = kwargs['field']
         return dict(kwargs,
-                    options=self.get_options(kwargs.get('value', []), field),
+                    options=self.get_options(field.value, field),
                     multiple='multiple' if field.multiple else '',
                     readonly='readonly' if 'w' not in field.permissions else '',
                     required=('true' if field.conv.required else 'false'))

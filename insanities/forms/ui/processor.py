@@ -43,6 +43,7 @@ class HtmlUI(object):
         self.engine = engine
         self.media = FormMedia()
         self._init_kw = kw
+        self.widgets = {}
 
     def collect_widgets(self, form_instance):
         widgets = collect_widgets(form_instance.fields, self.fields_widgets, 
@@ -51,6 +52,14 @@ class HtmlUI(object):
             self.media += w.get_media()
         return widgets
 
+    def ui_for(self, field):
+        'Returns widget for field or default if former is absend or None'
+        widget = self.widgets.get(field.resolve_name())
+        if widget:
+            return widget(env=self.engine)
+        if self.default:
+            return self.default(env=self.engine)
+
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
         vars = self._init_kw.copy()
@@ -58,14 +67,14 @@ class HtmlUI(object):
         return self.__class__(**vars)
 
     def render(self, form):
+        self.widgets = self.collect_widgets(form)
         if self.form_widget:
-            return self.form_widget.render(form=form, ui=self)
+            return self.form_widget(env=self.engine).render(form=form, ui=self)
         result = StringIO()
-        widgets = self.collect_widgets(form)
         for field in form.fields:
-            widget = widgets.get(field.resolve_name())
+            widget = self.ui_for(field)
             if widget:
-                result.write(widget(env=self.engine).render(field=field, ui=self))
+                result.write(widget.render(field=field, ui=self))
         return result.getvalue()
 
 
