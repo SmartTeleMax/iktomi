@@ -72,7 +72,7 @@ class HtmlUI(object):
         #     atribute
         #     It is all about "ui"
         self.widgets = self.collect_widgets(form)
-        form_widget = self.form_widget or getattr(form, widget, None)
+        form_widget = self.form_widget or getattr(form, 'widget', None)
         if form_widget:
             return form_widget(engine=self.engine).render(form=form, ui=self)
         result = StringIO()
