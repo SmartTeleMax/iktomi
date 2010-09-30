@@ -4,8 +4,11 @@ import string
 from os import path
 import os, struct, tempfile, time
 from PIL import Image
+
 from ..utils import weakproxy, cached_property
-from . import convs
+from ..forms import convs
+from ..forms.fields import Field
+from ..forms.ui import widgets
 
 
 def time_uid():
@@ -27,8 +30,8 @@ class BaseFile(object):
 
 class TempUploadedFile(BaseFile):
 
-    def __init__(self, tempdir=None, name=None, ext=None, uid=None):
-        self.temp_path = tempdir or tempfile.gettempdir()
+    def __init__(self, temp_dir=None, name=None, ext=None, uid=None):
+        self.temp_path = temp_dir or tempfile.gettempdir()
         super(TempUploadedFile, self).__init__(self.temp_path, name, ext)
         self.uid = uid or time_uid()
 
@@ -143,27 +146,32 @@ class TempFile(convs.Converter):
               conv=convs.Char(check_file_path, required=False),
               widget=widgets.HiddenInput),
         Field('original_name',
-              conv=convs.Char(required=False)
+              conv=convs.Char(required=False),
               widget=widgets.HiddenInput),
-        Field('delete', conv=convs.Bool()),
+        Field('delete', conv=convs.Bool(), label='Delete'),
     ]
 
     @cached_property
-    def tempdir(self):
+    def temp_dir(self):
         # Can be overwritten
-        return self.form.env.temp_path
+        return self.field.env.temp_path
+
+    @cached_property
+    def temp_url(self):
+        # Can be overwritten
+        return self.field.env.temp_url
 
     def from_python(self, value):
         data = {'temp_name': '', 'original_name': '', 'delete': False}
         if isinstance(value, self.stored_file_cls):
             data['mode'] = 'existing'
-        elif isinstance(value, self.TempUploadedFile):
+        elif isinstance(value, self.temp_file_cls):
             data['mode'] = 'temp'
             data['temp_name'] = value.uid + value.ext
             data['original_name'] = value.name
         else:
             data['mode'] = 'empty'
-        return (value, data)
+        return data
 
     def to_python(self, file, mode=None, temp_name=None, original_name=None, delete=False):
 
@@ -205,15 +213,22 @@ class TempFile(convs.Converter):
             logger.warning('Unknown mode submitted for FileField: %r', mode)
             raise convs.SkipReadonly
 
-
     def save_temp_file(self, file):
-        tmp = self.temp_file_cls(self.tempdir)
+        tmp = self.temp_file_cls(self.temp_dir)
         #XXX: file.file - due to FieldStorage interface
         tmp.save(file.file)
         return tmp
 
     def delete_temp_file(self, temp_name):
         uid, ext = path.splitext(temp_name)
-        tmp = self.temp_file_cls(self.tempdir, name=None, ext=ext, uid=uid)
+        tmp = self.temp_file_cls(self.temp_dir, name=None, ext=ext, uid=uid)
         tmp.delete()
 
+class TempFileWidget(widgets.Widget):
+
+    template = 'widgets/fileinput.html'
+
+    def prepare_data(self, **kwargs):
+        data = widgets.Widget.prepare_data(self, **kwargs)
+        data['mode'] = data['value']['mode']
+        return data

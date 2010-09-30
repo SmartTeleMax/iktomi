@@ -92,10 +92,10 @@ class Converter(object):
         return self.field.env
 
     def _check(self, method):
-        def wrapper(value):
+        def wrapper(value, **kwargs):
             if self.required and not value:
                 raise ValidationError(self.error_required)
-            value = method(value)
+            value = method(value, **kwargs)
             for v in self.validators_and_filters:
                 value = v(value)
             return value
@@ -484,3 +484,13 @@ class List(Converter):
         if self.filter is not None:
             items = filter(self.filter, items)
         return items
+
+class SimpleFile(Converter):
+    def to_python(self, file):
+        if file == u'' or file is None: #XXX WEBOB ONLY !!!
+            return None
+        return file
+
+    def from_python(self, value):
+        return None
+

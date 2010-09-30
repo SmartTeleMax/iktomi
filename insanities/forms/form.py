@@ -52,6 +52,7 @@ class Form(object):
         self.env = BaseFormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.data = data = MultiDict()
+        self.files = MultiDict()
         self.initial = initial
         self.python_data = initial.copy()
         # clone all fields

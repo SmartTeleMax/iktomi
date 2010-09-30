@@ -6,7 +6,7 @@ from StringIO import StringIO
 from .media import FormMedia
 
 
-def collect_widgets(fields, update, default=None, from_fields=False):
+def collect_widgets(fields, update, default=None, from_fields=False, engine=None):
     widgets = {}
     for field in fields:
         if hasattr(field, 'fields'):
@@ -18,7 +18,7 @@ def collect_widgets(fields, update, default=None, from_fields=False):
         else:
             widget = update.get(field.resolve_name(), default)
         if widget:
-            widgets[field.resolve_name()] = widget(element=field)
+            widgets[field.resolve_name()] = widget(element=field, engine=engine)
     return widgets
 
 
@@ -46,7 +46,8 @@ class HtmlUI(object):
 
     def collect_widgets(self, form_instance):
         widgets = collect_widgets(form_instance.fields, self.fields_widgets, 
-                                  default=self.default, from_fields=self.from_fields)
+                                  default=self.default, from_fields=self.from_fields,
+                                  engine=engine)
         for w in widgets.values():
             self.media += w.get_media()
         return widgets
@@ -57,14 +58,15 @@ class HtmlUI(object):
         return self.__class__(**vars)
 
     def render(self, form):
-        if self.form_widget:
-            return self.form_widget.render(form=form, ui=self)
+        form_widget = self.form_widget or getattr(form, widget)
+        if form_widget:
+            return form_widget.render(form=form, ui=self)
         result = StringIO()
         widgets = self.collect_widgets(form)
         for field in form.fields:
             widget = widgets.get(field.resolve_name())
             if widget:
-                result.write(widget(env=self.engine).render(field=field, ui=self))
+                result.write(widget.render(field=field, ui=self))
         return result.getvalue()
 
 
@@ -75,3 +77,4 @@ class engine_wrapper(object):
 
     def render(self, template_name, **data):
         return self.env.get_template('%s.%s' % (template_name, self.ext)).render(**data)
+
