@@ -12,8 +12,6 @@ def collect_widgets(fields, update, default=None, from_fields=False):
     for field in fields:
         if hasattr(field, 'fields'):
             widgets.update(collect_widgets(field.fields, update))
-            #XXX: what about if we want specify widget for fieldset?
-            continue
         widget = update.get(field.resolve_name())
         if widget is None and from_fields:
             widget = getattr(field, 'widget', None)
