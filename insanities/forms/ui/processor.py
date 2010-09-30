@@ -43,6 +43,7 @@ class HtmlUI(object):
         self.engine = engine
         self.media = FormMedia()
         self._init_kw = kw
+        #XXX: not good due to one ui may process multiple forms
         self.widgets = {}
 
     def collect_widgets(self, form_instance):
@@ -56,9 +57,9 @@ class HtmlUI(object):
         'Returns widget for field or default if former is absend or None'
         widget = self.widgets.get(field.resolve_name())
         if widget:
-            return widget(env=self.engine)
+            return widget(engine=self.engine)
         if self.default:
-            return self.default(env=self.engine)
+            return self.default(engine=self.engine)
 
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
@@ -66,9 +67,14 @@ class HtmlUI(object):
         return self.__class__(**vars)
 
     def render(self, form):
+        #XXX: here we can
+        #     - make a copy of self with binded form
+        #     - make instance of class (implement it first) with HtmlUI as
+        #     atribute
+        #     It is all about "ui"
         self.widgets = self.collect_widgets(form)
         if self.form_widget:
-            return self.form_widget(env=self.engine).render(form=form, ui=self)
+            return self.form_widget(engine=self.engine).render(form=form, ui=self)
         result = StringIO()
         for field in form.fields:
             widget = self.ui_for(field)
@@ -78,9 +84,9 @@ class HtmlUI(object):
 
 
 class engine_wrapper(object):
+    'This wrapper is temporary, for use only with jinja2 or mint'
     def __init__(self, env, ext='html'):
         self.env = env
         self.ext = ext
-
     def render(self, template_name, **data):
         return self.env.get_template('%s.%s' % (template_name, self.ext)).render(**data)

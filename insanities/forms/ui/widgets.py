@@ -33,7 +33,7 @@ class Widget(object):
         '''
         data = self.prepare_data(**kwargs)
         data['widget'] = self
-        return self.env.render(self.template, **data)
+        return self.engine.render(self.template, **data)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
