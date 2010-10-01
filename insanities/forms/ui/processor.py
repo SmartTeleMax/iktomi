@@ -6,18 +6,20 @@ from StringIO import StringIO
 from .media import FormMedia
 from ..form import Form
 
+#XXX: I think, from fields should be True by default
 def collect_widgets(fields, update, default=None, from_fields=False):
     #XXX: why this is separated from HtmlUI?
     widgets = {}
     for field in fields:
         if hasattr(field, 'fields'):
-            widgets.update(collect_widgets(field.fields, update))
+            subwidgets = collect_widgets(field.fields, update,
+                                         default=default, from_fields=from_fields)
+            widgets.update(subwidgets)
         widget = update.get(field.resolve_name())
         if widget is None and from_fields:
             widget = getattr(field, 'widget', None)
         widget = widget or default
-        if widget is not None:
-            widgets[field.resolve_name()] = widget
+        widgets[field.resolve_name()] = widget()
     return widgets
 
 
@@ -91,9 +93,8 @@ class HtmlUI(object):
 
     def render_field(self, field):
         widget = self.widget_for(field)
-        if widget:
-            return widget.render(field=field, ui=self)
-        return '' # XXX?
+        # XXX?
+        return widget.render(field=field, ui=self)
 
 
 class engine_wrapper(object):

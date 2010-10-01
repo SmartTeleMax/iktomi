@@ -1,21 +1,21 @@
-<input type="hidden" name="{{ input_name }}__mode" value="{{ mode }}" />
+{{ ui.render(field.get_field('mode')) }}
+{{ ui.render(field.get_field('temp_name')) }}
+{{ ui.render(field.get_field('original_name')) }}
+
 {% if mode == 'existing' %}
-    <a target="_blank" href="{{ value.base_url }}{{ value.filename }}">
-        {{ widget.env.gettext('current file') }}
+    <a target="_blank" href="{{ file_url }}">
+        current file {#{ _('current file') }#}
     </a><br/>
 {% elif mode == 'temp' %}
-    <a target="_blank" href="{{ temp_url }}{{ value.uid }}{{ value.ext }}">
-        {{ widget.env.gettext('temporary file') }}
+    <a target="_blank" href="{{ file_url }}">
+        uploaded temporary file {#{ _('temporary file') }#}
     </a><br/>
-    <input type="hidden" name="{{ input_name }}__temp_name" value="{{ value.uid|escape }}{{ value.ext|escape }}" />
-    <input type="hidden" name="{{ input_name }}__original_name" value="{{ value.name|escape }}" />
 {% endif %}
-{% if mode != 'empty' and null %}
-  <label for="id-{{ input_name }}__delete">
-    {{ widget.env.gettext('delete') }}
-  </label>
-  <input type="checkbox" name="{{ input_name }}__delete" id="id-{{ input_name }}__delete"
-         {% if delete %}checked="checked"{% endif %} />
-  <br/>
+{% if mode != 'empty' and not required %}
+    {{ ui.render(field.get_field('delete')) }}
+    <label for="{{ field.get_field('delete').id }}">delete</label>
+    <br/>
 {% endif %}
-<input type="file" name="{{ input_name }}__file" />
+
+
+<input type="file" name="{{ field.input_name }}" />

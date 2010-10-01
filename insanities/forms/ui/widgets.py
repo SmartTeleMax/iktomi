@@ -184,3 +184,8 @@ class FieldListWidget(Widget):
 
     template = 'fields/fieldlist'
 
+
+class FormWidget(Widget):
+
+    template = 'forms/table'
+

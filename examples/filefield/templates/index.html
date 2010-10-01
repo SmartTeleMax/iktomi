@@ -1,0 +1,22 @@
+{% block content %}
+{% if files %}
+<ul id="files_list">
+    {% for file in files %}
+    <li>
+        <a href="{{ url + file }}">{{ file }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<form method="POST" action='{{ VALS.url_for('files') }}' enctype="multipart/form-data">
+<fieldset>
+<table>
+    {{ ui.render(form) }}
+</table>
+</fieldset>
+
+<input type="submit" value='Go!'/>
+</form>
+{% endblock %}
+

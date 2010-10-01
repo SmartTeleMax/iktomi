@@ -1,0 +1,12 @@
+THIS IS EXAMPLE APPLICATON
+--------------------------
+
+Before using make sure you built 'venv':
+
+    ./buildenv.sh
+
+Now you are ready to start application:
+
+    ./manage.py server:serve
+
+Open 'http://localhost:8000/' in your browser

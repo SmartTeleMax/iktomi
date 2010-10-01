@@ -50,15 +50,12 @@ class jinja_env(RequestHandler):
     '''
 
     def __init__(self, param='TEMPLATES', paths=None, autoescape=False,
-                 FormEnvCls=FormEnvironment, extensions=None):
+                 extensions=None):
         self.param = param
         self.paths = paths
         self.autoescape = autoescape
         self.env = None
         self.extensions = extensions or []
-        # form rendering is not the only thing FormEnvironment does.
-        # so we need a way to redefine other methods of it (i.e. i18n)
-        self.FormEnvCls = FormEnvCls
 
     def handle(self, rctx):
         # lazy jinja env
@@ -74,8 +71,7 @@ class jinja_env(RequestHandler):
                 autoescape=self.autoescape,
                 extensions=self.extensions,
             )
-        form_env = self.FormEnvCls(rctx=rctx, **rctx.conf.as_dict())
-        rctx.vals.update(dict(form_env=form_env, jinja_env=self.env))
+        rctx.vals.update(dict(jinja_env=self.env))
         return rctx.next()
 
     def _paths_list(self, paths):
