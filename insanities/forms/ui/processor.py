@@ -25,7 +25,6 @@ class HtmlUI(object):
         if engine:
             engine = engine_wrapper(engine, ext=kw.get('engine_ext', 'html'))
         self.engine = engine
-        self.media = FormMedia()
         self._init_kw = kw
 
     def _collect_widgets(self, fields):
@@ -42,10 +41,7 @@ class HtmlUI(object):
         return widgets
 
     def collect_widgets(self, form_instance):
-        widgets = self._collect_widgets(form_instance.fields)
-        for w in widgets.values():
-            self.media += w.get_media()
-        return widgets
+        return self._collect_widgets(form_instance.fields)
 
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
@@ -64,6 +60,9 @@ class _FieldRenderrer(object):
     '''Stores widgets to render individual fields'''
     def __init__(self, widgets):
         self.widgets = widgets
+        self.media = FormMedia()
+        for w in widgets.values():
+            self.media += w.get_media()
 
     def render_field(self, field):
         widget = self.widgets[field.resolve_name()]
