@@ -145,34 +145,15 @@ class ImageView(FieldWidget):
     classname = 'imageview'
 
 
-class FileInput(Widget):
-    '''
-    '''
-    template = 'widgets/fileinput'
-
-    def prepare_data(self, field=None, **data):
-        value = field.value
-        delete = field.get_field('delete').value
-        if value is None:
-            value = field.parent.initial.get(field.name, None)
-            if isinstance(value, field.stored_file_cls):
-                mode = 'existing'
-            else:
-                value = None
-                mode = 'empty'
-        elif isinstance(value, field.stored_file_cls):
-            mode = 'existing'
-        elif isinstance(value, field.temp_file_cls):
-            mode = 'temp'
-        else:
-            assert None
-        return dict(data, field=field, value=value, mode=mode,
-                    temp_url=field.conv.temp_url,
-                    required=field.required)
-
-
-class ImageInput(FileInput):
-    template = 'widgets/imageinput'
+#class FileInput(Widget):
+#    '''
+#    '''
+#    template = 'widgets/file'
+#
+#
+#
+#class ImageInput(FileInput):
+#    template = 'widgets/imageinput'
 
 
 class FieldSetWidget(Widget):
@@ -188,4 +169,13 @@ class FieldListWidget(Widget):
 class FormWidget(Widget):
 
     template = 'forms/table'
+
+
+class DefaultFormWidget(FormWidget):
+    def render(self, form=None, ui=None):
+        result = StringIO()
+        for field in form.fields:
+            result.write(ui.render_field(field))
+        return result.getvalue()
+
 

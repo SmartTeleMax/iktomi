@@ -1,6 +1,6 @@
-{{ ui.render(field.get_field('mode')) }}
-{{ ui.render(field.get_field('temp_name')) }}
-{{ ui.render(field.get_field('original_name')) }}
+{{ ui.render_field(field.get_field('mode')) }}
+{{ ui.render_field(field.get_field('temp_name')) }}
+{{ ui.render_field(field.get_field('original_name')) }}
 
 {% if mode == 'existing' %}
     <a target="_blank" href="{{ file_url }}">
@@ -12,10 +12,9 @@
     </a><br/>
 {% endif %}
 {% if mode != 'empty' and not required %}
-    {{ ui.render(field.get_field('delete')) }}
+    {{ ui.render_field(field.get_field('delete')) }}
     <label for="{{ field.get_field('delete').id }}">delete</label>
     <br/>
 {% endif %}
-
 
 <input type="file" name="{{ field.input_name }}" />
