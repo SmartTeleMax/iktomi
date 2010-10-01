@@ -12,7 +12,7 @@
 <form method="POST" action='{{ VALS.url_for('files') }}' enctype="multipart/form-data">
 <fieldset>
 <table>
-    {{ ui.render(form) }}
+    {{ ui(form).render() }}
 </table>
 </fieldset>
 

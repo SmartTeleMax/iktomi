@@ -11,6 +11,7 @@ from .widgets import DefaultFormWidget
 
 
 class HtmlUI(object):
+    '''A configuration stateless object of form rendering'''
 
     def __init__(self, **kw):
         '''
@@ -42,19 +43,20 @@ class HtmlUI(object):
         return widgets
 
     def bind(self, engine, ext='html'):
-        'Creates new HtmlUI instance binded to engine'
+        'Creates new HtmlUI instance bound to engine'
         vars = dict(self._init_kw, engine=engine, engine_ext=ext)
         return self.__class__(**vars)
 
-    def render(self, form):
+    def __call__(self, form):
+        '''Binds UI to a form'''
         widgets = self.collect_widgets(form.fields)
 
         form_widget = self.form_widget or getattr(form, 'widget', DefaultFormWidget)
         form_widget = form_widget(engine=self.engine)
-        return _Renderrer(form, form_widget, widgets)
+        return Renderrer(form, form_widget, widgets)
 
 
-class _Renderrer(object):
+class Renderrer(object):
     '''Stores widgets to render individual fields'''
     def __init__(self, form, form_widget, widgets):
         self.widgets = widgets
@@ -63,16 +65,18 @@ class _Renderrer(object):
 
     @cached_property
     def media(self):
+        '''Collected FormMedia from form's widgets'''
         media = FormMedia()
         for w in self.widgets.values():
             media += w.get_media()
         return media
 
     def render(self):
+        '''Renders the form'''
         return self.form_widget.render(form=self.form, ui=self)
-    __unicode__ = __html__ = render
 
     def render_field(self, field):
+        '''Renders a particular field in the bound form'''
         widget = self.widgets[field.resolve_name()]
         return widget.render(field=field, ui=self)
 
