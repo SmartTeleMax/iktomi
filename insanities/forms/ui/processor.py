@@ -14,7 +14,6 @@ class HtmlUI(object):
         '''
         form_widget - widget which will be rendered, if appears.
         fields_widgets - dict [field_name:widget] which will be used to render field.
-        from_fields - bool make HtmlUI take widgets from fields.
         default - widget, default widget if other is absent.
         engine - template engine (jinja2, mint, ...).
         engine_ext - template files extensions.
@@ -48,12 +47,6 @@ class HtmlUI(object):
             self.media += w.get_media()
         return widgets
 
-    def widget_for(self, field):
-        'Returns widget for field or default if former is absend or None'
-        #XXX rename to widget_for?
-        #    Or implement rendering of subfields by render method
-
-
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
         vars = dict(self._init_kw, engine=engine, engine_ext=ext)
@@ -68,6 +61,7 @@ class HtmlUI(object):
 
 
 class _FieldRenderrer(object):
+    '''Stores widgets to render individual fields'''
     def __init__(self, widgets):
         self.widgets = widgets
 
