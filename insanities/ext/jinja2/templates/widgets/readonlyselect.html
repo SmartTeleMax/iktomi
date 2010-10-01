@@ -1,7 +1,0 @@
-{% for option in options %}
-  {# XXX This doesn't work for multiple #}
-  {%- if option.value==value %}
-    <input type="hidden" name="{{ widget.input_name }}" value="{{ option.value|escape }}" />
-    {{ option.title|escape }}
-  {%- endif %}
-{% endfor %}

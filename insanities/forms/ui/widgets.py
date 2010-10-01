@@ -44,6 +44,8 @@ class FieldWidget(Widget):
 
     def render(self, field=None, **kwargs):
         kwargs['value'] = field.grab()
+        kwargs['readonly'] = 'w' not in field.permissions
+        kwargs['required'] = field.conv.required
         return Widget.render(self, field=field, **kwargs)
 
 
@@ -96,11 +98,8 @@ class Select(FieldWidget):
 
     def prepare_data(self, **kwargs):
         field = kwargs['field']
-        return dict(kwargs,
-                    options=self.get_options(field.value, field),
-                    multiple='multiple' if field.multiple else '',
-                    readonly='readonly' if 'w' not in field.permissions else '',
-                    required=('true' if field.conv.required else 'false'))
+        kwargs['options'] = self.get_options(field.value, field)
+        return kwargs
 
 
 class CheckBoxSelect(Select):
@@ -116,11 +115,6 @@ class CheckBox(FieldWidget):
 class Textarea(FieldWidget):
 
     template = 'widgets/textarea'
-
-
-class ReadonlySelect(Select):
-
-    template = 'widgets/readonlyselect'
 
 
 class CharDisplay(FieldWidget):
@@ -139,31 +133,18 @@ class CharDisplay(FieldWidget):
                     should_escape=self.escape)
 
 
-class ImageView(FieldWidget):
-
-    template = 'widgets/imageview'
-    classname = 'imageview'
-
-
-#class FileInput(Widget):
-#    '''
-#    '''
-#    template = 'widgets/file'
-#
-#
-#
-#class ImageInput(FileInput):
-#    template = 'widgets/imageinput'
+class FileInput(Widget):
+    template = 'widgets/file'
 
 
 class FieldSetWidget(Widget):
 
-    template = 'fields/fieldset'
+    template = 'widgets/fieldset'
 
 
-class FieldListWidget(Widget):
-
-    template = 'fields/fieldlist'
+#class FieldListWidget(Widget):
+# this widget is mindless without JS
+#    template = 'widgets/fieldlist'
 
 
 class FormWidget(Widget):

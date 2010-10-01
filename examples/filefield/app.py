@@ -14,7 +14,9 @@ import handlers as h
 static = static_files(cfg.STATIC)
 media = static_files(cfg.MEDIA, '/media/')
 
-env = Conf(**conf_to_dict(cfg)) | jinja_env(extensions=['jinja2.ext.i18n']) | local_cache_env()
+env = (Conf(**conf_to_dict(cfg)) | 
+       jinja_env(extensions=['jinja2.ext.i18n'], autoescape=True) |
+       local_cache_env())
 
 # should be added only in local app, but for simplicity added immediatelly
 env = env | static.add_reverse

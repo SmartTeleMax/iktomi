@@ -14,7 +14,7 @@
       {% endif %}
     </th>
     <td>
-      {{ ui.render_field(subfield) }}
+      {{ ui.render_field(subfield)|safe }}
     </td>
   </tr>
 {% endfor %}

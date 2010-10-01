@@ -3,9 +3,11 @@
 __all__ = ['HtmlUI']
 
 from StringIO import StringIO
+
+from ...utils import cached_property
+from ..form import Form
 from .media import FormMedia
 from .widgets import DefaultFormWidget
-from ..form import Form
 
 
 class HtmlUI(object):
@@ -27,21 +29,17 @@ class HtmlUI(object):
         self.engine = engine
         self._init_kw = kw
 
-    def _collect_widgets(self, fields):
-        # recursive part of collect_widgets
+    def collect_widgets(self, fields):
         widgets = {}
         for field in fields:
             fieldname = field.resolve_name()
             if hasattr(field, 'fields'):
-                subwidgets = self._collect_widgets(field.fields)
+                subwidgets = self.collect_widgets(field.fields)
                 widgets.update(subwidgets)
             widget = self.fields_widgets.get(fieldname)
             widget = getattr(field, 'widget', self.default)
             widgets[fieldname] = widget(engine=self.engine)
         return widgets
-
-    def collect_widgets(self, form_instance):
-        return self._collect_widgets(form_instance.fields)
 
     def bind(self, engine, ext='html'):
         'Creates new HtmlUI instance binded to engine'
@@ -49,20 +47,30 @@ class HtmlUI(object):
         return self.__class__(**vars)
 
     def render(self, form):
-        widgets = self.collect_widgets(form)
-        renderrer = _FieldRenderrer(widgets)
+        widgets = self.collect_widgets(form.fields)
 
         form_widget = self.form_widget or getattr(form, 'widget', DefaultFormWidget)
-        return form_widget(engine=self.engine).render(form=form, ui=renderrer)
+        form_widget = form_widget(engine=self.engine)
+        return _Renderrer(form, form_widget, widgets)
 
 
-class _FieldRenderrer(object):
+class _Renderrer(object):
     '''Stores widgets to render individual fields'''
-    def __init__(self, widgets):
+    def __init__(self, form, form_widget, widgets):
         self.widgets = widgets
-        self.media = FormMedia()
-        for w in widgets.values():
-            self.media += w.get_media()
+        self.form = form
+        self.form_widget = form_widget
+
+    @cached_property
+    def media(self):
+        media = FormMedia()
+        for w in self.widgets.values():
+            media += w.get_media()
+        return media
+
+    def render(self):
+        return self.form_widget.render(form=self.form, ui=self)
+    __unicode__ = __html__ = render
 
     def render_field(self, field):
         widget = self.widgets[field.resolve_name()]
