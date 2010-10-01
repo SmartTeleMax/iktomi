@@ -236,6 +236,7 @@ class TempFile(convs.Converter):
         tmp = self.temp_file_cls(self.temp_dir, name=None, ext=ext, uid=uid)
         tmp.delete()
 
+
 class TempFileWidget(widgets.Widget):
 
     template = 'widgets/fileinput'
@@ -246,7 +247,7 @@ class TempFileWidget(widgets.Widget):
 
         data['mode'] = field.get_field('mode').value
         if data['mode'] == 'existing':
-            value.base_url + value.filename
+            data['file_url'] = value.base_url + value.filename
         elif data['mode'] == 'temp':
             data['file_url'] = field.conv.temp_url + value.uid + value.ext
         return data
