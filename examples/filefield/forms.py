@@ -20,6 +20,6 @@ class FileForm(Form):
                   conv=TempFile(temp_dir=os.path.join(cfg.MEDIA, 'temp'),
                                 required=True,
                                 temp_url='/media/temp/'),
-                  widget=TempFileWidget),
+                  widget=TempFileWidget(template='fileinput')),
     ]
 
