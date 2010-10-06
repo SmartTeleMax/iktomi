@@ -140,7 +140,8 @@ class SqlAlchemyCommands(CommandDigest):
         '''
         if self.initial:
             databases = db if db else self.databases
-            session = construct_maker(database, models=self.models)()
+            session = construct_maker(databases, models=self.models,
+                                      engine_params=self.engine_params)()
             #TODO: implement per db initial
             self.initial(session)
 
