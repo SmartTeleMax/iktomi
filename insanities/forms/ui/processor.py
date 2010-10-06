@@ -71,6 +71,9 @@ class Renderrer(object):
             media += w.get_media()
         return media
 
+    def ui_for(self, field):
+        return self.widgets.get(field.resolve_name())
+
     def render(self):
         '''Renders the form'''
         return self.form_widget.render(form=self.form, ui=self)
