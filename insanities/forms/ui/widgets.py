@@ -46,7 +46,8 @@ class FieldWidget(Widget):
         kwargs['value'] = field.grab()
         kwargs['readonly'] = 'w' not in field.permissions
         kwargs['required'] = field.conv.required
-        return Widget.render(self, field=field, **kwargs)
+        kwargs['label'] = self.label or field.name
+        return super(FieldWidget, self).render(field=field, **kwargs)
 
 
 class TextInput(FieldWidget):
