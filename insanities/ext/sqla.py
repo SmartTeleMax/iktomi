@@ -194,7 +194,7 @@ class SqlAlchemyCommands(CommandDigest):
 from sqlalchemy import String, Integer, Text, Boolean, Date, DateTime
 from sqlalchemy import orm, types, create_engine
 
-from ..forms.files import StoredFile, StoredImageFile
+from .filefields import StoredFile, StoredImageFile
 
 class StringList(types.TypeDecorator):
 
