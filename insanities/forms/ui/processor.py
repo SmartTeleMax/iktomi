@@ -38,7 +38,8 @@ class HtmlUI(object):
                 subwidgets = self.collect_widgets(field.fields)
                 widgets.update(subwidgets)
             widget = self.fields_widgets.get(fieldname)
-            widget = getattr(field, 'widget', self.default)
+            if not widget:
+                widget = getattr(field, 'widget', self.default)
             widgets[fieldname] = widget(engine=self.engine)
         return widgets
 
