@@ -40,24 +40,33 @@ class Widget(object):
         return self.__class__(**kwargs)
 
 
-class TextInput(Widget):
+class FieldWidget(Widget):
+
+    def render(self, field=None, **kwargs):
+        kwargs['value'] = field.grab()
+        kwargs['readonly'] = 'w' not in field.permissions
+        kwargs['required'] = field.conv.required
+        return Widget.render(self, field=field, **kwargs)
+
+
+class TextInput(FieldWidget):
 
     template = 'widgets/textinput'
     classname = 'textinput'
 
 
-class HiddenInput(Widget):
+class HiddenInput(FieldWidget):
 
     template = 'widgets/hiddeninput'
 
 
-class PasswordInput(Widget):
+class PasswordInput(FieldWidget):
 
     template = 'widgets/passwordinput'
     classname = 'textinput'
 
 
-class Select(Widget):
+class Select(FieldWidget):
     '''
     Takes options from :class:`EnumChoice<EnumChoice>` converter,
     looks up if converter allows null and passed this value as template
@@ -89,11 +98,8 @@ class Select(Widget):
 
     def prepare_data(self, **kwargs):
         field = kwargs['field']
-        return dict(kwargs,
-                    options=self.get_options(field.value, field),
-                    multiple='multiple' if field.multiple else '',
-                    readonly='readonly' if 'w' not in field.permissions else '',
-                    required=('true' if field.conv.required else 'false'))
+        kwargs['options'] = self.get_options(field.value, field)
+        return kwargs
 
 
 class CheckBoxSelect(Select):
@@ -101,22 +107,17 @@ class CheckBoxSelect(Select):
     template = 'widgets/select-checkbox'
 
 
-class CheckBox(Widget):
+class CheckBox(FieldWidget):
 
     template = 'widgets/checkbox'
 
 
-class Textarea(Widget):
+class Textarea(FieldWidget):
 
     template = 'widgets/textarea'
 
 
-class ReadonlySelect(Select):
-
-    template = 'widgets/readonlyselect'
-
-
-class CharDisplay(Widget):
+class CharDisplay(FieldWidget):
 
     template = 'widgets/span'
     classname = 'chardisplay'
@@ -132,39 +133,30 @@ class CharDisplay(Widget):
                     should_escape=self.escape)
 
 
-class ImageView(Widget):
-
-    template = 'widgets/imageview'
-    classname = 'imageview'
-
-
 class FileInput(Widget):
-    '''
-    '''
-    template = 'widgets/fileinput'
-
-    def prepare_data(self, **data):
-        field = self.field
-        value = field.value
-        delete = field.form.data.get(field.input_name + '__delete', False)
-        if value is None:
-            value = field.parent.initial.get(field.name, None)
-            if isinstance(value, field.stored_file_cls):
-                mode = 'existing'
-            else:
-                value = None
-                mode = 'empty'
-        elif isinstance(value, field.stored_file_cls):
-            mode = 'existing'
-        elif isinstance(value, field.temp_file_cls):
-            mode = 'temp'
-        else:
-            assert None
-        return dict(data, value=value, mode=mode, input_name=self.input_name,
-                    delete=delete, temp_url=self.env.rctx.conf.temp_url,
-                    null=field.null)
+    template = 'widgets/file'
 
 
-class ImageInput(FileInput):
-    template = 'widgets/imageinput'
+class FieldSetWidget(Widget):
+
+    template = 'widgets/fieldset'
+
+
+#class FieldListWidget(Widget):
+# this widget is mindless without JS
+#    template = 'widgets/fieldlist'
+
+
+class FormWidget(Widget):
+
+    template = 'forms/table'
+
+
+class DefaultFormWidget(FormWidget):
+    def render(self, form=None, ui=None):
+        result = StringIO()
+        for field in form.fields:
+            result.write(ui.render_field(field))
+        return result.getvalue()
+
 

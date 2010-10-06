@@ -205,13 +205,11 @@ class FieldSet(AggregateField):
     Container field aggregating a couple of other different fields
     '''
 
-    def __init__(self, name, conv=convs.Converter, fields=[], parent=None,
-                 **kwargs):
-        if parent is not None:
+    def __init__(self, name, conv=convs.Converter, fields=[], **kwargs):
+        if kwargs.get('parent'):
             conv = conv(field=self)
             fields = [field(parent=self) for field in fields]
         kwargs.update(dict(
-            parent=parent,
             name=name,
             conv=conv,
             fields=fields,
@@ -262,17 +260,33 @@ class FieldSet(AggregateField):
             except convs.SkipReadonly:
                 field.fill(self.form.data,
                            field.from_python(result[field.name]))
-                try:
-                    if hasattr(field, 'grab'):
+                if hasattr(field, 'grab'):
+                    try:
                         field.to_python(field.grab())
-                except convs.ValidationError, e:
-                    self.form.errors[field.input_name] = e.message
-                except convs.NotSubmitted:
-                    pass
+                    except convs.ValidationError, e:
+                        self.form.errors[field.input_name] = e.message
+                    except convs.NotSubmitted:
+                        pass
         if not is_valid:
             raise convs.NestedError
         return self.to_python(result)
 
+
+class FileField(FieldSet):
+    '''
+    Container field aggregating a couple of other different fields
+    '''
+
+    def __init__(self, name, conv=convs.SimpleFile, **kwargs):
+        kwargs.setdefault('fields', getattr(conv, 'subfields', []))
+        FieldSet.__init__(self, name, conv=conv, **kwargs)
+
+    def to_python(self, value):
+        file = self.form.files.get(self.input_name, None)
+        return self.conv.to_python(file, **value)
+
+    def get_default(self):
+        return None # XXX
 
 class FieldList(AggregateField):
     '''

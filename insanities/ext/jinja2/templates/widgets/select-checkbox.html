@@ -1,8 +1,13 @@
 <div {%- if widget.classname %} class="{{ widget.classname }}"{% endif %}>
   {% for option in options %}
     <div>
-       <input type="{% if widget.multiple %}checkbox{% else %}radio{% endif %}" value="{{ option.value|escape }}" name="{{ widget.input_name }}" id="{{ widget.id }}-{{ loop.index }}" {%- if option.selected %} checked="checked"{% endif %} />
-       <label for="{{ widget.id }}-{{ loop.index }}" {%- if option.selected %} class="selected"{% endif %}>{{ option.title|escape }}</label>
+       <input type="{{ 'checkbox' field.multiple else 'radio' %}" value="{{ option.value|escape }}" {#
+              #}name="{{ field.input_name|escape }}" id="{{ field.id }}-{{ loop.index }}"
+              {%- if option.selected %} checked="checked"{% endif %} />
+       <label for="{{ field.id }}-{{ loop.index }}"
+              {%- if option.selected %} class="selected"{% endif %}>
+            {{- option.title|escape -}}
+       </label>
     </div>
   {%- endfor %}
 </div>

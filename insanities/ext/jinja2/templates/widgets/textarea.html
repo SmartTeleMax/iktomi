@@ -1,3 +1,5 @@
-<textarea id="{{ widget.id }}" name="{{ widget.input_name }}"
+<textarea id="{{ field.id }}" name="{{ field.input_name }}"
           {%- if readonly %} readonly="readonly"{% endif %}
-          {%- if widget.classname %} class="{{ widget.classname }}"{% endif %}>{{ value|escape }}</textarea>
+          {%- if widget.classname %} class="{{ widget.classname }}"{% endif %}>
+          {{- value|escape -}}
+</textarea>
