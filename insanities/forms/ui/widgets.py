@@ -4,6 +4,7 @@ from copy import deepcopy
 from ...utils import weakproxy, cached_property
 from .. import convs
 from media import FormMedia, FormCSSRef, FormJSRef
+from StringIO import StringIO
 
 
 class Widget(object):

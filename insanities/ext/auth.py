@@ -49,8 +49,6 @@ class LoginForm(Form):
     )
 
 
-
-
 class CookieAuth(RequestHandler):
     '''
     CookieAuth instances allows to add cookies based authentication to you web app.
