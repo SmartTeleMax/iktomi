@@ -291,7 +291,9 @@ class EnumChoice(Converter):
     def to_python(self, value):
         if value == '':
             #XXX: check for multiple?
-            return []
+            if self.multiple:
+                return []
+            return None
         if self.multiple:
             value = [item for item in map(self._safe_to_python, value or [])
                      if item is not None]

@@ -43,7 +43,7 @@ class Widget(object):
 class FieldWidget(Widget):
 
     def render(self, field=None, **kwargs):
-        kwargs['value'] = field.grab()
+        kwargs['value'] = field.value or ''
         kwargs['readonly'] = 'w' not in field.permissions
         kwargs['required'] = field.conv.required
         kwargs['label'] = self.label or field.name
@@ -82,7 +82,7 @@ class Select(FieldWidget):
 
     def get_options(self, value, field):
         options = []
-        if not field.multiple and value is None and not field.conv.required:
+        if not field.multiple and not field.conv.required:
             options = [{'value': '',
                         'title': self.null_label,
                         'selected': value in (None, '')}]
@@ -138,7 +138,7 @@ class FileInput(Widget):
     template = 'widgets/file'
 
 
-class FieldSetWidget(Widget):
+class FieldSetWidget(FieldWidget):
 
     template = 'widgets/fieldset'
 
