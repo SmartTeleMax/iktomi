@@ -65,7 +65,7 @@ class sqla_session(RequestHandler):
                  class_=DBSession, engine_params=None):
         self.param_name = param_name
         engine_params = engine_params or {}
-        self.maker = construct_maker(uri)
+        self.maker = construct_maker(uri, engine_params=engine_params)
 
     def handle(self, rctx):
         db = self.maker()
