@@ -114,7 +114,7 @@ class Converter(object):
         """ custom converters should override this """
         if value is None:
             value = ''
-        return unicode(value)
+        return value
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
