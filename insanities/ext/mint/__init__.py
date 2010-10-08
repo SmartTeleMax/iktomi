@@ -22,7 +22,7 @@ class render_to(RequestHandler):
     def get_template(self, rctx):
         template = self.template or rctx.data[self.param]
         if isinstance(template, basestring):
-            template = rctx.vals.mint_env.get_template(template)
+            template = rctx.vals.get_template(template)
         return template
 
     def handle(self, rctx):
@@ -57,5 +57,5 @@ class mint_env(RequestHandler):
             gl.update(self.globals)
             self.env = Loader(rctx.conf.TEMPLATES, cache=self.cache, 
                               globals=gl)
-        rctx.vals.update(dict(mint_env=self.env))
+        rctx.vals.update(dict(get_template=self.env.get_template))
         return rctx.next()

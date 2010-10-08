@@ -87,10 +87,10 @@ class Renderrer(object):
 
 class engine_wrapper(object):
     'This wrapper is temporary, for use only with jinja2 or mint'
-    def __init__(self, env, ext='html'):
-        self.env = env
+    def __init__(self, get_template, ext='html'):
+        self.get_template = get_template
         self.ext = ext
 
     def render(self, template_name, **data):
-        return self.env.get_template('%s.%s' % (template_name, self.ext)).render(**data)
+        return self.get_template('%s.%s' % (template_name, self.ext)).render(**data)
 
