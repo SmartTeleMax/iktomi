@@ -247,7 +247,7 @@ class FieldSet(AggregateField):
     def accept(self):
         if 'w' not in self.permissions:
             raise convs.SkipReadonly
-        result = self.python_data.copy()
+        result = self.python_data
         is_valid = True
         for field in self.fields:
             try:
