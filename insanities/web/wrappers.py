@@ -82,10 +82,18 @@ class namespace(RequestHandler):
 
 
 class Conf(RequestHandler):
-
     def __init__(self, **kwargs):
         self.conf = kwargs
 
     def handle(self, rctx):
         rctx.conf.update(self.conf)
+        return rctx.next()
+
+
+class Vals(RequestHandler):
+    def __init__(self, **kwargs):
+        self.vals = kwargs
+
+    def handle(self, rctx):
+        rctx.vals.update(self.vals)
         return rctx.next()
