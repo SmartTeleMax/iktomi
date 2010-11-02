@@ -154,10 +154,8 @@ class FormWidget(Widget):
 
 
 class DefaultFormWidget(FormWidget):
-    def render(self, form=None, ui=None):
+    def render(self, form=None, ui=None, **kw):
         result = StringIO()
         for field in form.fields:
-            result.write(ui.render_field(field))
+            result.write(ui.render_field(field, **kw))
         return result.getvalue()
-
-

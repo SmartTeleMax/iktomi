@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['HtmlUI']
+__all__ = ['HtmlUI', 'UiMixin']
 
 from StringIO import StringIO
 
 from ...utils import cached_property
 from ..form import Form
 from .media import FormMedia
-from .widgets import DefaultFormWidget
+from .widgets import DefaultFormWidget, Widget, TextInput
 
 
 class HtmlUI(object):
@@ -78,14 +78,26 @@ class Renderrer(object):
     def render(self):
         '''Renders the form'''
         vars = self.globs.copy()
-        vars['form'] = self.form
-        vars['ui'] = self
-        return self.form_widget.render(**vars)
+        return self.form_widget.render(form=self.form, ui=self, **vars)
 
-    def render_field(self, field):
+    def render_field(self, field, **kw):
         '''Renders a particular field in the bound form'''
-        widget = self.widgets[field.resolve_name()]
         vars = self.globs.copy()
-        vars['field'] = field
-        vars['ui'] = self
-        return widget.render(**vars)
+        vars.update(kw)
+        widget = self.widgets[field.resolve_name()]
+        return widget.render(field=field, ui=self, **vars)
+
+
+class UiMixin(object):
+    def __init__(self, *args, **kw):
+        super(UiMixin, self).__init__(*args, **kw)
+
+    def get_ui(self, rctx, form_template=''):
+        form_widget = Widget(template=form_template) if form_template else None
+        return HtmlUI(form_widget=form_widget,
+                      default=TextInput, 
+                      from_fields=True,
+                      renderer=rctx.vals.renderer,
+                      globs=dict(VALS=rctx.vals,
+                                 CONF=rctx.conf,
+                                 REQUEST=rctx.request))(self)
