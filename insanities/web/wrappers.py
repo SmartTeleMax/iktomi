@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['prefix', 'subdomain', 'namespace', 'Conf']
+__all__ = ['prefix', 'subdomain', 'namespace', 'Conf', 'Vals']
 
 import logging
 import re

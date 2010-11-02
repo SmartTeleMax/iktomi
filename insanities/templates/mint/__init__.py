@@ -17,10 +17,11 @@ class TemplateEngine(object):
         '''
         paths - list of paths or str path
         '''
-        paths = paths if isinstance(paths, (list, tuple)) else [paths]
+        #XXX: mint fail
+        #paths = paths if isinstance(paths, (list, tuple)) else [paths]
         # default templates for forms widgets
-        paths.append(DEFAULT_TEMPLATE_DIR)
-        self.env = Loader(rctx.conf.TEMPLATES, cache=self.cache, 
+        #paths.append(DEFAULT_TEMPLATE_DIR)
+        self.env = mint.Loader(paths, cache=cache, 
                           globals=globs)
 
     def render(self, template_name, **kw):

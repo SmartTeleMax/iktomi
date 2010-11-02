@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from copy import deepcopy
 from ...utils import weakproxy, cached_property
 from .. import convs
 from media import FormMedia, FormCSSRef, FormJSRef
@@ -34,7 +33,7 @@ class Widget(object):
         '''
         data = self.prepare_data(**kwargs)
         data['widget'] = self
-        return self.engine.render(self.template, **data)
+        return self.renderer.render(self.template, **data)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)

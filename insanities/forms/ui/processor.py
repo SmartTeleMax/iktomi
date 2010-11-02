@@ -18,16 +18,13 @@ class HtmlUI(object):
         form_widget - widget which will be rendered, if appears.
         fields_widgets - dict [field_name:widget] which will be used to render field.
         default - widget, default widget if other is absent.
-        engine - template engine (jinja2, mint, ...).
+        renderer - template engine (jinja2, mint, ...).
         engine_ext - template files extensions.
         '''
         self.form_widget = kw.get('form_widget')
         self.fields_widgets = kw.get('fields_widgets', {})
         self.default = kw.get('default')
-        engine = kw.get('engine')
-        if engine:
-            engine = engine_wrapper(engine, ext=kw.get('engine_ext', 'html'))
-        self.engine = engine
+        self.renderer = kw.get('renderer')
         self._init_kw = kw
 
     def collect_widgets(self, fields):
@@ -40,29 +37,32 @@ class HtmlUI(object):
             widget = self.fields_widgets.get(fieldname)
             if not widget:
                 widget = getattr(field, 'widget', self.default)
-            widgets[fieldname] = widget(engine=self.engine)
+            widgets[fieldname] = widget(renderer=self.renderer)
         return widgets
 
-    def bind(self, engine, ext='html'):
-        'Creates new HtmlUI instance bound to engine'
-        vars = dict(self._init_kw, engine=engine, engine_ext=ext)
+    def bind(self, renderer):
+        'Creates new HtmlUI instance bound to renderer'
+        vars = dict(self._init_kw, renderer=renderer)
         return self.__class__(**vars)
 
     def __call__(self, form):
         '''Binds UI to a form'''
         widgets = self.collect_widgets(form.fields)
 
-        form_widget = self.form_widget or getattr(form, 'widget', DefaultFormWidget)
-        form_widget = form_widget(engine=self.engine)
-        return Renderrer(form, form_widget, widgets)
+        form_widget = self.form_widget or getattr(form, 'widget', 
+                                                  DefaultFormWidget)
+        form_widget = form_widget(renderer=self.renderer)
+        return Renderrer(form, form_widget, widgets, 
+                         globs=self._init_kw.get('globs'))
 
 
 class Renderrer(object):
     '''Stores widgets to render individual fields'''
-    def __init__(self, form, form_widget, widgets):
+    def __init__(self, form, form_widget, widgets, globs=None):
         self.widgets = widgets
         self.form = form
         self.form_widget = form_widget
+        self.globs = globs or {}
 
     @cached_property
     def media(self):
@@ -77,20 +77,15 @@ class Renderrer(object):
 
     def render(self):
         '''Renders the form'''
-        return self.form_widget.render(form=self.form, ui=self)
+        vars = self.globs.copy()
+        vars['form'] = self.form
+        vars['ui'] = self
+        return self.form_widget.render(**vars)
 
     def render_field(self, field):
         '''Renders a particular field in the bound form'''
         widget = self.widgets[field.resolve_name()]
-        return widget.render(field=field, ui=self)
-
-
-class engine_wrapper(object):
-    'This wrapper is temporary, for use only with jinja2 or mint'
-    def __init__(self, get_template, ext='html'):
-        self.get_template = get_template
-        self.ext = ext
-
-    def render(self, template_name, **data):
-        return self.get_template('%s.%s' % (template_name, self.ext)).render(**data)
-
+        vars = self.globs.copy()
+        vars['field'] = field
+        vars['ui'] = self
+        return widget.render(**vars)
