@@ -38,7 +38,8 @@ class Template(object):
                 p = path.abspath(path.join(self.cfg.TEMPLATES, 
                                            '%s.%s' % (template_name, ext)))
                 if path.exists(p) and path.isfile(p):
-                    return renderer.render(p, **vars)
+                    return renderer.render('%s.%s' % (template_name, ext),
+                                           **vars)
         if self.default_renderer:
             return self.default_renderer.render(template_name, **vars)
         raise Exception('Template object has no renderer for "%s"' % template_name)
