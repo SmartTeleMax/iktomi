@@ -114,9 +114,10 @@ class CookieAuth(RequestHandler):
         def login(rctx):
             form = self._login_form(rctx.vals.as_dict())
             next = rctx.request.GET.get('next', '/')
+            msg = ''
             if rctx.request.method == 'POST':
                 if form.accept(rctx.request.POST):
-                    user_id = self._user_by_credential(rctx, **form.python_data)
+                    user_id, msg = self._user_by_credential(rctx, **form.python_data)
                     if user_id is not None:
                         key = os.urandom(10).encode('hex')
                         rctx.response.set_cookie(self._cookie_name, key, path='/')
@@ -125,7 +126,7 @@ class CookieAuth(RequestHandler):
                         else:
                             logger.info('session_storage "%r" is unrichable' % rctx.vals.session_storage)
                         raise HttpException(303, url=next)
-            return dict(form=form, next=next)
+            return dict(form=form, next=next, message=msg)
         return match('/%s' % self._login, self._login) | login
 
     @property
