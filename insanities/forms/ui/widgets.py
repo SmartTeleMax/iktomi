@@ -44,7 +44,7 @@ class Widget(object):
 class FieldWidget(Widget):
 
     def render(self, field=None, **kwargs):
-        kwargs['value'] = field.value or ''
+        kwargs['value'] = field.grab() if hasattr(field, 'grab') else ''
         kwargs['readonly'] = 'w' not in field.permissions
         kwargs['required'] = field.conv.required
         kwargs['label'] = self.label or field.name
@@ -90,7 +90,7 @@ class Select(FieldWidget):
         assert isinstance(field.conv, convs.EnumChoice)
 
         values = value if field.multiple else [value]
-        values = map(unicode, values)
+        #values = map(unicode, values)
         for choice, label in field.conv:
             choice = unicode(choice)
             options.append(dict(value=choice,
@@ -100,7 +100,7 @@ class Select(FieldWidget):
 
     def prepare_data(self, **kwargs):
         field = kwargs['field']
-        kwargs['options'] = self.get_options(field.value, field)
+        kwargs['options'] = self.get_options(field.grab(), field)
         return kwargs
 
 
