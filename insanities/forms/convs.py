@@ -152,6 +152,8 @@ def limit(min_length=None, max_length=None):
 
     @validator(message)
     def wrapper(value):
+        if not value:
+            return True
         if min_length and len(value) < min_length:
             return False
         if max_length and len(value) > max_length:
@@ -170,6 +172,8 @@ def num_limit(min_value=None, max_value=None):
 
     @validator(message)
     def wrapper(value):
+        if not value:
+            return True
         if min_value and value < min_value:
             return False
         if max_value and value > max_value:
