@@ -142,13 +142,13 @@ class validator(object):
 
 def limit(min_length=None, max_length=None):
     if min_length == max_length:
-        message = N_('length should be exactly %(min) symbols')
+        message = N_('length should be exactly %(min)d symbols') % dict(min=min_length)
     elif min_length and max_length:
-        message = N_('length should be between %(min) and %(max) symbols')
+        message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
     elif max_length:
-        message = N_('maximal length is %(max)')
+        message = N_('maximal length is %(max)d') % dict(max=max_length)
     else:
-        message = N_('minimal length is %(min)')
+        message = N_('minimal length is %(min)d') % dict(min=min_length)
 
     @validator(message)
     def wrapper(value):
@@ -162,11 +162,11 @@ def limit(min_length=None, max_length=None):
 
 def num_limit(min_value=None, max_value=None):
     if min_value and max_value:
-        message = N_('value should be between %(min) and %(max)')
+        message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
     elif max_value:
-        message = N_('maximal value is %(max)')
+        message = N_('maximal value is %(max)d') % dict(max=max_value)
     else:
-        message = N_('minimal value is %(min)')
+        message = N_('minimal value is %(min)d') % dict(min=min_value)
 
     @validator(message)
     def wrapper(value):
