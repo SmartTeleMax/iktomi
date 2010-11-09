@@ -161,9 +161,9 @@ def limit(min_length=None, max_length=None):
 
 
 def num_limit(min_value=None, max_value=None):
-    if min_length and max_length:
+    if min_value and max_value:
         message = N_('value should be between %(min) and %(max)')
-    elif max_length:
+    elif max_value:
         message = N_('maximal value is %(max)')
     else:
         message = N_('minimal value is %(min)')
