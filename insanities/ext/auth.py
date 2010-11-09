@@ -153,5 +153,5 @@ class CookieAuth(RequestHandler):
             if 'user' in rctx.vals and rctx.vals.user is not None:
                 return rctx
             raise HttpException(303, 
-                                url=rctx.vals.url_for(self._login).set(next=rctx.request.path))
+                                url=rctx.vals.url_for(self._login).set(next=rctx.request.path_info))
         return FunctionWrapper(_login_required)
