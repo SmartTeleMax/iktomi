@@ -70,8 +70,8 @@ class Converter(object):
     #: Values are not accepted by Required validator
     error_required = N_('required field')
 
-    def __init__(self, field=None, *args, **kwargs):
-        self.field = weakproxy(field)
+    def __init__(self, *args, **kwargs):
+        self.field = weakproxy(kwargs.get('field'))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
         self.validators_and_filters = args
@@ -119,7 +119,7 @@ class Converter(object):
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
-        return self.__class__(**kwargs)
+        return self.__class__(*self.validators_and_filters, **kwargs)
 
     def assert_(self, expression, msg):
         'Shortcut for assertions of certain type'
