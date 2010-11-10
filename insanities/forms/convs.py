@@ -140,46 +140,57 @@ class validator(object):
 
 # Some useful validators
 
-def limit(min_length=None, max_length=None):
-    if min_length == max_length:
-        message = N_('length should be exactly %(min)d symbols') % dict(min=min_length)
-    elif min_length and max_length:
-        message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
-    elif max_length:
-        message = N_('maximal length is %(max)d') % dict(max=max_length)
-    else:
-        message = N_('minimal length is %(min)d') % dict(min=min_length)
+def limit(min_length, max_length):
+    'Sting length constraint'
+    message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
 
     @validator(message)
     def wrapper(value):
         if not value:
+            # it meens that this value is not required
             return True
-        if min_length and len(value) < min_length:
+        if len(value) < min_length:
             return False
-        if max_length and len(value) > max_length:
+        if len(value) > max_length:
             return False
         return True
     return wrapper
 
 
-def num_limit(min_value=None, max_value=None):
-    if min_value and max_value:
-        message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
-    elif max_value:
-        message = N_('maximal value is %(max)d') % dict(max=max_value)
-    else:
-        message = N_('minimal value is %(min)d') % dict(min=min_value)
+def num_limit(min_value, max_value):
+    'Numerical values limit'
+    message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
 
     @validator(message)
     def wrapper(value):
         if not value:
+            # it meens that this value is not required
             return True
-        if min_value and value < min_value:
+        if value < min_value:
             return False
-        if max_value and value > max_value:
+        if value > max_value:
             return False
         return True
     return wrapper
+
+
+def length(*args):
+    'Exact string lengths'
+    @validator(u'Length of value is limited to ' + ','.join([str(a) for a in args]))
+    def wrapper(value):
+        if not value:
+            return True
+        if not len(str(value)) in args:
+            return False
+        return True
+    return wrapper
+
+
+@validator(u'Value must be positive')
+def positive_num(value):
+    if not value:
+        return True
+    return value > 0
 
 
 class Char(Converter):
