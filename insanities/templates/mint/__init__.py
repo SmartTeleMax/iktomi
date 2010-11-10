@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 import mint
 
-__all__ = ('render_to', 'mint_env')
+__all__ = ('TemplateEngine',)
 
 CURDIR = dirname(abspath(__file__))
 DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')

@@ -10,7 +10,7 @@ from . import convs
 from .perms import DEFAULT_PERMISSIONS
 
 
-class BaseFormEnvironment(object):
+class FormEnvironment(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
@@ -49,7 +49,7 @@ class Form(object):
     def __init__(self, env=None, initial=None, name=None, permissions=None):
         env = env or {}
         initial = initial or {}
-        self.env = BaseFormEnvironment(**env) if isinstance(env, dict) else env
+        self.env = FormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.data = data = MultiDict()
         self.files = MultiDict()
