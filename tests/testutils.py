@@ -4,13 +4,6 @@ import unittest
 from insanities.forms import *
 
 
-class MockEnvironment(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-    def gettext(self, template, count):
-        return template
-
-
 class MockForm(object):
     permissions = set('rw')
     name = ''
@@ -34,4 +27,4 @@ class MockField(object):
 class FormTestCase(unittest.TestCase):
 
     def env(self, **kwargs):
-        return MockEnvironment(**kwargs)
+        return kwargs

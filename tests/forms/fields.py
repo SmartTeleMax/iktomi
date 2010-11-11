@@ -6,21 +6,22 @@ from insanities.forms import *
 from insanities.web.core import RequestContext
 from webob.multidict import MultiDict
 
-from .testutils import FormTestCase, MockForm
 
-
-class FieldTests(FormTestCase):
+class FieldTests(unittest.TestCase):
 
     def test_accept(self):
         'Method accept of bound field returns cleaned value'
-        field = MockForm(Field('input', conv=convs.Char), 
-                env=self.env(), 
-                data=MultiDict(input='value')).fields[0]
-        self.assertEqual(field.accept(), 'value')
+        class _Form(Form):
+            fields=[Field('input', convs.Char())]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(input='value')))
+        self.assertEqual(form.python_data['input'], 'value')
 
     def test_accept_invalid(self):
         'Method accept of bound field returns cleaned value'
-        field = MockForm(Field('input', conv=convs.Char(required=True)), 
-                env=self.env(),
-                data=MultiDict()).fields[0]
+
+        class _Form(Form):
+            fields=[Field('input', convs.Char(required=True))]
+
+        field = _Form().fields[0]
         self.assertRaises(convs.ValidationError, field.accept)
