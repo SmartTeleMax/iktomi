@@ -148,7 +148,7 @@ class AggregateField(BaseField):
     def python_data(self):
         '''Representation of aggregate value as dictionary.'''
         try:
-            value = self.value
+            value = self.clean_value
         except LookupError:
             value = self.get_default()
         return self.from_python(value)
@@ -264,12 +264,15 @@ class FieldList(AggregateField):
         old = self.python_data
         is_valid = True
         result = OrderedDict()
-        for index in self.form.data.getall(self.indeces_input_name):
+        for index in self.form.raw_data.getall(self.indeces_input_name):
             try:
-                index = int(index)
+                #XXX: we do not convert index to int, just check it.
+                #     is it good idea?
+                int(index)
             except ValueError:
                 logger.warning('Got incorrect index from form: %r', index)
                 continue
+            #TODO: describe this
             field = self.field(name=str(index))
             try:
                 result[field.name] = field.accept()

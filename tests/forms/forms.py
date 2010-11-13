@@ -59,7 +59,7 @@ class FormClassInitializationTests(unittest.TestCase):
 
 class FormClassAcceptTests(unittest.TestCase):
     def test_accept(self):
-        'Initialization of form object'
+        'Clean accept'
         class _Form(Form):
             fields=[
                 Field('first', convs.Int()),
@@ -72,7 +72,7 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'first':1, 'second':2})
 
     def test_with_default(self):
-        'Initialization of form object'
+        'Accept with default values'
         class _Form(Form):
             fields=[
                 Field('first', convs.Int(), default=2),
@@ -84,7 +84,7 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'first':1, 'second':None})
 
     def test_with_initial(self):
-        'Initialization of form object'
+        'Accept with initial data'
         class _Form(Form):
             fields=[
                 Field('first', convs.Int()),
@@ -94,3 +94,82 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assert_(form.accept(MultiDict(first='1', second='2')))
         self.assertEqual(form.initial, {'second':3})
         self.assertEqual(form.python_data, {'first':1, 'second':2})
+
+    def test_with_errors(self):
+        'Accept with errors'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int()),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(not form.accept(MultiDict(first='1')))
+        self.assertEqual(form.errors, {'second':'required field'})
+
+
+class FormReadonlyFieldsTest(unittest.TestCase):
+
+    def test_readonly(self):
+        'Accept of readonly fields'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), permissions='r'),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(first='1', second='2')))
+        self.assertEqual(form.python_data, {'first':None, 'second':2})
+
+    def test_with_default(self):
+        'Accept of readonly fields with default values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), default=1, permissions='r'),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(first='3', second='2')))
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
+        self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
+
+    def test_fieldset(self):
+        'Accept of readonly fieldset with default values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int(), default=1, permissions='r'),
+                    Field('second', convs.Int(), default=2),
+                ]),
+                Field('third', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(**{'set.first': '2', 'set.second': '2', 'third': '3'})))
+        self.assertEqual(form.python_data, {'set': {'first': 1, 'second': 2}, 'third': 3})
+        self.assertEqual(form.raw_data, MultiDict(**{'set.first': '1', 'set.second': '2', 'third':'3'}))
+
+    def test_fieldlist(self):
+        'Accept of readonly fieldlist with default values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int(), permissions='r')),
+            ]
+        form = _Form(initial={'list':[1, 2]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '2', 'list-2': '3'})))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+
+    def test_fieldlist_of_fieldsets(self):
+        'Accept of fieldlist of readonly fieldsets'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=FieldSet(
+                    'set',
+                    fields=[Field('number', convs.Int(), permissions='r')],
+                )),
+            ]
+        form = _Form(initial={'list':[{'number':1}, {'number':2}]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '1', 'list-2.number': '2'}))
+        self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '2', 'list-2.number': '3'})))
+        self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
