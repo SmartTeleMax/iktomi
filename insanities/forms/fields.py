@@ -96,6 +96,14 @@ class BaseField(object):
         '''
         return self.perm_getter.get_perms(self)
 
+    @cached_property
+    def writable(self):
+        return 'w' in self.permissions
+
+    @cached_property
+    def readable(self):
+        return 'r' in self.permissions
+
 
 class Field(BaseField):
     '''
@@ -133,12 +141,6 @@ class Field(BaseField):
             raw_data[self.input_name] = value
 
     def accept(self):
-        '''
-        Converts field's raw value to python, but raises SkipReadonly exception
-        if there are no write permission to the field.
-        '''
-        if 'w' not in self.permissions:
-            raise convs.SkipReadonly
         return self.to_python(self.raw_value)
 
 
@@ -201,22 +203,13 @@ class FieldSet(AggregateField):
             field.set_raw_value(field.from_python(subvalue))
 
     def accept(self):
-        if 'w' not in self.permissions:
-            raise convs.SkipReadonly
         result = self.python_data
-        is_valid = True
         for field in self.fields:
-            try:
+            if field.writable:
                 result[field.name] = field.accept()
-            except convs.ValidationError, e:
-                is_valid = False
-                self.form.errors[field.input_name] = e.message
-            except convs.NestedError:
-                is_valid = False
-            except convs.SkipReadonly:
+            else:
+                # readonly field
                 field.set_raw_value(field.from_python(result[field.name]))
-        if not is_valid:
-            raise convs.NestedError
         return self.to_python(result)
 
 
@@ -260,10 +253,7 @@ class FieldList(AggregateField):
         return self.input_name+'-indeces'
 
     def accept(self):
-        if 'w' not in self.permissions:
-            raise convs.SkipReadonly
         old = self.python_data
-        is_valid = True
         result = OrderedDict()
         for index in self.form.raw_data.getall(self.indeces_input_name):
             try:
@@ -275,18 +265,12 @@ class FieldList(AggregateField):
                 continue
             #TODO: describe this
             field = self.field(name=str(index))
-            try:
+            if not field.writable:
+                # readonly field
+                if index in old:
+                    result[field.name] = old[field.name]
+            else:
                 result[field.name] = field.accept()
-            except convs.ValidationError, e:
-                is_valid = False
-                self.form.errors[field.input_name] = e.message
-                if index in old:
-                    result[field.name] = old[field.name]
-            except convs.NotSubmitted:
-                if index in old:
-                    result[field.name] = old[field.name]
-        if not is_valid:
-            raise convs.NestedError
         return self.to_python(result)
 
     def set_raw_value(self, value):

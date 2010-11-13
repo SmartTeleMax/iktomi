@@ -17,11 +17,3 @@ class FieldTests(unittest.TestCase):
         self.assert_(form.accept(MultiDict(input='value')))
         self.assertEqual(form.python_data['input'], 'value')
 
-    def test_accept_invalid(self):
-        'Method accept of bound field returns cleaned value'
-
-        class _Form(Form):
-            fields=[Field('input', convs.Char(required=True))]
-
-        field = _Form().fields[0]
-        self.assertRaises(convs.ValidationError, field.accept)

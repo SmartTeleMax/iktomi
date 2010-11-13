@@ -95,13 +95,15 @@ class Form(object):
         self.errors = {}
         for field in self.fields:
             try:
-                self.python_data[field.name] = field.accept()
+                if field.writable:
+                    self.python_data[field.name] = field.accept()
+                else:
+                    # readonly field
+                    field.set_raw_value(field.from_python(self.python_data[field.name]))
             except convs.ValidationError, e:
                 self.errors[field.input_name] = e.message
             except convs.NestedError:
                 pass
-            except convs.SkipReadonly:
-                field.set_raw_value(field.from_python(self.python_data[field.name]))
 
         if not self.is_valid:
             return False

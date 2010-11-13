@@ -16,12 +16,10 @@ class MockForm(object):
         return self
 
 
-class MockField(object):
-    def __init__(self,conv, env):
-        self.conv = conv(field=self)
-        self.env = env
-    def get_default(self):
-        return ''
+def MockField(conv, env):
+    class _Form(Form):
+        fields=[Field('field', conv)]
+    return _Form(env=env).fields[0]
 
 
 class FormTestCase(unittest.TestCase):

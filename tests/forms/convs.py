@@ -40,12 +40,6 @@ class IntConverterTests(FormTestCase):
         value = conv.to_python('12')
         self.assertEqual(value, 12)
 
-    def test_accept_invalid(self):
-        'Accept method of Int converter for invalid data'
-        field = MockField(convs.Int, self.env())
-        conv = field.conv
-        self.assertRaises(convs.ValidationError, conv.to_python, '12c')
-
     def test_accept_null_value(self):
         'Accept method of Int converter for None value'
         field = MockField(convs.Int(required=False), self.env())
@@ -107,22 +101,10 @@ class TestDate(FormTestCase):
         conv = field.conv
         self.assertEqual(conv.to_python('31.01.1999'), date(1999, 1, 31))
 
-    def test_accept_invalid(self):
-        '''Date converter to_python method invalid'''
-        field = MockField(convs.Date(format="%d.%m.%Y"), self.env())
-        conv = field.conv
-        self.assertRaises(convs.ValidationError, conv.to_python, '12c')
-
     def test_readable_format(self):
         '''Ensure that readable format string for DateTime conv is generated correctly'''
         conv = convs.Date(format="%d.%m.%Y")()
         self.assertEqual(conv.readable_format, 'DD.MM.YYYY')
-
-    def test_type_error(self):
-        '''In some cases Date\DateTime\Time converters should use'''
-        field = MockField(convs.Date(format="%d.%m.%Y"), self.env())
-        conv = field.conv
-        self.assertRaises(convs.ValidationError, conv.to_python, '\x00abc')
 
     def test_from_python(self):
         '''Date converter from_python method'''
