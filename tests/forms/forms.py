@@ -56,6 +56,32 @@ class FormClassInitializationTests(unittest.TestCase):
         self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
         self.assertEqual(form.python_data, {'first':1, 'second':2})
 
+    def test_fieldset_with_initial(self):
+        'Initialization of form object with fieldset with initial values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int()),
+                    Field('second', convs.Int()),
+                ]),
+            ]
+        form = _Form(initial={'set': {'first': 1, 'second': 2}})
+        self.assertEqual(form.raw_data, {'set.first': '1', 'set.second': '2'})
+        self.assertEqual(form.python_data, {'set': {'first': 1, 'second': 2}})
+
+    def test_fieldset_with_initial_and_default(self):
+        'Initialization of form object with fieldset with initial and default values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int(), default=3),
+                    Field('second', convs.Int()),
+                ]),
+            ]
+        form = _Form(initial={'set': {'first': None, 'second': 2}})
+        self.assertEqual(form.raw_data, {'set.first': '', 'set.second': '2'})
+        self.assertEqual(form.python_data, {'set': {'first': None, 'second': 2}})
+
 
 class FormClassAcceptTests(unittest.TestCase):
     def test_accept(self):
