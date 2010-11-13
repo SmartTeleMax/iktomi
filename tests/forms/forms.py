@@ -173,3 +173,95 @@ class FormReadonlyFieldsTest(unittest.TestCase):
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
         self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '2', 'list-2.number': '3'})))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
+
+    def test_fieldset_of_fieldsets(self):
+        'Accept of readonly fieldset of fieldsets'
+        class _Form(Form):
+            fields=[
+                FieldSet('sets', fields=[
+                    FieldSet('set1', fields=[
+                        Field('first', convs.Int(), permissions='r'),
+                        Field('second', convs.Int()),
+                    ]),
+                    FieldSet('set2', fields=[
+                        Field('first', convs.Int()),
+                        Field('second', convs.Int(), permissions='r'),
+                    ]),
+                ]),
+            ]
+        form = _Form(initial={'sets':{
+            'set1': {'first': 1, 'second': 2},
+            'set2': {'first': 1, 'second': 2},
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '1',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '2',
+        }))
+
+        self.assert_(form.accept(MultiDict(**{
+            'sets.set1.first': 'incorect',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': 'incorect',
+        })))
+
+        self.assertEqual(form.python_data, {'sets': {
+            'set1': {'first': 1, 'second': 2}, 
+            'set2': {'first': 1, 'second': 2}, 
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '1',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '2',
+        }))
+
+    def test_fieldset_of_fieldsets_with_noreq(self):
+        'Accept of readonly fieldset of fieldsets with required=False'
+        class _Form(Form):
+            fields=[
+                FieldSet('sets', fields=[
+                    FieldSet('set1', fields=[
+                        Field('first', convs.Int(required=False), permissions='r'),
+                        Field('second', convs.Int()),
+                    ]),
+                    FieldSet('set2', fields=[
+                        Field('first', convs.Int()),
+                        Field('second', convs.Int(required=False), permissions='r'),
+                    ]),
+                ]),
+            ]
+        form = _Form(initial={'sets':{
+            'set1': {'first': None, 'second': 2},
+            'set2': {'first': 1, 'second': None},
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '',
+        }))
+
+        self.assert_(form.accept(MultiDict(**{
+            'sets.set1.first': 'incorect',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': 'incorect',
+        })))
+
+        self.assertEqual(form.python_data, {'sets': {
+            'set1': {'first': None, 'second': 2}, 
+            'set2': {'first': 1, 'second': None}, 
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '',
+        }))

@@ -27,6 +27,9 @@ class Form(object):
         self.env = FormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.raw_data = raw_data = MultiDict()
+        #NOTE: if you provide initial value for some aggregated field
+        #      you need to provide values for all fields that are in that
+        #      aggregated field, including emty values (None)
         self.initial = initial = initial or {}
         self.python_data = initial.copy()
         # clone all fields
