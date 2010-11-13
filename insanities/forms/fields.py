@@ -188,12 +188,7 @@ class FieldSet(AggregateField):
     def get_default(self):
         result = dict((field.name, field.get_default())
                       for field in self.fields)
-        try:
-            return self.to_python(result)
-        except convs.ValidationError:
-            #XXX: what?
-            assert False, 'FieldSet converter must overwrite get_default() '\
-                                            'method when validation is needed'
+        return self.to_python(result)
 
     def set_raw_value(self, value):
         # fills in raw_data multidict, resulting keys are field's absolute names
