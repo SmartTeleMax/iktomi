@@ -96,14 +96,15 @@ class Converter(object):
 
     def _check(self, method):
         def wrapper(value, **kwargs):
+            field, form = self.field, self.field.form
             if self.required and self._is_empty(value):
-                self.field.form.errors[self.field.input_name] = self.error_required
-                return self.field.parent.python_data[self.field.name]
+                form.errors[self.field.input_name] = self.error_required
+                return self.field.parent.python_data[field.name]
             try:
                 value = method(value, **kwargs)
             except ValidationError, e:
-                self.field.form.errors[self.field.input_name] = e.message
-                value = self.field.parent.python_data[self.field.name]
+                form.errors[field.input_name] = e.message
+                value = field.parent.python_data[field.name]
             for v in self.validators_and_filters:
                 value = v(value)
             return value
