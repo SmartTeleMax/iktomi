@@ -82,6 +82,26 @@ class FormClassInitializationTests(unittest.TestCase):
         self.assertEqual(form.raw_data, {'set.first': '', 'set.second': '2'})
         self.assertEqual(form.python_data, {'set': {'first': None, 'second': 2}})
 
+    def test_fieldlist_with_initial(self):
+        'Initialization of form object with fieldlist with initial values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        form = _Form(initial={'list': [1, 2]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+
+    def test_fieldlist_with_initial_and_default(self):
+        'Initialization of form object with fieldlist with initial and default values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int(), default=2)),
+            ]
+        form = _Form(initial={'list': [1, 2]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+
 
 class FormClassAcceptTests(unittest.TestCase):
     def test_accept(self):
@@ -105,6 +125,7 @@ class FormClassAcceptTests(unittest.TestCase):
                 Field('second', convs.Int(required=False), get_default=lambda: 2),
             ]
         form = _Form()
+        form.accept(MultiDict(first='1'))
         self.assert_(form.accept(MultiDict(first='1')))
         self.assertEqual(form.initial, {})
         self.assertEqual(form.python_data, {'first':1, 'second':None})
@@ -118,7 +139,7 @@ class FormClassAcceptTests(unittest.TestCase):
             ]
         form = _Form(initial={'second':3})
         self.assert_(form.accept(MultiDict(first='1', second='2')))
-        self.assertEqual(form.initial, {'second':3})
+        self.assertEqual(form.initial, {'second': 3})
         self.assertEqual(form.python_data, {'first':1, 'second':2})
 
     def test_with_errors(self):
@@ -130,7 +151,7 @@ class FormClassAcceptTests(unittest.TestCase):
             ]
         form = _Form()
         self.assert_(not form.accept(MultiDict(first='1')))
-        self.assertEqual(form.errors, {'second':'required field'})
+        self.assertEqual(form.errors, {'second': 'required field'})
 
 
 class FormReadonlyFieldsTest(unittest.TestCase):

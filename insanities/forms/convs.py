@@ -225,7 +225,7 @@ class Char(Converter):
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
             if not regex.match(value):
-                raise ValidationError(self.error_regex, regex=self.regex)
+                raise ValidationError(self.error_regex)
         return value
 
     def from_python(self, value):
@@ -353,8 +353,7 @@ class BaseDatetime(Converter):
         try:
             return self.convert_datetime(value)
         except ValueError:
-            raise ValidationError(self.error_wrong_format,
-                                  readable_format=self.readable_format)
+            raise ValidationError(self.error_wrong_format)
         except TypeError, e:
             raise ValidationError, unicode(e)
 
