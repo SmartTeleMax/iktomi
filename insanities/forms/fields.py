@@ -104,6 +104,9 @@ class BaseField(object):
     def readable(self):
         return 'r' in self.permissions
 
+    def render(self):
+        return self.widget.render(self.raw_value)
+
 
 class Field(BaseField):
     '''
