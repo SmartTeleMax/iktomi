@@ -246,8 +246,7 @@ except ImportError:
     pass
 else:
     HtmlTextJinja = get_html_class(Markup)
-    HtmlStringJinja = get_html_class(Markup, impl=types.String)
-    HtmlMediumTextJinja = get_html_class(Markup, impl=types.MediumText)
+    HtmlStringJinja = get_html_class(Markup, impl_=types.String)
 
 
 class AlchemyFile(types.TypeDecorator):

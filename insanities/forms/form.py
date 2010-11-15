@@ -24,6 +24,7 @@ class Form(object):
 
     def __init__(self, env=None, initial=None, name=None, permissions=None):
         env = env or {}
+        initial = initial or {}
         self.env = FormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.raw_data = raw_data = MultiDict()
