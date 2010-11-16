@@ -6,9 +6,8 @@ import os, struct, tempfile, time, logging
 from PIL import Image
 
 from ..utils import weakproxy, cached_property
-from ..forms import convs
+from ..forms import convs, widgets
 from ..forms.fields import Field
-from ..forms.ui import widgets
 
 logger = logging.getLogger(__name__)
 

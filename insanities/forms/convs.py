@@ -102,14 +102,14 @@ class Converter(object):
                 return self.field.parent.python_data[field.name]
             try:
                 value = method(value, **kwargs)
+                for v in self.validators_and_filters:
+                    value = v(value)
             except ValidationError, e:
                 form.errors[field.input_name] = e.message
                 #NOTE: by default value for field is in python_data,
                 #      but this is not true for FieldList where data
                 #      is dynamic, so we set value to None for absent value.
                 value = field.parent.python_data.get(field.name)
-            for v in self.validators_and_filters:
-                value = v(value)
             return value
         return wrapper
 

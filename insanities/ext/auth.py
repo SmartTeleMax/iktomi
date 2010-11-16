@@ -11,7 +11,6 @@ from ..web.http import HttpException
 from ..web.filters import *
 from ..utils import N_
 from ..forms import *
-from ..forms.ui import HtmlUI, widgets
 
 
 def encrypt_password(raw_password, algorithm='sha1', salt=None):

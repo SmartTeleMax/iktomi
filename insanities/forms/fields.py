@@ -5,6 +5,7 @@ from . import convs
 from ..utils.odict import OrderedDict
 import re, logging
 from .perms import FieldPerm
+import widgets
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +22,17 @@ class BaseField(object):
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
 
-    # default converter
+    # defaults
     conv = convs.Char
+    widget = widgets.TextInput()
+    label = None
 
     def __init__(self, name, conv=None, parent=None, **kwargs):
         kwargs.update(dict(
             parent=parent,
             name=name,
             conv=(conv or self.conv)(field=self),
+            widget=(kwargs.get('widget') or self.widget)(field=self),
         ))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
@@ -163,7 +167,7 @@ class FieldSet(AggregateField):
     '''
     Container field aggregating a couple of other different fields
     '''
-
+    template = 'widgets/fieldset'
     def __init__(self, name, conv=convs.Converter, fields=[], **kwargs):
         if kwargs.get('parent'):
             conv = conv(field=self)
@@ -209,6 +213,9 @@ class FieldSet(AggregateField):
                 # readonly field
                 field.set_raw_value(field.from_python(result[field.name]))
         return self.to_python(result)
+
+    def render(self):
+        return self.env.renderer.render(self.template, field=self)
 
 
 class FieldList(AggregateField):
@@ -281,3 +288,6 @@ class FieldList(AggregateField):
             indeces.append(index)
         for index in indeces:
             self.form.raw_data.add(self.indeces_input_name, index)
+
+    def render(self):
+        return self.env.renderer.render(self.template, field=self)
