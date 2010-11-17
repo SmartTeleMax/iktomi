@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from os import path
+import os
 import logging
 logger = logging.getLogger(__name__)
+from glob import glob
 
 from ..web import RequestHandler
 
@@ -10,39 +11,38 @@ from ..web import RequestHandler
 __all__ = ('Template',)
 
 
+class TemplateError(Exception): pass
+
+
 class Template(object):
-    def __init__(self, cfg, by_ext=None, by_dir=None, 
-                 default=None, globs=None):
-        self.globs = globs or {}
-        self.by_ext = by_ext if by_ext else {}
-        self.by_dir = by_dir if by_dir else {}
-        self.default_renderer = default
-        self.cfg = cfg
+    def __init__(self, *dirs, **kwargs):
+        self.globs = kwargs.get('globs', {})
+        self.cache = kwargs.get('cache', False)
+        self.dirs = []
+        for d in dirs:
+            self.dirs.append(d)
+        self.engines = {}
+        for template_type, engine_class in kwargs.get('engines', {}).items():
+            self.engines[template_type] = engine_class(self.dirs[:], cache=self.cache)
 
     def render(self, template_name, **kw):
         vars = self.globs.copy()
         vars.update(kw)
-        for dir_prefix, renderer in self.by_dir.items():
-            if template_name.startswith(dir_prefix):
-                return self.by_dir[dir_prefix].render(template_name, **vars)
-        name, ext = path.splitext(template_name)
-        if ext:
-            ext = ext[1:]
-            if ext in self.by_ext:
-                return self.by_ext[ext].render(template_name, **vars)
-        else:
-            for ext, renderer in self.by_ext.items():
-                #TODO: improve this code, it is not working for cases
-                #      where cfg.TEMPLATES is a list of dirs or
-                #      for dirs outside of cfg.TEMPLATES
-                p = path.abspath(path.join(self.cfg.TEMPLATES, 
-                                           '%s.%s' % (template_name, ext)))
-                if path.exists(p) and path.isfile(p):
-                    return renderer.render('%s.%s' % (template_name, ext),
-                                           **vars)
-        if self.default_renderer:
-            return self.default_renderer.render(template_name, **vars)
-        raise Exception('Template object has no renderer for "%s"' % template_name)
+        resolved_name, engine = self.resolve(template_name)
+        return engine.render(resolved_name, **vars)
+
+    def resolve(self, template_name):
+        pattern = template_name
+        if not os.path.splitext(template_name)[1]:
+            pattern += '.*'
+        for d in self.dirs:
+            path = os.path.join(d, pattern)
+            for file_name in glob(path):
+                name, ext = os.path.splitext(file_name)
+                template_type = ext[1:]
+                if template_type in self.engines:
+                    return file_name[len(d)+1:], self.engines[template_type]
+        raise TemplateError('Template or engine for template "%s" not found' % pattern)
 
     def render_to(self, template_name):
         return RenderWrapper(template_name, self)

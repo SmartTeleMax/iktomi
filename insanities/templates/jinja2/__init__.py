@@ -6,25 +6,20 @@ logger = logging.getLogger(__name__)
 
 import jinja2
 
-__all__ = ('TemplateEngine',)
+__all__ = ('TemplateEngine', 'TEMPLATE_DIR')
 
 CURDIR = dirname(abspath(__file__))
-DEFAULT_TEMPLATE_DIR = join(CURDIR, 'templates')
+TEMPLATE_DIR = join(CURDIR, 'templates')
 
 
 class TemplateEngine(object):
-    def __init__(self, paths=None, autoescape=False,
-                 extensions=None):
+    def __init__(self, paths, cache=False):
         '''
-        paths - list of paths or str path
+        paths - list of paths
         '''
-        paths = paths if isinstance(paths, (list, tuple)) else [paths]
-        # default templates for forms widgets
-        paths.append(DEFAULT_TEMPLATE_DIR)
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(paths),
-            autoescape=autoescape,
-            extensions=extensions or [],
+            autoescape=True,
         )
 
     def render(self, template_name, **kw):
