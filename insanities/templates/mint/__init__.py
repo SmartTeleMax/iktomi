@@ -21,8 +21,8 @@ class TemplateEngine(object):
 
     def render(self, template_name, **kw):
         'Interface method'
-        return mint.Markup(self.env.get_template(template_name).render(**kw))
+        return self.env.get_template(template_name).render(**kw)
 
     def render_string(self, source, **kw):
         'Interface method'
-        return mint.Markup(mint.Template(source=source).render(**kw))
+        return mint.Template(source=source).render(**kw)
