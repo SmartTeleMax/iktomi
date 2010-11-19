@@ -298,14 +298,16 @@ class EnumChoice(Converter):
     error_required = N_('you must select a value')
 
     def from_python(self, value):
+        conv = self.conv(field=self.field)
         if self.multiple:
-            return [self.conv.from_python(item) for item in value or []]
+            return [conv.from_python(item) for item in value or []]
         else:
-            return self.conv.from_python(value)
+            return conv.from_python(value)
 
     def _safe_to_python(self, value):
+        conv = self.conv(field=self.field)
         try:
-            value = self.conv.to_python(value)
+            value = conv.to_python(value)
         except ValidationError:
             return None
         if value not in dict(self.choices):
@@ -326,11 +328,13 @@ class EnumChoice(Converter):
         return value
 
     def __iter__(self):
+        conv = self.conv(field=self.field)
         for python_value, label in self.choices:
-            yield self.conv.from_python(python_value), label
+            yield conv.from_python(python_value), label
 
     def get_label(self, value):
-        return dict(self.choices).get(self.conv.to_python(value))
+        conv = self.conv(field=self.field)
+        return dict(self.choices).get(conv.to_python(value))
 
 
 class BaseDatetime(Converter):

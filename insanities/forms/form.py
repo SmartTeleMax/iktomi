@@ -18,7 +18,7 @@ class FormEnvironment(object):
 
 class Form(object):
 
-    template = 'forms/div'
+    template = 'forms/default'
     media = FormMedia()
     permissions = DEFAULT_PERMISSIONS
 
