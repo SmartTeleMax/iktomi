@@ -97,3 +97,12 @@ class Vals(RequestHandler):
     def handle(self, rctx):
         rctx.vals.update(self.vals)
         return rctx.next()
+
+
+class Data(RequestHandler):
+    def __init__(self, **kwargs):
+        self.data = kwargs
+
+    def handle(self, rctx):
+        rctx.data.update(self.data)
+        return rctx.next()

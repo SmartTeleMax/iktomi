@@ -344,3 +344,18 @@ class RequestContext(object):
         '''Stop chain execution and try to handle Map's next chain (if any).'''
         return STOP
 
+    def render_to_response(self, template, data, content_type='text/html'):
+        data.update(self.data.as_dict())
+        data['VALS'] = self.vals
+        data['CONF'] = self.conf
+        data['REQUEST'] = self.request
+        rendered = self.vals.renderer.render(template, **data)
+        self.response.content_type = content_type
+        self.response.write(rendered)
+
+    def render_string(self, template, data):
+        data.update(self.data.as_dict())
+        data['VALS'] = self.vals
+        data['CONF'] = self.conf
+        data['REQUEST'] = self.request
+        return self.vals.renderer.render(template, **data)
