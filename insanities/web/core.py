@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'STOP', 'Map']
+__all__ = ['RequestHandler', 'STOP', 'Map', 'RequestContext', 'HttpException']
 
 import logging
 import types

@@ -46,20 +46,20 @@ class Request(_Request):
     # We need to inject code which works with
     # prefixes
     @property
-    def path(self):
-        path = super(Request, self).path
+    def prefixed_path(self):
+        path = self.path
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
-        return path# or '/'
+        return path
 
     @property
-    def path_qs(self):
-        path = super(Request, self).path_qs
+    def prefixed_path_qs(self):
+        path = self.path_qs
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
-        return path# or '/'
+        return path
 
     @property
     def subdomain(self):
