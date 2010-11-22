@@ -41,7 +41,7 @@ class WSGIHandler(object):
             process_http_exception(rctx, e)
         except Exception, e:
             logger.exception(e)
-            raise e
+            raise
         headers = rctx.response.headers.items()
         start_response(rctx.response.status, headers)
         return [rctx.response.body]
