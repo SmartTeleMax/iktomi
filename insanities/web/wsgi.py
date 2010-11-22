@@ -26,9 +26,6 @@ class WSGIHandler(object):
     def __init__(self, app):
         self.app = app
 
-    def status(self, number):
-        return '%d %s' % (number, httplib.responses[number])
-
     def __call__(self, env, start_response):
         rctx = RequestContext(env)
         response = rctx.response
@@ -36,10 +33,10 @@ class WSGIHandler(object):
             result = self.app(rctx)
             if result is STOP:
                 response.status = httplib.NOT_FOUND
-            else:
-                rctx = result
         except HttpException, e:
             process_http_exception(response, e)
+            status_int = response.status_int
+            response.write('%d %s' % (status_int, httplib.responses[status_int]))
         except Exception, e:
             logger.exception(e)
             raise
