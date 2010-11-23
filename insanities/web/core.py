@@ -8,7 +8,7 @@ import httplib
 from inspect import getargspec
 from .http import HttpException, Request, Response
 from ..utils.stacked_dict import StackedDict
-from ..utils.url import URL
+from .url import URL
 
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,8 @@ class Reverse(object):
 
         host = u'.'.join(subdomains)
         absolute = (host != self.host)
-        path = u''.join([b(**kwargs) for b in builders])
+        # path - urlencoded str
+        path = ''.join([b(**kwargs) for b in builders])
         return URL(path, host=host)
 
 

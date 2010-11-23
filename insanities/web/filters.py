@@ -7,9 +7,10 @@ import re
 import httplib
 import mimetypes
 from os import path
+from urllib import unquote
 from .core import RequestHandler, STOP
 from .http import HttpException
-from ..utils.url import UrlTemplate
+from .url import UrlTemplate
 
 
 logger = logging.getLogger(__name__)
