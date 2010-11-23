@@ -5,10 +5,10 @@ __all__ = ['prefix', 'subdomain', 'namespace', 'Conf', 'Vals']
 import logging
 import re
 import httplib
-from urllib import quote
+from urllib import quote, unquote
 from os import path
 from .core import RequestHandler, STOP
-from ..utils.url import UrlTemplate
+from .url import UrlTemplate
 from .filters import match
 
 
@@ -27,7 +27,7 @@ class prefix(RequestHandler):
         matched, kwargs = self.builder.match(rctx.request.prefixed_path, rctx=rctx)
         if matched:
             rctx.data.update(kwargs)
-            rctx.request.add_prefix(quote(self.builder(**kwargs).encode('utf-8')))
+            rctx.request.add_prefix(self.builder(**kwargs))
             return rctx.next()
         return STOP
 
