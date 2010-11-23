@@ -32,7 +32,8 @@ class WSGIHandler(object):
         try:
             result = self.app(rctx)
             if result is STOP:
-                response.status = httplib.NOT_FOUND
+                status_int = response.status = httplib.NOT_FOUND
+                response.write('%d %s' % (status_int, httplib.responses[status_int]))
         except HttpException, e:
             process_http_exception(response, e)
             status_int = response.status_int
