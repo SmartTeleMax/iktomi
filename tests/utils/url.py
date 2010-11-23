@@ -90,3 +90,15 @@ class UrlTemplateTest(unittest.TestCase):
         'Unicode values of converters'
         t = UrlTemplate('/<name>/text/<action>')
         self.assertEqual(t.match(quote(u'/имя/text/действие'.encode('utf-8'))), (True, {'name': u'имя', 'action': u'действие'}))
+
+    def test_incorrect_value(self):
+        'Incorrect url encoded value'
+        t = UrlTemplate('/<name>')
+        value = quote(u'/имя'.encode('utf-8'))[:-1]
+        self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\ufffd8'}))
+
+    def test_incorrect_urlencoded_path(self):
+        'Incorrect url encoded path'
+        t = UrlTemplate('/<name>')
+        value = quote(u'/имя'.encode('utf-8'))+'%r1'
+        self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\u044f%r1'}))

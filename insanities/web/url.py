@@ -297,8 +297,8 @@ class UrlTemplate(object):
                 conv_name, args = self._url_params[url_arg_name]
                 # now we replace converter by class instance
                 conv = self._init_converter(conv_name, args)
+                unicode_value = urllib.unquote(value_urlencoded).decode('utf-8', 'replace')
                 try:
-                    unicode_value = urllib.unquote(value_urlencoded).decode('utf-8')
                     kwargs[url_arg_name] = conv.to_python(unicode_value, **kw)
                 except ConvertError, err:
                     logger.debug('ConvertError by "%s", value "%s"' % (err.converter, err.value.encode('utf-8')))
