@@ -5,10 +5,10 @@ __all__ = ['prefix', 'subdomain', 'namespace', 'Conf']
 import logging
 import re
 import httplib
-from urllib import quote
+from urllib import quote, unquote
 from os import path
 from .core import RequestHandler, STOP
-from ..utils.url import UrlTemplate
+from .url import UrlTemplate
 from .filters import match
 
 

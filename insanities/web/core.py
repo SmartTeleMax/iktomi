@@ -8,7 +8,7 @@ import httplib
 from inspect import getargspec
 from .http import HttpException, Request, Response
 from ..utils.stacked_dict import StackedDict
-from ..utils.url import URL
+from .url import URL
 
 
 logger = logging.getLogger(__name__)

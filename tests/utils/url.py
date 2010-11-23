@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from insanities.utils.url import URL
+from urllib import quote
+from insanities.web.url import URL, UrlTemplate
 
 
 class URLTests(unittest.TestCase):
@@ -52,3 +53,40 @@ class URLTests(unittest.TestCase):
         u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'})
         self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск')
 
+
+class UrlTemplateTest(unittest.TestCase):
+    def test_match(self):
+        'Simple match'
+        t = UrlTemplate('/')
+        self.assertEqual(t.match('/'), (True, {}))
+
+    def test_static_text(self):
+        'Simple text match'
+        t = UrlTemplate('/test/url')
+        self.assertEqual(t.match('/test/url'), (True, {}))
+
+    def test_converter(self):
+        'Simple text match'
+        t = UrlTemplate('/<string:name>')
+        self.assertEqual(t.match('/somevalue'), (True, {'name': 'somevalue'}))
+
+    def test_default_converter(self):
+        'Default converter test'
+        t = UrlTemplate('/<name>')
+        self.assertEqual(t.match('/somevalue'), (True, {'name': 'somevalue'}))
+
+    def test_multiple_converters(self):
+        'Multiple converters'
+        t = UrlTemplate('/<name>/text/<action>')
+        self.assertEqual(t.match(quote('/this/text/edit')), (True, {'name': 'this', 'action': 'edit'}))
+
+    def test_multiple_converters_postfix(self):
+        'Multiple converters with postfix data'
+        t = UrlTemplate('/<name>/text/<action>/post')
+        self.assertEqual(t.match(quote(u'/this/text/edit/post')), (True, {'name': 'this', 'action': 'edit'}))
+        self.assertEqual(t.match(quote(u'/this/text/edit')), (False, {}))
+
+    def test_unicode(self):
+        'Unicode values of converters'
+        t = UrlTemplate('/<name>/text/<action>')
+        self.assertEqual(t.match(quote(u'/имя/text/действие'.encode('utf-8'))), (True, {'name': u'имя', 'action': u'действие'}))
