@@ -2,7 +2,7 @@
 
 import unittest
 from urllib import quote
-from insanities.web.url import URL, UrlTemplate
+from insanities.web.url import URL, UrlTemplate, Converter, ConvertError
 
 
 class URLTests(unittest.TestCase):
@@ -102,3 +102,33 @@ class UrlTemplateTest(unittest.TestCase):
         t = UrlTemplate('/<name>')
         value = quote(u'/имя'.encode('utf-8'))+'%r1'
         self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\u044f%r1'}))
+
+    def test_converter_with_args(self):
+        'Converter with args'
+        class Conv(Converter):
+            def __init__(self, *items):
+                self.items = items
+            def to_python(self, value, **kw):
+                if value not in self.items:
+                    raise ConvertError(self.name, value)
+                return value
+        t = UrlTemplate('/<conv(u"text", u"test"):name>', converters=[Conv])
+        value = quote(u'/имя'.encode('utf-8'))
+        self.assertEqual(t.match(value), (False, {}))
+        value = quote(u'/text'.encode('utf-8'))
+        self.assertEqual(t.match(value), (True, {'name': u'text'}))
+        value = quote(u'/test'.encode('utf-8'))
+        self.assertEqual(t.match(value), (True, {'name': u'test'}))
+
+    def test_incorrect_url_template(self):
+        'Incorrect url template'
+        self.assertRaises(ValueError, lambda: UrlTemplate('/<name></'))
+
+    def test_incorrect_url_template1(self):
+        'Incorrect url template 1'
+        self.assertRaises(ValueError, lambda: UrlTemplate('/<:name>/'))
+
+    def test_unknown_converter(self):
+        'Unknown converter'
+        self.assertRaises(KeyError, lambda: UrlTemplate('/<baba:name>/'))
+        self.assertRaises(KeyError, lambda: UrlTemplate('/<baba:name></'))

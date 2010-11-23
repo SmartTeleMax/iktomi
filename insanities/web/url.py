@@ -215,16 +215,18 @@ convs_dict = dict((item.name or item.__name__, item) \
 
 _split_pattern = re.compile(r'(<[^<]*>)')
 
+#NOTE: taken from werkzeug
 _converter_pattern = re.compile(r'''^<
         (?P<converter>[a-zA-Z_][a-zA-Z0-9]+)    # converter name
-        (?P<args>\(.*?\))?                      # converter args
+        (?:\((?P<args>.*?)\))?                  # converter args
         \:?                                     # delimiter
-        (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?    # variable name
+        (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?   # variable name
         >$''', re.VERBOSE | re.U)
 
 _static_url_pattern = re.compile(r'^[^<]*?$')
 
-def construct_re(url_template, match_whole_str=False, default_converter='string'):
+def construct_re(url_template, match_whole_str=False, converters=None,
+                 default_converter='string'):
     '''
     url_template - str or unicode representing template
 
@@ -234,6 +236,8 @@ def construct_re(url_template, match_whole_str=False, default_converter='string'
               dict {url param name: [converter name, converter args (str)]},
               list of (variable name, converter name, converter args name))
     '''
+    converters = converters or {}
+    converters.update(convs_dict)
     # needed for reverse url building (or not needed?)
     builder_params = []
     # found url params and their converters
@@ -262,8 +266,12 @@ def construct_re(url_template, match_whole_str=False, default_converter='string'
                     variable = converter
                     converter = default_converter
                 result += '(?P<%s>[.a-zA-Z0-9_%%-]+)' % variable
-                builder_params.append((variable, converter, args))
-                url_params[variable] = [converter, args]
+                try:
+                    conv_object = init_converter(converters[converter], args)
+                except KeyError:
+                    raise KeyError('There is no converter named "%s"' % converter)
+                builder_params.append((variable, conv_object))
+                url_params[variable] = conv_object
                 continue
             raise ValueError('Incorrect url template "%s"' % url_template)
         else:
@@ -272,6 +280,15 @@ def construct_re(url_template, match_whole_str=False, default_converter='string'
     if match_whole_str:
         result += '$'
     return re.compile(result), url_params, builder_params
+
+
+def init_converter(conv_class, args):
+    if args:
+        #XXX: taken from werkzeug
+        storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
+        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
+        return conv_class(*args, **kwargs)
+    return conv_class()
 
 
 class UrlTemplate(object):
@@ -283,6 +300,7 @@ class UrlTemplate(object):
         self._allowed_converters = self._init_converters(converters)
         self._pattern, self._url_params, self._builder_params = construct_re(template, 
                                                                              match_whole_str=match_whole_str,
+                                                                             converters=self._allowed_converters,
                                                                              default_converter=default_converter)
 
     def match(self, path, **kw):
@@ -294,12 +312,10 @@ class UrlTemplate(object):
             kwargs = m.groupdict()
             # convert params
             for url_arg_name, value_urlencoded in kwargs.items():
-                conv_name, args = self._url_params[url_arg_name]
-                # now we replace converter by class instance
-                conv = self._init_converter(conv_name, args)
+                conv_obj = self._url_params[url_arg_name]
                 unicode_value = urllib.unquote(value_urlencoded).decode('utf-8', 'replace')
                 try:
-                    kwargs[url_arg_name] = conv.to_python(unicode_value, **kw)
+                    kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
                 except ConvertError, err:
                     logger.debug('ConvertError by "%s", value "%s"' % (err.converter, err.value.encode('utf-8')))
                     return False, {}
@@ -311,34 +327,23 @@ class UrlTemplate(object):
         result = ''
         for part in self._builder_params:
             if isinstance(part, tuple):
-                var, conv_name, args = part
-                conv = self._init_converter(conv_name, args)
+                var, conv_obj = part
                 value = kwargs[var]
-                result += conv.to_url(value)
+                result += conv_obj.to_url(value)
             else:
                 result += part
         # result - urlencoded str
         return result
 
-    def _init_converter(self, conv_name, args):
-        try:
-            conv = self._allowed_converters[conv_name]
-        except KeyError:
-            raise KeyError('There is no converter named "%s"' % conv_name)
-        else:
-            if args:
-                conv = conv()
-            else:
-                conv = conv()
-        return conv
-
     def _init_converters(self, converters):
         convs = convs_dict.copy()
         if converters is not None:
             for conv in converters:
-                 name = conv.name or conv.__name__
+                 name = conv.name or conv.__name__.lower()
                  convs[name] = conv
         return convs
 
     def __repr__(self):
-        return '%s(%r, match_whole_str=%r)' % (self.__class__.__name__, self.template.encode('utf-8'), self.match_whole_str)
+        return '%s(%r, match_whole_str=%r)' % (self.__class__.__name__, 
+                                               self.template.encode('utf-8'),
+                                               self.match_whole_str)
