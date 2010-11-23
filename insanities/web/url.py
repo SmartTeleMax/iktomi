@@ -36,7 +36,10 @@ class URL(object):
     '''
 
     def __init__(self, path, query=None, host=None, port=None, schema=None):
-        self.path = path
+        '''
+        path - urlencoded string or unicode object (not encoded at all)
+        '''
+        self.path = path if isinstance(path, str) else urlquote(path)
         self.query = MultiDict(query) if query else MultiDict()
         self.host = host or ''
         self.port = port or ''
@@ -85,11 +88,8 @@ class URL(object):
         query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
                                 for k,v in self.query.iteritems()])  \
                  if self.query else '')
-        if isinstance(self.path, unicode):
-            path = urlquote(self.path.encode('utf-8'))
-        else:
-            path = urlquote(self.path)
 
+        path = self.path
         if self.host:
             host = self.host.encode('idna')
             port = ':' + self.port if self.port else ''
@@ -102,11 +102,12 @@ class URL(object):
         query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
                  if self.query else '')
 
+        path = urllib.unquote(self.path).decode('utf-8')
         if self.host:
             port = u':' + self.port if self.port else u''
-            return u''.join((self.schema, '://', self.host, port, self.path,  query))
+            return u''.join((self.schema, '://', self.host, port, path,  query))
         else:
-            return self.path + query
+            return path + query
 
 
     def __repr__(self):
@@ -248,7 +249,7 @@ def construct_re(url_template, match_whole_str=False, default_converter='string'
                 #      - make part str if it was unicode
                 #      - urlquote part
                 #      - escape all specific for re chars in part
-                part = urllib.quote(unicode(part).encode('utf-8'))
+                part = urlquote(unicode(part).encode('utf-8'))
                 result += re.escape(part)
                 builder_params.append(part)
                 continue
@@ -306,17 +307,16 @@ class UrlTemplate(object):
 
     def __call__(self, **kwargs):
         'Url building with url params values taken from kwargs. (reverse)'
-        result = u''
-        #XXX: must return urlencoded value. Not unicode
+        result = ''
         for part in self._builder_params:
             if isinstance(part, tuple):
                 var, conv_name, args = part
                 conv = self._init_converter(conv_name, args)
                 value = kwargs[var]
-                #XXX unicode?
-                result += unicode(conv.to_url(value))
+                result += conv.to_url(value)
             else:
                 result += part
+        # result - urlencoded str
         return result
 
     def _init_converter(self, conv_name, args):

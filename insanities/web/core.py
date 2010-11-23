@@ -71,7 +71,8 @@ class Reverse(object):
 
         host = u'.'.join(subdomains)
         absolute = (host != self.host)
-        path = u''.join([b(**kwargs) for b in builders])
+        # path - urlencoded str
+        path = ''.join([b(**kwargs) for b in builders])
         return URL(path, host=host)
 
 
