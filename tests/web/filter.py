@@ -61,7 +61,7 @@ class Prefix(unittest.TestCase):
         '''Prefix root'''
 
         def handler(r):
-            self.assertEqual(r.request.path, '/')
+            self.assertEqual(r.request.prefixed_path, '/')
 
         app = Map(
             match('/', 'index') | handler,
@@ -89,7 +89,7 @@ class Prefix(unittest.TestCase):
         '''Simple prefix'''
 
         def handler(r):
-            self.assertEqual(r.request.path, '/item')
+            self.assertEqual(r.request.prefixed_path, '/item')
 
         app = Map(
             match('/', 'index') | handler,
