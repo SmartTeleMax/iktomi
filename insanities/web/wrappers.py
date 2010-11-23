@@ -27,7 +27,7 @@ class prefix(RequestHandler):
         matched, kwargs = self.builder.match(rctx.request.path, rctx=rctx)
         if matched:
             rctx.data.update(kwargs)
-            rctx.request.add_prefix(quote(self.builder(**kwargs).encode('utf-8')))
+            rctx.request.add_prefix(self.builder(**kwargs))
             return rctx.next()
         return STOP
 

@@ -279,6 +279,7 @@ class UrlTemplate(object):
     def __init__(self, template, match_whole_str=True, converters=None,
                  default_converter='string'):
         self.template = template
+        self.match_whole_str = match_whole_str
         self._allowed_converters = self._init_converters(converters)
         self._pattern, self._url_params, self._builder_params = construct_re(template, 
                                                                              match_whole_str=match_whole_str,
@@ -340,4 +341,4 @@ class UrlTemplate(object):
         return convs
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.template.encode('utf-8'))
+        return '%s(%r, match_whole_str=%r)' % (self.__class__.__name__, self.template.encode('utf-8'), self.match_whole_str)
