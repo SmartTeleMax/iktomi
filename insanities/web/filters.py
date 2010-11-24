@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 class match(RequestHandler):
 
-    def __init__(self, url, name, converters=None):
+    def __init__(self, url, name, convs=None):
         super(match,self).__init__()
         self.url = url
         self.url_name = name
-        self.builder = UrlTemplate(url)
+        self.builder = UrlTemplate(url, converters=convs)
 
     def trace(self, tracer):
         tracer.url_name(self.url_name)

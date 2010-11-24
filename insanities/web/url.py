@@ -204,8 +204,19 @@ class Boolean(Converter):
 
     def to_url(self, value):
         if value:
-            return 'true'
-        return 'false'
+            return 'yes'
+        return 'no'
+
+
+class Any(Converter):
+    name='any'
+    def __init__(self, *values):
+        self.values = values
+
+    def to_python(self, value, **kwargs):
+        if value in self.values:
+            return value
+        raise ConvertError(self.name, value)
 
 
 convs_dict = dict((item.name or item.__name__, item) \
