@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from copy import deepcopy
-import simplejson
 from ..utils import weakproxy, cached_property
 from . import convs
 from .media import FormMedia, FormCSSRef, FormJSRef
@@ -40,21 +39,23 @@ class Widget(object):
     def get_media(self):
         return FormMedia(self.media)
 
-    def prepare_data(self, value, readonly=False):
+    def prepare_data(self, value):
         '''
         Method returning data passed to template.
         Subclasses can override it.
         '''
         return dict(widget=self,
                     value=value,
-                    readonly=readonly)
+                    readonly=not self.field.writable)
 
-    def render(self, value, readonly=False):
+    def render(self, value):
         '''
         Renders widget to template
         '''
-        data = self.prepare_data(value, readonly)
-        return self.env.render('widgets/'+self.template, **data)
+        data = self.prepare_data(value)
+        if self.field.readable:
+            return self.env.renderer.render(self.template, **data)
+        return ''
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
@@ -64,18 +65,18 @@ class Widget(object):
 
 class TextInput(Widget):
 
-    template = 'textinput'
+    template = 'widgets/textinput'
     classname = 'textinput'
 
 
 class HiddenInput(Widget):
 
-    template = 'hiddeninput'
+    template = 'widgets/hiddeninput'
 
 
 class PasswordInput(Widget):
 
-    template = 'passwordinput'
+    template = 'widgets/passwordinput'
     classname = 'textinput'
 
 
@@ -85,7 +86,7 @@ class Select(Widget):
     looks up if converter allows null and passed this value as template
     :obj:`required` variable.
     '''
-    template = 'select'
+    template = 'widgets/select'
     classname = 'select'
     #: HTML select element's select attribute value.
     size = None
@@ -109,8 +110,8 @@ class Select(Widget):
                                 selected=(choice in values)))
         return options
 
-    def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+    def prepare_data(self, value):
+        data = Widget.prepare_data(self, value)
         return dict(data,
                     options=self.get_options(value),
                     required=('true' if self.field.conv.required else 'false'))
@@ -118,7 +119,7 @@ class Select(Widget):
 
 class GroupedSelect(Select):
 
-    template = 'grouped_select'
+    template = 'widgets/grouped_select'
     classname = 'grouped_select select'
     size = None
 
@@ -164,22 +165,22 @@ class GroupedSelect(Select):
 
 class CheckBoxSelect(Select):
 
-    template = 'select-checkbox'
+    template = 'widgets/select-checkbox'
 
 
 class CheckBox(Widget):
 
-    template = 'checkbox'
+    template = 'widgets/checkbox'
 
 
 class Textarea(Widget):
 
-    template = 'textarea'
+    template = 'widgets/textarea'
 
 
 class TinyMce(Widget):
 
-    template = 'tinymce'
+    template = 'widgets/tinymce'
 
     media = [FormJSRef('tiny_mce/tiny_mce_init.js')]
 
@@ -289,10 +290,11 @@ class TinyMce(Widget):
 
         cfg['field_name'] = self.field.resolve_name()
 
-        return simplejson.dumps(cfg)
+        import json
+        return json.dumps(cfg)
 
-    def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+    def prepare_data(self, value):
+        data = Widget.prepare_data(self, value)
         return dict(data,
                     config=self.js_config,
                     plugins=','.join(self.plugins))
@@ -301,12 +303,12 @@ class TinyMce(Widget):
 
 class ReadonlySelect(Select):
 
-    template = 'readonlyselect'
+    template = 'widgets/readonlyselect'
 
 
 class CharDisplay(Widget):
 
-    template = 'span'
+    template = 'widgets/span'
     classname = 'chardisplay'
     #: If is True, value is escaped while rendering. 
     #: Passed to template as :obj:`should_escape` variable.
@@ -314,8 +316,8 @@ class CharDisplay(Widget):
     #: Function converting the value to string.
     getter = staticmethod(lambda v: v)
 
-    def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+    def prepare_data(self, value):
+        data = Widget.prepare_data(self, value)
         return dict(data,
                     value=self.getter(value),
                     should_escape=self.escape)
@@ -323,17 +325,17 @@ class CharDisplay(Widget):
 
 class ImageView(Widget):
 
-    template = 'imageview'
+    template = 'widgets/imageview'
     classname = 'imageview'
 
 
 class FileInput(Widget):
     '''
     '''
-    template = 'fileinput'
+    template = 'widgets/fileinput'
 
-    def prepare_data(self, value, readonly=False):
-        data = Widget.prepare_data(self, value, readonly)
+    def prepare_data(self, value):
+        data = Widget.prepare_data(self, value)
 
         field = self.field
         value = field.parent.python_data.get(field.name, None)
@@ -356,5 +358,5 @@ class FileInput(Widget):
                     null=field.null)
 
 class ImageInput(FileInput):
-    template = 'imageinput'
+    template = 'widgets/imageinput'
 

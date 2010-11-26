@@ -48,8 +48,6 @@ class LoginForm(Form):
     )
 
 
-
-
 class CookieAuth(RequestHandler):
     '''
     CookieAuth instances allows to add cookies based authentication to you web app.
@@ -113,10 +111,12 @@ class CookieAuth(RequestHandler):
             auth.logout_handler | render_to('login.html')
         '''
         def login(rctx):
-            form = self._login_form(rctx.vals.form_env)
+            form = self._login_form(rctx.vals.as_dict())
+            next = rctx.request.GET.get('next', '/')
+            msg = ''
             if rctx.request.method == 'POST':
                 if form.accept(rctx.request.POST):
-                    user_id = self._user_by_credential(rctx, **form.python_data)
+                    user_id, msg = self._user_by_credential(rctx, **form.python_data)
                     if user_id is not None:
                         key = os.urandom(10).encode('hex')
                         rctx.response.set_cookie(self._cookie_name, key, path='/')
@@ -124,9 +124,8 @@ class CookieAuth(RequestHandler):
                             pass
                         else:
                             logger.info('session_storage "%r" is unrichable' % rctx.vals.session_storage)
-                        next = rctx.request.GET.get('next', '/')
                         raise HttpException(303, url=next)
-            return dict(form=form)
+            return dict(form=form, next=next, message=msg)
         return match('/%s' % self._login, self._login) | login
 
     @property
@@ -153,5 +152,5 @@ class CookieAuth(RequestHandler):
             if 'user' in rctx.vals and rctx.vals.user is not None:
                 return rctx
             raise HttpException(303, 
-                                url=rctx.vals.url_for(self._login).set(next=rctx.request.path))
+                                url=rctx.vals.url_for(self._login).set(next=rctx.request.path_info))
         return FunctionWrapper(_login_required)

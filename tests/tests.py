@@ -5,17 +5,14 @@ import unittest
 from unittest import defaultTestLoader as dtl
 from inspect import isclass
 
-
-# JINJA2 staff
-from jinja2 import Environment, PackageLoader
-from insanities.ext.jinja2 import FormEnvironment
-jinja_env = Environment(loader=PackageLoader('insanities', 'templates'))
-env = FormEnvironment(jinja_env)
-
 from utils import *
 from web import *
-from forms import *
-from ext import *
+#from forms import *
+#from ext import *
+
+from forms.convs import *
+from forms.fields import *
+from forms.forms import *
 
 suite = unittest.TestSuite()
 

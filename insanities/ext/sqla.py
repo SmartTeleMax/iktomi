@@ -26,17 +26,46 @@ class DBSession(orm.session.Session):
         return obj
 
 
+def import_string(module_name, item_name=None):
+    if item_name is None:
+        return __import__(module_name, None, None, ['*'])
+    return getattr(__import__(module_name, None, None, ['*']), item_name)
+
+
+def construct_maker(databases, models=None, query_cls=None, engine_params=None,
+                    session_class=DBSession):
+    '''
+    databases - str with db uri or dict.
+    models - str name of models package (module), default is 'module'
+    query_cls - additional query class
+    engine_params - additional engine params
+    '''
+    models = models or 'models'
+    engine_params = engine_params or {}
+    db_dict = {}
+    if isinstance(databases, basestring):
+        return orm.sessionmaker(class_=session_class, query_cls=query_cls,
+                                autoflush=False)
+    for ref, uri in databases.items():
+        md_ref = '.'.join(filter(None, [models, ref]))
+        metadata = import_string(md_ref, 'metadata')
+        engine = create_engine(uri, **engine_params)
+        engine.logger.name += '(%s)' % ref
+        for table in metadata.sorted_tables:
+            db_dict[table] = engine
+    if query_cls is None:
+        query_cls = Query
+    return orm.sessionmaker(class_=session_class, query_cls=query_cls, binds=db_dict,
+                            autoflush=False)
+
+
 class sqla_session(RequestHandler):
 
     def __init__(self, uri, param_name='db', query_cls=Query,
                  class_=DBSession, engine_params=None):
         self.param_name = param_name
         engine_params = engine_params or {}
-        engine = create_engine(uri, **engine_params)
-        #engine.logger.name += '(%s)' % ref
-        self.maker = orm.sessionmaker(class_=class_, query_cls=query_cls,
-                                      bind=engine, autoflush=False,
-                                      autocommit=False)
+        self.maker = construct_maker(uri, engine_params=engine_params)
 
     def handle(self, rctx):
         db = self.maker()
@@ -57,7 +86,7 @@ class SqlAlchemyCommands(CommandDigest):
     db_name - key from databases dict, provided during init
     '''
 
-    def __init__(self, databases, base_class, initial=None):
+    def __init__(self, databases, initial=None, engine_params=None, models=None):
         '''
         :*base_class* - base class of models (usualy result of declarative_meta())
 
@@ -66,79 +95,98 @@ class SqlAlchemyCommands(CommandDigest):
         :*initial* - function that takes session object and populates 
                      session with models instances
         '''
-        self.cfg = databases
-        self.base_class = base_class
+        self.databases = databases if isinstance(databases, dict) else {'':databases}
+        self.engine_params = engine_params or {}
+        self.engine_params['echo'] = True
+        self.models = models or 'models'
         self.initial = initial
 
-    def command_sync(self, db_name=None):
+    def command_sync(self, db=None):
         '''
-        $ python manage.py sqlalchemy:sync [db_name]
+        $ python manage.py sqlalchemy:sync [--db=name]
 
         syncs models with database
         '''
-        if db_name is None:
-            db_name = ''
-        engine = create_engine(self.cfg[db_name], echo=True)
-        self.base_class.metadata.create_all(engine)
+        for ref, uri in self.databases.items():
+            if db and ref != db:
+                continue
+            md_ref = '.'.join(filter(None, [self.models, ref]))
+            metadata = import_string(md_ref, 'metadata')
+            engine = create_engine(uri, **self.engine_params)
+            engine.logger.name += '(%s)' % ref
+            metadata.create_all(engine)
 
-    def command_drop(self, db_name=None):
+    def command_drop(self, db=None):
         '''
-        $ python manage.py sqlalchemy:drop [db_name]
+        $ python manage.py sqlalchemy:drop [--db=name]
 
         drops model's tables from database
         '''
-        if db_name is None:
-            db_name = ''
-        engine = create_engine(self.cfg[db_name], echo=True)
-        self.base_class.metadata.drop_all(engine, checkfirst=True)
+        for ref, uri in self.databases.items():
+            if db and ref != db:
+                continue
+            md_ref = '.'.join(filter(None, [self.models, ref]))
+            metadata = import_string(md_ref, 'metadata')
+            engine = create_engine(uri, **self.engine_params)
+            engine.logger.name += '(%s)' % ref
+            metadata.create_all(engine)
+            metadata.drop_all(engine, checkfirst=True)
 
-    def command_initial(self, db_name=None):
+    def command_initial(self, db=None):
         '''
-        $ python manage.py sqlalchemy:initial [db_name]
+        $ python manage.py sqlalchemy:initial [--db=name]
 
         populates models with initial data
         '''
-        if db_name is None:
-            db_name = ''
         if self.initial:
-            engine = create_engine(self.cfg[db_name], echo=True)
-            session = orm.sessionmaker(bind=engine)()
+            databases = db if db else self.databases
+            session = construct_maker(databases, models=self.models,
+                                      engine_params=self.engine_params)()
+            #TODO: implement per db initial
             self.initial(session)
 
-    def command_schema(self, model_name=None):
+    def command_schema(self, model_name=None, db=None):
         '''
         $ python manage.py sqlalchemy:schema [model_name]
 
         shows CREATE sql script for model(s)
         '''
         from sqlalchemy.schema import CreateTable
-        if model_name:
-            table = self.base_class._decl_class_registry[model_name].__table__
-            print str(CreateTable(table))
-        else:
-            for model in self.base_class._decl_class_registry.values():
-                print str(CreateTable(model.__table__))
+        for ref, uri in self.databases.items():
+            if db and not db == ref:
+                continue
+            md_ref = '.'.join(filter(None, [self.models, ref]))
+            metadata = import_string(md_ref, 'metadata')
+            for table in metadata.sorted_tables:
+                if model_name:
+                    if model_name == table.name:
+                        print '-- database %r' % ref
+                        print str(CreateTable(table))
+                else:
+                    print '-- database %r' % ref
+                    print str(CreateTable(table))
 
-    def command_reset(self, db_name=None):
+    def command_reset(self, db=None):
         '''
-        $ python manage.py sqlalchemy:reset [db_name]
+        $ python manage.py sqlalchemy:reset [--db=name]
         '''
-        self.command_drop(db_name)
-        self.command_sync(db_name)
-        self.command_initial(db_name)
+        self.command_drop(db)
+        self.command_sync(db)
+        self.command_initial(db)
 
-    def command_shell(self, db_name=None):
+    def command_shell(self, db=None):
         '''
-        $ python manage.py sqlalchemy:shell [db_name]
+        $ python manage.py sqlalchemy:shell [--db=name]
 
         provides python interactive shell with 'db' as session to database
         '''
-        if db_name is None:
-            db_name = ''
-        engine = create_engine(self.cfg[db_name], echo=True)
+        if db is None:
+            db = ''
         from code import interact
-        interact('SqlAlchemy session with db: %s' % (db_name if db_name else 'default',),
-                 local={'db': orm.sessionmaker(bind=engine)()})
+        interact('SqlAlchemy session with is local variable - db',
+                 local={'db': construct_maker(self.databases, 
+                                              models=self.models, 
+                                              engine_params=self.engine_params)()})
 
 
 # COLUMNS
@@ -147,7 +195,7 @@ class SqlAlchemyCommands(CommandDigest):
 from sqlalchemy import String, Integer, Text, Boolean, Date, DateTime
 from sqlalchemy import orm, types, create_engine
 
-from ..forms.files import StoredFile, StoredImageFile
+from .filefields import StoredFile, StoredImageFile
 
 class StringList(types.TypeDecorator):
 
@@ -198,8 +246,7 @@ except ImportError:
     pass
 else:
     HtmlTextJinja = get_html_class(Markup)
-    HtmlStringJinja = get_html_class(Markup, impl=types.String)
-    HtmlMediumTextJinja = get_html_class(Markup, impl=types.MediumText)
+    HtmlStringJinja = get_html_class(Markup, impl_=types.String)
 
 
 class AlchemyFile(types.TypeDecorator):

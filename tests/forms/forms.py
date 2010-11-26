@@ -1,228 +1,380 @@
 # -*- coding: utf-8 -*-
+
 import unittest
-from copy import copy
 
-from insanities.forms import fields, convs, form, widgets, media, perms
-from insanities.web.core import RequestContext
+from insanities.forms import *
+from webob.multidict import MultiDict
 
 
-class TestFormClass(unittest.TestCase):
-    @property
-    def env(self):
-        from os import path
-        import jinja2
-        from insanities.ext import jinja2 as jnj
+class FormClassInitializationTests(unittest.TestCase):
 
-        DIR = jnj.__file__
-        DIR = path.dirname(path.abspath(DIR))
-        TEMPLATES = [path.join(DIR, 'templates')]
-        rctx = RequestContext.blank('/')
-        rctx.vals['jinja_env'] = jinja2.Environment(
-                            loader=jinja2.FileSystemLoader(TEMPLATES))
-        return jnj.FormEnvironment(rctx)
-
-    def instantiate_conv(self, conv, value=None):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input', conv=conv)]
-        return SampleForm(self.env, initial={'input': value}).get_field('input').conv
-
-class TestForm(TestFormClass):
     def test_init(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input'),
-                    fields.Field(name='input2'),
-                    fields.Field(conv=convs.Int,
-                                 name='int', default=10),
-                    fields.Field(name='input3', default='abyr'),
-                    ]
+        'Initialization of form object'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int()),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assertEqual(form.initial, {})
+        self.assertEqual(form.raw_data, {'first':'', 'second':''})
+        self.assertEqual(form.python_data, {'first':None, 'second':None})
 
-        frm = SampleForm(self.env, initial={
-            'input2': '123',
-            'input3': '123',
-        })
+    def test_with_default(self):
+        'Initialization of form object with fields default values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), default=1),
+                Field('second', convs.Int(), get_default=lambda: 2),
+            ]
+        form = _Form()
+        self.assertEqual(form.initial, {})
+        self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
 
-        self.assertEqual(frm.data, form.MultiDict([
-            ('input', ''),
-            ('input2', '123'),
-            ('input3', '123'),
-            ('int', '10'),
-        ]))
-        self.assertEqual(frm.python_data, {
-            'input': None,
-            'input2': '123',
-            'input3': '123',
-            'int': 10,
-        })
+    def test_with_initial(self):
+        'Initialization of form object with initial values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int()),
+                Field('second', convs.Int()),
+            ]
+        form = _Form(initial={'first':1, 'second':2})
+        self.assertEqual(form.initial, {'first':1, 'second':2})
+        self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
 
-    def test_name(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input')]
-        frm = SampleForm(self.env, name='formname')
+    def test_with_initial_and_default(self):
+        'Initialization of form object with initial and default values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), default=3),
+                Field('second', convs.Int()),
+            ]
+        form = _Form(initial={'first':1, 'second':2})
+        self.assertEqual(form.initial, {'first':1, 'second':2})
+        self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
 
-        self.assertEqual(frm.get_field('input').input_name, 'formname:input')
+    def test_fieldset_with_initial(self):
+        'Initialization of form object with fieldset with initial values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int()),
+                    Field('second', convs.Int()),
+                ]),
+            ]
+        form = _Form(initial={'set': {'first': 1, 'second': 2}})
+        self.assertEqual(form.raw_data, {'set.first': '1', 'set.second': '2'})
+        self.assertEqual(form.python_data, {'set': {'first': 1, 'second': 2}})
 
-    def test_permissions(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input')]
+    def test_fieldset_with_initial_and_default(self):
+        'Initialization of form object with fieldset with initial and default values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int(), default=3),
+                    Field('second', convs.Int()),
+                ]),
+            ]
+        form = _Form(initial={'set': {'first': None, 'second': 2}})
+        self.assertEqual(form.raw_data, {'set.first': '', 'set.second': '2'})
+        self.assertEqual(form.python_data, {'set': {'first': None, 'second': 2}})
 
-        frm = SampleForm(self.env, permissions='rw')
-        self.assertEqual(frm.permissions, set('rw'))
+    def test_init_fieldlist_with_initial(self):
+        'Initialization of form object with fieldlist with initial values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        form = _Form(initial={'list': [1, 2]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
 
-        class SampleForm(form.Form):
-            permissions='rw'
-            fields=[fields.Field(name='input')]
-
-        frm = SampleForm(self.env)
-        self.assertEqual(frm.permissions, set('rw'))
-
-    def test_get_data(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input'),
-                    fields.Field(name='input2'),
-                    ]
-
-        frm = SampleForm(self.env)
-        data = form.MultiDict([
-            ('input', ''),
-            ('input2', '123'),
-        ])
-        frm.accept(data)
-
-        self.assertEqual(frm.get_data(compact=False), form.MultiDict([
-            ('input', ''),
-            ('input2', '123'),
-        ]))
-        self.assertEqual(frm.get_data(compact=True), form.MultiDict([
-            ('input2', '123'),
-        ]))
-
-
-    def test_render(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input1'),
-                    fields.Field(name='input2'),
-                    ]
-
-        # XXX how to test render?
-        rnd = SampleForm(self.env).render()
-        assert 'input1' in rnd and 'input2' in rnd
-
-    def test_is_valid(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input', conv=convs.Int)]
-
-        frm = SampleForm(self.env)
-
-        # XXX not validated form returns is_valid = True
-        # assert not frm.is_valid        
-        frm.accept(form.MultiDict([('input', '123')]))
-        assert frm.is_valid
-
-        frm = SampleForm(self.env)
-        frm.accept(form.MultiDict([('input', 'NaN')]))
-        assert not frm.is_valid
-
-    def test_get_media(self):
-        pass
-        #media = FormMedia(self.media, env=self.env)
-        #for field in self.fields:
-        #    media += field.get_media()
-        #return media
-
-    def test_accept_valid(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input1', conv=convs.Int),
-                    fields.Field(name='input2', conv=convs.Int,
-                                 default=25,
-                                 perm_getter=perms.SimplePerm('r')),
-                    ]
-        frm = SampleForm(self.env)
-        assert frm.accept(form.MultiDict([('input1', '123'), ('input2', 1),]))
-
-        assert not frm.errors
-        self.assertEqual(frm.python_data, {'input1': 123, 'input2': 25})
-        self.assertEqual(frm.data, {'input1': '123', 'input2': '25'})
-
-    def test_accept_invalid(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input1',
-                                 conv=convs.Int,
-                                 default=1)]
-
-        frm = SampleForm(self.env)
-        assert not frm.accept(form.MultiDict([('input1', '12m')]))
-
-        assert frm.errors
-        self.assertEqual(frm.python_data, {'input1': 1})
-        self.assertEqual(frm.data, form.MultiDict([('input1', '12m')]))
-
-    def test_accept_invalid_nested(self):
-        class SampleForm(form.Form):
-            fields=[fields.FieldSet(
-                        name='fieldset',
-                        fields=[
-                              fields.Field(name='input2', conv=convs.Int),
-                            ]),
-                    fields.Field(name='input1', conv=convs.Int),
-                    ]
-
-        frm = SampleForm(self.env)
-        md = form.MultiDict([
-            ('fieldset.input2', '12c'),
-            ('input1', '20'),
-            ])
-        assert not frm.accept(md)
-        assert frm.errors
-
-        self.assertEqual(frm.python_data['input1'], 20)
-        self.assertEqual(frm.data, md)
-
-    def test_accept_clean_interface_valid(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input1', conv=convs.Int),
-                    fields.Field(name='input2', conv=convs.Int)]
-
-            def clean__input2(self, value):
-                if value != self.python_data['input1']:
-                    raise convs.ValidationError('')
-                return value
-
-        frm = SampleForm(self.env)
-        assert frm.accept(form.MultiDict([('input1', '12'), ('input2', '12')]))
-        assert not frm.errors
-
-        self.assertEqual(frm.python_data, {'input1': 12, 'input2': 12})
-
-    def test_accept_clean_interface_invalid(self):
-        class SampleForm(form.Form):
-            fields=[fields.Field(name='input1', conv=convs.Int),
-                    fields.Field(name='input2', conv=convs.Int)]
-
-            def clean__input2(self, value):
-                if value != self.python_data['input1']:
-                    raise convs.ValidationError('')
-                return value
-
-        frm = SampleForm(self.env)
-        assert not frm.accept(form.MultiDict([('input1', '12'), ('input2', '13')]))
-        assert frm.errors
-
-        self.assertEqual(frm.python_data, {'input1': 12})
+    def test_fieldlist_with_initial_and_default(self):
+        'Initialization of form object with fieldlist with initial and default values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int(), default=2)),
+            ]
+        form = _Form(initial={'list': [1, 2]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
 
 
-    def get_field(self):
-        class SampleForm(form.Form):
-            fields=[fields.FieldSet(
-                        name='fieldset',
-                        fields=[
-                              fields.Field(name='input2', conv=convs.Int),
-                            ]),
-                    fields.Field(name='input1', conv=convs.Int),
-                    ]
-        self.assertEqual(self.get_field('input1').input_name, 'input1')
-        self.assertEqual(self.get_field('fieldset.input2').input_name, 'input2')
-        self.assertEqual(self.get_field('field'), None)
+class FormErrorsTests(unittest.TestCase):
+
+    def test_simple(self):
+        'Accept with errors'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int()),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(not form.accept(MultiDict(first='1')))
+        self.assertEqual(form.errors, {'second': 'required field'})
+
+    def test_fieldset(self):
+        'Accept with errors (fieldset)'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int(), default=1, permissions='r'),
+                    Field('second', convs.Int(), default=2),
+                ]),
+                Field('third', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(not form.accept(MultiDict(**{'set.first': '2d', 'set.second': '', 'third': '3f'})))
+        self.assertEqual(form.python_data, {'set': {'first': 1, 'second': 2}, 'third': None})
+        self.assertEqual(form.errors, {'set.second': convs.Int.error_required, 
+                                       'third': convs.Int.error_notvalid})
+        self.assertEqual(form.raw_data, MultiDict(**{'set.first': '1', 'set.second': '', 'third': '3f'}))
+
+    def test_fieldlist_with_initial_delete(self):
+        'Fieldlist element deletion'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        form = _Form(initial={'list': [1, 2, 3]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2'), ('list-indeces', '3')), 
+                                                  **{'list-1': '1', 'list-2': '2', 'list-3': '3'}))
+        self.assertEqual(form.python_data, {'list': [1, 2, 3]})
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '3')), 
+                                                  **{'list-1': '1', 'list-3': '3'})))
+        self.assertEqual(form.python_data, {'list': [1, 3]})
 
 
-if __name__ == '__main__':
-    unittest.main()
+class FormClassAcceptTests(unittest.TestCase):
+    def test_accept(self):
+        'Clean accept'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int()),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(first='1', second='2')))
+        self.assertEqual(form.initial, {})
+        self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
+
+    def test_with_default(self):
+        'Accept with default values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), default=2),
+                Field('second', convs.Int(required=False), get_default=lambda: 2),
+            ]
+        form = _Form()
+        form.accept(MultiDict(first='1'))
+        self.assert_(form.accept(MultiDict(first='1')))
+        self.assertEqual(form.initial, {})
+        self.assertEqual(form.python_data, {'first':1, 'second':None})
+
+    def test_with_initial(self):
+        'Accept with initial data'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int()),
+                Field('second', convs.Int()),
+            ]
+        form = _Form(initial={'second':3})
+        self.assert_(form.accept(MultiDict(first='1', second='2')))
+        self.assertEqual(form.initial, {'second': 3})
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
+
+class FormReadonlyFieldsTest(unittest.TestCase):
+
+    def test_readonly(self):
+        'Accept of readonly fields'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), permissions='r'),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(first='1', second='2')))
+        self.assertEqual(form.python_data, {'first':None, 'second':2})
+
+    def test_with_default(self):
+        'Accept of readonly fields with default values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), default=1, permissions='r'),
+                Field('second', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(first='3', second='2')))
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
+        self.assertEqual(form.raw_data, {'first':'1', 'second':'2'})
+
+    def test_fieldset(self):
+        'Accept of readonly fieldset with default values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int(), default=1, permissions='r'),
+                    Field('second', convs.Int(), default=2),
+                ]),
+                Field('third', convs.Int()),
+            ]
+        form = _Form()
+        self.assert_(form.accept(MultiDict(**{'set.first': '2', 'set.second': '2', 'third': '3'})))
+        self.assertEqual(form.python_data, {'set': {'first': 1, 'second': 2}, 'third': 3})
+        self.assertEqual(form.raw_data, MultiDict(**{'set.first': '1', 'set.second': '2', 'third':'3'}))
+
+    def test_fieldlist(self):
+        'Accept of readonly fieldlist with default values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int(), permissions='r')),
+            ]
+        form = _Form(initial={'list':[1, 2]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '2', 'list-2': '3'})))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+
+    def test_fieldlist_of_fieldsets(self):
+        'Accept of fieldlist of readonly fieldsets'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=FieldSet(
+                    'set',
+                    fields=[Field('number', convs.Int(), permissions='r')],
+                )),
+            ]
+        form = _Form(initial={'list':[{'number':1}, {'number':2}]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '1', 'list-2.number': '2'}))
+        self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '2', 'list-2.number': '3'})))
+        self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
+
+    def test_fieldset_of_fieldsets(self):
+        'Accept of readonly fieldset of fieldsets'
+        class _Form(Form):
+            fields=[
+                FieldSet('sets', fields=[
+                    FieldSet('set1', fields=[
+                        Field('first', convs.Int(), permissions='r'),
+                        Field('second', convs.Int()),
+                    ]),
+                    FieldSet('set2', fields=[
+                        Field('first', convs.Int()),
+                        Field('second', convs.Int(), permissions='r'),
+                    ]),
+                ]),
+            ]
+        form = _Form(initial={'sets':{
+            'set1': {'first': 1, 'second': 2},
+            'set2': {'first': 1, 'second': 2},
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '1',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '2',
+        }))
+
+        self.assert_(form.accept(MultiDict(**{
+            'sets.set1.first': 'incorect',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': 'incorect',
+        })))
+
+        self.assertEqual(form.python_data, {'sets': {
+            'set1': {'first': 1, 'second': 2}, 
+            'set2': {'first': 1, 'second': 2}, 
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '1',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '2',
+        }))
+
+    def test_fieldset_of_fieldsets_with_noreq(self):
+        'Accept of readonly fieldset of fieldsets with required=False'
+        class _Form(Form):
+            fields=[
+                FieldSet('sets', fields=[
+                    FieldSet('set1', fields=[
+                        Field('first', convs.Int(required=False), permissions='r'),
+                        Field('second', convs.Int()),
+                    ]),
+                    FieldSet('set2', fields=[
+                        Field('first', convs.Int()),
+                        Field('second', convs.Int(required=False), permissions='r'),
+                    ]),
+                ]),
+            ]
+        form = _Form(initial={'sets':{
+            'set1': {'first': None, 'second': 2},
+            'set2': {'first': 1, 'second': None},
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '',
+        }))
+
+        self.assert_(form.accept(MultiDict(**{
+            'sets.set1.first': 'incorect',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': 'incorect',
+        })))
+
+        self.assertEqual(form.python_data, {'sets': {
+            'set1': {'first': None, 'second': 2}, 
+            'set2': {'first': 1, 'second': None}, 
+        }})
+
+        self.assertEqual(form.raw_data, MultiDict(**{
+            'sets.set1.first': '',
+            'sets.set1.second': '2',
+            'sets.set2.first': '1',
+            'sets.set2.second': '',
+        }))
+
+
+class FormFieldListErrorsTests(unittest.TestCase):
+
+    def test_fieldlist(self):
+        'Fieldlist errors'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        form = _Form()
+        self.assertEqual(form.raw_data, MultiDict())
+        self.assertEqual(form.python_data, {'list': []})
+        self.assert_(not form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2'), ('list-indeces', '3')), 
+                                           **{'list-1': '1', 'list-2': '2', 'list-3': '3s'})))
+        self.assertEqual(form.python_data, {'list': [1, 2, None]})
+        self.assertEqual(form.errors, {'list-3': convs.Int.error_notvalid})
+
+    def test_fieldlist_with_initial(self):
+        '''Fieldlist errors (list of one initial value), when submiting
+        new value before initial and incorrect value insted of initial'''
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        form = _Form(initial={'list': [1]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'),), 
+                                           **{'list-1': '1'}))
+        self.assertEqual(form.python_data, {'list': [1]})
+        self.assert_(not form.accept(MultiDict((('list-indeces', '2'), ('list-indeces', '1')), 
+                                           **{'list-1': '1s', 'list-2': '2'})))
+        self.assertEqual(form.python_data, {'list': [2, 1]})
+        self.assertEqual(form.errors, {'list-1': convs.Int.error_notvalid})

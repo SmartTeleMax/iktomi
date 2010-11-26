@@ -1,9 +1,0 @@
-<select id="{{ widget.id }}" name="{{ widget.input_name }}"
-        {%- if widget.multiple %} multiple="multiple"{% endif %}
-        {%- if readonly %} readonly="readonly"{% endif %}
-        {%- if widget.classname %} class="{{ widget.classname }}"{% endif %}
-        {%- if widget.size %} size="{{ widget.size }}"{% endif %}>
-  {% for option in options -%}
-  <option value="{{ option.value|escape }}" {%- if option.selected %} selected="selected" class="selected"{% endif %}>{{ option.title|escape }}</option>
-  {%- endfor %}
-</select>

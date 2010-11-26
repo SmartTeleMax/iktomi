@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['prefix', 'subdomain', 'namespace', 'Conf']
+__all__ = ['prefix', 'subdomain', 'namespace', 'Conf', 'Vals']
 
 import logging
 import re
@@ -25,7 +25,7 @@ class prefix(RequestHandler):
         tracer.builder(self.builder)
 
     def handle(self, rctx):
-        matched, kwargs = self.builder.match(rctx.request.path, rctx=rctx)
+        matched, kwargs = self.builder.match(rctx.request.prefixed_path, rctx=rctx)
         if matched:
             rctx.data.update(kwargs)
             rctx.request.add_prefix(self.builder(**kwargs))
@@ -83,10 +83,27 @@ class namespace(RequestHandler):
 
 
 class Conf(RequestHandler):
-
     def __init__(self, **kwargs):
         self.conf = kwargs
 
     def handle(self, rctx):
         rctx.conf.update(self.conf)
+        return rctx.next()
+
+
+class Vals(RequestHandler):
+    def __init__(self, **kwargs):
+        self.vals = kwargs
+
+    def handle(self, rctx):
+        rctx.vals.update(self.vals)
+        return rctx.next()
+
+
+class Data(RequestHandler):
+    def __init__(self, **kwargs):
+        self.data = kwargs
+
+    def handle(self, rctx):
+        rctx.data.update(self.data)
         return rctx.next()

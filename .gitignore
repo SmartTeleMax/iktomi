@@ -4,6 +4,8 @@
 *~
 .ropeproject
 *.*.swp
+.swp
+*.swo
 build
 dist
 *.egg-info

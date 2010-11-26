@@ -8,6 +8,7 @@ import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
+from ..utils.dt import strftime
 from ..utils import N_, M_
 
 
@@ -22,17 +23,12 @@ class NestedError(NotSubmitted): pass
 
 class ValidationError(Exception):
 
-    def __init__(self, message):
-        Exception.__init__(self, message)
-
     @property
     def message(self):
         return self.args[0]
 
-    def __str__(self):
-        # This method is called by logging, we need it to avoid
-        # <unprintable ValidationError object> messages.
-        return self.message.encode('utf-8')
+    def __repr__(self):
+        return self.messages.encode('utf-8')
 
 
 class Converter(object):
@@ -69,18 +65,17 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
-    #: A list of callables to make additional validation. 
-    #: Validators recieve converter and value and raising ValidationError
-    #: if there is something wrong.
-    #: Validators are attached to converter by chaining::
-    #:
-    #:    conv | myvalidator1 | myvalidator2
-    validators = None
+    required = True
 
     #: Values are not accepted by Required validator
-    null_values = (None, )
-
     error_required = N_('required field')
+
+    def __init__(self, *args, **kwargs):
+        self.field = weakproxy(kwargs.get('field'))
+        self._init_kwargs = kwargs
+        self.__dict__.update(kwargs)
+        self.validators_and_filters = args
+        self.to_python = self._check(self.to_python)
 
     # It is defined as read-only property to avoid setting it to True where
     # converter doesn't support it.
@@ -88,118 +83,133 @@ class Converter(object):
     def multiple(self):
         '''
         Signs if converter is multiple or not.
-        Multiple converters usually accept and return lists.
+        Multiple converters usually accept and return collections.
         '''
         return False
-
-    def __init__(self, field=None, **kwargs):
-        self.field = weakproxy(field)
-        self._init_kwargs = kwargs
-        self.__dict__.update(kwargs)
-        self.validators = self.validators or []
 
     @property
     def env(self):
         return self.field.env
 
-    def accept(self, value):
-        '''Converts the message and validates it by chained validators'''
-        value = self.to_python(value)
-        for validate in self.validators:
-            value = validate(self, value)
-        if self.required and value in self.null_values:
-            self.error('required')
-        return value
+    def _is_empty(self, value):
+        return value in ('', [])
+
+    def _check(self, method):
+        def wrapper(value, **kwargs):
+            field, form = self.field, self.field.form
+            if self.required and self._is_empty(value):
+                form.errors[self.field.input_name] = self.error_required
+                return self.field.parent.python_data[field.name]
+            try:
+                value = method(value, **kwargs)
+                for v in self.validators_and_filters:
+                    value = v(value)
+            except ValidationError, e:
+                form.errors[field.input_name] = e.message
+                #NOTE: by default value for field is in python_data,
+                #      but this is not true for FieldList where data
+                #      is dynamic, so we set value to None for absent value.
+                value = field.parent.python_data.get(field.name)
+            return value
+        return wrapper
 
     def to_python(self, value):
         """ custom converters should override this """
+        if value == '':
+            return None
         return value
 
     def from_python(self, value):
         """ custom converters should override this """
+        if value is None:
+            value = ''
         return value
-
-    #: Property responsible to "field is None" *validation*.
-    #: Be careful and don't confuse with `null` property of Char converter.
-    required = True
-
-    def __or__(self, validator):
-        """ chaining converters """
-        validators = self.validators + [validator]
-        return self(validators=validators)
 
     def __call__(self, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
-        return self.__class__(**kwargs)
+        return self.__class__(*self.validators_and_filters, **kwargs)
 
-    def error(self, error_type, count=None,
-              default=N_('unknown error')):
-        '''
-        Raises :class:`ValidationError <insanities.forms.convs.ValidationError>` with the
-        message taken from converter's error_%(error_type) method and formatted with
-        converters' attributes as arguments.
-
-        For example::
-
-            class Conv(Converter):
-                bars = BARS
-
-                error_foo = N_('foo')
-                error_bar = M_('you need one bar', 
-                               'you need %(bars) bars')
-
-                def to_python(self, value):
-                    if not footest(value):
-                        self.error('foo')
-                    if not bartest(value, self.bars):
-                        self.error('bar', count=self.BARS)
-                    return value
-        '''
-        message_template = getattr(self, 'error_'+error_type, default)
-        #if callable(message_template):
-        #    message_template = message_template()
-        message_template = self.env.gettext(message_template, count)
-        message = message_template % self.__dict__
-        raise ValidationError(message)
-
-    def _assert(self, expression, error_type, count=None):
+    def assert_(self, expression, msg):
+        'Shortcut for assertions of certain type'
         if not expression:
-            self.error(error_type, count=None)
+            raise ValidationError(msg)
+
+
+class validator(object):
+    'Function decorator'
+    def __init__(self, message):
+        self.message = message
+    def __call__(self, func):
+        def wrapper(value):
+            if not func(value):
+                raise ValidationError(self.message)
+            return value
+        return wrapper
+
+# Some useful validators
+
+def limit(min_length, max_length):
+    'Sting length constraint'
+    message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
+
+    @validator(message)
+    def wrapper(value):
+        if not value:
+            # it meens that this value is not required
+            return True
+        if len(value) < min_length:
+            return False
+        if len(value) > max_length:
+            return False
+        return True
+    return wrapper
+
+
+def num_limit(min_value, max_value):
+    'Numerical values limit'
+    message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
+
+    @validator(message)
+    def wrapper(value):
+        if not value:
+            # it meens that this value is not required
+            return True
+        if value < min_value:
+            return False
+        if value > max_value:
+            return False
+        return True
+    return wrapper
+
+
+def length(*args):
+    'Exact string lengths'
+    @validator(u'Length of value is limited to ' + ','.join([str(a) for a in args]))
+    def wrapper(value):
+        if not value:
+            return True
+        if not len(str(value)) in args:
+            return False
+        return True
+    return wrapper
+
+
+@validator(u'Value must be positive')
+def positive_num(value):
+    if not value:
+        return True
+    return value > 0
 
 
 class Char(Converter):
 
-    """
-    string converter with min length, max length and regex
-    checks support
-    """
-
-    #: Min length of valid string
-    min_length = None
-    #: Max length of valid string
-    max_length = None
     #: Regexp to match input string
     regex = None
-    #: Option showing whether strip input string or not. True by default
-    strip = True
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
+    strip=False
 
-    #: Property responsible to returned converting value to None when the value
-    #: is empty (by default, if it is in conv.empty_values)
-    #: If null is True Converter represents empty value ('' or None) as None
-    null = False
-
-
-    error_length_exact = M_(u'The length should be exactly one symbol',
-                            u'The length should be exactly %(max_length)s symbols')
-    error_max_length = M_(u'The length should be at most one symbol',
-                          u'The length should be at most %(max_length)s symbols')
-    error_min_length = M_(u'The length should be at least one symbol',
-                          u'The length should be at least %(min_length)s symbols')
-
-    error_notempty = N_(u'field can not be empty')
     error_regex = N_('field should match %(regex)s')
 
     def clean_value(self, value):
@@ -212,8 +222,6 @@ class Char(Converter):
         '''
         # We have to clean before checking min/max length. It's done in
         # separate method to allow additional clean action in subclasses.
-        if value is None:
-            value = ''
         if self.strip:
             value = value.strip()
         return value
@@ -221,29 +229,12 @@ class Char(Converter):
     def to_python(self, value):
         # converting
         value = self.clean_value(value)
-        if self.null and value in ('', None):
-            return None
-        # various validations
-        if self.nontext_replacement is not None:
-            value = replace_nontext(value, self.nontext_replacement)
-        if self.max_length==self.min_length!=None:
-            self._assert(len(value) == self.max_length, 'error_length_exact',
-                         count=self.max_length)
-        else:
-            if self.max_length:
-                self._assert(len(value) <= self.max_length, 'max_length',
-                             count=self.max_length)
-            if self.min_length:
-                if self.min_length == 1:
-                    self._assert(len(value) >= self.min_length, 'notempty')
-                else:
-                    self._assert(len(value) >= self.min_length, 'min_length',
-                                 count=self.min_length)
         if self.regex:
             regex = self.regex
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
-            self._assert(regex.match(value), 'regex')
+            if not regex.match(value):
+                raise ValidationError(self.error_regex)
         return value
 
     def from_python(self, value):
@@ -257,29 +248,15 @@ class Int(Converter):
     integer converter with max and min values support
     """
 
-    #: Min allowed valid number
-    min = None
-    #: Max allowed valid number
-    max = None
-
-    null_values = (None, '')
-
     error_notvalid = N_('it is not valid integer')
-    error_min = N_('min value is %(min)s')
-    error_max = N_('max value is %(max)s')
-
 
     def to_python(self, value):
-        if value in self.null_values:
+        if value == '':
             return None
         try:
             value = int(value)
         except ValueError:
-            self.error('notvalid')
-        if self.min is not None:
-            self._assert(self.min <= value, 'min')
-        if self.max is not None:
-            self._assert(self.max >= value, 'max')
+            raise ValidationError(self.error_notvalid)
         return value
 
     def from_python(self, value):
@@ -287,13 +264,10 @@ class Int(Converter):
             return ''
         return unicode(value)
 
-    def __call__(self, **kwargs):
-        kwargs.setdefault('min', self.min)
-        kwargs.setdefault('max', self.max)
-        return Converter.__call__(self, **kwargs)
-
 
 class Bool(Converter):
+
+    required = False
 
     def to_python(self, value):
         return bool(value)
@@ -317,23 +291,23 @@ class EnumChoice(Converter):
     '''In addition to Converter interface it must provide methods __iter__ and
     get_label.'''
 
-    conv = Converter()
+    conv = Char()
     # choices: [(python_value, label), ...]
     choices = ()
     multiple = False
-    null_values = (None, [])
-
     error_required = N_('you must select a value')
 
     def from_python(self, value):
+        conv = self.conv(field=self.field)
         if self.multiple:
-            return [self.conv.from_python(item) for item in value or []]
+            return [conv.from_python(item) for item in value or []]
         else:
-            return self.conv.from_python(value)
+            return conv.from_python(value)
 
     def _safe_to_python(self, value):
+        conv = self.conv(field=self.field)
         try:
-            value = self.conv.to_python(value)
+            value = conv.to_python(value)
         except ValidationError:
             return None
         if value not in dict(self.choices):
@@ -341,6 +315,11 @@ class EnumChoice(Converter):
         return value
 
     def to_python(self, value):
+        if value == '':
+            #XXX: check for multiple?
+            if self.multiple:
+                return []
+            return None
         if self.multiple:
             value = [item for item in map(self._safe_to_python, value or [])
                      if item is not None]
@@ -349,89 +328,77 @@ class EnumChoice(Converter):
         return value
 
     def __iter__(self):
+        conv = self.conv(field=self.field)
         for python_value, label in self.choices:
-            yield self.conv.from_python(python_value), label
+            yield conv.from_python(python_value), label
 
     def get_label(self, value):
-        return dict(self.choices).get(self.conv.to_python(value))
+        conv = self.conv(field=self.field)
+        return dict(self.choices).get(conv.to_python(value))
 
 
-class DatetimeDisplay(DisplayOnly):
+class BaseDatetime(Converter):
 
-    format = '%d.%m.%Y, %H:%M'
+    format = None
+    readable_format = None
+    replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
+                    ('%m', 'MM'), ('%Y', 'YYYY'))
+    error_wrong_format = N_('Wrong format (%(readable_format)s)')
+
+    def __init__(self, *args, **kwargs):
+        if not 'readable_format' in kwargs or 'format' in kwargs:
+            replacements = self.replacements # XXX make language-dependent
+            fmt = kwargs.get('format', self.format)
+            for repl in replacements:
+                fmt = fmt.replace(*repl)
+            kwargs['readable_format'] = fmt
+        Converter.__init__(self, *args, **kwargs)
 
     def from_python(self, value):
-        if not value:
-            return self.env.get_string(N_(u'is not set'))
-        return value.strftime(self.format)
-
-
-min_datetime = datetime(1900, 1, 1)
-
-
-class Datetime(Converter):
-
-    format = '%d.%m.%Y, %H:%M'
-
-    def from_python(self, value):
-        if not value:
+        if value is None:
             return ''
-        if value > min_datetime:
-            return value.strftime(self.format)
-        else:
-            return "%s" % value
+        # carefull to years before 1900
+        return strftime(value, self.format)
 
     def to_python(self, value):
         if not value:
             return None
         try:
-            return datetime.strptime(value, self.format)
+            return self.convert_datetime(value)
         except ValueError:
-            # XXX Message is format dependent
-            raise ValidationError, u'неверный формат (ДД.ММ.ГГГГ, ЧЧ:ММ)'
+            raise ValidationError(self.error_wrong_format)
+        except TypeError, e:
+            raise ValidationError, unicode(e)
 
 
-class Date(Converter):
+class Datetime(BaseDatetime):
+
+    format = '%d.%m.%Y, %H:%M'
+
+    def convert_datetime(self, value):
+        return datetime.strptime(value, self.format)
+
+
+class Date(BaseDatetime):
 
     format = '%d.%m.%Y'
 
-    def from_python(self, value):
-        if not value:
-            return ''
-        if value > min_datetime.date():
-            return value.strftime(self.format)
-        else:
-            return "%s" % value
-
-    def to_python(self, value):
-        if not value:
-            return None
-        elif not value:
-            return None
-        try:
-            return datetime.strptime(value, self.format).date()
-        except ValueError:
-            # XXX Message is format dependent
-            raise ValidationError, u'неверный формат (ДД.ММ.ГГГГ)'
+    def convert_datetime(self, value):
+        return datetime.strptime(value, self.format).date()
 
 
-class Time(Converter):
+class Time(BaseDatetime):
 
     format = '%H:%M'
 
     def from_python(self, value):
-        if value in (None, ''):
+        if value is None:
             return ''
+        # we don't care about year in time converter, so use native strftime
         return value.strftime(self.format)
 
-    def to_python(self, value):
-        if not value:
-            return None
-        try:
-            return datetime.strptime(value, self.format).time()
-        except ValueError:
-            # XXX Message is format dependent
-            raise ValidationError, u'неверный формат (ЧЧ:ММ)'
+    def convert_datetime(self, value):
+        return datetime.strptime(value, self.format).time()
 
 
 class SplitDateTime(Converter):
@@ -525,7 +492,7 @@ class Html(Char):
         try:
             clean = sanitizer.sanitize(value)
         except ParseError:
-            raise ValidationError, u'not valid html'
+            raise ValidationError(u'not valid html')
         else:
             return self.Markup(clean)
 
@@ -540,11 +507,6 @@ class Html(Char):
 class List(Converter):
 
     filter = None
-    min_length = None
-    max_length = None
-
-    error_min_length = N_('min length is %(min_length)s')
-    error_max_length = N_('max length is %(max_length)s')
 
     def from_python(self, value):
         result = OrderedDict()
@@ -556,9 +518,17 @@ class List(Converter):
         items = value.values()
         if self.filter is not None:
             items = filter(self.filter, items)
-        if self.max_length:
-            self._assert(len(items)<=self.max_length, 'max_length')
-        if self.min_length:
-            self._assert(len(value)>=self.min_length, 'min_length')
         return items
+
+class SimpleFile(Converter):
+
+    def _is_empty(self, file):
+        return file == u'' or file is None #XXX WEBOB ONLY !!!
+
+    def to_python(self, file):
+        if not self._is_empty(file):
+            return file
+
+    def from_python(self, value):
+        return None
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'STOP', 'Map']
+__all__ = ['RequestHandler', 'STOP', 'Map', 'RequestContext', 'HttpException']
 
 import logging
 import types
@@ -157,6 +157,17 @@ class Map(RequestHandler):
             rctx.rollback()
         return STOP
 
+    def run_handler(self, rctx, i, j):
+        #logger.debug('Position in map: %s %s' % (i, j))
+        try:
+            handler = self.grid[i][j]
+        except IndexError:
+            return rctx
+        else:
+            rctx._set_map_state(self, i, j+1)
+            #logger.debug('Handled by %r' % handler)
+            return handler.handle(rctx)
+
     def compile_urls_map(self):
         tracer = Tracer()
         for row in self.grid:
@@ -169,7 +180,7 @@ class Map(RequestHandler):
         return tracer.urls
 
     def __call__(self, rctx):
-        logger.debug('Called map: %r' % self)
+        #logger.debug('Called map: %r' % self)
         return self.handle(rctx)
 
     def __repr__(self):
@@ -286,6 +297,9 @@ class RequestContext(object):
         # XXX it's big question, which dicts we have to commit after map success
         self._local = StackedDict()
 
+    def redirect_to(self, *args, **kwargs):
+        raise HttpException(303, url=self.vals.url_for(*args, **kwargs))
+
     @classmethod
     def blank(cls, url, **data):
         '''
@@ -340,3 +354,18 @@ class RequestContext(object):
         '''Stop chain execution and try to handle Map's next chain (if any).'''
         return STOP
 
+    def render_to_response(self, template, data, content_type='text/html'):
+        data.update(self.data.as_dict())
+        data['VALS'] = self.vals
+        data['CONF'] = self.conf
+        data['REQUEST'] = self.request
+        rendered = self.vals.renderer.render(template, **data)
+        self.response.content_type = content_type
+        self.response.write(rendered)
+
+    def render_string(self, template, data):
+        data.update(self.data.as_dict())
+        data['VALS'] = self.vals
+        data['CONF'] = self.conf
+        data['REQUEST'] = self.request
+        return self.vals.renderer.render(template, **data)
