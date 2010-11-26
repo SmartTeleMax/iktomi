@@ -4,7 +4,6 @@ __all__ = ['RequestHandler', 'STOP', 'Map', 'RequestContext', 'HttpException']
 
 import logging
 import types
-import httplib
 from inspect import getargspec
 from .http import HttpException, Request, Response
 from ..utils.stacked_dict import StackedDict
@@ -191,7 +190,6 @@ class FunctionWrapper(RequestHandler):
     '''Wrapper for handler represented by function'''
 
     def __init__(self, func):
-        super(FunctionWrapper, self).__init__()
         self.func = func
 
     def handle(self, rctx):
