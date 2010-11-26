@@ -326,7 +326,7 @@ class RequestContext(object):
                 return self
             else:
                 v['_map_j'] += 1
-                logger.debug('Handled by %r' % handler)
+                #logger.debug('Handled by %r' % handler)
                 return handler.handle(self)
         return self
 
