@@ -17,8 +17,9 @@ logger = logging.getLogger(__name__)
 
 class prefix(RequestHandler):
 
-    def __init__(self, _prefix):
-        self.builder = UrlTemplate(_prefix, match_whole_str=False)
+    def __init__(self, _prefix, convs=None):
+        self.builder = UrlTemplate(_prefix, match_whole_str=False, 
+                                            converters=convs)
 
     def trace(self, tracer):
         tracer.builder(self.builder)
