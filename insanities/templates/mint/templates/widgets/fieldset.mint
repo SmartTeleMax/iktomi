@@ -3,5 +3,5 @@
         #if f.label:
             @div.class(label)
                 {{ f.label }}
-        {{ utils.markup(field.render()) }}
+        {{ utils.markup(f.render()) }}
         @div.class(clear)
