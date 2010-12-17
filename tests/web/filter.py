@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+__all__ = []
+
 import unittest
 import sys
 import os

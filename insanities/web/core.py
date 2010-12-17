@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'STOP', 'Map', 'RequestContext', 'HttpException']
+__all__ = ['WebHandler', 'List', 'HttpException', 'handler']
 
 import logging
 import types
@@ -14,39 +14,42 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_handler(handler):
-    '''Wrapps functions, that they can be usual RequestHandler's'''
+    '''Wrapps functions, that they can be usual WebHandler's'''
     if type(handler) in (types.FunctionType, types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
 
 
-def map_row_from_handler(h):
-    if isinstance(h, Map) and len(h.grid) == 1:
-        return h.grid[0]
-    else:
-        return [h]
-
-
-class STOP(object): pass
-
-
-class RequestHandler(object):
+class WebHandler(object):
     '''Base class for all request handlers.'''
 
     def __or__(self, next_):
-        next_ = prepare_handler(next_)
-        return Map(initial_grid=[[self] + map_row_from_handler(next_)])
+        if hasattr(self, '_next_handler'):
+            self._next_handler | next_
+        else:
+            self._next_handler = prepare_handler(next_)
+        return self
 
-    def handle(self, rctx):
-        '''This method should be overridden in subclasses.
-        It always takes rctx object as only argument and returns it'''
-        return rctx.next()
+    def handle(self, env, data, next_handler):
+        '''This method should be overridden in subclasses.'''
+        return next_handler(env, data)
 
     def trace(self, tracer):
         pass
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
+
+    def __call__(self, env, data):
+        next_handler = self.get_next()
+        result = self.handle(env, data, next_handler)
+        return result
+
+    def get_next(self):
+        if hasattr(self, '_next_handler'):
+            return self._next_handler
+        #XXX: may be FunctionWrapper?
+        return lambda e, d: None
 
 
 class Reverse(object):
@@ -75,153 +78,49 @@ class Reverse(object):
         return URL(path, host=host)
 
 
-class Map(RequestHandler):
-    '''
-        Strores combinations RequestHandler instances: chains and maps.
-        For example::
-
-            h1 | h2 | h3
-
-        where h1, h2 and h3 are RequestHandler instances, will produce 
-        Map instance with one chain containing three handlers.
-
-        And following construction::
-
-            Map(
-                h1 | h2 | h3,
-                Map(
-                    h3 | h4,
-                    h7),
-                h5,
-            )
-
-        will produce a map with three chains: the first contains three handlers and others
-        contain one handlers.
-
-        Map tries to execute each of it's chains until success. Unsuccesfull chain execution means
-        one of the handlers in chain returns `rctx.stop()` signal. Succesful execution means either
-        all handlers return `rctx.next()`, or any of them returns `rctx.complete()` signal.
-
-        If all handlers have been finished unsuccesfully, Map returns `rctx.stop()` signal.
-
-        Map also incapsulates rctx dictionaries' (rctx.conf, rctx.vals, rctx.data) state
-        management: changes in a chain does not attract on other ones in current map.
-        If the chain has been finished succesfully, all changes are commited, otherwise
-        they are rolled back.
-    '''
+class List(WebHandler):
 
     def __init__(self, *handlers, **kwargs):
-        self.grid = kwargs.pop('initial_grid', [])
+        self.handlers = []
         for handler in handlers:
-            handler = prepare_handler(handler)
-            row = map_row_from_handler(handler)
-            self.grid.append(row)
-        if not self.grid:
-            # length of grid must be at least 1
-            self.grid.append([])
-        self.__urls = self.compile_urls_map()
+            self.handlers.append(prepare_handler(handler))
 
-    def __or__(self, next_):
-        next_ = prepare_handler(next_)
-        row = map_row_from_handler(next_)
-        if len(self.grid) == 1:
-            return Map(initial_grid=[self.grid[0] + row])
-        return Map(initial_grid=[[self] + row])
+    def handle(self, env, data, next_handler):
+        for handler in self.handlers:
+            result = handler(env, data)
+            if result is None:
+                continue
+            return result
+        return next_handler(env, data)
 
-    @property
-    def urls(self):
-        return self.__urls
-
-    def handle(self, rctx):
-        # construct url_for
-        last_url_for = getattr(rctx.vals, 'url_for', None)
-        if last_url_for is None:
-            urls = self.urls
-        else:
-            urls = last_url_for.urls
-        # urls - url map of the most parent Map instance.
-        # namespace is controlled by Conf wrapper instance,
-        # so we just use rctx.conf.namespace
-        url_for = Reverse(urls, rctx.conf.namespace,
-                          host=rctx.request.host.split(':')[0])
-        rctx.vals['url_for'] = rctx.data['url_for'] = url_for
-
-        for i in xrange(len(self.grid)):
-            rctx.lazy_copy()
-            rctx._set_map_state(self, i, 0)
-            result = rctx.next()
-            if result is not STOP:
-                result.commit()
-                return result.next()
-            rctx.rollback()
-        return STOP
-
-    def run_handler(self, rctx, i, j):
-        #logger.debug('Position in map: %s %s' % (i, j))
-        try:
-            handler = self.grid[i][j]
-        except IndexError:
-            return rctx
-        else:
-            rctx._set_map_state(self, i, j+1)
-            #logger.debug('Handled by %r' % handler)
-            return handler.handle(rctx)
-
-    def compile_urls_map(self):
-        tracer = Tracer()
+    def trace(self, tracer):
         for row in self.grid:
             for item in row:
-                if isinstance(item, Map):
+                if isinstance(item, List):
                     tracer.nested_map(item)
                     break
                 item.trace(tracer)
             tracer.finish_step()
         return tracer.urls
 
-    def __call__(self, rctx):
-        #logger.debug('Called map: %r' % self)
-        return self.handle(rctx)
-
     def __repr__(self):
-        return '%s(*%r)' % (self.__class__.__name__, self.grid)
+        return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class FunctionWrapper(RequestHandler):
+class FunctionWrapper(WebHandler):
     '''Wrapper for handler represented by function'''
 
     def __init__(self, func):
         self.func = func
 
-    def handle(self, rctx):
-        # Now we will find which arguments are required by
-        # wrapped function. And then get arguments values from rctx
-        # data,
-        # if there is no value argument we trying to get default value
-        # from function specification otherwise Exception is raised
-        argsspec = getargspec(self.func)
-        arg_offset = 1 if type(self.func) is types.MethodType else 0
-        if argsspec.defaults and len(argsspec.defaults) > 0:
-            args = argsspec.args[arg_offset:-len(argsspec.defaults)]
-            kwargs = {}
-            for i, kwarg_name in enumerate(argsspec.args[-len(argsspec.defaults):]):
-                if kwarg_name in rctx.data:
-                    kwargs[kwarg_name] = rctx.data[kwarg_name]
-                else:
-                    kwargs[kwarg_name] = argsspec.defaults[i]
-        else:
-            args = argsspec.args[arg_offset:]
-            kwargs = {}
-        # form list of arguments values
-        args = [rctx] + [rctx.data[arg_name] for arg_name in args[1:]]
-        result = self.func(*args, **kwargs)
-        if result is STOP:
-            return STOP
-        if isinstance(result, dict):
-            rctx.data.update(result)
-        return rctx.next()
+    def handle(self, env, data, next_handler):
+        return self.func(env, data, next_handler)
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.func.__name__)
+
+
+handler = FunctionWrapper
 
 
 class Tracer(object):
@@ -271,99 +170,23 @@ class Tracer(object):
         return lambda e: self._current_step.setdefault(name, []).append(e)
 
 
-class RequestContext(object):
-    '''
-    Context of the request. A class containing request and response objects and
-    a number of data containers with request environment and processing data.
-    '''
 
-    def __init__(self, wsgi_environ):
-        self.request = Request(environ=wsgi_environ, charset='utf8')
-        self.response = Response()
-        self.wsgi_env = wsgi_environ.copy()
 
-        #: this attribute is for views and template data,
-        #: for example filter match appends params here.
-        self.data = StackedDict()
-
-        #: this is config, static, declarative (key, value)
-        self.conf = StackedDict(namespace='')
-
-        #: this storage is for nesecary objects like db session, templates env,
-        #: cache, url_for. something like dynamic config values.
-        self.vals = StackedDict()
-        # XXX it's big question, which dicts we have to commit after map success
-        self._local = StackedDict()
-
-    def redirect_to(self, *args, **kwargs):
-        raise HttpException(303, url=self.vals.url_for(*args, **kwargs))
-
-    @classmethod
-    def blank(cls, url, **data):
-        '''
-        Method returning blank rctx. Very useful for testing
-
-        `data` - POST parameters.
-        '''
-        POST = data or None
-        env = Request.blank(url, POST=POST).environ
-        return cls(env)
-
-    def _set_map_state(self, _map, i, j):
-        v = self._local
-        v['_map'], v['_map_i'], v['_map_j'] = _map, i, j
-
-    def next(self):
-        '''Call next handler in chain'''
-        v = self._local
-        if '_map' in v:
-            #logger.debug('Position in map: %s %s' % (i, j))
-            try:
-                handler = v._map.grid[v._map_i][v._map_j]
-            except IndexError:
-                return self
-            else:
-                v['_map_j'] += 1
-                #logger.debug('Handled by %r' % handler)
-                return handler.handle(self)
-        return self
-
-    def complete(self):
-        '''Completes the chain execution without STOP signal'''
-        return self
-
-    def _dict_action(self, action):
-        for d in self.data, self.vals, self.conf:
-            getattr(d, action)()
-
-    def lazy_copy(self):
-        self._dict_action('lazy_copy')
-        self._local.lazy_copy()
-
-    def commit(self):
-        self._dict_action('commit')
-        self._local.rollback()
-
-    def rollback(self):
-        self._dict_action('rollback')
-        self._local.rollback()
-
-    def stop(self):
-        '''Stop chain execution and try to handle Map's next chain (if any).'''
-        return STOP
-
-    def render_to_response(self, template, data, content_type='text/html'):
-        data.update(self.data.as_dict())
-        data['VALS'] = self.vals
-        data['CONF'] = self.conf
-        data['REQUEST'] = self.request
-        rendered = self.vals.renderer.render(template, **data)
-        self.response.content_type = content_type
-        self.response.write(rendered)
-
-    def render_string(self, template, data):
-        data.update(self.data.as_dict())
-        data['VALS'] = self.vals
-        data['CONF'] = self.conf
-        data['REQUEST'] = self.request
-        return self.vals.renderer.render(template, **data)
+#    def redirect_to(self, *args, **kwargs):
+#        raise HttpException(303, url=self.vals.url_for(*args, **kwargs))
+#
+#    def render_to_response(self, template, data, content_type='text/html'):
+#        data.update(self.data.as_dict())
+#        data['VALS'] = self.vals
+#        data['CONF'] = self.conf
+#        data['REQUEST'] = self.request
+#        rendered = self.vals.renderer.render(template, **data)
+#        self.response.content_type = content_type
+#        self.response.write(rendered)
+#
+#    def render_string(self, template, data):
+#        data.update(self.data.as_dict())
+#        data['VALS'] = self.vals
+#        data['CONF'] = self.conf
+#        data['REQUEST'] = self.request
+#        return self.vals.renderer.render(template, **data)
