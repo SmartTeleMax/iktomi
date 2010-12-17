@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
 
-__all__ = []
+__all__ = ['UrlTemplateTests', 'Prefix', 'Match', 'Subdomain']
 
 import unittest
-import sys
-import os
-FRAMEWORK_DIR = os.path.abspath('../..')
-sys.path.append(FRAMEWORK_DIR)
-from insanities.web.core import Map, RequestHandler, STOP, Reverse, RequestContext
-from insanities.web.filters import *
-from insanities.web.filters import UrlTemplate
-from insanities.web.urlconvs import ConvertError
-from insanities.web.wrappers import *
-from insanities.web.http import Request
+from insanities import web
+from insanities.web.url import UrlTemplate
+from insanities.web.http import Request, Response
+from insanities.utils.stacked_dict import StackedDict
 
 class UrlTemplateTests(unittest.TestCase):
 
@@ -62,30 +56,32 @@ class Prefix(unittest.TestCase):
     def test_prefix_root(self):
         '''Prefix root'''
 
-        def handler(r):
-            self.assertEqual(r.request.prefixed_path, '/')
+        def handler(env, data, nx):
+            self.assertEqual(env.request.prefixed_path, '/')
+            return Reponse()
 
-        app = Map(
-            match('/', 'index') | handler,
-            prefix('/docs') | Map(
-                match('/', 'docs') | handler,
-                match('/item', 'doc') | handler,
-                prefix('/tags') | Map(
-                    match('/', 'tags') | handler,
-                    match('/tag', 'tag') | handler
+        app = web.List(
+            web.match('/', 'index') | handler,
+            web.prefix('/docs') | web.List(
+                web.match('/', 'docs') | handler,
+                web.match('/item', 'doc') | handler,
+                web.prefix('/tags') | web.List(
+                    web.match('/', 'tags') | handler,
+                    web.match('/tag', 'tag') | handler
                 )
             )
         )
 
         def assertStatus(url, status):
-            rctx = RequestContext.blank(url)
-            self.assertEqual(app(rctx).response.status_int, status)
+            env = StackedDict()
+            env.request = Request.blank(url)
+            self.assertEqual(app(env, {}).status_int, status)
 
-        self.assert_(app(RequestContext.blank('/docs')) is STOP)
+        self.assert_(app(Request.blank('/docs'), {}) is STOP)
         assertStatus('/docs/', 200)
-        self.assert_(app(RequestContext.blank('/docs/tags')) is STOP)
+        self.assert_(app(Request.blank('/docs/tags'), {}) is STOP)
         assertStatus('/docs/tags/',200)
-        self.assert_(app(RequestContext.blank('/docs/tags/asdasd')) is STOP)
+        self.assert_(app(Request.blank('/docs/tags/asdasd'), {}) is STOP)
 
     def test_prefix_leaf(self):
         '''Simple prefix'''
@@ -93,14 +89,14 @@ class Prefix(unittest.TestCase):
         def handler(r):
             self.assertEqual(r.request.prefixed_path, '/item')
 
-        app = Map(
-            match('/', 'index') | handler,
-            prefix('/docs') | Map(
-                match('/', 'docs') | handler,
-                match('/item', 'doc') | handler,
-                prefix('/tags') | Map(
-                    match('/', 'tags') | handler,
-                    match('/tag', 'tag') | handler
+        app = web.List(
+            web.match('/', 'index') | handler,
+            web.prefix('/docs') | web.List(
+                web.match('/', 'docs') | handler,
+                web.match('/item', 'doc') | handler,
+                web.prefix('/tags') | web.List(
+                    web.match('/', 'tags') | handler,
+                    web.match('/tag', 'tag') | handler
                 )
             )
         )
@@ -110,9 +106,9 @@ class Prefix(unittest.TestCase):
 
     def test_unicode(self):
         '''Routing rules with unicode'''
-        app = Map(
-            prefix(u'/հայերեն') | Map(
-                match(u'/%', 'percent')
+        app = web.List(
+            web.prefix(u'/հայերեն') | web.List(
+                web.match(u'/%', 'percent')
             )
         )
         encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
@@ -136,16 +132,16 @@ class Subdomain(unittest.TestCase):
         def handler(r):
             self.assertEqual(r.request.path, '/')
 
-        app = subdomain('host') | Map(
-            subdomain('') | match('/', 'index') | handler,
-            subdomain('k') | Map(
-                subdomain('l') | Map(
-                    match('/', 'l') | handler,
+        app = web.subdomain('host') | web.List(
+            web.subdomain('') | web.match('/', 'index') | handler,
+            web.subdomain('k') | web.List(
+                web.subdomain('l') | web.List(
+                    web.match('/', 'l') | handler,
                 ),
-                subdomain('') | match('/', 'k') | handler,
+                web.subdomain('') | web.match('/', 'k') | handler,
             )
         )
-        app = Map(app)
+        app = web.List(app)
 
         def assertStatus(url, st):
             rctx = RequestContext(Request.blank(url).environ)
@@ -161,7 +157,7 @@ class Subdomain(unittest.TestCase):
 
     def test_unicode(self):
         '''IRI tests'''
-        app = Map(subdomain(u'рф') | subdomain(u'сайт') | match('/', 'site'))
+        app = web.List(web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site'))
         encoded = 'http://xn--80aswg.xn--p1ai/'
         self.assertEqual(Reverse(app.urls, '')('site').get_readable(), u'http://сайт.рф/')
         self.assertEqual(str(Reverse(app.urls, '')('site')), encoded)
@@ -176,7 +172,7 @@ class Match(unittest.TestCase):
     def test_simple_match(self):
         '''Check simple case of match'''
 
-        m = match('/first', 'first') | (lambda x: x)
+        m = web.match('/first', 'first') | (lambda x: x)
 
         rctx = RequestContext(Request.blank('/first').environ)
         rctx = m(rctx)
@@ -191,9 +187,9 @@ class Match(unittest.TestCase):
         def handler(r):
             self.assertEqual(r.data.id, 42)
 
-        app = Map(
-            match('/first', 'first') | handler,
-            match('/second/<int:id>', 'second') | handler
+        app = web.List(
+            web.match('/first', 'first') | handler,
+            web.match('/second/<int:id>', 'second') | handler
         )
 
         rctx = RequestContext(Request.blank('/second/42').environ)
@@ -206,9 +202,9 @@ class Match(unittest.TestCase):
             self.assertEqual(id, 42)
             self.assertEqual(param, 23)
 
-        app = Map(
-            match('/first', 'first') | handler,
-            match('/second/<int:id>/<int:param>', 'second') | handler
+        app = web.List(
+            web.match('/first', 'first') | handler,
+            web.match('/second/<int:id>/<int:param>', 'second') | handler
         )
 
         rctx = RequestContext(Request.blank('/second/42/23').environ)
@@ -220,9 +216,9 @@ class Match(unittest.TestCase):
         def handler(r, id):
             self.assertEqual(id, 42)
 
-        app = Map(
-            match('/first', 'first') | handler,
-            match('/second/<int:id>', 'second') | handler
+        app = web.List(
+            web.match('/first', 'first') | handler,
+            web.match('/second/<int:id>', 'second') | handler
         )
 
         rctx = RequestContext(Request.blank('/second/42').environ)
@@ -234,9 +230,9 @@ class Match(unittest.TestCase):
         def handler(r, id):
             pass
 
-        app = Map(
-            match('/first', 'first') | handler,
-            match('/second/<int:id>', 'second') | handler
+        app = web.List(
+            web.match('/first', 'first') | handler,
+            web.match('/second/<int:id>', 'second') | handler
         )
 
         rctx = app(RequestContext.blank('/second/42/'))

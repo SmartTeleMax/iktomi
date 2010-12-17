@@ -5,8 +5,11 @@ import unittest
 from unittest import defaultTestLoader as dtl
 from inspect import isclass
 
-#from utils import *
-from web import *
+from utils.stacked_dict import *
+
+#from web.chain import *
+#from web.convs import *
+#from web.filter import *
 
 #from forms.convs import *
 #from forms.fields import *

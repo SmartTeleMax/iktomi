@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import sys
-import os
-FRAMEWORK_DIR = os.path.abspath('../..')
-sys.path.append(FRAMEWORK_DIR)
-from insanities.web.urlconvs import *
+from insanities.web.url import *
 
 
 class IntConverter(unittest.TestCase):

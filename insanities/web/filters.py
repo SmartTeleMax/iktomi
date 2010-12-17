@@ -27,7 +27,7 @@ class match(WebHandler):
         tracer.builder(self.builder)
 
     def handle(self, env, data, next_handler):
-        matched, kwargs = self.builder.match(rctx.request.prefixed_path, rctx=rctx)
+        matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
         if matched:
             env.current_url_name = self.url_name
             data.update(kwargs)
@@ -40,7 +40,6 @@ class match(WebHandler):
 
 
 class method(WebHandler):
-
     def __init__(self, *names):
         self._names = [name.upper() for name in names]
 
@@ -73,7 +72,6 @@ class ctype(WebHandler):
 
 
 class static_files(WebHandler):
-
     def __init__(self, location, url='/static/'):
         self.location = location
         self.url = url
@@ -105,7 +103,6 @@ class static_files(WebHandler):
 
 
 class prefix(WebHandler):
-
     def __init__(self, _prefix, convs=None):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
@@ -114,7 +111,7 @@ class prefix(WebHandler):
         tracer.builder(self.builder)
 
     def handle(self, env, data, next_handler):
-        matched, kwargs = self.builder.match(rctx.request.prefixed_path, rctx=rctx)
+        matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
         if matched:
             data.update(kwargs)
             env.request.add_prefix(self.builder(**kwargs))
@@ -126,7 +123,6 @@ class prefix(WebHandler):
 
 
 class subdomain(WebHandler):
-
     def __init__(self, _subdomain):
         self.subdomain = unicode(_subdomain)
 
@@ -135,7 +131,7 @@ class subdomain(WebHandler):
             tracer.subdomain(self.subdomain)
 
     def handle(self, env, data, next_handler):
-        subdomain = rctx.request.subdomain
+        subdomain = env.request.subdomain
         #XXX: here we can get 'idna' encoded sequence, that is the bug
         if self.subdomain:
             slen = len(self.subdomain)
