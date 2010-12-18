@@ -151,7 +151,6 @@ class subdomain(WebHandler):
         if matches:
             #XXX: here we add subdomain prefix. What codec we need 'utf-8' or 'idna'
             env.request.add_subdomain(quote(self.subdomain.encode('utf-8')))
-            #rctx.request.add_subdomain(self.subdomain)
             return next_handler(env, data)
         return None
 

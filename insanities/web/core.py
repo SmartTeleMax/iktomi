@@ -4,6 +4,7 @@ __all__ = ['WebHandler', 'List', 'HttpException', 'handler', 'Reverse']
 
 import logging
 import types
+import httplib
 from inspect import getargspec
 from .http import HttpException, Request, Response
 from ..utils.stacked_dict import StackedDict
@@ -18,6 +19,18 @@ def prepare_handler(handler):
     if type(handler) in (types.FunctionType, types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
+
+
+def process_http_exception(response, e):
+    response.status = e.status
+    if e.status in (httplib.MOVED_PERMANENTLY,
+                    httplib.SEE_OTHER):
+        if isinstance(e.url, unicode):
+            url = e.url.encode('utf-8')
+        else:
+            url = str(e.url)
+        response.headers.add('Location', url)
+
 
 
 class WebHandler(object):
@@ -45,7 +58,15 @@ class WebHandler(object):
 
     def __call__(self, env, data):
         next_handler = self.get_next()
+        env_changed = env._something_new
+        data_changed = data._something_new
+        env._commit()
+        data._commit()
         result = self.handle(env, data, next_handler)
+        if env_changed:
+            env._rollback()
+        if data_changed:
+            data._rollback()
         return result
 
     def get_next(self):
@@ -53,6 +74,32 @@ class WebHandler(object):
             return self._next_handler
         #XXX: may be FunctionWrapper?
         return lambda e, d: None
+
+    def as_wsgi(self):
+        def wrapper(environ, start_response):
+            env = StackedDict()
+            env.request = Request(environ)
+            data = StackedDict()
+            try:
+                response = self(env, data)
+                if response is None:
+                    logger.debug('Application returned None instead of Response object')
+                    status_int = httplib.NOT_FOUND
+                    response = Response(status=status_int, 
+                                        body='%d %s' % (status_int, httplib.responses[status_int]))
+            except HttpException, e:
+                response = Response()
+                process_http_exception(response, e)
+                status_int = response.status_int
+                response.write('%d %s' % (status_int, httplib.responses[status_int]))
+            except Exception, e:
+                logger.exception(e)
+                raise
+
+            headers = response.headers.items()
+            start_response(response.status, headers)
+            return [response.body]
+        return wrapper
 
 
 class Reverse(object):
@@ -176,35 +223,3 @@ class Tracer(object):
 
     def __getattr__(self, name):
         return lambda e: self._current_step.setdefault(name, []).append(e)
-
-
-
-
-#    def redirect_to(self, *args, **kwargs):
-#        raise HttpException(303, url=self.vals.url_for(*args, **kwargs))
-#
-#    def render_to_response(self, template, data, content_type='text/html'):
-#        data.update(self.data.as_dict())
-#        data['VALS'] = self.vals
-#        data['CONF'] = self.conf
-#        data['REQUEST'] = self.request
-#        rendered = self.vals.renderer.render(template, **data)
-#        self.response.content_type = content_type
-#        self.response.write(rendered)
-#
-#    def render_string(self, template, data):
-#        data.update(self.data.as_dict())
-#        data['VALS'] = self.vals
-#        data['CONF'] = self.conf
-#        data['REQUEST'] = self.request
-#        return self.vals.renderer.render(template, **data)
-#
-
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
-# TESTSSSSSS INITIAL
