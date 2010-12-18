@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['HttpException', ]
+__all__ = ['HttpException', 'Request', 'Response']
 
 import logging
 import httplib
@@ -84,5 +84,3 @@ class Request(_Request):
                                 encoding=self.charset,
                                 errors=self.unicode_errors,
                                 decode_keys=self.decode_param_names)
-
-
