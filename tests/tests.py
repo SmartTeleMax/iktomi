@@ -3,7 +3,6 @@
 
 import unittest
 from unittest import defaultTestLoader as dtl
-from inspect import isclass
 
 from utils.stacked_dict import *
 
@@ -19,7 +18,7 @@ suite = unittest.TestSuite()
 
 # Adding tests in one suite
 for item in locals().values():
-    if isclass(item) and issubclass(item, unittest.TestCase):
+    if isinstance(item, type) and issubclass(item, unittest.TestCase):
         suite.addTest(dtl.loadTestsFromTestCase(item))
 
 if __name__ == '__main__':

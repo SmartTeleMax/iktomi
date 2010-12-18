@@ -2,37 +2,42 @@
 
 class StackedDict(object):
     def __init__(self, *args, **kwargs):
-        self._stack = [{}]
-        self._current_data = dict(*args, **kwargs)
+        self.__stack = [{}]
+        self.__dict__.update(dict(*args, **kwargs))
+
+    def _get_dict(self):
+        d = self.__dict__.copy()
+        del d['_StackedDict__stack']
+        return d
+
+    def _set_dict(self, value):
+        value['_StackedDict__stack'] = self.__stack
+        self.__dict__ = value
+
+    _dict_ = property(_get_dict, _set_dict)
 
     @property
     def something_new(self):
-        return self._stack[-1] != self._current_data
+        return self.__stack[-1] != self._dict_
 
     def commit(self):
         if self.something_new:
-            self._stack.append(self._current_data.copy())
+            self.__stack.append(self._dict_)
 
     def rollback(self):
-        if len(self._stack) > 1:
-            self._current_data = self._stack.pop()
+        if len(self.__stack) > 1:
+            self._dict_ = self.__stack.pop()
 
     def as_dict(self):
-        return self._current_data.copy()
-
-    def __setitem__(self, k, v):
-        self._current_data[k] = v
+        return self._dict_
 
     def __getitem__(self, k):
-        return self._current_data[k]
+        return self.__dict__[k]
 
     def __delitem__(self, k):
-        del self._current_data[k]
+        del self.__dict__[k]
 
-    def __getattr__(self, k):
-        if k in self._current_data:
-            return self._current_data[k]
-        raise AttributeError(k)
+    __setitem__ = object.__setattr__
 
-    def __delattr__(self, k):
-        del self._current_data[k]
+    def __contains__(self, k):
+        return k in self._dict_
