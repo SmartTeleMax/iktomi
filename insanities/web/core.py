@@ -58,14 +58,12 @@ class WebHandler(object):
 
     def __call__(self, env, data):
         next_handler = self.get_next()
-        env_changed = env._something_new
-        data_changed = data._something_new
         env._commit()
         data._commit()
         result = self.handle(env, data, next_handler)
-        if env_changed:
+        if env._something_new:
             env._rollback()
-        if data_changed:
+        if data._something_new:
             data._rollback()
         return result
 

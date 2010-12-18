@@ -41,3 +41,6 @@ class StackedDict(object):
 
     def __contains__(self, k):
         return k in self._dict_
+
+    def __repr__(self):
+        return repr(self._dict_)

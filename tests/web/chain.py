@@ -4,6 +4,7 @@ __all__ = ['Chain']
 
 import unittest
 from insanities import web
+from insanities.utils.stacked_dict import StackedDict
 
 
 class Chain(unittest.TestCase):
@@ -37,69 +38,96 @@ class Chain(unittest.TestCase):
             return nh(env, data)
 
         def handler2(env, data, nh):
-            self.assertEqual(env, {})
             return nh(env, data)
 
         chain = web.handler(handler1) | handler2
 
-        self.assert_(chain({}, {}) is None)
+        self.assert_(chain(StackedDict(), StackedDict()) is None)
 
-    def test_list(self):
+    def test_List(self):
         'List handle'
         def h1(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
         def h2(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
         def h3(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
         chain = web.List(h1, h2, h3)
-        count = {'count': 0}
-        self.assert_(chain(count, {}) is None)
-        self.assertEqual(count['count'], 3)
+        count = StackedDict(count=0)
+        self.assert_(chain(count, StackedDict()) is None)
+        self.assertEqual(count['count'], 0)
 
     def test_list_of_chains(self):
         'List of chains'
         def h1(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
         def h2(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
         def h3(env, data, nh):
+            self.assertEqual(env.count, 1)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
         chain = web.List(h1, web.handler(h2) | h3)
-        count = {'count': 0}
-        self.assert_(chain(count, {}) is None)
-        self.assertEqual(count['count'], 3)
+        count = StackedDict(count=0)
+        self.assert_(chain(count, StackedDict()) is None)
+        self.assertEqual(count['count'], 0)
 
     def test_chain_with_list(self):
         'Chain with List'
         def h(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
-        chain = web.handler(h) | web.List(h, web.handler(h) | h)
-        count = {'count': 0}
-        self.assert_(chain(count, {}) is None)
-        self.assertEqual(count['count'], 4)
+        def h1(env, data, nh):
+            self.assertEqual(env.count, 1)
+            env['count'] = env['count'] + 1
+            return nh(env, data)
+
+        def h2(env, data, nh):
+            self.assertEqual(env.count, 2)
+            env['count'] = env['count'] + 1
+            return nh(env, data)
+
+        chain = web.handler(h) | web.List(h1, web.handler(h1) | h2)
+        count = StackedDict(count=0)
+        self.assert_(chain(count, StackedDict()) is None)
+        self.assertEqual(count['count'], 0)
 
     def test_chain_with_list_and_postfix(self):
         'Chain with List and postfix'
         def h(env, data, nh):
+            self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
             return nh(env, data)
 
-        chain = web.handler(h) | web.List(h, web.handler(h) | h) | h
-        count = {'count': 0}
-        self.assert_(chain(count, {}) is None)
-        self.assertEqual(count['count'], 5)
+        def h1(env, data, nh):
+            self.assertEqual(env.count, 1)
+            env['count'] = env['count'] + 1
+            return nh(env, data)
+
+        def h2(env, data, nh):
+            self.assertEqual(env.count, 2)
+            env['count'] = env['count'] + 1
+            return nh(env, data)
+
+        chain = web.handler(h) | web.List(h1, web.handler(h1) | h2) | h1
+        count = StackedDict(count=0)
+        self.assert_(chain(count, StackedDict()) is None)
+        self.assertEqual(count['count'], 0)
