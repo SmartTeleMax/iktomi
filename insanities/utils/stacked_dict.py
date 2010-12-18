@@ -17,14 +17,14 @@ class StackedDict(object):
     _dict_ = property(_get_dict, _set_dict)
 
     @property
-    def something_new(self):
+    def _something_new(self):
         return self.__stack[-1] != self._dict_
 
-    def commit(self):
-        if self.something_new:
+    def _commit(self):
+        if self._something_new:
             self.__stack.append(self._dict_)
 
-    def rollback(self):
+    def _rollback(self):
         if len(self.__stack) > 1:
             self._dict_ = self.__stack.pop()
 

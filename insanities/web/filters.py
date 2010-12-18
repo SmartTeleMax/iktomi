@@ -15,6 +15,11 @@ from .url import UrlTemplate
 logger = logging.getLogger(__name__)
 
 
+def update_data(data, new_data):
+    for k,v in new_data.items():
+        data[k] = v
+
+
 class match(WebHandler):
 
     def __init__(self, url, name, convs=None):
@@ -30,7 +35,7 @@ class match(WebHandler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
         if matched:
             env.current_url_name = self.url_name
-            data.update(kwargs)
+            update_data(data, kwargs)
             return next_handler(env, data)
         return None
 
@@ -113,7 +118,7 @@ class prefix(WebHandler):
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
         if matched:
-            data.update(kwargs)
+            update_data(data, kwargs)
             env.request.add_prefix(self.builder(**kwargs))
             return next_handler(env, data)
         return None

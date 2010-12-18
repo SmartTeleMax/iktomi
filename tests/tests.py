@@ -5,10 +5,12 @@ import unittest
 from unittest import defaultTestLoader as dtl
 
 from utils.stacked_dict import *
+from utils.html import *
+from utils.url import *
 
-#from web.chain import *
+from web.chain import *
 #from web.convs import *
-#from web.filter import *
+from web.filter import *
 
 #from forms.convs import *
 #from forms.fields import *
