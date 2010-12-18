@@ -30,6 +30,7 @@ class match(WebHandler):
     def trace(self, tracer):
         tracer.url_name(self.url_name)
         tracer.builder(self.builder)
+        tracer.finish_step()
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
@@ -114,6 +115,7 @@ class prefix(WebHandler):
 
     def trace(self, tracer):
         tracer.builder(self.builder)
+        super(prefix, self).trace(tracer)
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
@@ -134,6 +136,7 @@ class subdomain(WebHandler):
     def trace(self, tracer):
         if self.subdomain:
             tracer.subdomain(self.subdomain)
+        super(subdomain, self).trace(tracer)
 
     def handle(self, env, data, next_handler):
         subdomain = env.request.subdomain
@@ -170,3 +173,4 @@ class namespace(WebHandler):
 
     def trace(self, tracer):
         tracer.namespace(self.namespace)
+        super(namespace, self).trace(tracer)

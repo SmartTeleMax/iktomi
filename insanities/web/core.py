@@ -35,7 +35,10 @@ class WebHandler(object):
         return next_handler(env, data)
 
     def trace(self, tracer):
-        pass
+        next_handler = self.get_next()
+        # if next_handler is lambda - the end of chain
+        if not type(next_handler) is types.FunctionType:
+            next_handler.trace(tracer)
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
@@ -54,10 +57,15 @@ class WebHandler(object):
 
 class Reverse(object):
 
-    def __init__(self, urls, namespace, host=''):
+    def __init__(self, urls, env=None):
         self.urls = urls
-        self.namespace = namespace or ''
-        self.host = host
+        self.env = env
+
+    @property
+    def namespace(self):
+        if self.env:
+            return 'namespace' in self.env and self.env.namespace or ''
+        return ''
 
     def __call__(self, name, **kwargs):
         if name.startswith('.'):
@@ -72,10 +80,15 @@ class Reverse(object):
         subdomains, builders = self.urls[name]
 
         host = u'.'.join(subdomains)
-        absolute = (host != self.host)
         # path - urlencoded str
         path = ''.join([b(**kwargs) for b in builders])
         return URL(path, host=host)
+
+    @classmethod
+    def from_handler(cls, handler, env=None):
+        tracer = Tracer()
+        handler.trace(tracer)
+        return cls(tracer.urls, env=env)
 
 
 class List(WebHandler):
@@ -94,14 +107,9 @@ class List(WebHandler):
         return next_handler(env, data)
 
     def trace(self, tracer):
-        for row in self.grid:
-            for item in row:
-                if isinstance(item, List):
-                    tracer.nested_map(item)
-                    break
-                item.trace(tracer)
-            tracer.finish_step()
-        return tracer.urls
+        for handler in self.handlers:
+            handler.trace(tracer)
+        super(List, self).trace(tracer)
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
@@ -146,7 +154,7 @@ class Tracer(object):
         # get url name and url builders if there are any
         url_name = self._current_step.get('url_name', None)
         builders = self._current_step.get('builder', [])
-        nested_map = self._current_step.get('nested_map', None)
+        nested_list = self._current_step.get('nested_list', None)
 
         # url name show that it is an usual chain (no nested map)
         if url_name:
@@ -156,9 +164,9 @@ class Tracer(object):
             self.check_name(url_name)
             self.__urls[url_name] = (subdomains, builders)
         # nested map (which also may have nested maps)
-        elif nested_map:
-            nested_map = nested_map[0]
-            for k,v in nested_map.urls.items():
+        elif nested_list:
+            nested_list = nested_list[0]
+            for k,v in nested_list.urls.items():
                 if namespaces:
                     k = '.'.join(namespaces) + '.' + k
                 self.check_name(k)

@@ -97,15 +97,15 @@ class Prefix(unittest.TestCase):
         '''Routing rules with unicode'''
         app = web.List(
             web.prefix(u'/հայերեն') | web.List(
-                web.match(u'/%', 'percent')
+                web.match(u'/%', 'percent') | (lambda e,d,n: Response())
             )
         )
         encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
 
-        self.assertEqual(str(web.Reverse(app.urls, '')('percent')), encoded)
-        self.assertEqual(web.Reverse(app.urls, '')('percent').get_readable(), u'/հայերեն/%')
+        self.assertEqual(str(web.Reverse.from_handler(app)('percent')), encoded)
+        self.assertEqual(web.Reverse.from_handler(app)('percent').get_readable(), u'/հայերեն/%')
 
-        self.assert_(web.ask(app, encoded) is not None)
+        self.assertNotEqual(web.ask(app, encoded), None)
 
         # rctx have prefixes, so we need new one
         self.assertEqual(web.ask(app, encoded).status_int, 200)
@@ -138,12 +138,11 @@ class Subdomain(unittest.TestCase):
 
     def test_unicode(self):
         '''IRI tests'''
-        app = web.List(web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site'))
+        app = web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site') | (lambda e,d,n: Response() )
         encoded = 'http://xn--80aswg.xn--p1ai/'
-        self.assertEqual(web.Reverse(app.urls, '')('site').get_readable(), u'http://сайт.рф/')
-        self.assertEqual(str(web.Reverse(app.urls, '')('site')), encoded)
-
-        self.assert_(web.ask(app, encoded) is not None)
+        self.assertEqual(web.Reverse.from_handler(app)('site').get_readable(), u'http://сайт.рф/')
+        self.assertEqual(str(web.Reverse.from_handler(app)('site')), encoded)
+        self.assertNotEqual(web.ask(app, encoded), None)
 
 
 class Match(unittest.TestCase):
