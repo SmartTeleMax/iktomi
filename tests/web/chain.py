@@ -125,9 +125,31 @@ class Chain(unittest.TestCase):
         def h2(env, data, nh):
             self.assertEqual(env.count, 2)
             env['count'] = env['count'] + 1
-            return nh(env, data)
 
-        chain = web.handler(h) | web.List(h1, web.handler(h1) | h2) | h1
+        chain = web.handler(h) | web.List(h1, web.handler(h1) | h2) | h2
         count = StackedDict(count=0)
         self.assert_(chain(count, StackedDict()) is None)
         self.assertEqual(count['count'], 0)
+
+    def test_chain_of_lists(self):
+        'Chain of lists'
+        def h(env, data, nx):
+            return nx(env, data)
+        first_list = web.List(h, h)
+        chain = web.List(h) | first_list
+        self.assert_(hasattr(chain.handlers[0], '_next_handler'))
+        self.assertEqual(chain.handlers[0]._next_handler, first_list)
+
+    def test_chain_of_lists(self):
+        'Chain of lists, data check'
+        def h(env, data, nx):
+            data.count = 1
+            return nx(env, data)
+
+        def h1(env, data, nx):
+            self.assert_('count' in data)
+            self.assertEqual(data.count, 1)
+            return nx(env, data)
+
+        chain = web.List(h) | web.List(h1, h1)
+        chain(StackedDict(), StackedDict())

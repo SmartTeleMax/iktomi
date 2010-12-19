@@ -36,11 +36,11 @@ def process_http_exception(response, e):
 class WebHandler(object):
     '''Base class for all request handlers.'''
 
-    def __or__(self, next_):
+    def __or__(self, next_handler):
         if hasattr(self, '_next_handler'):
-            self._next_handler | next_
+            self._next_handler | next_handler
         else:
-            self._next_handler = prepare_handler(next_)
+            self._next_handler = prepare_handler(next_handler)
         return self
 
     def handle(self, env, data, next_handler):
@@ -61,10 +61,11 @@ class WebHandler(object):
         env._commit()
         data._commit()
         result = self.handle(env, data, next_handler)
-        if env._something_new:
-            env._rollback()
-        if data._something_new:
-            data._rollback()
+        if result is None:
+            if env._something_new:
+                env._rollback()
+            if data._something_new:
+                data._rollback()
         return result
 
     def get_next(self):
@@ -143,13 +144,18 @@ class List(WebHandler):
         for handler in handlers:
             self.handlers.append(prepare_handler(handler))
 
+    def __or__(self, next_handler):
+        'List needs to set next handler for each handler it keeps'
+        for handler in self.handlers:
+            handler | prepare_handler(next_handler)
+        return self
+
     def handle(self, env, data, next_handler):
         for handler in self.handlers:
             result = handler(env, data)
             if result is None:
                 continue
             return result
-        return next_handler(env, data)
 
     def trace(self, tracer):
         for handler in self.handlers:
