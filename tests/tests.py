@@ -9,6 +9,7 @@ from utils.html import *
 from utils.url import *
 
 from web.chain import *
+from web.reverse import *
 from web.convs import *
 from web.filter import *
 

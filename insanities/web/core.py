@@ -109,8 +109,8 @@ class Reverse(object):
 
     @property
     def namespace(self):
-        if self.env:
-            return 'namespace' in self.env and self.env.namespace or ''
+        if self.env and 'namespace' in self.env:
+            return self.env.namespace
         return ''
 
     def __call__(self, name, **kwargs):
@@ -205,23 +205,13 @@ class Tracer(object):
         # get url name and url builders if there are any
         url_name = self._current_step.get('url_name', None)
         builders = self._current_step.get('builder', [])
-        nested_list = self._current_step.get('nested_list', None)
 
-        # url name show that it is an usual chain (no nested map)
         if url_name:
             url_name = url_name[0]
             if namespaces:
                 url_name = '.'.join(namespaces) + '.' + url_name
             self.check_name(url_name)
             self.__urls[url_name] = (subdomains, builders)
-        # nested map (which also may have nested maps)
-        elif nested_list:
-            nested_list = nested_list[0]
-            for k,v in nested_list.urls.items():
-                if namespaces:
-                    k = '.'.join(namespaces) + '.' + k
-                self.check_name(k)
-                self.__urls[k] = (v[0] + subdomains, builders + v[1])
 
         self._current_step = {}
 
