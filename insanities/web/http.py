@@ -63,7 +63,7 @@ class Request(_Request):
 
     @property
     def subdomain(self):
-        path = super(Request, self).host.split(':')[0]
+        path = self.server_name.decode('idna')
         if self._subdomain:
             path = path[:-len(self._subdomain)-1]
         return path
