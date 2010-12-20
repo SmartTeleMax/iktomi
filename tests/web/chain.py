@@ -4,7 +4,7 @@ __all__ = ['Chain']
 
 import unittest
 from insanities import web
-from insanities.utils.stacked_dict import StackedDict
+from insanities.utils.storage import VersionedStorage
 
 
 class Chain(unittest.TestCase):
@@ -42,10 +42,10 @@ class Chain(unittest.TestCase):
 
         chain = web.handler(handler1) | handler2
 
-        self.assert_(chain(StackedDict(), StackedDict()) is None)
+        self.assert_(chain(VersionedStorage(), VersionedStorage()) is None)
 
     def test_List(self):
-        'List handle'
+        'cases handle'
         def h1(env, data, nh):
             self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
@@ -61,13 +61,13 @@ class Chain(unittest.TestCase):
             env['count'] = env['count'] + 1
             return nh(env, data)
 
-        chain = web.List(h1, h2, h3)
-        count = StackedDict(count=0)
-        self.assert_(chain(count, StackedDict()) is None)
+        chain = web.cases(h1, h2, h3)
+        count = VersionedStorage(count=0)
+        self.assert_(chain(count, VersionedStorage()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_list_of_chains(self):
-        'List of chains'
+        'cases of chains'
         def h1(env, data, nh):
             self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
@@ -83,13 +83,13 @@ class Chain(unittest.TestCase):
             env['count'] = env['count'] + 1
             return nh(env, data)
 
-        chain = web.List(h1, web.handler(h2) | h3)
-        count = StackedDict(count=0)
-        self.assert_(chain(count, StackedDict()) is None)
+        chain = web.cases(h1, web.handler(h2) | h3)
+        count = VersionedStorage(count=0)
+        self.assert_(chain(count, VersionedStorage()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_chain_with_list(self):
-        'Chain with List'
+        'Chain with cases'
         def h(env, data, nh):
             self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
@@ -105,13 +105,13 @@ class Chain(unittest.TestCase):
             env['count'] = env['count'] + 1
             return nh(env, data)
 
-        chain = web.handler(h) | web.List(h1, web.handler(h1) | h2)
-        count = StackedDict(count=0)
-        self.assert_(chain(count, StackedDict()) is None)
+        chain = web.handler(h) | web.cases(h1, web.handler(h1) | h2)
+        count = VersionedStorage(count=0)
+        self.assert_(chain(count, VersionedStorage()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_chain_with_list_and_postfix(self):
-        'Chain with List and postfix'
+        'Chain with cases and postfix'
         def h(env, data, nh):
             self.assertEqual(env.count, 0)
             env['count'] = env['count'] + 1
@@ -126,17 +126,17 @@ class Chain(unittest.TestCase):
             self.assertEqual(env.count, 2)
             env['count'] = env['count'] + 1
 
-        chain = web.handler(h) | web.List(h1, web.handler(h1) | h2) | h2
-        count = StackedDict(count=0)
-        self.assert_(chain(count, StackedDict()) is None)
+        chain = web.handler(h) | web.cases(h1, web.handler(h1) | h2) | h2
+        count = VersionedStorage(count=0)
+        self.assert_(chain(count, VersionedStorage()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_chain_of_lists(self):
         'Chain of lists'
         def h(env, data, nx):
             return nx(env, data)
-        first_list = web.List(h, h)
-        chain = web.List(h) | first_list
+        first_list = web.cases(h, h)
+        chain = web.cases(h) | first_list
         self.assert_(hasattr(chain.handlers[0], '_next_handler'))
         self.assertEqual(chain.handlers[0]._next_handler, first_list)
 
@@ -151,5 +151,5 @@ class Chain(unittest.TestCase):
             self.assertEqual(data.count, 1)
             return nx(env, data)
 
-        chain = web.List(h) | web.List(h1, h1)
-        chain(StackedDict(), StackedDict())
+        chain = web.cases(h) | web.cases(h1, h1)
+        chain(VersionedStorage(), VersionedStorage())

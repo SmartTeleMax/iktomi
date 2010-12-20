@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'List', 'HttpException', 'handler', 'Reverse']
+__all__ = ['WebHandler', 'cases', 'HttpException', 'handler', 'Reverse']
 
 import logging
 import types
 import httplib
 from inspect import getargspec
 from .http import HttpException, Request, Response
-from ..utils.stacked_dict import StackedDict
+from ..utils.storage import VersionedStorage
 from .url import URL
 
 
@@ -62,9 +62,9 @@ class WebHandler(object):
         data._commit()
         result = self.handle(env, data, next_handler)
         if result is None:
-            if env._something_new:
+            if env._modified:
                 env._rollback()
-            if data._something_new:
+            if data._modified:
                 data._rollback()
         return result
 
@@ -76,9 +76,9 @@ class WebHandler(object):
 
     def as_wsgi(self):
         def wrapper(environ, start_response):
-            env = StackedDict()
+            env = VersionedStorage()
             env.request = Request(environ)
-            data = StackedDict()
+            data = VersionedStorage()
             try:
                 response = self(env, data)
                 if response is None:
@@ -137,7 +137,7 @@ class Reverse(object):
         return cls(tracer.urls, env=env)
 
 
-class List(WebHandler):
+class cases(WebHandler):
 
     def __init__(self, *handlers, **kwargs):
         self.handlers = []
@@ -145,7 +145,7 @@ class List(WebHandler):
             self.handlers.append(prepare_handler(handler))
 
     def __or__(self, next_handler):
-        'List needs to set next handler for each handler it keeps'
+        'cases needs to set next handler for each handler it keeps'
         for handler in self.handlers:
             handler | prepare_handler(next_handler)
         return self
@@ -160,7 +160,7 @@ class List(WebHandler):
     def trace(self, tracer):
         for handler in self.handlers:
             handler.trace(tracer)
-        super(List, self).trace(tracer)
+        super(cases, self).trace(tracer)
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)

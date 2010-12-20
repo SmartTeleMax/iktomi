@@ -1,27 +1,27 @@
 # -*- coding: utf-8 -*-
 
-class StackedDict(object):
+class VersionedStorage(object):
     def __init__(self, *args, **kwargs):
         self.__stack = [{}]
         self.__dict__.update(dict(*args, **kwargs))
 
     def _get_dict(self):
         d = self.__dict__.copy()
-        del d['_StackedDict__stack']
+        del d['_VersionedStorage__stack']
         return d
 
     def _set_dict(self, value):
-        value['_StackedDict__stack'] = self.__stack
+        value['_VersionedStorage__stack'] = self.__stack
         self.__dict__ = value
 
     _dict_ = property(_get_dict, _set_dict)
 
     @property
-    def _something_new(self):
+    def _modified(self):
         return self.__stack[-1] != self._dict_
 
     def _commit(self):
-        if self._something_new:
+        if self._modified:
             self.__stack.append(self._dict_)
 
     def _rollback(self):

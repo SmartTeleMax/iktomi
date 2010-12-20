@@ -3,12 +3,12 @@
 __all__ = ['ask']
 
 from .http import Request
-from ..utils.stacked_dict import StackedDict
+from ..utils.storage import VersionedStorage
 
 
 def ask(application, url, method='get', data=None, headers=None):
-    env = StackedDict()
+    env = VersionedStorage()
     #TODO: may be later process cookies separatly
     env.request = Request.blank(url, POST=data, headers=headers)
-    data = StackedDict()
+    data = VersionedStorage()
     return application(env, data)

@@ -4,7 +4,7 @@
 import unittest
 from unittest import defaultTestLoader as dtl
 
-from utils.stacked_dict import *
+from utils.storage import *
 from utils.html import *
 from utils.url import *
 

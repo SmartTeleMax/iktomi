@@ -6,7 +6,6 @@ import unittest
 from insanities import web
 from insanities.web.url import UrlTemplate
 from insanities.web.http import Request, Response
-from insanities.utils.stacked_dict import StackedDict
 
 class UrlTemplateTests(unittest.TestCase):
 
@@ -60,12 +59,12 @@ class Prefix(unittest.TestCase):
             self.assertEqual(env.request.prefixed_path, '/')
             return Response()
 
-        app = web.List(
+        app = web.cases(
             web.match('/', 'index') | handler,
-            web.prefix('/docs') | web.List(
+            web.prefix('/docs') | web.cases(
                 web.match('/', 'docs') | handler,
                 web.match('/item', 'doc') | handler,
-                web.prefix('/tags') | web.List(
+                web.prefix('/tags') | web.cases(
                     web.match('/', 'tags') | handler,
                     web.match('/tag', 'tag') | handler)))
 
@@ -82,12 +81,12 @@ class Prefix(unittest.TestCase):
             self.assertEqual(env.request.prefixed_path, '/item')
             return Response()
 
-        app = web.List(
+        app = web.cases(
             web.match('/', 'index'),
-            web.prefix('/docs') | web.List(
+            web.prefix('/docs') | web.cases(
                 web.match('/', 'docs') | handler,
                 web.match('/item', 'doc') | handler,
-                web.prefix('/tags') | web.List(
+                web.prefix('/tags') | web.cases(
                     web.match('/', 'tags') | handler,
                     web.match('/tag', 'tag') | handler)))
 
@@ -95,8 +94,8 @@ class Prefix(unittest.TestCase):
 
     def test_unicode(self):
         '''Routing rules with unicode'''
-        app = web.List(
-            web.prefix(u'/հայերեն') | web.List(
+        app = web.cases(
+            web.prefix(u'/հայերեն') | web.cases(
                 web.match(u'/%', 'percent') | (lambda e,d,n: Response())
             )
         )
@@ -120,10 +119,10 @@ class Subdomain(unittest.TestCase):
             self.assertEqual(env.request.path, '/')
             return Response()
 
-        app = web.subdomain('host') | web.List(
+        app = web.subdomain('host') | web.cases(
             web.subdomain('') | web.match('/', 'index') | handler,
-            web.subdomain('k') | web.List(
-                web.subdomain('l') | web.List(
+            web.subdomain('k') | web.cases(
+                web.subdomain('l') | web.cases(
                     web.match('/', 'l') | handler,
                 ),
                 web.subdomain('') | web.match('/', 'k') | handler))
@@ -162,7 +161,7 @@ class Match(unittest.TestCase):
             self.assertEqual(data.id, 42)
             return Response()
 
-        app = web.List(
+        app = web.cases(
             web.match('/first', 'first') | handler,
             web.match('/second/<int:id>', 'second') | handler)
 
@@ -176,7 +175,7 @@ class Match(unittest.TestCase):
             self.assertEqual(data.param, 23)
             return Response()
 
-        app = web.List(
+        app = web.cases(
             web.match('/first', 'first') | handler,
             web.match('/second/<int:id>/<int:param>', 'second') | handler)
 
@@ -188,7 +187,7 @@ class Match(unittest.TestCase):
         def handler(env, data, nx):
             return Response()
 
-        app = web.List(
+        app = web.cases(
             web.match('/first', 'first') | handler,
             web.match('/second/<int:id>', 'second') | handler)
 
