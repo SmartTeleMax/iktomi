@@ -194,7 +194,7 @@ class Tracer(object):
 
     def check_name(self, name):
         if name in self.__urls:
-            raise ValueError('Dublicating key "%s" in url map' % name)
+            raise ValueError('Same url name "%s" in your app' % name)
 
     def finish_step(self):
         # get subdomains, namespaces if there are any
