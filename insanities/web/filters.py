@@ -28,11 +28,6 @@ class match(WebHandler):
         self.url_name = name
         self.builder = UrlTemplate(url, converters=convs)
 
-    def trace(self, tracer):
-        tracer.url_name(self.url_name)
-        tracer.builder(self.builder)
-        tracer.finish_step()
-
     def _locations(self):
         return {self.url_name: {'builders': [self.builder]}}
 
@@ -117,10 +112,6 @@ class prefix(WebHandler):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
 
-    def trace(self, tracer):
-        tracer.builder(self.builder)
-        super(prefix, self).trace(tracer)
-
     def _locations(self):
         locations = super(prefix, self)._locations()
         for v in locations.values():
@@ -142,11 +133,6 @@ class prefix(WebHandler):
 class subdomain(WebHandler):
     def __init__(self, _subdomain):
         self.subdomain = unicode(_subdomain)
-
-    def trace(self, tracer):
-        if self.subdomain:
-            tracer.subdomain(self.subdomain)
-        super(subdomain, self).trace(tracer)
 
     def _locations(self):
         locations = super(subdomain, self)._locations()
@@ -184,10 +170,6 @@ class namespace(WebHandler):
         else:
             env.namespace = self.namespace
         return next_handler(env, data)
-
-    def trace(self, tracer):
-        tracer.namespace(self.namespace)
-        super(namespace, self).trace(tracer)
 
     def _locations(self):
         locations = super(namespace, self)._locations()

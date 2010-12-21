@@ -48,12 +48,6 @@ class WebHandler(object):
         '''This method should be overridden in subclasses.'''
         return next_handler(env, data)
 
-    def trace(self, tracer):
-        next_handler = self.get_next()
-        # if next_handler is lambda - the end of chain
-        if not type(next_handler) is types.FunctionType:
-            next_handler.trace(tracer)
-
     def _locations(self):
         next_handler = self.get_next()
         # if next_handler is lambda - the end of chain
@@ -167,11 +161,6 @@ class cases(WebHandler):
                 continue
             return result
 
-    def trace(self, tracer):
-        for handler in self.handlers:
-            handler.trace(tracer)
-        super(cases, self).trace(tracer)
-
     def _locations(self):
         locations = {}
         for handler in self.handlers:
@@ -196,43 +185,6 @@ class FunctionWrapper(WebHandler):
 
 
 handler = FunctionWrapper
-
-
-class Tracer(object):
-
-    def __init__(self):
-        self.__urls = {}
-        self._current_step = {}
-
-    @property
-    def urls(self):
-        return self.__urls
-
-    def check_name(self, name):
-        if name in self.__urls:
-            raise ValueError('Same url name "%s" in your app' % name)
-
-    def finish_step(self):
-        # get subdomains, namespaces if there are any
-        subdomains = self._current_step.get('subdomain', [])
-        subdomains.reverse()
-        namespaces = self._current_step.get('namespace', [])
-
-        # get url name and url builders if there are any
-        url_name = self._current_step.get('url_name', None)
-        builders = self._current_step.get('builder', [])
-
-        if url_name:
-            url_name = url_name[0]
-            if namespaces:
-                url_name = '.'.join(namespaces) + '.' + url_name
-            self.check_name(url_name)
-            self.__urls[url_name] = (subdomains, builders)
-
-        self._current_step = {}
-
-    def __getattr__(self, name):
-        return lambda e: self._current_step.setdefault(name, []).append(e)
 
 
 def locations(handler):
