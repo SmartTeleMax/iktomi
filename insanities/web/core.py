@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'HttpException', 'handler', 'Reverse']
+__all__ = ['WebHandler', 'cases', 'HttpException', 'handler', 'Reverse',
+           'locations']
 
 import logging
 import types
@@ -53,6 +54,14 @@ class WebHandler(object):
         if not type(next_handler) is types.FunctionType:
             next_handler.trace(tracer)
 
+    def _locations(self):
+        next_handler = self.get_next()
+        # if next_handler is lambda - the end of chain
+        if not type(next_handler) is types.FunctionType:
+            return next_handler._locations()
+        # we are last in chain
+        return {}
+
     def __repr__(self):
         return '%s()' % self.__class__.__name__
 
@@ -82,15 +91,18 @@ class WebHandler(object):
             try:
                 response = self(env, data)
                 if response is None:
-                    logger.debug('Application returned None instead of Response object')
+                    logger.debug('Application returned None '
+                                 'instead of Response object')
                     status_int = httplib.NOT_FOUND
                     response = Response(status=status_int, 
-                                        body='%d %s' % (status_int, httplib.responses[status_int]))
+                                        body='%d %s' % (status_int, 
+                                                        httplib.responses[status_int]))
             except HttpException, e:
                 response = Response()
                 process_http_exception(response, e)
                 status_int = response.status_int
-                response.write('%d %s' % (status_int, httplib.responses[status_int]))
+                response.write('%d %s' % (status_int, 
+                                          httplib.responses[status_int]))
             except Exception, e:
                 logger.exception(e)
                 raise
@@ -123,18 +135,16 @@ class Reverse(object):
                 ns = self.namespace
             name = ns + '.' + local_name
 
-        subdomains, builders = self.urls[name]
+        data = self.urls[name]
 
-        host = u'.'.join(subdomains)
+        host = u'.'.join(data.get('subdomains', []))
         # path - urlencoded str
-        path = ''.join([b(**kwargs) for b in builders])
+        path = ''.join([b(**kwargs) for b in reversed(data['builders'])])
         return URL(path, host=host)
 
     @classmethod
     def from_handler(cls, handler, env=None):
-        tracer = Tracer()
-        handler.trace(tracer)
-        return cls(tracer.urls, env=env)
+        return cls(locations(handler), env=env)
 
 
 class cases(WebHandler):
@@ -161,6 +171,12 @@ class cases(WebHandler):
         for handler in self.handlers:
             handler.trace(tracer)
         super(cases, self).trace(tracer)
+
+    def _locations(self):
+        locations = {}
+        for handler in self.handlers:
+            locations.update(handler._locations())
+        return locations
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
@@ -217,3 +233,7 @@ class Tracer(object):
 
     def __getattr__(self, name):
         return lambda e: self._current_step.setdefault(name, []).append(e)
+
+
+def locations(handler):
+    return handler._locations()

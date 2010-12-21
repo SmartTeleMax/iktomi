@@ -4,18 +4,18 @@
 import unittest
 from unittest import defaultTestLoader as dtl
 
-#from utils.storage import *
-#from utils.html import *
-#from utils.url import *
+from utils.storage import *
+from utils.html import *
+from utils.url import *
 
-#from web.chain import *
+from web.chain import *
 from web.reverse import *
-#from web.convs import *
-#from web.filter import *
-#
-#from forms.convs import *
-#from forms.fields import *
-#from forms.forms import *
+from web.convs import *
+from web.filter import *
+
+from forms.convs import *
+from forms.fields import *
+from forms.forms import *
 
 suite = unittest.TestSuite()
 

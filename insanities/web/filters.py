@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['match', 'method', 'static_files', 'ctype', 'prefix', 'subdomain', 'namespace']
+__all__ = ['match', 'method', 'static_files', 'ctype', 'prefix', 
+           'subdomain', 'namespace']
 
 import logging
 import httplib
@@ -31,6 +32,9 @@ class match(WebHandler):
         tracer.url_name(self.url_name)
         tracer.builder(self.builder)
         tracer.finish_step()
+
+    def _locations(self):
+        return {self.url_name: {'builders': [self.builder]}}
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
@@ -117,6 +121,12 @@ class prefix(WebHandler):
         tracer.builder(self.builder)
         super(prefix, self).trace(tracer)
 
+    def _locations(self):
+        locations = super(prefix, self)._locations()
+        for v in locations.values():
+            v.setdefault('builders', []).append(self.builder)
+        return locations
+
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
         if matched:
@@ -137,6 +147,12 @@ class subdomain(WebHandler):
         if self.subdomain:
             tracer.subdomain(self.subdomain)
         super(subdomain, self).trace(tracer)
+
+    def _locations(self):
+        locations = super(subdomain, self)._locations()
+        for v in locations.values():
+            v.setdefault('subdomains', []).append(self.subdomain)
+        return locations
 
     def handle(self, env, data, next_handler):
         subdomain = env.request.subdomain
@@ -172,3 +188,10 @@ class namespace(WebHandler):
     def trace(self, tracer):
         tracer.namespace(self.namespace)
         super(namespace, self).trace(tracer)
+
+    def _locations(self):
+        locations = super(namespace, self)._locations()
+        new_locations = {}
+        for k, v in locations.items():
+            new_locations[self.namespace+'.'+k] = v
+        return new_locations
