@@ -165,7 +165,7 @@ class namespace(WebHandler):
         self.namespace = ns
 
     def handle(self, env, data, next_handler):
-        if env.namespace:
+        if 'namespace' in env:
             env.namespace += '.' + self.namespace
         else:
             env.namespace = self.namespace
