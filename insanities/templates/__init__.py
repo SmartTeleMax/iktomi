@@ -24,7 +24,7 @@ class Template(object):
             self.engines[template_type] = engine_class(self.dirs[:], cache=self.cache)
 
     def render(self, template_name, **kw):
-        logger.debug('Rendering template "%s"' % self.template_name)
+        logger.debug('Rendering template "%s"' % template_name)
         vars = self.globs.copy()
         vars.update(kw)
         resolved_name, engine = self.resolve(template_name)
@@ -41,10 +41,17 @@ class Template(object):
                 template_type = ext[1:]
                 if template_type in self.engines:
                     return file_name[len(d)+1:], self.engines[template_type]
-        raise TemplateError('Template or engine for template "%s" not found' % pattern)
+        raise TemplateError('Template or engine for template "%s" not found. Dirs %r' % \
+                            (pattern, self.dirs))
 
     def render_to(self, template_name):
+        'WebHandler'
         def wrapper(env, data, next_handler):
             data.env = env
             return Response(self.render(self.template_name, **data.as_dict()))
         return wrapper
+
+    def render_to_response(self, template_name, data, content_type='text/html'):
+        'handy method'
+        return Response(self.render(template_name, **data),
+                        content_type=content_type)
