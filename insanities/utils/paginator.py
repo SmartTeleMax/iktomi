@@ -2,7 +2,7 @@
 
 from . import cached_property
 import math, itertools
-from .url import URL
+from ..web.url import URL
 
 
 def full_page_range(pages_count, page):
@@ -111,12 +111,8 @@ class Paginator(object):
     impl = staticmethod(full_page_range) # Callable returning the list of pages
                                          # to show in paginator.
 
-    def __init__(self, rctx, **kwargs):
-        # Expected parameters in kwargs:
-        # * count - mandatory if not defined as property in subclass
-        # * all parameters defined here as property can be passed to redefine
-        #   default behavior.
-        self._rctx = rctx
+    def __init__(self, request, **kwargs):
+        self.request = request
         self.__dict__.update(kwargs)
         # Calculate page here in case we return 404 for invalid page
         self.page
@@ -136,7 +132,7 @@ class Paginator(object):
     @cached_property
     def page(self):
         '''Current page.'''
-        page = self._rctx.request.GET.get(self.page_param)
+        page = self.request.GET.get(self.page_param)
         if not page:
             return 1
         try:
@@ -153,7 +149,7 @@ class Paginator(object):
     def url(self):
         '''Current or base URL. Can be redefined via keyword argument on
         initialization.'''
-        return URL(self._rctx.request.path)
+        return URL(self.request.path)
 
     def page_url(self, page):
         '''Returns URL for page.'''
