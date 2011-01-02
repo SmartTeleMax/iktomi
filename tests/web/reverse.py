@@ -13,6 +13,13 @@ class LocationsTests(unittest.TestCase):
         'Locations of web.match'
         self.assert_(web.locations(web.match('/', 'name')).keys(), ['name'])
 
+    def test_match_dublication(self):
+        'Raise error on same url names'
+        self.assertRaises(ValueError, lambda: web.locations(
+                web.cases(
+                    web.match('/', 'index'),
+                    web.match('/index', 'index'))))
+
     def test_cases(self):
         'Locations of web.cases'
         chain = web.cases(
@@ -76,6 +83,11 @@ class LocationsTests(unittest.TestCase):
         self.assertEqual(len(locations['news.item']['builders']), 3)
         self.assertEqual(len(locations['docs.index']['builders']), 3)
         self.assertEqual(len(locations['docs.item']['builders']), 3)
+
+    def test_namespace_with_empty_name(self):
+        'Namespaces with empty url name'
+        chain = web.namespace('news') | web.match('/', '')
+        self.assert_(web.locations(chain).keys(), ['news'])
 
     def test_subdomain(self):
         'Locations and subdomains'

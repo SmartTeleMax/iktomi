@@ -95,7 +95,7 @@ class UrlTemplateTest(unittest.TestCase):
         'Incorrect url encoded value'
         t = UrlTemplate('/<name>')
         value = quote(u'/имя'.encode('utf-8'))[:-1]
-        self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\ufffd8'}))
+        self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\ufffd%8'}))
 
     def test_incorrect_urlencoded_path(self):
         'Incorrect url encoded path'

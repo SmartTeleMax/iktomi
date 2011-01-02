@@ -177,5 +177,5 @@ class namespace(WebHandler):
         locations = super(namespace, self)._locations()
         new_locations = {}
         for k, v in locations.items():
-            new_locations[self.namespace+'.'+k] = v
+            new_locations[self.namespace+'.'+k if k else self.namespace] = v
         return new_locations

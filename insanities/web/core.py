@@ -164,7 +164,11 @@ class cases(WebHandler):
     def _locations(self):
         locations = {}
         for handler in self.handlers:
-            locations.update(handler._locations())
+            handler_locations = handler._locations()
+            for k, v in handler_locations.items():
+                if k in locations:
+                    raise ValueError('Location "%s" already exists' % k)
+                locations[k] = v
         return locations
 
     def __repr__(self):

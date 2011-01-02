@@ -1,6 +1,10 @@
 #!venv/bin/python
 # -*- coding: utf-8 -*-
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
+
 import unittest
 from unittest import defaultTestLoader as dtl
 
@@ -13,7 +17,7 @@ from web.reverse import *
 from web.convs import *
 from web.filter import *
 
-from forms.convs import *
+#from forms.convs import *
 from forms.fields import *
 from forms.forms import *
 
