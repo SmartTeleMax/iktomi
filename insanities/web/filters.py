@@ -81,12 +81,12 @@ class static_files(WebHandler):
         self.location = location
         self.url = url
 
-    def add_reverse(self, env):
+    def construct_reverse(self):
         def url_for_static(part):
             while part.startswith('/'):
                 part = part[1:]
             return path.join(self.url, part)
-        env.url_for_static = url_for_static
+        return url_for_static
 
     def handle(self, env, data, next_handler):
         if env.request.path.startswith(self.url):
