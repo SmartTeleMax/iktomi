@@ -7,7 +7,7 @@ import logging
 import httplib
 import mimetypes
 from os import path
-from urllib import quote
+from urllib import unquote
 from .core import WebHandler
 from .http import HttpException, Response
 from .url import UrlTemplate
@@ -89,9 +89,10 @@ class static_files(WebHandler):
         return url_for_static
 
     def handle(self, env, data, next_handler):
-        if env.request.path.startswith(self.url):
-            static_path = env.request.path[len(self.url):]
-            while static_path.startswith('/'):
+        path_info = unquote(env.request.path)
+        if path_info.startswith(self.url):
+            static_path = path_info[len(self.url):]
+            while static_path[0] in ('.', '/', '~'):
                 static_path = static_path[1:]
             file_path = path.join(self.location, static_path)
             if path.exists(file_path) and path.isfile(file_path):
@@ -103,7 +104,8 @@ class static_files(WebHandler):
                     response.write(f.read())
                 return response
             else:
-                raise HttpException(httplib.NOT_FOUND)
+                logger.info('Client requested non existent static data "%s"' % file_path)
+                return Response(status=404)
         return None
 
 
