@@ -48,7 +48,7 @@ class Template(object):
         'WebHandler'
         def wrapper(env, data, next_handler):
             data.env = env
-            return Response(self.render(self.template_name, **data.as_dict()))
+            return Response(self.render(template_name, **data.as_dict()))
         return wrapper
 
     def render_to_response(self, template_name, data, content_type='text/html'):
