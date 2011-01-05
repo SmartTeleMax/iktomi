@@ -73,7 +73,7 @@ class Form(object):
 
     def render(self):
         '''Proxy method to form's environment render method'''
-        return self.env.renderer.render(self.template, form=self)
+        return self.env.template.render(self.template, form=self)
 
     @property
     def is_valid(self):

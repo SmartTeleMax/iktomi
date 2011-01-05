@@ -54,7 +54,7 @@ class Widget(object):
         '''
         data = self.prepare_data(value)
         if self.field.readable:
-            return self.env.renderer.render(self.template, **data)
+            return self.env.template.render(self.template, **data)
         return ''
 
     def __call__(self, **kwargs):

@@ -215,7 +215,7 @@ class FieldSet(AggregateField):
         return self.to_python(result)
 
     def render(self):
-        return self.env.renderer.render(self.template, field=self)
+        return self.env.template.render(self.template, field=self)
 
 
 class FieldList(AggregateField):
@@ -290,4 +290,4 @@ class FieldList(AggregateField):
             self.form.raw_data.add(self.indeces_input_name, index)
 
     def render(self):
-        return self.env.renderer.render(self.template, field=self)
+        return self.env.template.render(self.template, field=self)
