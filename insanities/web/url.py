@@ -99,9 +99,8 @@ class URL(str):
         else:
             return path + query
 
-
     def __repr__(self):
-        return '<URL %r>' % self
+        return '<URL %r>' % str.__repr__(self)
 
 
 class ConvertError(Exception):
