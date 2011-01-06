@@ -6,11 +6,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from ..web.core import STOP, RequestHandler, FunctionWrapper
-from ..web.http import HttpException
-from ..web.filters import *
-from ..utils import N_
-from ..forms import *
+from insanities import web
+from insanities.forms import *
+from insanities.utils import N_
+
 
 
 def encrypt_password(raw_password, algorithm='sha1', salt=None):
@@ -38,17 +37,13 @@ def check_password(raw_password, enc_password):
 
 class LoginForm(Form):
     fields = (
-        Field('login', conv=convs.Char(min_length=3),
-              widget=widgets.TextInput(),
+        Field('login', convs.Char(),
               label=N_('Username')),
-        Field('password',
-              conv=convs.Char(min_length=3),
-              widget=widgets.PasswordInput(),
-              label=N_(u'Password')),
-    )
+        Field('password', convs.Char(),
+              label=N_(u'Password')))
 
 
-class CookieAuth(RequestHandler):
+class CookieAuth(web.WebHandler):
     '''
     CookieAuth instances allows to add cookies based authentication to you web app.
     It tries to be very agile.
@@ -56,8 +51,9 @@ class CookieAuth(RequestHandler):
 
     #TODO: add "maxage" and "path" parametrs.
     #TODO: add "user_param_name" parametr.
-    def __init__(self, user_by_credential, user_by_id, login_url='login', 
-                 logout_url='logout', cookie_name='auth', login_form=LoginForm):
+    def __init__(self, user_by_credential, user_by_id, session_storage,
+                 login_url='login', logout_url='logout', cookie_name='auth',
+                 login_form=LoginForm):
         '''
         Each instance of this class handles cookie base authentication.
         You may have multiple instances of `CookieAuth` in single webapp 
@@ -78,28 +74,46 @@ class CookieAuth(RequestHandler):
 
         :*login_form* - class of login form. Data from this form will be passed to `user_by_credential`.
         '''
-        super(CookieAuth, self).__init__()
         self._user_by_credential = user_by_credential
         self._user_by_id = user_by_id
         self._login = login_url
         self._logout = logout_url
         self._cookie_name = cookie_name
         self._login_form = login_form
+        self.session_storage = session_storage
 
-    def handle(self, rctx):
+    def handle(self, env, data, next_handler):
         user = None
-        if self._cookie_name in rctx.request.cookies:
-            key = rctx.request.cookies[self._cookie_name]
-            value = rctx.vals.session_storage.get(key.encode('utf-8'))
+        if self._cookie_name in env.request.cookies:
+            key = env.request.cookies[self._cookie_name]
+            value = self.session_storage.get(self._cookie_name+':'+key.encode('utf-8'))
             if value is not None:
-                user = self._user_by_id(rctx, int(value))
+                user = self._user_by_id(env, int(value))
         logger.debug('Got user: %r' % user)
-        rctx.vals['user'] = user
+        env.user = user
         try:
-            result = rctx.next()
+            result = next_handler(env, data)
         finally:
-            del rctx.vals['user']
+            del env.user
         return result
+
+    def login(self, user_id):
+        key = os.urandom(10).encode('hex')
+        response = web.Response()
+        response.set_cookie(self._cookie_name, key, path='/')
+        if not self.session_storage.set(self._cookie_name+':'+key.encode('utf-8'), 
+                                        str(user_id)):
+            logger.info('session_storage "%r" is unrichable' % self.session_storage)
+        return response
+
+    def logout(self, request):
+        response = web.Response()
+        response.delete_cookie(self._cookie_name)
+        key = requests.cookies[self._cookie_name]
+        if key is not None:
+            if not self.session_storage.delete(self._cookie_name+':'+key.encode('utf-8')):
+                logger.info('session_storage "%r" is unrichable' % self.session_storage)
+        return response
 
     @property
     def login_handler(self):
@@ -110,23 +124,23 @@ class CookieAuth(RequestHandler):
 
             auth.logout_handler | render_to('login.html')
         '''
-        def login(rctx):
-            form = self._login_form(rctx.vals.as_dict())
-            next = rctx.request.GET.get('next', '/')
+        def login(env, data, next_handler):
+            form = self._login_form(env)
+            next = env.request.GET.get('next', '/')
             msg = ''
-            if rctx.request.method == 'POST':
-                if form.accept(rctx.request.POST):
-                    user_id, msg = self._user_by_credential(rctx, **form.python_data)
+            if env.request.method == 'POST':
+                if form.accept(env.request.POST):
+                    user_id, msg = self._user_by_credential(env, **form.python_data)
                     if user_id is not None:
-                        key = os.urandom(10).encode('hex')
-                        rctx.response.set_cookie(self._cookie_name, key, path='/')
-                        if rctx.vals.session_storage.set(key.encode('utf-8'), str(user_id)):
-                            pass
-                        else:
-                            logger.info('session_storage "%r" is unrichable' % rctx.vals.session_storage)
-                        raise HttpException(303, url=next)
-            return dict(form=form, next=next, message=msg)
-        return match('/%s' % self._login, self._login) | login
+                        response = self.login(user_id)
+                        response.status = 303
+                        response.headers['Location'] = next
+                        return response
+            data.form = form
+            data.message = msg
+            data.login_url = env.url_for(self._login).set(next=next)
+            return next_handler(env, data)
+        return web.match('/%s' % self._login, self._login) | login
 
     @property
     def logout_handler(self):
@@ -137,20 +151,22 @@ class CookieAuth(RequestHandler):
         session id provided or id is incorrect handler silently redirects to login
         url and does not throw any exception.
         '''
-        def logout(rctx):
-            if self._cookie_name in rctx.request.cookies:
-                key = rctx.request.cookies[self._cookie_name]
-                if key is not None:
-                    rctx.vals.session_storage.delete(key.encode('utf-8'))
-                raise HttpException(303, url=rctx.vals.url_for(self._login))
-            raise HttpException(404)
-        return match('/%s' % self._logout, self._logout) | logout
+        def logout(env, data, next_handler):
+            if self._cookie_name in env.request.cookies:
+                response = self.logout(env.request)
+                response.status = 303
+                response.headers['Location'] = '/'
+                return response
+            return next_handler(env, data)
+        return web.match('/%s' % self._logout, self._logout) | logout
 
     @property
     def login_required(self):
-        def _login_required(rctx):
-            if 'user' in rctx.vals and rctx.vals.user is not None:
-                return rctx
-            raise HttpException(303, 
-                                url=rctx.vals.url_for(self._login).set(next=rctx.request.path_info))
-        return FunctionWrapper(_login_required)
+        def _login_required(env, data, next_handler):
+            if 'user' in env and env.user is not None:
+                return next_handler(env, data)
+            response = web.Response(status=303)
+            response.headers['Location'] = str(env.url_for(self._login).set(next=env.request.path_info))
+            return response
+        return web.handler(_login_required)
+
