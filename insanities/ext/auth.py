@@ -109,7 +109,7 @@ class CookieAuth(web.WebHandler):
     def logout(self, request):
         response = web.Response()
         response.delete_cookie(self._cookie_name)
-        key = requests.cookies[self._cookie_name]
+        key = request.cookies[self._cookie_name]
         if key is not None:
             if not self.session_storage.delete(self._cookie_name+':'+key.encode('utf-8')):
                 logger.info('session_storage "%r" is unrichable' % self.session_storage)
