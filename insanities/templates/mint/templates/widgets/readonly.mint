@@ -1,1 +1,1 @@
-@input.readonly(readonly).value({{ value }})
+@input.name({{ widget.input_name }}).readonly(readonly).value({{ value }})
