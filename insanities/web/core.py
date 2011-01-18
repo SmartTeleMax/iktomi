@@ -80,7 +80,7 @@ class WebHandler(object):
     def as_wsgi(self):
         def wrapper(environ, start_response):
             env = VersionedStorage()
-            env.request = Request(environ)
+            env.request = Request(environ, charset='utf-8')
             data = VersionedStorage()
             try:
                 response = self(env, data)
