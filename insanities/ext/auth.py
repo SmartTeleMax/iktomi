@@ -134,7 +134,7 @@ class CookieAuth(web.WebHandler):
                     if user_id is not None:
                         response = self.login(user_id)
                         response.status = 303
-                        response.headers['Location'] = next
+                        response.headers['Location'] = str(next)
                         return response
             data.form = form
             data.message = msg
