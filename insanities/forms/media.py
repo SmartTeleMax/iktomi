@@ -77,7 +77,8 @@ class FormMediaAtom(object):
 
     def render(self):
         '''Renders media item to HTML'''
-        return self.holder.env.macros[self.macro](data=self.data)
+        return self.holder.env.macros[self.macro](data=self.data, 
+                                                  env=self.holder.env)
 
 
 class FormCSSRef(FormMediaAtom):
