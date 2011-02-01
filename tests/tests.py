@@ -17,7 +17,7 @@ from web.reverse import *
 from web.convs import *
 from web.filter import *
 
-#from forms.convs import *
+from forms.convs import *
 from forms.fields import *
 from forms.forms import *
 
