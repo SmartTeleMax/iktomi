@@ -20,6 +20,7 @@ from web.filter import *
 from forms.convs import *
 from forms.fields import *
 from forms.forms import *
+from forms.media import *
 
 suite = unittest.TestSuite()
 

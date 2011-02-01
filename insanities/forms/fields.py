@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from ..utils import weakproxy, cached_property
-from . import convs
-from ..utils.odict import OrderedDict
 import re, logging
-from .perms import FieldPerm
+
 import widgets
+from . import convs
+from ..utils import weakproxy, cached_property
+from ..utils.odict import OrderedDict
+from .perms import FieldPerm
+from .media import FormMedia
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class BaseField(object):
     conv = convs.Char
     widget = widgets.TextInput()
     label = None
+    media = FormMedia()
 
     def __init__(self, name, conv=None, parent=None, **kwargs):
         kwargs.update(dict(
@@ -110,6 +113,11 @@ class BaseField(object):
 
     def render(self):
         return self.widget.render(self.raw_value)
+
+    def get_media(self):
+        media = FormMedia(self.media)
+        media += self.widget.get_media()
+        return media
 
 
 class Field(BaseField):
@@ -217,6 +225,12 @@ class FieldSet(AggregateField):
     def render(self):
         return self.env.template.render(self.template, field=self)
 
+    def get_media(self):
+        media = BaseField.get_media(self)
+        for field in self.fields:
+            media += field.get_media()
+        return media
+
 
 class FieldList(AggregateField):
     '''
@@ -291,3 +305,8 @@ class FieldList(AggregateField):
 
     def render(self):
         return self.env.template.render(self.template, field=self)
+
+    def get_media(self):
+        media = BaseField.get_media(self)
+        media += self.field.get_media()
+        return media
