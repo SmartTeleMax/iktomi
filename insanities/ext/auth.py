@@ -40,6 +40,7 @@ class LoginForm(Form):
         Field('login', convs.Char(),
               label=N_('Username')),
         Field('password', convs.Char(),
+              widget=widgets.PasswordInput(),
               label=N_(u'Password')))
 
 
