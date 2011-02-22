@@ -1,15 +1,9 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<a href="{{ VALS.url_for('posts') }}">{{ _('back to posts page') }}</a>
+<a href="{{ url_for('posts') }}">back to posts page</a>
 <form action="" method="post">
-    {{ form.render() }}
-    <input type="submit" value="{{ _('save post') }}" />
+    {{ form.render()|safe }}
+    <input type="submit" value="save post" />
 </form>
 {% endblock %}
-{# Currently we have no flexible way to plug jinja in. 
-   We will fix it when i18n will be used in real projects
-   It is temporary hack to make string in quotes parsable by gettext
-
-_('save post')
-#}

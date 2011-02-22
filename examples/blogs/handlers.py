@@ -5,89 +5,94 @@ from sqlalchemy.orm.exc import NoResultFound
 import models
 import forms
 from insanities.utils.paginator import ModelPaginator, ChunkedPageRange
-from insanities.web.http import HttpException
+
+from webob.exc import HTTPSeeOther, HTTPNotFound
+from insanities.web import Response
 
 
-def redirect_to(url):
-    raise HttpException(303, url=url)
+def render_to(template_name):
+    def handler(env, data, next_handler):
+        template_data = data.as_dict()
+        template_data.update(
+            auth_user=env.user,
+            url_for=env.url_for,
+            url_for_static=env.url_for_static)
+        return env.template.render_to_response(template_name, template_data)
+    return handler
 
 
-def posts_paginator(rctx):
-    paginator = ModelPaginator(rctx,
-                               rctx.vals.db.query(models.Post),
+def posts_paginator(env, data, next_handler):
+    data.paginator = ModelPaginator(env.request,
+                               env.db.query(models.Post),
                                impl=ChunkedPageRange(),
-                               limit=3
-                               )
-    return dict(paginator=paginator)
+                               limit=3)
+    return next_handler(env, data)
 
 
-def post_by_id(rctx, id):
+def post_by_id(env, data, next_handler):
     try:
-        post = rctx.vals.db.query(models.Post).filter_by(id=id).one()
+        post = env.db.query(models.Post).filter_by(id=data.id).one()
     except NoResultFound:
-        raise HttpException(404)
+        raise HTTPNotFound()
     else:
-        return dict(post=post)
+        return next_handler(env, data(post=post))
 
 
-def post_form(rctx):
-    form = forms.PostForm(rctx.vals.form_env)
-    if rctx.request.method == 'POST':
-        if form.accept(rctx.request.POST):
+def post_form(env, data, next_handler):
+    form = forms.PostForm(env)
+    if env.request.method == 'POST':
+        if form.accept(env.request.POST):
             data = form.python_data
-            data['author'] = rctx.vals.user
+            data['author'] = env.user
             data['date'] = datetime.datetime.now()
             post = models.Post(**data)
-            rctx.vals.db.add(post)
-            rctx.vals.db.commit()
-            redirect_to(rctx.vals.url_for('post', id=post.id))
-    return dict(form=form)
+            env.db.add(post)
+            env.db.commit()
+            raise HTTPSeeOther(location=str(env.url_for('post', id=post.id)))
+    return next_handler(env, data(form=form))
 
 
-def del_post(rctx, id):
-    db = rctx.vals.db
+def del_post(env, data, next_handler):
     try:
-        post = db.query(models.Post).filter_by(id=id).one()
+        post = env.db.query(models.Post).filter_by(id=data.id).one()
     except NoResultFound:
-        raise HttpException(404)
+        raise HTTPNotFound()
     else:
-        if rctx.request.method == 'POST':
-            db.delete(post)
-            db.commit()
-            redirect_to(rctx.vals.url_for('posts'))
-        return dict(post=post)
+        if env.request.method == 'POST':
+            env.db.delete(post)
+            env.db.commit()
+            raise HTTPSeeOther(location=str(env.url_for('posts')))
+        return next_handler(env, data(post=post))
 
 
-def edit_post(rctx, id):
-    db = rctx.vals.db
+def edit_post(env, data, next_handler):
     try:
-        post = db.query(models.Post).filter_by(id=id).one()
+        post = env.db.query(models.Post).filter_by(id=data.id).one()
     except NoResultFound:
-        raise HttpException(404)
+        raise HTTPNotFound
     else:
         initial = {}
         for field in forms.PostForm.fields:
             initial[field.name] = getattr(post, field.name, '')
-        form = forms.PostForm(rctx.vals.form_env, initial=initial)
-        if rctx.request.method == 'POST':
-            if form.accept(rctx.request.POST):
+        form = forms.PostForm(env, initial=initial)
+        if env.request.method == 'POST':
+            if form.accept(env.request.POST):
                 data = form.python_data
                 data['date'] = datetime.datetime.now()
                 post = models.Post(**data)
-                rctx.vals.db.add(post)
-                rctx.vals.db.commit()
-                redirect_to(rctx.vals.url_for('post', id=post.id))
-    return dict(form=form)
+                env.db.add(post)
+                env.db.commit()
+                raise HTTPSeeOther(location=str(env.url_for('post', id=post.id)))
+    return next_handler(env, data(form=form))
 
 
 from xml.etree.ElementTree import Element, tostring
 
 
-def to_xml(rctx, paginator):
-    rctx.response.content_type = 'application/xml'
-    root = Element('posts', {'total_pages':str(paginator.pages_count),
-                        'page':str(paginator.page)})
-    for i in paginator.items:
+def to_xml(env, data, next_handler):
+    root = Element('posts', {'total_pages': str(data.paginator.pages_count),
+                             'page': str(data.paginator.page)})
+    for i in data.paginator.items:
         post = Element('post', {'id':str(i.id), 'date':i.date.strftime('%d:%m:%Y')})
         title = Element('title')
         title.text = i.title
@@ -96,27 +101,22 @@ def to_xml(rctx, paginator):
         body.text = i.body
         post.append(body)
         root.append(post)
-    rctx.response.write(tostring(root))
+    return Response(tostring(root), content_type='application/xml')
 
 
 import simplejson
 
 
-def to_json(rctx, paginator):
-    rctx.response.content_type = 'application/json'
-    rctx.response.write(simplejson.dumps(
-        dict(total_pages=paginator.pages_count,
-             page=paginator.page,
-             items=[dict(title=i.title,
-                         body=i.body,
-                         id=i.id,
-                         date=i.date.strftime('%d:%m:%Y')) for i in paginator.items])
-    ))
+def to_json(env, data, next_handler):
+    items = [dict(title=i.title,
+                  body=i.body,
+                  id=i.id,
+                  date=i.date.strftime('%d:%m:%Y'))
+             for i in data.paginator.items]
 
-def change_language(rctx):
-    lang = rctx.request.POST.get('language')
-    if lang in rctx.conf.LANGUAGES:
-        rctx.vals.language_handler.activate(rctx, lang)
-        rctx.response.set_cookie('language', lang, path='/')
-    # XXX HTTP_REFERER
-    raise HttpException(303, url=rctx.vals.url_for('posts'))
+    result = simplejson.dumps(
+        dict(total_pages=data.paginator.pages_count,
+             page=data.paginator.page,
+             items=items))
+    return Response(result, content_type='application/json')
+

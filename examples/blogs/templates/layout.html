@@ -2,16 +2,13 @@
 
 <html>
     <head>
-        <title>{{ _('Example blog') }}</title>
+        <title>Example blog</title>
         {% block css %}
         {% endblock %}
         {% block js %}
         {% endblock %}
     </head>
     <body>
-        <form action="{{ VALS.url_for('change_language') }}" method="POST">
-        <input type="submit" name="language" value="{% if language == 'en' %}ru{% else %}en{% endif %}" />
-        </form>
         {% block content %}
         {% endblock %}
     </body>

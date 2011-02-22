@@ -2,12 +2,13 @@
 
 from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.schema import MetaData
 from sqlalchemy.orm import relation
 from sqlalchemy.orm.exc import NoResultFound
 from insanities.ext.auth import check_password, encrypt_password
 
-
-ModelBase = declarative_base()
+metadata = MetaData()
+ModelBase = declarative_base(metadata=metadata)
 
 
 class User(ModelBase):
@@ -20,19 +21,19 @@ class User(ModelBase):
     password = Column(String)
 
     @classmethod
-    def by_credential(cls, rctx, login, password):
+    def by_credential(cls, env, login, password):
         try:
-            user = rctx.vals.db.query(User).filter_by(login=login).one()
+            user = env.db.query(User).filter_by(login=login).one()
             if check_password(password, user.password):
-                return user.id
+                return (user.id, None)
         except NoResultFound:
             pass
-        return None
+        return (None, None) # XXX?
 
     @classmethod
-    def by_id(cls, rctx, id):
+    def by_id(cls, env, id):
         try:
-            user = rctx.vals.db.query(User).filter_by(id=id).one()
+            user = env.db.query(User).filter_by(id=id).one()
         except NoResultFound:
             pass
         else:

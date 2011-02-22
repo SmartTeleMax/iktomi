@@ -44,3 +44,7 @@ class VersionedStorage(object):
 
     def __repr__(self):
         return repr(self._dict_)
+
+    def __call__(self, **kwargs):
+        self.__dict__.update(**kwargs)
+        return self

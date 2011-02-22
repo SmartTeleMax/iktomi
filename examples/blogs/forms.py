@@ -4,7 +4,6 @@ from insanities.forms import *
 
 
 class PostForm(Form):
-    template = 'paragraph'
     fields = [
         Field('title', label='title',
               conv=convs.Char(min_length=3, max_length=255)),

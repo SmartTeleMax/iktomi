@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<a href="{{ VALS.url_for('posts') }}">{{ _('back to posts page') }}</a>
+<a href="{{ url_for('posts') }}">back to posts page</a>
 <p class="title">{{ post.title }}</p>
 {{ post.body }}
 {% endblock %}

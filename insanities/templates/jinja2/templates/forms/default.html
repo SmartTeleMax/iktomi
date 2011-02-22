@@ -6,6 +6,6 @@
   {% if field.label %}
   <label for="{{ field.id }}">{{ field.label }}</label>
   {% endif %}
-  {{ ui.render_field(field)|safe }}
+  {{ field.render()|safe }}
 </p>
 {% endfor %}

@@ -13,7 +13,7 @@
       </th>
     {% endif %}
     <td {% if not field.label %}colspan="2"{% endif %}>
-      {{ ui.render_field(field)|safe }}
+      {{ field.render()|safe }}
     </td>
   </tr>
 {% endfor %}
