@@ -4,11 +4,11 @@ logger = logging.getLogger(__name__)
 
 from werkzeug.contrib.sessions import SessionStore, Session, dump_cookie
 from cPickle import dumps, loads, HIGHEST_PROTOCOL
+from werkzeug.exc import HTTPException
 
-from insanities.web import Wrapper
+raise NotImplementedError('This module is not tested')
 
 __all__ = ['CacheSessionStore', 'CookieStore']
-
 
 
 
@@ -42,56 +42,50 @@ class CacheSessionStore(SessionStore):
         return self.session_class(loads(data), sid, False)
 
 
-class CookieStore(Wrapper):
+def cookie_store(storage, cookie_name='session_id', cookie_args=None):
 
-    def __init__(self, store, cookie_name='session_id', **kwargs):
-        super(CookieStore, self).__init__()
+    cookie_args = cookie_args or {}
+    cookie_args.setdefault('max_age', 36000)
 
-        self.store = store
-        self.cookie_name = cookie_name
-
-        self.cookie_args = kwargs
-        self.cookie_args.setdefault('max_age', 36000)
-
-        super(CookieStore, self).__init__()
-
-    def handle(self, rctx):
-        if self.cookie_name in rctx.request.cookies:
-            sid = rctx.request.cookies[self.cookie_name]
-            cookie_store = self.store.get(sid)
+    def handle(env, data, next_handler):
+        if cookie_name in env.request.cookies:
+            sid = env.request.cookies[self.cookie_name]
+            env.cookie_store = storage.get(sid)
         else:
-            cookie_store = self.store.new()
-        rctx.cookie_store = cookie_store
+            env.cookie_store = storage.new()
 
         try:
-            rctx = self.exec_wrapped(rctx)
-        finally:
-            if rctx.cookie_store.should_save:
-                self.store.save(rctx.cookie_store)
-    
-                rctx.response.set_cookie(self.cookie_name,
-                                         rctx.cookie_store.sid,
-                                         **self.cookie_args)
-                logger.debug('Cookie storage: ' + unicode(rctx.cookie_store))
-        return rctx
+            response = next_handler(env, data)
+        except HTTPException, e:
+            response = e
+
+        # XXX response == None
+        if response and env.cookie_store.should_save:
+            storage.save(env.cookie_store)
+
+            response.set_cookie(cookie_name,
+                                env.cookie_store.sid,
+                                **cookie_args)
+        return response
+    return handle
 
 
-class RCtxFlashMixin(object):
+class flash_messages(env):
 
-    def has_flash_messages(self):
-        return '_flash' in self.cookie_store and \
-               len(self.cookie_store['_flash'])
+    def has_flash_messages():
+        return '_flash' in env.cookie_store and \
+               len(env.cookie_store['_flash'])
 
-    def get_flash_messages(self):
-        if self.has_flash_messages():
-            messages = self.cookie_store['_flash']
-            del self.cookie_store['_flash']
+    def get_flash_messages():
+        if env.has_flash_messages():
+            messages = env.cookie_store['_flash']
+            del env.cookie_store['_flash']
             return messages
         return []
 
-    def flash(self, message, category=None):
-        if '_flash' not in self.cookie_store:
-            self.cookie_store['_flash'] = []
-        self.cookie_store['_flash'].append((message, category))
+    def flash(message, category=None):
+        if '_flash' not in env.cookie_store:
+            env.cookie_store['_flash'] = []
+        env.cookie_store['_flash'].append((message, category))
 
 
