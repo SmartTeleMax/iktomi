@@ -6,7 +6,6 @@ __all__ = ['WebHandler', 'cases', 'handler', 'Reverse',
 import logging
 import types
 import httplib
-from inspect import getargspec
 from webob.exc import HTTPException
 from .http import Request, Response
 from ..utils.storage import VersionedStorage

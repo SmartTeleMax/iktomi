@@ -8,7 +8,6 @@ import httplib
 import mimetypes
 from os import path
 from urllib import unquote
-from webob import exc
 from .core import WebHandler
 from .http import Response
 from .url import UrlTemplate
