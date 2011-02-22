@@ -4,9 +4,7 @@ import os
 import logging
 logger = logging.getLogger(__name__)
 from glob import glob
-
-from ..web import RequestHandler
-
+from ..web import Response
 
 __all__ = ('Template',)
 
@@ -26,6 +24,7 @@ class Template(object):
             self.engines[template_type] = engine_class(self.dirs[:], cache=self.cache)
 
     def render(self, template_name, **kw):
+        logger.debug('Rendering template "%s"' % template_name)
         vars = self.globs.copy()
         vars.update(kw)
         resolved_name, engine = self.resolve(template_name)
@@ -42,23 +41,17 @@ class Template(object):
                 template_type = ext[1:]
                 if template_type in self.engines:
                     return file_name[len(d)+1:], self.engines[template_type]
-        raise TemplateError('Template or engine for template "%s" not found' % pattern)
+        raise TemplateError('Template or engine for template "%s" not found. Dirs %r' % \
+                            (pattern, self.dirs))
 
     def render_to(self, template_name):
-        return RenderWrapper(template_name, self)
+        'WebHandler'
+        def wrapper(env, data, next_handler):
+            data.env = env
+            return Response(self.render(template_name, **data.as_dict()))
+        return wrapper
 
-
-class RenderWrapper(RequestHandler):
-    def __init__(self, template_name, template):
-        self.template_name = template_name
-        self.template = template
-    def handle(self, rctx):
-        logger.debug('Rendering template "%s"' % self.template_name)
-        template_kw = rctx.data.as_dict()
-        template_kw['REQUEST'] = rctx.request
-        template_kw['VALS'] = rctx.vals
-        template_kw['CONF'] = rctx.conf
-        rendered = self.template.render(self.template_name, 
-                                        **template_kw)
-        rctx.response.write(rendered)
-        return rctx.next()
+    def render_to_response(self, template_name, data, content_type='text/html'):
+        'handy method'
+        return Response(self.render(template_name, **data),
+                        content_type=content_type)

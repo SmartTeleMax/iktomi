@@ -3,7 +3,6 @@ import unittest
 from copy import copy
 
 from insanities.forms import *
-from insanities.web.core import RequestContext
 from webob.multidict import MultiDict
 
 
@@ -16,4 +15,3 @@ class FieldTests(unittest.TestCase):
         form = _Form()
         self.assert_(form.accept(MultiDict(input='value')))
         self.assertEqual(form.python_data['input'], 'value')
-

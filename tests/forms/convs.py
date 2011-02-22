@@ -4,101 +4,94 @@ import unittest
 
 from insanities.forms import *
 from webob.multidict import MultiDict
-from .testutils import FormTestCase, MockField
 
 
-class ConverterTests(FormTestCase):
+def init_conv(conv, name='name'):
+    class f(Form):
+        fields = [Field(name, conv)]
+    return f().get_field(name).conv
+
+
+class ConverterTests(unittest.TestCase):
 
     def test_accept(self):
         'Accept method of converter'
-        field = MockField(convs.Converter, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Converter)
         value = conv.to_python('value')
         self.assertEqual(value, 'value')
 
     def test_to_python(self):
         'Converter to_python method'
-        field = MockField(convs.Converter, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Converter)
         value = conv.to_python('value')
         self.assertEqual(value, 'value')
 
     def test_from_python(self):
         'Converter from_python method'
-        field = MockField(convs.Converter, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Converter)
         value = conv.from_python('value')
         self.assertEqual(value, 'value')
 
 
-class IntConverterTests(FormTestCase):
+class IntConverterTests(unittest.TestCase):
 
     def test_accept_valid(self):
         'Accept method of Int converter'
-        field = MockField(convs.Int, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Int)
         value = conv.to_python('12')
         self.assertEqual(value, 12)
 
     def test_accept_null_value(self):
         'Accept method of Int converter for None value'
-        field = MockField(convs.Int(required=False), self.env())
-        conv = field.conv
+        conv = init_conv(convs.Int(required=False))
         value = conv.to_python('')
         self.assertEqual(value, None)
 
     def test_to_python(self):
         'Int Converter to_python method'
-        field = MockField(convs.Int, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Int)
         value = conv.to_python('12')
         self.assertEqual(value, 12)
 
     def test_from_python(self):
         'Int Converter from_python method'
-        field = MockField(convs.Int, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Int)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
 
 
-class CharConverterTests(FormTestCase):
+class CharConverterTests(unittest.TestCase):
 
     def test_accept_valid(self):
         'Accept method of Char converter'
-        field = MockField(convs.Char, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Char)
         value = conv.to_python('12')
         self.assertEqual(value, u'12')
 
     def test_accept_null_value(self):
         'Accept method of Char converter for None value'
-        field = MockField(convs.Char(required=False), self.env())
-        conv = field.conv
+        conv = init_conv(convs.Char(required=False))
         value = conv.to_python('')
         self.assertEqual(value, '')
 
     def test_to_python(self):
         'Char Converter to_python method'
-        field = MockField(convs.Char, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Char)
         value = conv.to_python('12')
         self.assertEqual(value, u'12')
 
     def test_from_python(self):
         'Char Converter from_python method'
-        field = MockField(convs.Char, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Char)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
 
-class TestDate(FormTestCase):
+class TestDate(unittest.TestCase):
 
     def test_accept_valid(self):
         '''Date converter to_python method'''
         from datetime import date
-        field = MockField(convs.Date(format="%d.%m.%Y"), self.env())
-        conv = field.conv
+        conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.to_python('31.01.1999'), date(1999, 1, 31))
 
     def test_readable_format(self):
@@ -109,38 +102,33 @@ class TestDate(FormTestCase):
     def test_from_python(self):
         '''Date converter from_python method'''
         from datetime import date
-        field = MockField(convs.Date(format="%d.%m.%Y"), self.env())
-        conv = field.conv
+        conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.from_python(date(1999, 1, 31)), '31.01.1999')
 
     def test_from_python_pre_1900(self):
         # XXX move this tests to tests.utils.dt
         '''Test if from_python works fine with dates under 1900'''
         from datetime import date
-        field = MockField(convs.Date(format="%d.%m.%Y"), self.env())
-        conv = field.conv
+        conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.from_python(date(1899, 1, 31)), '31.01.1899')
         self.assertEqual(conv.from_python(date(401, 1, 31)), '31.01.401')
 
-        field = MockField(convs.Date(format="%d.%m.%y"), self.env())
-        conv = field.conv
+        conv = init_conv(convs.Date(format="%d.%m.%y"))
         # XXX is it right?
         self.assertEqual(conv.from_python(date(1899, 1, 31)), '31.01.99')
         self.assertEqual(conv.from_python(date(5, 1, 31)), '31.01.05')
 
-class TestTime(FormTestCase):
+class TestTime(unittest.TestCase):
 
     def test_from_python(self):
         '''Time converter from_python method'''
         from datetime import time
-        field = MockField(convs.Time, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Time)
         self.assertEqual(conv.from_python(time(12, 30)), '12:30')
 
     def test_to_python(self):
         '''Time converter to_python method'''
         from datetime import time
-        field = MockField(convs.Time, self.env())
-        conv = field.conv
+        conv = init_conv(convs.Time)
         self.assertEqual(conv.to_python('12:30'), time(12, 30))
 

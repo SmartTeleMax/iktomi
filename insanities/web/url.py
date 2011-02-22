@@ -14,36 +14,39 @@ def urlquote(value):
     return urllib.quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
 
 
-class URL(object):
-    '''
-        URL object
+def construct_url(path, query, host, port, schema):
+    query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
+                            for k,v in query.iteritems()])  \
+             if query else '')
 
-        Represents URL with schema, host, port, path (required) and query
-        specified.
+    path = path
+    if host:
+        host = host.encode('idna')
+        port = ':' + port if port else ''
+        return ''.join((schema, '://', host, port, path,  query))
+    else:
+        return path + query
 
-        `schema`, `host`, `port`, `path` are string objects. `query` is 
-        MultiDict or any object accepted by MultiDict's constructor.
 
-        `host`, `path` and `query`'s keys and values can be also unicode strings.
+class URL(str):
 
-        You can get encoded URL like this::
-
-          url = URL('path', **kwargs)
-          str_url = str(url)
-
-        In this case path and query args are encoded by urlencode, while host is
-        encoded by idna.
-    '''
-
-    def __init__(self, path, query=None, host=None, port=None, schema=None):
+    def __new__(cls, path, query=None, host=None, port=None, schema=None):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        self.path = path if isinstance(path, str) else urlquote(path)
-        self.query = MultiDict(query) if query else MultiDict()
-        self.host = host or ''
-        self.port = port or ''
-        self.schema = schema or 'http'
+        path = path if isinstance(path, str) else urlquote(path)
+        query = MultiDict(query) if query else MultiDict()
+        host = host or ''
+        port = port or ''
+        schema = schema or 'http'
+        self = str.__new__(cls, construct_url(path, query, host, 
+                                              port,schema))
+        self.path = path
+        self.query = query
+        self.host = host
+        self.port = port
+        self.schema = schema
+        return self
 
     def _copy(self, **kwargs):
         path = kwargs.pop('path', self.path)
@@ -84,19 +87,6 @@ class URL(object):
         '''A proxy method for query.get'''
         return self.query.get(key, default=default)
 
-    def __str__(self):
-        query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
-                                for k,v in self.query.iteritems()])  \
-                 if self.query else '')
-
-        path = self.path
-        if self.host:
-            host = self.host.encode('idna')
-            port = ':' + self.port if self.port else ''
-            return ''.join((self.schema, '://', host, port, path,  query))
-        else:
-            return path + query
-
     def get_readable(self):
         '''Gets human-readable representation of the url'''
         query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
@@ -109,9 +99,8 @@ class URL(object):
         else:
             return path + query
 
-
     def __repr__(self):
-        return '<URL %r>' % str(self)
+        return '<URL %r>' % str.__repr__(self)
 
 
 class ConvertError(Exception):

@@ -1,26 +1,32 @@
 #!venv/bin/python
 # -*- coding: utf-8 -*-
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
+
 import unittest
 from unittest import defaultTestLoader as dtl
-from inspect import isclass
 
-from utils import *
-from web import *
-#from forms import *
-#from ext import *
+from utils.storage import *
+from utils.html import *
+from utils.url import *
+
+from web.chain import *
+from web.reverse import *
+from web.convs import *
+from web.filter import *
 
 from forms.convs import *
 from forms.fields import *
 from forms.forms import *
+from forms.media import *
 
 suite = unittest.TestSuite()
 
-# Adding tests in one suite
 for item in locals().values():
-    if isclass(item) and issubclass(item, unittest.TestCase):
+    if isinstance(item, type) and issubclass(item, unittest.TestCase):
         suite.addTest(dtl.loadTestsFromTestCase(item))
 
 if __name__ == '__main__':
-    # Running tests in textmode
     unittest.TextTestRunner(verbosity=2).run(suite)

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['RequestHandler', 'STOP', 'Map', 'RequestContext', 'HttpException']
+__all__ = ['WebHandler', 'cases', 'HttpException', 'handler', 'Reverse',
+           'locations']
 
 import logging
 import types
+import httplib
 from inspect import getargspec
 from .http import HttpException, Request, Response
-from ..utils.stacked_dict import StackedDict
+from ..utils.storage import VersionedStorage
 from .url import URL
 
 
@@ -14,47 +16,108 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_handler(handler):
-    '''Wrapps functions, that they can be usual RequestHandler's'''
+    '''Wrapps functions, that they can be usual WebHandler's'''
     if type(handler) in (types.FunctionType, types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
 
 
-def map_row_from_handler(h):
-    if isinstance(h, Map) and len(h.grid) == 1:
-        return h.grid[0]
-    else:
-        return [h]
+def process_http_exception(response, e):
+    response.status = e.status
+    if e.status in (httplib.MOVED_PERMANENTLY,
+                    httplib.SEE_OTHER):
+        if isinstance(e.url, unicode):
+            url = e.url.encode('utf-8')
+        else:
+            url = str(e.url)
+        response.headers.add('Location', url)
 
 
-class STOP(object): pass
 
-
-class RequestHandler(object):
+class WebHandler(object):
     '''Base class for all request handlers.'''
 
-    def __or__(self, next_):
-        next_ = prepare_handler(next_)
-        return Map(initial_grid=[[self] + map_row_from_handler(next_)])
+    def __or__(self, next_handler):
+        if hasattr(self, '_next_handler'):
+            self._next_handler | next_handler
+        else:
+            self._next_handler = prepare_handler(next_handler)
+        return self
 
-    def handle(self, rctx):
-        '''This method should be overridden in subclasses.
-        It always takes rctx object as only argument and returns it'''
-        return rctx.next()
+    def handle(self, env, data, next_handler):
+        '''This method should be overridden in subclasses.'''
+        return next_handler(env, data)
 
-    def trace(self, tracer):
-        pass
+    def _locations(self):
+        next_handler = self.get_next()
+        # if next_handler is lambda - the end of chain
+        if not type(next_handler) is types.FunctionType:
+            return next_handler._locations()
+        # we are last in chain
+        return {}
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
 
+    def __call__(self, env, data):
+        next_handler = self.get_next()
+        env._commit()
+        data._commit()
+        result = self.handle(env, data, next_handler)
+        if result is None:
+            if env._modified:
+                env._rollback()
+            if data._modified:
+                data._rollback()
+        return result
+
+    def get_next(self):
+        if hasattr(self, '_next_handler'):
+            return self._next_handler
+        #XXX: may be FunctionWrapper?
+        return lambda e, d: None
+
+    def as_wsgi(self):
+        def wrapper(environ, start_response):
+            env = VersionedStorage()
+            env.request = Request(environ, charset='utf-8')
+            data = VersionedStorage()
+            try:
+                response = self(env, data)
+                if response is None:
+                    logger.debug('Application returned None '
+                                 'instead of Response object')
+                    status_int = httplib.NOT_FOUND
+                    response = Response(status=status_int, 
+                                        body='%d %s' % (status_int, 
+                                                        httplib.responses[status_int]))
+            except HttpException, e:
+                response = Response()
+                process_http_exception(response, e)
+                status_int = response.status_int
+                response.write('%d %s' % (status_int, 
+                                          httplib.responses[status_int]))
+            except Exception, e:
+                logger.exception(e)
+                raise
+
+            headers = response.headers.items()
+            start_response(response.status, headers)
+            return [response.body]
+        return wrapper
+
 
 class Reverse(object):
 
-    def __init__(self, urls, namespace, host=''):
+    def __init__(self, urls, env=None):
         self.urls = urls
-        self.namespace = namespace or ''
-        self.host = host
+        self.env = env
+
+    @property
+    def namespace(self):
+        if self.env and 'namespace' in self.env:
+            return self.env.namespace
+        return ''
 
     def __call__(self, name, **kwargs):
         if name.startswith('.'):
@@ -66,304 +129,67 @@ class Reverse(object):
                 ns = self.namespace
             name = ns + '.' + local_name
 
-        subdomains, builders = self.urls[name]
+        data = self.urls[name]
 
-        host = u'.'.join(subdomains)
-        absolute = (host != self.host)
+        host = u'.'.join(data.get('subdomains', []))
         # path - urlencoded str
-        path = ''.join([b(**kwargs) for b in builders])
+        path = ''.join([b(**kwargs) for b in reversed(data['builders'])])
         return URL(path, host=host)
 
+    @classmethod
+    def from_handler(cls, handler, env=None):
+        return cls(locations(handler), env=env)
 
-class Map(RequestHandler):
-    '''
-        Strores combinations RequestHandler instances: chains and maps.
-        For example::
 
-            h1 | h2 | h3
-
-        where h1, h2 and h3 are RequestHandler instances, will produce 
-        Map instance with one chain containing three handlers.
-
-        And following construction::
-
-            Map(
-                h1 | h2 | h3,
-                Map(
-                    h3 | h4,
-                    h7),
-                h5,
-            )
-
-        will produce a map with three chains: the first contains three handlers and others
-        contain one handlers.
-
-        Map tries to execute each of it's chains until success. Unsuccesfull chain execution means
-        one of the handlers in chain returns `rctx.stop()` signal. Succesful execution means either
-        all handlers return `rctx.next()`, or any of them returns `rctx.complete()` signal.
-
-        If all handlers have been finished unsuccesfully, Map returns `rctx.stop()` signal.
-
-        Map also incapsulates rctx dictionaries' (rctx.conf, rctx.vals, rctx.data) state
-        management: changes in a chain does not attract on other ones in current map.
-        If the chain has been finished succesfully, all changes are commited, otherwise
-        they are rolled back.
-    '''
+class cases(WebHandler):
 
     def __init__(self, *handlers, **kwargs):
-        self.grid = kwargs.pop('initial_grid', [])
+        self.handlers = []
         for handler in handlers:
-            handler = prepare_handler(handler)
-            row = map_row_from_handler(handler)
-            self.grid.append(row)
-        if not self.grid:
-            # length of grid must be at least 1
-            self.grid.append([])
-        self.__urls = self.compile_urls_map()
+            self.handlers.append(prepare_handler(handler))
 
-    def __or__(self, next_):
-        next_ = prepare_handler(next_)
-        row = map_row_from_handler(next_)
-        if len(self.grid) == 1:
-            return Map(initial_grid=[self.grid[0] + row])
-        return Map(initial_grid=[[self] + row])
+    def __or__(self, next_handler):
+        'cases needs to set next handler for each handler it keeps'
+        for handler in self.handlers:
+            handler | prepare_handler(next_handler)
+        return self
 
-    @property
-    def urls(self):
-        return self.__urls
+    def handle(self, env, data, next_handler):
+        for handler in self.handlers:
+            result = handler(env, data)
+            if result is None:
+                continue
+            return result
 
-    def handle(self, rctx):
-        # construct url_for
-        last_url_for = getattr(rctx.vals, 'url_for', None)
-        if last_url_for is None:
-            urls = self.urls
-        else:
-            urls = last_url_for.urls
-        # urls - url map of the most parent Map instance.
-        # namespace is controlled by Conf wrapper instance,
-        # so we just use rctx.conf.namespace
-        url_for = Reverse(urls, rctx.conf.namespace,
-                          host=rctx.request.host.split(':')[0])
-        rctx.vals['url_for'] = rctx.data['url_for'] = url_for
-
-        for i in xrange(len(self.grid)):
-            rctx.lazy_copy()
-            rctx._set_map_state(self, i, 0)
-            result = rctx.next()
-            if result is not STOP:
-                result.commit()
-                return result.next()
-            rctx.rollback()
-        return STOP
-
-    def run_handler(self, rctx, i, j):
-        #logger.debug('Position in map: %s %s' % (i, j))
-        try:
-            handler = self.grid[i][j]
-        except IndexError:
-            return rctx
-        else:
-            rctx._set_map_state(self, i, j+1)
-            #logger.debug('Handled by %r' % handler)
-            return handler.handle(rctx)
-
-    def compile_urls_map(self):
-        tracer = Tracer()
-        for row in self.grid:
-            for item in row:
-                if isinstance(item, Map):
-                    tracer.nested_map(item)
-                    break
-                item.trace(tracer)
-            tracer.finish_step()
-        return tracer.urls
-
-    def __call__(self, rctx):
-        #logger.debug('Called map: %r' % self)
-        return self.handle(rctx)
+    def _locations(self):
+        locations = {}
+        for handler in self.handlers:
+            handler_locations = handler._locations()
+            for k, v in handler_locations.items():
+                if k in locations:
+                    raise ValueError('Location "%s" already exists' % k)
+                locations[k] = v
+        return locations
 
     def __repr__(self):
-        return '%s(*%r)' % (self.__class__.__name__, self.grid)
+        return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class FunctionWrapper(RequestHandler):
+class FunctionWrapper(WebHandler):
     '''Wrapper for handler represented by function'''
 
     def __init__(self, func):
         self.func = func
 
-    def handle(self, rctx):
-        # Now we will find which arguments are required by
-        # wrapped function. And then get arguments values from rctx
-        # data,
-        # if there is no value argument we trying to get default value
-        # from function specification otherwise Exception is raised
-        argsspec = getargspec(self.func)
-        arg_offset = 1 if type(self.func) is types.MethodType else 0
-        if argsspec.defaults and len(argsspec.defaults) > 0:
-            args = argsspec.args[arg_offset:-len(argsspec.defaults)]
-            kwargs = {}
-            for i, kwarg_name in enumerate(argsspec.args[-len(argsspec.defaults):]):
-                if kwarg_name in rctx.data:
-                    kwargs[kwarg_name] = rctx.data[kwarg_name]
-                else:
-                    kwargs[kwarg_name] = argsspec.defaults[i]
-        else:
-            args = argsspec.args[arg_offset:]
-            kwargs = {}
-        # form list of arguments values
-        args = [rctx] + [rctx.data[arg_name] for arg_name in args[1:]]
-        result = self.func(*args, **kwargs)
-        if result is STOP:
-            return STOP
-        if isinstance(result, dict):
-            rctx.data.update(result)
-        return rctx.next()
+    def handle(self, env, data, next_handler):
+        return self.func(env, data, next_handler)
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.func.__name__)
 
 
-class Tracer(object):
-
-    def __init__(self):
-        self.__urls = {}
-        self._current_step = {}
-
-    @property
-    def urls(self):
-        return self.__urls
-
-    def check_name(self, name):
-        if name in self.__urls:
-            raise ValueError('Dublicating key "%s" in url map' % name)
-
-    def finish_step(self):
-        # get subdomains, namespaces if there are any
-        subdomains = self._current_step.get('subdomain', [])
-        subdomains.reverse()
-        namespaces = self._current_step.get('namespace', [])
-
-        # get url name and url builders if there are any
-        url_name = self._current_step.get('url_name', None)
-        builders = self._current_step.get('builder', [])
-        nested_map = self._current_step.get('nested_map', None)
-
-        # url name show that it is an usual chain (no nested map)
-        if url_name:
-            url_name = url_name[0]
-            if namespaces:
-                url_name = '.'.join(namespaces) + '.' + url_name
-            self.check_name(url_name)
-            self.__urls[url_name] = (subdomains, builders)
-        # nested map (which also may have nested maps)
-        elif nested_map:
-            nested_map = nested_map[0]
-            for k,v in nested_map.urls.items():
-                if namespaces:
-                    k = '.'.join(namespaces) + '.' + k
-                self.check_name(k)
-                self.__urls[k] = (v[0] + subdomains, builders + v[1])
-
-        self._current_step = {}
-
-    def __getattr__(self, name):
-        return lambda e: self._current_step.setdefault(name, []).append(e)
+handler = FunctionWrapper
 
 
-class RequestContext(object):
-    '''
-    Context of the request. A class containing request and response objects and
-    a number of data containers with request environment and processing data.
-    '''
-
-    def __init__(self, wsgi_environ):
-        self.request = Request(environ=wsgi_environ, charset='utf8')
-        self.response = Response()
-        self.wsgi_env = wsgi_environ.copy()
-
-        #: this attribute is for views and template data,
-        #: for example filter match appends params here.
-        self.data = StackedDict()
-
-        #: this is config, static, declarative (key, value)
-        self.conf = StackedDict(namespace='')
-
-        #: this storage is for nesecary objects like db session, templates env,
-        #: cache, url_for. something like dynamic config values.
-        self.vals = StackedDict()
-        # XXX it's big question, which dicts we have to commit after map success
-        self._local = StackedDict()
-
-    def redirect_to(self, *args, **kwargs):
-        raise HttpException(303, url=self.vals.url_for(*args, **kwargs))
-
-    @classmethod
-    def blank(cls, url, **data):
-        '''
-        Method returning blank rctx. Very useful for testing
-
-        `data` - POST parameters.
-        '''
-        POST = data or None
-        env = Request.blank(url, POST=POST).environ
-        return cls(env)
-
-    def _set_map_state(self, _map, i, j):
-        v = self._local
-        v['_map'], v['_map_i'], v['_map_j'] = _map, i, j
-
-    def next(self):
-        '''Call next handler in chain'''
-        v = self._local
-        if '_map' in v:
-            #logger.debug('Position in map: %s %s' % (i, j))
-            try:
-                handler = v._map.grid[v._map_i][v._map_j]
-            except IndexError:
-                return self
-            else:
-                v['_map_j'] += 1
-                #logger.debug('Handled by %r' % handler)
-                return handler.handle(self)
-        return self
-
-    def complete(self):
-        '''Completes the chain execution without STOP signal'''
-        return self
-
-    def _dict_action(self, action):
-        for d in self.data, self.vals, self.conf:
-            getattr(d, action)()
-
-    def lazy_copy(self):
-        self._dict_action('lazy_copy')
-        self._local.lazy_copy()
-
-    def commit(self):
-        self._dict_action('commit')
-        self._local.rollback()
-
-    def rollback(self):
-        self._dict_action('rollback')
-        self._local.rollback()
-
-    def stop(self):
-        '''Stop chain execution and try to handle Map's next chain (if any).'''
-        return STOP
-
-    def render_to_response(self, template, data, content_type='text/html'):
-        data.update(self.data.as_dict())
-        data['VALS'] = self.vals
-        data['CONF'] = self.conf
-        data['REQUEST'] = self.request
-        rendered = self.vals.renderer.render(template, **data)
-        self.response.content_type = content_type
-        self.response.write(rendered)
-
-    def render_string(self, template, data):
-        data.update(self.data.as_dict())
-        data['VALS'] = self.vals
-        data['CONF'] = self.conf
-        data['REQUEST'] = self.request
-        return self.vals.renderer.render(template, **data)
+def locations(handler):
+    return handler._locations()
