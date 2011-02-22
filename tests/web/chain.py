@@ -132,15 +132,6 @@ class Chain(unittest.TestCase):
         self.assertEqual(count['count'], 0)
 
     def test_chain_of_lists(self):
-        'Chain of lists'
-        def h(env, data, nx):
-            return nx(env, data)
-        first_list = web.cases(h, h)
-        chain = web.cases(h) | first_list
-        self.assert_(hasattr(chain.handlers[0], '_next_handler'))
-        self.assertEqual(chain.handlers[0]._next_handler, first_list)
-
-    def test_chain_of_lists(self):
         'Chain of lists, data check'
         def h(env, data, nx):
             data.count = 1
