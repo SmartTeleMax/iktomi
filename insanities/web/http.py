@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['HttpException', 'Request', 'Response']
+__all__ = ['Request', 'Response']
 
 import logging
 import httplib
@@ -12,16 +12,6 @@ from ..utils import cached_property
 
 logger = logging.getLogger(__name__)
 
-
-class HttpException(Exception):
-    '''
-    Exception forcing :class:`Map <insanities.web.core.Map>` to generate
-    :class:`Response` with given status code and Location header (if provided)
-    '''
-    def __init__(self, status, url=None):
-        super(HttpException, self).__init__()
-        self.status = int(status)
-        self.url = url
 
 
 class Request(_Request):

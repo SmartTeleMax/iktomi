@@ -60,10 +60,10 @@ class CookieAuth(web.WebHandler):
         You may have multiple instances of `CookieAuth` in single webapp 
         (just use different values for `cookie_name`).
 
-        :*user_by_credential* - callable that gets `rctx` and data from `login_form`.
+        :*user_by_credential* - callable that gets `env` and data from `login_form`.
                                 It must return user id or None.
 
-        :*user_by_id* - callable that gets `rctx` and id. It must return User or None.
+        :*user_by_id* - callable that gets `env` and id. It must return User or None.
 
         :*login_url* - string that will be substitute to `match` filter as value and url name.
                        default value is 'login', so `match('/login', 'login')`

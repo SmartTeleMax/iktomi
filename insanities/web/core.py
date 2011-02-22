@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'HttpException', 'handler', 'Reverse',
+__all__ = ['WebHandler', 'cases', 'handler', 'Reverse',
            'locations']
 
 import logging
 import types
 import httplib
 from inspect import getargspec
-from .http import HttpException, Request, Response
+from webob.exc import HTTPException
+from .http import Request, Response
 from ..utils.storage import VersionedStorage
 from .url import URL
+
 
 
 logger = logging.getLogger(__name__)
@@ -20,18 +22,6 @@ def prepare_handler(handler):
     if type(handler) in (types.FunctionType, types.MethodType):
         handler = FunctionWrapper(handler)
     return handler
-
-
-def process_http_exception(response, e):
-    response.status = e.status
-    if e.status in (httplib.MOVED_PERMANENTLY,
-                    httplib.SEE_OTHER):
-        if isinstance(e.url, unicode):
-            url = e.url.encode('utf-8')
-        else:
-            url = str(e.url)
-        response.headers.add('Location', url)
-
 
 
 class WebHandler(object):
@@ -91,12 +81,8 @@ class WebHandler(object):
                     response = Response(status=status_int, 
                                         body='%d %s' % (status_int, 
                                                         httplib.responses[status_int]))
-            except HttpException, e:
-                response = Response()
-                process_http_exception(response, e)
-                status_int = response.status_int
-                response.write('%d %s' % (status_int, 
-                                          httplib.responses[status_int]))
+            except HTTPException, e:
+                response = e
             except Exception, e:
                 logger.exception(e)
                 raise
