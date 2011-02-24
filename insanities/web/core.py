@@ -7,7 +7,7 @@ import logging
 import types
 import httplib
 from webob.exc import HTTPException
-from .http import Request, Response
+from .http import Request, Response, PathPrefixes
 from ..utils.storage import VersionedStorage
 from .url import URL
 
@@ -70,6 +70,7 @@ class WebHandler(object):
         def wrapper(environ, start_response):
             env = VersionedStorage()
             env.request = Request(environ, charset='utf-8')
+            env._route_state = PathPrefixes(env.request)
             data = VersionedStorage()
             try:
                 response = self(env, data)
