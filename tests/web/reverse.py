@@ -171,3 +171,11 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r('newslist'), '/news/list')
         self.assertEqual(r('doc', id=1), '/docs/1')
         self.assertEqual(r('news', id=1), '/news/1')
+
+    def test_unicode(self):
+        'Reverse with unicode'
+        handler = web.match('/doc/<string:slug>', 'doc')
+        r = web.Reverse.from_handler(handler)
+        self.assertEqual(r('doc', slug=u'ю'), '/doc/%D1%8E')
+
+

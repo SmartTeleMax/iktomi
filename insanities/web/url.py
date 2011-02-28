@@ -149,7 +149,7 @@ class String(Converter):
         return value
 
     def to_url(self, value):
-        return str(value)
+        return unicode(value)
 
 
 class Integer(Converter):
