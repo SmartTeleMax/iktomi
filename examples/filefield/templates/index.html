@@ -9,10 +9,10 @@
 </ul>
 {% endif %}
 
-<form method="POST" action='{{ VALS.url_for('files') }}' enctype="multipart/form-data">
+<form method="POST" action='{{ url_for('files') }}' enctype="multipart/form-data">
 <fieldset>
 <table>
-    {{ ui(form).render()|safe }}
+    {{ form.render()|safe }}
 </table>
 </fieldset>
 

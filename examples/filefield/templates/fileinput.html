@@ -1,6 +1,6 @@
-{{ ui.render_field(field.get_field('mode'))|safe }}
-{{ ui.render_field(field.get_field('temp_name'))|safe }}
-{{ ui.render_field(field.get_field('original_name'))|safe }}
+{{ field.get_field('mode').render()|safe }}
+{{ field.get_field('temp_name').render()|safe }}
+{{ field.get_field('original_name').render()|safe }}
 
 {% if mode == 'existing' %}
     <a target="_blank" href="{{ file_url }}">
@@ -12,7 +12,7 @@
     </a><br/>
 {% endif %}
 {% if mode != 'empty' and not required %}
-    {{ ui.render_field(field.get_field('delete'))|safe }}
+    {{ field.get_field('delete').render()|safe }}
     <label for="{{ field.get_field('delete').id }}">delete</label>
     <br/>
 {% endif %}

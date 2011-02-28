@@ -310,3 +310,17 @@ class FieldList(AggregateField):
         media = BaseField.get_media(self)
         media += self.field.get_media()
         return media
+
+
+class FileField(BaseField):
+    '''
+    The simpliest file field
+    '''
+
+    def accept(self):
+        file = self.form.files.get(self.input_name, None)
+        return self.to_python(file)
+
+    def get_default(self):
+        return None # XXX
+

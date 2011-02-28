@@ -7,7 +7,7 @@ from PIL import Image
 
 from ..utils import weakproxy, cached_property
 from ..forms import convs, widgets
-from ..forms.fields import Field
+from ..forms.fields import Field, FieldSet
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,23 @@ def _get_file_content(f):
     if isinstance(f, cgi.FieldStorage):
         return f.value
     return f.read()
+
+
+class TempFileField(FieldSet):
+    '''
+    Container field aggregating a couple of other different fields
+    '''
+
+    def __init__(self, name, conv=convs.SimpleFile, **kwargs):
+        kwargs.setdefault('fields', getattr(conv, 'subfields', []))
+        FieldSet.__init__(self, name, conv=conv, **kwargs)
+
+    def to_python(self, value):
+        file = self.form.files.get(self.input_name, None)
+        return self.conv.to_python(file, **value)
+
+    def get_default(self):
+        return None # XXX
 
 
 class BaseFile(object):
