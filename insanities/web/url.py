@@ -329,7 +329,7 @@ class UrlTemplate(object):
             if isinstance(part, tuple):
                 var, conv_obj = part
                 value = kwargs[var]
-                result += conv_obj.to_url(value)
+                result += urlquote(conv_obj.to_url(value))
             else:
                 result += part
         # result - urlencoded str
