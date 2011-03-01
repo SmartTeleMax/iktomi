@@ -26,7 +26,7 @@ def list_files(env, data, next_handler):
 
 def post_file(env, data, next_handler):
     dir_ = os.path.join(env.cfg.MEDIA, 'stored')
-    form, url = data.form, data.url
+    form = data.form
 
     if form.accept(env.request.POST, env.request.FILES):
         tmp_file = form.python_data['file']
