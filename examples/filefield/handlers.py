@@ -5,7 +5,7 @@ import datetime, os
 from forms import FileForm
 from webob.exc import HTTPSeeOther
 
-from insanities.ext.filefields import TempUploadedFile, time_uid, StoredFile
+from insanities.ext.filefields import time_uid
 
 
 def render_to(template):
@@ -25,16 +25,17 @@ def list_files(env, data, next_handler):
     return next_handler(env, data)
 
 def post_file(env, data, next_handler):
-    dir_ = os.path.join(e.MEDIA, 'stored')
+    dir_ = os.path.join(env.cfg.MEDIA, 'stored')
     form, url = data.form, data.url
 
     if form.accept(env.request.POST, env.request.FILES):
         tmp_file = form.python_data['file']
-        if isinstance(tmp_file, TempUploadedFile):
+        if tmp_file.mode == 'temp':
             filename = time_uid() + tmp_file.ext
-            new_value = StoredFile(filename, dir_, url)
-            os.rename(tmp_file.full_path, new_value.full_path)
-        raise HTTPSeeOther(env.url_for('files'))
+            new_path = os.path.join(dir_, filename)
+            os.rename(tmp_file.full_path, new_path)
+
+        raise HTTPSeeOther(location=str(env.url_for('files')))
     #result = dict(result)
     return next_handler(env, data)
 
@@ -45,4 +46,4 @@ def delete_files(env, data, next_handler):
     filepath = os.path.join(dir_, f)
     if '/' not in f and os.path.isfile(filepath):
         os.unlink(filepath)
-    raise HTTPSeeOther(env.url_for('files'))
+    raise HTTPSeeOther(location=str(env.url_for('files')))

@@ -317,10 +317,15 @@ class FileField(BaseField):
     The simpliest file field
     '''
 
+    raw_value = None
+
     def accept(self):
         file = self.form.files.get(self.input_name, None)
         return self.to_python(file)
 
     def get_default(self):
         return None # XXX
+
+    def set_raw_value(self, value):
+        pass
 
