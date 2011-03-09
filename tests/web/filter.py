@@ -94,6 +94,7 @@ class Prefix(unittest.TestCase):
 
     def test_unicode(self):
         '''Routing rules with unicode'''
+        # XXX move to urltemplate and reverse tests?
         app = web.cases(
             web.prefix(u'/հայերեն') | web.cases(
                 web.match(u'/%', 'percent') | (lambda e,d,n: Response())

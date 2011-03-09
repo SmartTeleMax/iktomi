@@ -171,3 +171,21 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r('newslist'), '/news/list')
         self.assertEqual(r('doc', id=1), '/docs/1')
         self.assertEqual(r('news', id=1), '/news/1')
+
+    def test_unicode(self):
+        'Reverse with unicode'
+        # various combinations of url parts containing unicode
+        chain = web.subdomain(u'п') | web.cases(
+            web.prefix(u'/з') | web.match('/', 'unicode1'),
+            web.prefix(u'/з') | web.match('/<string:slug>', 'unicode2'),
+            web.match(u'/д/<string:slug>', 'unicode3'), #regression
+            web.match(u'/<string:slug1>/<string:slug2>', 'unicode4'), #regression
+        )
+        r = web.Reverse.from_handler(chain)
+
+        self.assertEqual(r('unicode1'), 'http://xn--o1a/%D0%B7/')
+        self.assertEqual(r('unicode2', slug=u'ю'), 'http://xn--o1a/%D0%B7/%D1%8E')
+        self.assertEqual(r('unicode3', slug=u'ю'), 'http://xn--o1a/%D0%B4/%D1%8E')
+        self.assertEqual(r('unicode4', slug1=u'д', slug2=u'ю'), 'http://xn--o1a/%D0%B4/%D1%8E')
+
+
