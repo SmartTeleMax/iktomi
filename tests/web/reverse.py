@@ -39,8 +39,8 @@ class LocationsTests(unittest.TestCase):
         'Locations of web.match with prefix'
         chain = web.prefix('/news') | web.match('/', 'index')
         self.assert_(web.locations(chain).keys(), ['index'])
-        self.assert_('builders' in web.locations(chain)['index'])
-        self.assertEqual(len(web.locations(chain)['index']['builders']), 2)
+        self.assert_(web.locations(chain)['index'].builders)
+        self.assertEqual(len(web.locations(chain)['index'].builders), 2)
 
     def test_prefix_and_cases(self):
         'Locations of web.cases with prefix'
@@ -49,8 +49,8 @@ class LocationsTests(unittest.TestCase):
                 web.match('/docs', 'docs'))
         for k in ('index', 'docs'):
             self.assert_(web.locations(chain).keys(), [k])
-            self.assert_('builders' in web.locations(chain)[k])
-            self.assertEqual(len(web.locations(chain)[k]['builders']), 2)
+            self.assert_(web.locations(chain)[k].builders)
+            self.assertEqual(len(web.locations(chain)[k].builders), 2)
 
     def test_namespace(self):
         'Locations namespace'
@@ -78,11 +78,11 @@ class LocationsTests(unittest.TestCase):
         self.assertEqual(locations.keys(), 
                          ['index', 'docs.index', 'docs.item',
                           'news.item', 'news.index'])
-        self.assertEqual(len(locations['index']['builders']), 2)
-        self.assertEqual(len(locations['news.index']['builders']), 3)
-        self.assertEqual(len(locations['news.item']['builders']), 3)
-        self.assertEqual(len(locations['docs.index']['builders']), 3)
-        self.assertEqual(len(locations['docs.item']['builders']), 3)
+        self.assertEqual(len(locations['index'].builders), 2)
+        self.assertEqual(len(locations['news.index'].builders), 3)
+        self.assertEqual(len(locations['news.item'].builders), 3)
+        self.assertEqual(len(locations['docs.index'].builders), 3)
+        self.assertEqual(len(locations['docs.item'].builders), 3)
 
     def test_namespace_with_empty_name(self):
         'Namespaces with empty url name'
@@ -93,8 +93,8 @@ class LocationsTests(unittest.TestCase):
         'Locations and subdomains'
         chain = web.subdomain('news') | web.match('/', 'index')
         self.assert_(web.locations(chain).keys(), ['index'])
-        self.assert_('subdomains' in web.locations(chain)['index'])
-        self.assertEqual(web.locations(chain)['index']['subdomains'], 
+        self.assert_(web.locations(chain)['index'].subdomains)
+        self.assertEqual(web.locations(chain)['index'].subdomains, 
                          ['news'])
 
     def test_subdomains_and_cases(self):
@@ -104,8 +104,8 @@ class LocationsTests(unittest.TestCase):
                 web.match('/docs', 'docs'))
         for k in ('index', 'docs'):
             self.assert_(web.locations(chain).keys(), [k])
-            self.assert_('subdomains' in web.locations(chain)[k])
-            self.assertEqual(web.locations(chain)[k]['subdomains'],
+            self.assert_(web.locations(chain)[k].subdomains)
+            self.assertEqual(web.locations(chain)[k].subdomains,
                              ['news'])
 
 
@@ -187,5 +187,3 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r('unicode2', slug=u'ю'), 'http://xn--o1a/%D0%B7/%D1%8E')
         self.assertEqual(r('unicode3', slug=u'ю'), 'http://xn--o1a/%D0%B4/%D1%8E')
         self.assertEqual(r('unicode4', slug1=u'д', slug2=u'ю'), 'http://xn--o1a/%D0%B4/%D1%8E')
-
-

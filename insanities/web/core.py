@@ -104,6 +104,10 @@ class Reverse(object):
             return self.env.namespace
         return ''
 
+    class smart_namespace:
+        def __init__(self, urls):
+            self.urls = urls
+
     def __call__(self, name, **kwargs):
         if name.startswith('.'):
             local_name = name.lstrip('.')
@@ -116,10 +120,15 @@ class Reverse(object):
 
         data = self.urls[name]
 
-        host = u'.'.join(data.get('subdomains', []))
+        host = u'.'.join(data.subdomains)
         # path - urlencoded str
-        path = ''.join([b(**kwargs) for b in reversed(data['builders'])])
+        path = ''.join([b(**kwargs) for b in reversed(data.builders)])
         return URL(path, host=host)
+
+    def __getattr__(self, name):
+        if name in self.__dict__:
+            return self.__dict__[name]
+        raise AttributeError(name)
 
     @classmethod
     def from_handler(cls, handler, env=None):

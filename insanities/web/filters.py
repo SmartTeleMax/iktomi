@@ -6,6 +6,7 @@ __all__ = ['match', 'method', 'static_files', 'ctype', 'prefix',
 import logging
 import httplib
 import mimetypes
+import collections
 from os import path
 from urllib import unquote
 from .core import WebHandler
@@ -14,6 +15,8 @@ from .url import UrlTemplate
 
 
 logger = logging.getLogger(__name__)
+
+UrlBuilderData = collections.namedtuple('UrlBuilderData', 'builders subdomains')
 
 
 def update_data(data, new_data):
@@ -29,7 +32,7 @@ class match(WebHandler):
         self.builder = UrlTemplate(url, converters=convs)
 
     def _locations(self):
-        return {self.url_name: {'builders': [self.builder]}}
+        return {self.url_name: UrlBuilderData([self.builder], [])}
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
@@ -117,7 +120,7 @@ class prefix(WebHandler):
     def _locations(self):
         locations = super(prefix, self)._locations()
         for v in locations.values():
-            v.setdefault('builders', []).append(self.builder)
+            v.builders.append(self.builder)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -139,7 +142,7 @@ class subdomain(WebHandler):
     def _locations(self):
         locations = super(subdomain, self)._locations()
         for v in locations.values():
-            v.setdefault('subdomains', []).append(self.subdomain)
+            v.subdomains.append(self.subdomain)
         return locations
 
     def handle(self, env, data, next_handler):
