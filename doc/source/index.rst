@@ -12,8 +12,10 @@ There is two main parts of Insanities: routing tools and web forms processing to
 Getting started
 ^^^^^^^^^^^^^^^
 
-* _`Creating simple app`: doc/source/web-tutorial.rst
+* `Creating simple app`_
 * :ref:`Form processing <insanities-forms-tutorial>`
+
+_Creating simple app: doc/source/web-tutorial.rst
 
 Routing
 ^^^^^^^
