@@ -1,1 +1,0 @@
-doc/source/index.rst
