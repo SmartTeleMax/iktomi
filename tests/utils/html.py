@@ -10,9 +10,9 @@ class TestSanitizer(unittest.TestCase):
 
     def setUp(self):
         self.attrs = {
-            'safe_tags': ['a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u', 'i', 'b',
+            'allowed_elements': ['a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u', 'i', 'b',
                           'blockquote', 'sub', 'sup', 'span'],
-            'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
+            'allowed_attributes': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allowed_classes': {},
             'strip_whitespace': True,
@@ -38,7 +38,7 @@ class TestSanitizer(unittest.TestCase):
     
     def test_safe_css(self):
         u'''Ensure that sanitizer does not remove safe css'''
-        self.attrs['safe_attrs'].append('style')
+        self.attrs['allowed_attributes'].append('style')
         res = self.sanitize('<p style="color: #000; background-color: red; font-size: 1.2em">p</p>')
         assert 'color: #000; background-color: red; font-size: 1.2em' in res
     
@@ -82,7 +82,7 @@ class TestSanitizer(unittest.TestCase):
 
     def test_unsafe_css(self):
         u'''Special test for html5: html5lib has very ultimate css cleanup with gauntlets'''
-        self.attrs['safe_attrs'].append('style')
+        self.attrs['allowed_attributes'].append('style')
         res = self.sanitize('<p style="background: url(javascript:void); '
                        'color: #000; width: e/**/xpression(alert());">p</p>')
         self.assertEqual(res, '<p>p</p>')

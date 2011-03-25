@@ -3,49 +3,32 @@
 Module containing classes for easy and flexible HTML cleanup
 '''
 
-import html5lib
+__all__ = ['Sanitizer', 'sanitize', 'remove_a_tags_without_href', 'strip_empty_tags',
+           'strip_empty_tags_nested']
+
 import re
-
 from xml.sax.saxutils import escape, unescape
+from html5lib import HTMLParser, sanitizer, treebuilders, treewalkers, serializer
+from html5lib.constants import tokenTypes
 from html5lib.html5parser import ParseError
-from html5lib import sanitizer, treebuilders, treewalkers, serializer
 
-try:
-    from html5lib.constants import tokenTypes
-    # dirty hack to support both html5lib v0.11 and v0.90
-except ImportError:
-    # html5lib v 0.11
-    tokenTypes = ("StartTag", "EndTag", "EmptyTag",
-                   "selfClosing", 'Comment', 'Characters')
-    tokenTypes = dict((x, x) for x in tokenTypes)
 
 SAFE_CLASSES = {}
 
 class TokenSanitazer(sanitizer.HTMLSanitizer):
 
     escape_invalid_tags = False
-    
+
     # only html (not SVG or MathML) elements and attributes
     allowed_elements = sanitizer.HTMLSanitizer.acceptable_elements
     allowed_attributes = sanitizer.HTMLSanitizer.acceptable_attributes
     allowed_classes = SAFE_CLASSES
-    
+
     options = ('allowed_elements', 'allowed_attributes', 'allowed_css_properties',
                'allowed_css_keywords', 'allowed_protocols', 'escape_invalid_tags',
                'allowed_classes', 'attr_val_is_uri')
-    # names from genshi-like style for backward compatibility
-    property_aliases = [('safe_tags', 'allowed_elements'),
-                        ('safe_attrs', 'allowed_attributes'),
-                        ('uri_attrs', 'attr_val_is_uri'),
-                        ('classes', 'allowed_classes'),
-                        ('safe_schemes', 'allowed_protocols')]
 
     def __init__(self, *args, **kwargs):
-        for old, new in self.property_aliases:
-            if old in kwargs:
-                # XXX write warning
-                kwargs[new] = kwargs.pop(old)
-
         for key in kwargs.keys():
             if key in self.options:
                 setattr(self, key, kwargs.pop(key))
@@ -53,7 +36,7 @@ class TokenSanitazer(sanitizer.HTMLSanitizer):
                              'lowercaseElementName', 'lowercaseAttrName'):
                 kwargs.pop(key)
         super(TokenSanitazer, self).__init__(*args, **kwargs)
-    
+
     def sanitize_token(self, token):
         if token["type"] in (tokenTypes["StartTag"], tokenTypes["EndTag"], 
                              tokenTypes["EmptyTag"]):
@@ -119,19 +102,13 @@ class TokenSanitazer(sanitizer.HTMLSanitizer):
         return token
 
 def remove_a_tags_without_href(dom_tree, **kwargs):
-    try:
-        import xpath
-    except ImportError:
-        # unfortunately, xpath is not included to python core
-        a_tags = []
-        for node in dom_tree.childNodes:
-            if node.nodeType == node.ELEMENT_NODE:
-                if node.tagName == 'a':
-                    a_tags.append(node)
-                a_tags.extend(node.getElementsByTagName('a'))
-        a_tags = filter(lambda x: not x.hasAttribute('href'), a_tags)
-    else:
-        a_tags = xpath.find('.//*:a[not(@href)]', dom_tree)
+    a_tags = []
+    for node in dom_tree.childNodes:
+        if node.nodeType == node.ELEMENT_NODE:
+            if node.tagName == 'a':
+                a_tags.append(node)
+            a_tags.extend(node.getElementsByTagName('a'))
+    a_tags = filter(lambda x: not x.hasAttribute('href'), a_tags)
 
     for a in a_tags:
         while a.childNodes:
@@ -165,9 +142,9 @@ class Sanitizer(object):
     Sanitizer object customizing sanitarization
     and providing method for sanitizing string.
     Is used by :class:`forms.convs.Html<insanities.forms.convs.Html>`.
-    
+
     There are some options accepted by constructor:
-    
+
     * *allowed_elements*. A list of HTML elements tag names
       that are not removed or escaped.
     * *allowed_attributes*. A list of HTML attributes that
@@ -223,7 +200,7 @@ class Sanitizer(object):
         buf = buf.strip()
         if not buf:
             return None
-        p = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"),
+        p = HTMLParser(tree=treebuilders.getTreeBuilder("dom"),
                                 tokenizer=self.token_sanitizer())
         return p.parseFragment(buf)
 
@@ -257,13 +234,16 @@ class Sanitizer(object):
 
         return unicode(clean)
 
+
 def _get_list_props(cls):
     return [(opt, getattr(cls, opt))
             for opt in cls.options
             if type(getattr(cls, opt)) in (list, tuple)]
 
+
 PROPERTIES = list(TokenSanitazer.options) + list(Sanitizer.options)
 LIST_PROPERTIES = dict(_get_list_props(TokenSanitazer) + _get_list_props(Sanitizer))
+
 
 def sanitize(buf, **kwargs):
     return Sanitizer(**kwargs).sanitize(buf)
