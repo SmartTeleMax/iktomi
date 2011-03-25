@@ -1,5 +1,4 @@
-import re, datetime, time
-from datetime import timedelta
+import re, time
 
 # http://code.activestate.com/recipes/306860-proleptic-gregorian-dates-and-strftime-before-1900/
 
