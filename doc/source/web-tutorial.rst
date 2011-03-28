@@ -49,25 +49,118 @@ for example, using `Flup`.
 Basic Routing
 ^^^^^^^^^^^^^
 
-Insanities provides some web handlers to ... 
+There is a couple of handlers to match different url parts or other request
+properties: `web.match`, `web.prefix`, `web.methods`, `web.subdomain`, etc.
 
-Insanities routing is based on `web.cases` class. The constructor of this class 
-accepts a couple of other headers and calls each of them until they return 
-`webob.Response` object.
+Insanities routing is based on `web.cases` and `web.match` class. Constructor 
+of class accepts a couple of other handlers. When called the instance calls 
+each of handlers until it returns `webob.Response` object. 
 
-And there is a couple of handlers to match different url parts or other request
-properties: `web.match`, `web.prefix`, `web.methods`, `web.subdomain`.
+Constructor of `web.match` class accepts a URL path to match and a handler name
+to be used for url building (see below). When called it calls next handler only
+for requests with matching urls. Let's see an example::
 
+    web.cases(
+        web.match('/', 'index') | index,
+        web.match('/contacts', 'contacts') | contacts,
+        web.match('/about', 'about') | about,
+    )
+
+As we see, `|` operator chains handlers and makes second handler next for first.
+Important: handlers are not reusable, i.e. can't be included in application in two places.
+
+And here's how it works. For request::
+
+    GET /contacts
+
+1. `web.cases` is called, it calls the first `web.match` handler
+2. `web.match('/', 'index')` does not accept the request and returns None.
+3. `web.cases` gets `None` from first handler and calls the next.
+4. `web.match('/contacts', 'contacts')` accepts the request, calls next 
+   handler (contacts) and returns it's result.
+5. `web.cases` gets not-None result from handler, stops iteration over
+   handlers and returns the result.
+
+Note that execution of chain can be cancelled by every handler. For example, 
+if `contacts` returns None, `web.cases` does not stop iteration of handlers 
+and `web.match('/about', 'about')` is called.
 
 URL parameters
 ^^^^^^^^^^^^^^
+If URL contains data that should be used in heandlers (object ids, slugs, ets),
+`werkzeug`-style URL parameters can be used in `web.match` and `web.prefix` handlers::
 
+    web.match('/user/<int:user_id>')
+
+These handlers use common url parsing engine. They get parameters' values from url and
+put them to `data` object by `__setattr__`.
+
+Insanities provides some basic url converterss: `string` (default), `int`, `bool`, `any`. 
+It also allows you to create and use own ones (see below).
+
+Nested handlers
+^^^^^^^^^^^^^^^
+For more complex projects a simple combinations of `web.cases` and `web.match`
+does not satisfy. Insanities provides some handlers to create complex routing
+rules and allows to create your own handlers. And you can combine handlers as you want. 
+Here is an example::
+
+    web.cases(
+        web.prefix('/api') | web.methods(['GET']) | web.cases(
+            web.match('/users', 'api_users') | users_list,
+            web.match('/comments', 'api_comments') | comments_list
+        ) | to_json,
+
+        web.match('/', 'index') | index,
+        web.prefix('user/<int:user_id>') | web.cases(
+            web.match('', 'user_profile') | user_profile,
+            web.match('/comments', 'user_comments') | user_comments,
+        )
+    )
+
+Building URLs
+^^^^^^^^^^^^^
+Insanities provides url building (or reversing) engine. 
+
+URL reverse object is a callable that can be created for any handler::
+
+    url_for = web.Reverse(web.locations(app))
+
+And this function can be used anywhere::
+    
+    url_for('user', user_id=5)
 
 Make an application configurable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Common way to apply configuration and plug-in any engines is to define configuration 
+function that puts all config parameters into `env` and chain it before app.
+For example::
 
-Bad title, it's about env.
+    import cfg
+    from insanities import web
+    from insanities.templates import jinja2, Template
 
+    template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR,
+                        engines={'html': jinja2.TemplateEngine})
+
+    def environment(env, data, next_handler):
+        env.cfg = cfg
+
+        env.url_for = url_for
+        env.template = template
+        env.db = my_db_engine()
+        env.cache = memcache_client
+
+        try:
+            return next_handler(env, data)
+        finally:
+            env.db.close()
+
+    app = web.handler(environment) | app
+
+    url_for = web.Reverse(web.locations(app))
+
+About `insanities.template` see *anywhere else*.
 
 Controlling execution flow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -78,9 +171,6 @@ Abuot various next_handler usecases
 Scopes of environment and data valiables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-Reversing URLs
-^^^^^^^^^^^^^^
 
 
 Smart URL object
@@ -101,6 +191,7 @@ subdomain, methods
 
 Custom URL converters
 ^^^^^^^^^^^^^^^^^^^^^
+by subclassing `web.url.Converter` class
 
 URL Namespaces
 ^^^^^^^^^^^^^^
