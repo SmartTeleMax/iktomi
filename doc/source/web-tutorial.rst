@@ -139,7 +139,7 @@ For example, to implement "middleware" you can do something like::
 
     def wrapper(env, data, next_handler):
         do_something()
-        result = next_handler()
+        result = next_handler(env, data)
         do_something_else(result)
         return result
 
@@ -150,7 +150,7 @@ statements with next_handler::
 
     def wrapper(env, data, next_handler):
         try:
-            return next_handler()
+            return next_handler(env, data)
         except MyError:
             return exc.HTTPNotFound()
 
@@ -204,11 +204,34 @@ any unexpected problems in other part of your app.
 
 Smart URL object
 ^^^^^^^^^^^^^^^^
+URL build functions does not return actually `str` object, but it's `web.URL`
+subclass'es instance. It allows to make common operations with queryString
+parameters (add, set, delete) and also has method returning
+URL as human-readable unicode string::
 
+    >>> print(URL('/').set(q=1))
+    /?q=1
+    >>> print(URL('/').set(q=1).add(q=2))
+    /?q=1&q=2
+    >>> print(URL('/').set(q=1).set(q=3))
+    /?q=3
+    >>> print(URL('/').set(q=1).delete('q'))
+    /
+    >>> print(URL('/', host=u"образец.рф").set(q=u'ок'))
+    http://xn--80abnh6an9b.xn--p1ai/?q=%D0%BE%D0%BA
+    >>> print(URL('/', host=u"образец.рф").set(q=u'ок').get_readable())
+    http://образец.рф/?q=ок
 
 Throwing HTTPException
 ^^^^^^^^^^^^^^^^^^^^^^
+Insanities uses webob HTTP exceptions::
 
+    from webob import exc
+
+    def handler(env, data, next_handler):
+        if not is_allowed(env):
+            raise exc.HTTPForbidden()
+        return next_handler(env, data)
 
 Advanced Practices
 ------------------
