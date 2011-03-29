@@ -130,6 +130,30 @@ And this function can be used anywhere::
     
     url_for('user', user_id=5)
 
+Controlling execution flow
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Insanities allows to natively implement many use cases without any extra essences
+like Django-middlewares, etc.
+
+For example, to implement "middleware" you can do something like::
+
+    def wrapper(env, data, next_handler):
+        do_something()
+        result = next_handler()
+        do_something_else(result)
+        return result
+
+    wrapped_app = web.handler(wrapper) | app
+
+It is transparent, obvious and native way. Also, it is possible to use try...except
+statements with next_handler::
+
+    def wrapper(env, data, next_handler):
+        try:
+            return next_handler()
+        except MyError:
+            return exc.HTTPNotFound()
+
 Make an application configurable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Common way to apply configuration and plug-in any engines is to define configuration 
@@ -160,18 +184,23 @@ For example::
 
     url_for = web.Reverse(web.locations(app))
 
-About `insanities.template` see *anywhere else*.
-
-Controlling execution flow
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Abuot various next_handler usecases
-
+About `insanities.template` see *in source*.
 
 Scopes of environment and data valiables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+`env` and `data` objects does not just store a data, they are also used for
+delimitate data between handlers from differrent app parts. `web.cases` handler
+is responsible for this delimitation. When called it stores it's inittial 
+state before calling nested handlers.
 
+Each nested handler can change `env` and `data` objects. If the handler finishes 
+successfully, `web.cases` accepts  changes, otherwise it rolls changes back 
+and calls next nested handler::
 
+    example is needed
+
+So you don't worry about the data you've added to `data` and `env` will involve
+any unexpected problems in other part of your app.
 
 Smart URL object
 ^^^^^^^^^^^^^^^^
