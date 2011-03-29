@@ -19,18 +19,18 @@ Routing
 ^^^^^^^
 
 * :ref:`How it works <insanities-web>`
-* :ref:`API reference <insanities-web-urlconvs>`
+* :ref:`API reference <insanities-web-api>`
 
 Forms
 ^^^^^
 
 * :ref:`How it works <insanities-forms>`
-* :ref:`API reference <insanities-forms-urlconvs>`
+* :ref:`API reference <insanities-forms-api>`
 
 Utilities
 ^^^^^^^^^
 
-Unsorted stuff for make insanities working :)
+Unsorted stuff for make insanities working.
 
 * :ref:`Utilities <insanities-utils>`
 

@@ -243,7 +243,25 @@ subdomain, methods
 
 Custom URL converters
 ^^^^^^^^^^^^^^^^^^^^^
-by subclassing `web.url.Converter` class
+You can add custom URL converters by subclassing `web.url.Converter`.
+A subclass should provide `to_python` and `to_url` methods. First accepts **unicode**
+url part and returns any python object. Second does reverse transformation. Note, that
+url parts are escaped automatically outside URL converter::
+
+    class MonthConv(url.Converter):
+        def to_python(self, value, **kwargs):
+            try:
+                return int(value)
+            except ValueError:
+                raise ConvertError(self.name, value)
+
+        def to_url(self, value):
+            return str(value)
+
+To include URL converter, pass `convs` argument to handler constructor::
+
+    prefix('/<month:month_num>', convs={'month': MonthConv})
+
 
 URL Namespaces
 ^^^^^^^^^^^^^^
