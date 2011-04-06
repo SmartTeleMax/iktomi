@@ -13,13 +13,13 @@ TEMPLATE_DIR = join(CURDIR, 'templates')
 
 
 class TemplateEngine(object):
-    def __init__(self, paths, cache=False):
+    def __init__(self, paths, cache = False, autoescape = False):
         '''
         paths - list of paths
         '''
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(paths),
-            autoescape=True,
+            loader = jinja2.FileSystemLoader(paths),
+            autoescape = autoescape,
         )
 
     def render(self, template_name, **kw):
