@@ -9,7 +9,7 @@
 </ul>
 {% endif %}
 
-<form method="POST" action='{{ url_for('files') }}' enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data">
 <fieldset>
 <table>
     {{ form.render()|safe }}

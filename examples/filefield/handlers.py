@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import datetime, os
+import os
 
-from forms import FileForm
+from forms import FileForm, OptionalFileForm
 from webob.exc import HTTPSeeOther
 
 from insanities.ext.filefields import time_uid
@@ -20,7 +20,10 @@ def list_files(env, data, next_handler):
     if not os.path.isdir(dir_):
         os.makedirs(dir_)
     data.files = os.listdir(dir_)
-    data.form = FileForm(env)
+    if env.request.GET.get('not_required', False):
+        data.form = OptionalFileForm(env)
+    else:
+        data.form = FileForm(env)
     data.url = '/media/stored/'
     return next_handler(env, data)
 
@@ -30,12 +33,12 @@ def post_file(env, data, next_handler):
 
     if form.accept(env.request.POST, env.request.FILES):
         tmp_file = form.python_data['file']
-        if tmp_file.mode == 'temp':
+        if tmp_file and tmp_file.mode == 'temp':
             filename = time_uid() + tmp_file.ext
             new_path = os.path.join(dir_, filename)
             os.rename(tmp_file.full_path, new_path)
 
-        raise HTTPSeeOther(location=str(env.url_for('files')))
+        raise HTTPSeeOther(location=env.request.url)
     #result = dict(result)
     return next_handler(env, data)
 

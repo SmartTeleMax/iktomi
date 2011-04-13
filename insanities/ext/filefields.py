@@ -117,7 +117,7 @@ class TempFileConv(convs.SimpleFile):
             # file.file - due to FieldStorage interface
             tmp.save_temp(file.file)
             return tmp
-        return self.file_cls()
+        return None
 
 
 class FileFieldSetConv(convs.Converter):
@@ -209,6 +209,7 @@ class FileFieldSet(FieldSet):
     def __init__(self, name, conv=FileFieldSetConv, **kwargs):
         kwargs.setdefault('fields', self.fields)
         FieldSet.__init__(self, name, conv=conv, **kwargs)
+        self.get_field('file').conv.required = self.conv.required
 
     def get_default(self):
         return None # XXX

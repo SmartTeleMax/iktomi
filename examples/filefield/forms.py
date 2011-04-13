@@ -27,6 +27,18 @@ class FileForm(Form):
                      template='fileinput.html'),
     ]
 
+class OptionalFileForm(Form):
+
+    fields = [
+        Field('accept', label='I accept the terms of service',
+              conv=convs.Bool(required=True),
+              widget=widgets.CheckBox()),
+        FileFieldSet('file', label='File',
+                     file_cls=MyUploadedFile,
+                     conv=FileFieldSetConv(required=False),
+                     template='fileinput.html'),
+    ]
+
 
 class SimpleFileForm(Form):
     template='forms/paragraph.html'
