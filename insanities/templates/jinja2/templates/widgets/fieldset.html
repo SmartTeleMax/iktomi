@@ -9,9 +9,9 @@
   {% endif %}
   <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}{% if subfield.classname %} {{ subfield.classname }}{% endif %}">
     <th>
-      {% if subfield.label %}
+      {%- if subfield.label -%}
       <label for="{{ subfield.id }}">{{ subfield.label }}</label>
-      {% endif %}
+      {%- endif -%}
     </th>
     <td>
       {{ subfield.render()|safe }}

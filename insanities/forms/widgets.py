@@ -17,6 +17,7 @@ class Widget(object):
 
     def __init__(self, field=None, **kwargs):
         self.field = weakproxy(field)
+
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
@@ -334,28 +335,28 @@ class FileInput(Widget):
     '''
     template = 'widgets/fileinput'
 
-    def prepare_data(self, value):
-        data = Widget.prepare_data(self, value)
-
-        field = self.field
-        value = field.parent.python_data.get(field.name, None)
-        delete = field.form.data.get(field.input_name + '__delete', False)
-        if value is None:
-            value = field.parent.initial.get(field.name, None)
-            if isinstance(value, field.stored_file_cls):
-                mode = 'existing'
-            else:
-                value = None
-                mode = 'empty'
-        elif isinstance(value, field.stored_file_cls):
-            mode = 'existing'
-        elif isinstance(value, field.temp_file_cls):
-            mode = 'temp'
-        else:
-            assert None
-        return dict(data, value=value, mode=mode, input_name=self.input_name,
-                    delete=delete, temp_url=self.env.rctx.conf.temp_url,
-                    null=field.null)
+#    def prepare_data(self, value):
+#        data = Widget.prepare_data(self, value)
+#
+#        field = self.field
+#        value = field.parent.python_data.get(field.name, None)
+#        delete = field.form.python_data.get(field.input_name + '__delete', False)
+#        if value is None:
+#            value = field.parent.initial.get(field.name, None)
+#            if isinstance(value, field.stored_file_cls):
+#                mode = 'existing'
+#            else:
+#                value = None
+#                mode = 'empty'
+#        elif isinstance(value, field.stored_file_cls):
+#            mode = 'existing'
+#        elif isinstance(value, field.temp_file_cls):
+#            mode = 'temp'
+#        else:
+#            assert None
+#        return dict(data, value=value, mode=mode, input_name=self.input_name,
+#                    delete=delete, temp_url=self.env.rctx.conf.temp_url,
+#                    null=field.null)
 
 class ImageInput(FileInput):
     template = 'widgets/imageinput'

@@ -209,8 +209,13 @@ class FieldSet(AggregateField):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), 'To set raw value need dict, got %r' % value
         for field in self.fields:
-            subvalue = value[field.name]
-            field.set_raw_value(field.from_python(subvalue))
+            try:
+                subvalue = value[field.name]
+                field.set_raw_value(field.from_python(subvalue))
+            except:
+                print 'REMOVE THE' * 100
+                print '/www/libs/insanities/insanities/forms/fields.py [216]'
+                pass
 
     def accept(self):
         result = self.python_data
@@ -238,6 +243,8 @@ class FieldList(AggregateField):
     '''
 
     order = False
+
+    template = 'fields/fieldlist'
 
     def __init__(self, name, conv=convs.List, field=Field(None),
                  parent=None, **kwargs):
@@ -310,3 +317,21 @@ class FieldList(AggregateField):
         media = BaseField.get_media(self)
         media += self.field.get_media()
         return media
+
+class FileField(BaseField):
+    '''
+    The simpliest file field
+    '''
+
+    raw_value = None
+
+    def accept(self):
+        file = self.form.files.get(self.input_name, None)
+        return self.to_python(file)
+
+    def get_default(self):
+        return None # XXX
+
+    def set_raw_value(self, value):
+        pass
+

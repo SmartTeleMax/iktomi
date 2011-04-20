@@ -3,11 +3,11 @@ import cgi
 import string
 from os import path
 import os, struct, tempfile, time, logging
-from PIL import Image
+import Image
 
 from ..utils import weakproxy, cached_property
 from ..forms import convs, widgets
-from ..forms.fields import Field
+from ..forms.fields import Field, FieldSet, FileField
 
 logger = logging.getLogger(__name__)
 
@@ -21,36 +21,73 @@ def _get_file_content(f):
     return f.read()
 
 
-class BaseFile(object):
+class UploadedFile(object):
 
-    def __init__(self, base_path, name, ext):
-        self.base_path = base_path
-        self.name = name
-        self.ext = ext
+    @property
+    def temp_path(self):
+        return tempfile.gettempdir()
+    @property
+    def base_path(self):
+        raise NotImplementedError
+    @property
+    def base_temp_url(self):
+        return '/form-temp/'
+    @property
+    def base_url(self):
+        raise NotImplementedError
 
 
-class TempUploadedFile(BaseFile):
+    def __init__(self, temp_name=None, original_name=None, saved_name=None):
+        self.original_name = original_name
+        self.temp_name = temp_name
+        self.saved_name = saved_name
+        self.uid = time_uid()
 
-    def __init__(self, temp_dir=None, name=None, ext=None, uid=None):
-        self.temp_path = temp_dir or tempfile.gettempdir()
-        super(TempUploadedFile, self).__init__(self.temp_path, name, ext)
-        self.uid = uid or time_uid()
+        if temp_name is not None:
+            self.uid, self.ext = path.splitext(temp_name)
+            self.mode = 'temp' # XXX use not-string flags
+        elif saved_name is not None:
+            self.mode = 'existing'
+        else:
+            self.mode = 'empty'
+
+    @property
+    def full_path(self):
+        if self.mode == 'temp':
+            return path.join(self.temp_path, self.temp_name)
+        elif self.mode == 'existing':
+            return path.join(self.base_path, self.saved_name)
+
+    @property
+    def url(self):
+        if self.mode == 'temp':
+            return self.base_temp_url + self.uid + self.ext
+        elif self.mode == 'existing':
+            return self.base_url + self.saved_name
 
     @cached_property
-    def full_path(self):
-        return path.join(self.temp_path, self.uid + self.ext)
+    def size(self):
+        return os.path.getsize(self.full_path)
 
-    def save(self, file, filename):
-        if not self.name or not self.ext:
-            self.name, self.ext = path.splitext(filename)
+    def save_temp(self, file, lazy=False):
+        self.ext = path.splitext(self.original_name)[1]
+        self.temp_name = self.uid + self.ext
+        self.mode = 'temp'
+        self._input_stream = file
+        if not lazy:
+            self.do_save_temp()
+
+    def do_save_temp(self):
+        # finish delayed file save
+        print self.full_path, True
         if not path.isdir(self.temp_path):
             os.makedirs(self.temp_path)
         try:
             fp = open(self.full_path, 'wb')
-            fp.write(_get_file_content(file))
+            fp.write(_get_file_content(self._input_stream))
             fp.close()
         except Exception, e:
-            raise convs.ValidationError(u"coudn't save file: %s" % e)
+            raise convs.ValidationError(u"couldn't save file: %s" % e)
 
     def delete(self):
         if path.isfile(self.full_path):
@@ -60,67 +97,6 @@ class TempUploadedFile(BaseFile):
                 pass
 
 
-class TempImageFile(TempUploadedFile):
-
-    invalid_image = u'The file is not valid image'
-
-    def __init__(self, field, name=None, ext=None, uid=None):
-        super(TempImageFile, self).__init__(field, name=name, ext=ext, uid=uid)
-        self.thumb_size = field.thumb_size
-        self.thumb_sufix = field.thumb_sufix
-
-    @cached_property
-    def thumb_filename(self):
-        return path.join(self.temp_path, self.uid + self.thumb_sufix + '.png')
-
-    def save(self, file, filename):
-        try:
-            image = Image.open(file)
-        except IOError, e:
-            raise convs.ValidationError(self.invalid_image)
-        file.seek(0)
-        super(TempImageFile, self).save(file, filename)
-        if self.thumb_size:
-            image.thumbnail(self.thumb_size, Image.ANTIALIAS)
-            image.save(self.thumb_filename, quality=85)
-
-    def delete(self):
-        super(TempImageFile, self).delete()
-        if self.thumb_size:
-            if path.isfile(self.thumb_filename):
-                try:
-                    os.unlink(self.thumb_filename)
-                except OSError:
-                    pass
-
-
-class StoredFile(BaseFile):
-
-    def __init__(self, filename, base_path, base_url):
-        name, ext = path.splitext(filename)
-        super(StoredFile, self).__init__(base_path, name, ext)
-        self.filename = filename
-        self.base_url = base_url
-
-    @cached_property
-    def full_path(self):
-        return path.join(self.base_path, self.filename)
-
-    @cached_property
-    def size(self):
-        return os.path.getsize(self.full_path)
-
-    @cached_property
-    def url(self):
-        return self.base_url + self.filename
-
-
-class StoredImageFile(StoredFile):
-
-    @cached_property
-    def image(self):
-        return Image.open(self.full_path)
-
 
 def check_file_path(value):
     if value and '/' in value:
@@ -129,14 +105,91 @@ def check_file_path(value):
         raise ValidationError('Invalid filename')
     return value
 
-class TempFile(convs.Converter):
+
+class TempFileConv(convs.SimpleFile):
+
+    @property
+    def file_cls(self):
+        return self.field.parent.file_cls
+
+    def to_python(self, file):
+        if not self._is_empty(file):
+            tmp = self.file_cls(original_name=file.filename)
+            # file.file - due to FieldStorage interface
+            tmp.save_temp(file.file)
+            return tmp
+        return None
+    # XXX
+        #return self.file_cls()
+
+
+class FileFieldSetConv(convs.Converter):
 
     hacking = u'Что-то пошло не так'
-    temp_file_cls = TempUploadedFile
-    stored_file_cls = StoredFile
     null = True
 
-    subfields = [
+    @property
+    def file_cls(self):
+        return self.field.file_cls
+
+    def from_python(self, value):
+        return {'temp_name': value and value.temp_name,
+                'original_name': value and value.original_name,
+                'delete': False, 'file': value,
+                'mode': value.mode if value is not None else 'empty'}
+
+    def _to_python(self, file=None, mode=None, temp_name=None, original_name=None, delete=False):
+        '''
+            file - UploadedFile instance
+        '''
+        temp_file = self.file_cls(temp_name=temp_name, original_name=original_name)
+        if mode == 'empty':
+            if not file and self.required:
+                raise convs.ValidationError(self.error_required)
+                #raise convs.SkipReadonly # XXX This is incorrect
+
+        elif mode == 'temp':
+            if not original_name:
+                logger.warning('Missing original_name for FileField')
+            if not temp_name:
+                logger.warning('Missing temp_name for FileField in mode "temp"')
+                raise convs.ValidationError(self.hacking)
+
+            if file:
+                temp_file.delete()
+            else:
+                if not path.isfile(temp_file.full_path):
+                    raise convs.ValidationError(u'Временный файл утерян')
+                file = temp_file
+
+        elif mode == 'existing':
+            if not file:
+                raise convs.SkipReadonly
+
+        else:
+            logger.warning('Unknown mode submitted for FileField: %r', mode)
+            raise convs.SkipReadonly
+
+        if delete:
+            return None
+        return file
+
+    def to_python(self, value):
+        value = self._to_python(**value)
+        #XXX Hack
+        self.field.set_raw_value(self.from_python(value))
+        return value
+
+
+class FileFieldSet(FieldSet):
+    '''
+    Container field aggregating a couple of other different fields
+    '''
+
+    fields = [
+        FileField('file',
+                  conv=TempFileConv(stored_file_cls=UploadedFile),
+                  widget=widgets.FileInput()),
         Field('mode',
               conv=convs.EnumChoice(choices=[('existing', ''),
                                              ('temp', ''),
@@ -152,102 +205,15 @@ class TempFile(convs.Converter):
         Field('delete', conv=convs.Bool(), label='Delete',
               widget=widgets.CheckBox),
     ]
+    conv = FileFieldSetConv
+    file_cls = UploadedFile
 
-    @cached_property
-    def temp_dir(self):
-        # Can be overwritten
-        return self.field.env.temp_path
+    def __init__(self, name, conv=FileFieldSetConv, **kwargs):
+        kwargs.setdefault('fields', self.fields)
+        FieldSet.__init__(self, name, conv=conv, **kwargs)
+        self.get_field('file').conv.required = self.conv.required
 
-    @cached_property
-    def temp_url(self):
-        # Can be overwritten
-        return self.field.env.temp_url
+    def get_default(self):
+        return None # XXX
 
-    def from_python(self, value):
-        data = {'temp_name': '', 'original_name': '', 'delete': False}
-        if isinstance(value, self.stored_file_cls):
-            data['mode'] = 'existing'
-        elif isinstance(value, self.temp_file_cls):
-            data['mode'] = 'temp'
-            data['temp_name'] = value.uid + value.ext
-            data['original_name'] = value.name
-        else:
-            data['mode'] = 'empty'
-        return data
-
-    def _is_empty(self, value):
-        return None # disable require check in converter
-
-    def _to_python(self, file, mode=None, temp_name=None, original_name=None, delete=False):
-
-#        if file and file.filename == '<fdopen>':
-#            file.filename = None
-
-        if mode == 'empty':
-            if file == u'' or file is None: #XXX WEBOB ONLY !!!
-                if self.required:
-                    raise convs.ValidationError(self.error_required)
-                raise convs.SkipReadonly # XXX This is incorrect
-            return self.save_temp_file(file)
-
-        elif mode == 'temp':
-            if not original_name:
-                logger.warning('Missing original_name for FileField')
-            if temp_name:
-                if not path.isfile(path.join(self.temp_dir, temp_name)):
-                    raise convs.ValidationError(u'Временный файл утерян')
-                if not (file and file.filename):
-                    uid, ext = path.splitext(temp_name)
-                    return self.temp_file_cls(self.temp_dir, original_name, ext, uid)
-                self.delete_temp_file(temp_name)
-                if delete:
-                    return None
-                return self.save_temp_file(file)
-            else:
-                logger.warning('Missing temp_name for FileField in mode "temp"')
-                raise convs.ValidationError(self.hacking)
-
-        elif mode == 'existing':
-            if file.filename:
-                return self.save_temp_file(file)
-            if delete:
-                return None
-            raise convs.SkipReadonly
-
-        else:
-            logger.warning('Unknown mode submitted for FileField: %r', mode)
-            raise convs.SkipReadonly
-
-    def to_python(self, file, **kwargs):
-        #XXX Hack
-        value = self._to_python(file, **kwargs)
-        self.field.fill(self.field.form.data, self.from_python(value))
-        return value
-
-    def save_temp_file(self, file):
-        tmp = self.temp_file_cls(self.temp_dir)
-        #XXX: file.file - due to FieldStorage interface
-        tmp.save(file.file, file.filename)
-        return tmp
-
-    def delete_temp_file(self, temp_name):
-        uid, ext = path.splitext(temp_name)
-        tmp = self.temp_file_cls(self.temp_dir, name=None, ext=ext, uid=uid)
-        tmp.delete()
-
-
-class TempFileWidget(widgets.Widget):
-
-    template = 'widgets/fileinput'
-
-    def prepare_data(self, field=None, **kwargs):
-        data = widgets.Widget.prepare_data(self, field=field, **kwargs)
-        value = field.value
-
-        data['mode'] = field.get_field('mode').value
-        if data['mode'] == 'existing':
-            data['file_url'] = value.base_url + value.filename
-        elif data['mode'] == 'temp':
-            data['file_url'] = field.conv.temp_url + value.uid + value.ext
-        return data
 

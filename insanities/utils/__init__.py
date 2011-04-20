@@ -25,9 +25,9 @@ def quoteattrs(data):
 def quote_js(text):
     '''Quotes text to be used as JavaScript string in HTML templates. The
     result doesn't contain surrounding quotes.'''
-    text = text.replace('\\', '\\\\');
-    text = text.replace('\n', '\\n');
-    text = text.replace('\r', '');
+    text = text.replace('\\', '\\\\')
+    text = text.replace('\n', '\\n')
+    text = text.replace('\r', '')
     for char in '\'"<>&':
         text = text.replace(char, '\\x%2x' % ord(char))
     return text
