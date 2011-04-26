@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['ReverseTests', 'LocationsTests']
+__all__ = ['ReverseTests', 'LocationsTests', 'SmartReverseTests']
 
 import unittest
 from insanities import web
@@ -115,11 +115,6 @@ class ReverseTests(unittest.TestCase):
         'Reverse namespace without env'
         self.assertEqual(web.Reverse({}).namespace, '')
 
-    def test_namespace_from_env(self):
-        'Reverse namespace from env'
-        self.assertEqual(web.Reverse({}, env=VersionedStorage(namespace='ns')).namespace,
-                         'ns')
-
     def test_one_handler(self):
         'Reverse one match'
         r = web.Reverse.from_handler(web.match('/', 'index'))
@@ -187,3 +182,13 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r('unicode2', slug=u'ю'), 'http://xn--o1a/%D0%B7/%D1%8E')
         self.assertEqual(r('unicode3', slug=u'ю'), 'http://xn--o1a/%D0%B4/%D1%8E')
         self.assertEqual(r('unicode4', slug1=u'д', slug2=u'ю'), 'http://xn--o1a/%D0%B4/%D1%8E')
+
+
+class SmartReverseTests(unittest.TestCase):
+
+    def test_valid_case(self):
+        'Smart reverse of named route'
+        r = web.Reverse(web.match('/', 'index'))
+        self.assert_(hasattr(r, 'index'))
+        self.assert_(callable(r.index))
+        self.assertEqual(r.index(), '/')
