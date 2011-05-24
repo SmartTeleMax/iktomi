@@ -99,7 +99,7 @@ class Converter(object):
             field, form = self.field, self.field.form
             if self.required and self._is_empty(value):
                 form.errors[self.field.input_name] = self.error_required
-                return self.field.parent.python_data[field.name]
+                return self.field.parent.python_data.get(field.name)
             try:
                 value = method(value, **kwargs)
                 for v in self.validators_and_filters:

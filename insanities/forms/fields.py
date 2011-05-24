@@ -67,6 +67,8 @@ class BaseField(object):
         of Input (Select, etc) element's Name attribute and Label element's For
         attribute.
         '''
+        if self.name is None:
+            return self.parent.input_name
         return self.parent.prefix + self.name
 
     @property
