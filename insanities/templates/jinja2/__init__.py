@@ -17,10 +17,10 @@ class TemplateEngine(object):
         '''
         paths - list of paths
         '''
-        self.env = self.__make_env(paths)
+        self.env = self._make_env(paths)
 
 
-    def __make_env(self, paths):
+    def _make_env(self, paths):
         return jinja2.Environment(
             loader=jinja2.FileSystemLoader(paths),
             autoescape=True,
