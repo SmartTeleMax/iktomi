@@ -17,10 +17,14 @@ class TemplateEngine(object):
         '''
         paths - list of paths
         '''
-        self.env = jinja2.Environment(
+        self.env = self.__make_env(paths)
+
+
+    def __make_env(self, paths):
+        return jinja2.Environment(
             loader=jinja2.FileSystemLoader(paths),
             autoescape=True,
-        )
+            )
 
     def render(self, template_name, **kw):
         'Interface method'
