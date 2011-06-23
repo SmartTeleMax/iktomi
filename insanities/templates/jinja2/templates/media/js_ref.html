@@ -1,0 +1,8 @@
+{% if data.startswith('/') %}
+<script type="text/javascript" src="{{ data }}"></script>  
+{% elif data.startswith('endpoint:') %}
+<script type="text/javascript" src="{{ env.url_for(data[9:]) }}"></script>
+{% else %}
+<script type="text/javascript" src="{{ env.url_for_static('js/'+data) }}"></script>  
+{% endif %}
+
