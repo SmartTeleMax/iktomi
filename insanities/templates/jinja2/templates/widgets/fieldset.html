@@ -7,7 +7,7 @@
     </td>
   </tr>
   {% endif %}
-  <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}{% if subfield.classname %} {{ subfield.classname }}{% endif %}">
+  <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}{% if subfield.widget.classname is defined %} {{ subfield.widget.classname }}{% endif %}">
     <th>
       {%- if subfield.label -%}
       <label for="{{ subfield.id }}">{{ subfield.label }}</label>

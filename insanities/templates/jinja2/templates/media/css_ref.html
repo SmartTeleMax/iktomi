@@ -1,0 +1,5 @@
+{% if not data.startswith('/') %}
+  {% set data = env.url_for_static('css/' + data) %}
+{% endif %}
+<link rel="stylesheet" type="text/css" media="all" href="{{ data }}" />
+
