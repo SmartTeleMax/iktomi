@@ -211,13 +211,8 @@ class FieldSet(AggregateField):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), 'To set raw value need dict, got %r' % value
         for field in self.fields:
-            try:
-                subvalue = value[field.name]
-                field.set_raw_value(field.from_python(subvalue))
-            except:
-                print 'REMOVE THE' * 100
-                print '/www/libs/insanities/insanities/forms/fields.py [216]'
-                pass
+            subvalue = value[field.name]
+            field.set_raw_value(field.from_python(subvalue))
 
     def accept(self):
         result = self.python_data
