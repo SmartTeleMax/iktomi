@@ -187,6 +187,32 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assertEqual(form.initial, {'second': 3})
         self.assertEqual(form.python_data, {'first':1, 'second':2})
 
+    def test_fieldlist_is_required(self):
+        'Fieldlist is required and accepted value is empty'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        form = _Form()
+        self.assertEqual(form.raw_data, MultiDict())
+        self.assertEqual(form.python_data, {'list': []})
+        self.assert_(not form.accept(MultiDict()))
+        self.assertEqual(form.python_data, {'list': []})
+        self.assertEqual(form.errors, {'list': convs.Converter.error_required})
+
+    def test_fieldset_is_required(self):
+        'Fieldset is required and accepted value is empty'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[Field('number', convs.Int())]),
+            ]
+        form = _Form()
+        self.assertEqual(form.raw_data, MultiDict([('set.number', '')]))
+        self.assertEqual(form.python_data, {'set': {'number': None}})
+        self.assert_(not form.accept(MultiDict()))
+        self.assertEqual(form.python_data, {'set': {'number': None}})
+        self.assertEqual(form.errors, {'set.number': convs.Converter.error_required})
+
 class FormReadonlyFieldsTest(unittest.TestCase):
 
     def test_readonly(self):

@@ -92,7 +92,7 @@ class Converter(object):
         return self.field.env
 
     def _is_empty(self, value):
-        return value in ('', [])
+        return value in ('', [], {})
 
     def _check(self, method):
         def wrapper(value, **kwargs):
