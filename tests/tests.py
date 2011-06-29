@@ -11,6 +11,7 @@ from unittest import defaultTestLoader as dtl
 from utils.storage import *
 from utils.html import *
 from utils.url import *
+from utils.odict import *
 
 from web.chain import *
 from web.reverse import *
