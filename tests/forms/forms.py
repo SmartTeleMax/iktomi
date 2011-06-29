@@ -109,12 +109,12 @@ class FormErrorsTests(unittest.TestCase):
         'Accept with errors'
         class _Form(Form):
             fields=[
-                Field('first', convs.Int()),
-                Field('second', convs.Int()),
+                Field('first', convs.Int(required=True)),
+                Field('second', convs.Int(required=True)),
             ]
         form = _Form()
         self.assert_(not form.accept(MultiDict(first='1')))
-        self.assertEqual(form.errors, {'second': 'required field'})
+        self.assertEqual(form.errors, {'second': convs.Converter.error_required})
 
     def test_fieldset(self):
         'Accept with errors (fieldset)'
@@ -122,7 +122,7 @@ class FormErrorsTests(unittest.TestCase):
             fields=[
                 FieldSet('set', fields=[
                     Field('first', convs.Int(), default=1, permissions='r'),
-                    Field('second', convs.Int(), default=2),
+                    Field('second', convs.Int(required=True), default=2),
                 ]),
                 Field('third', convs.Int()),
             ]
@@ -196,9 +196,9 @@ class FormClassAcceptTests(unittest.TestCase):
         form = _Form()
         self.assertEqual(form.raw_data, MultiDict())
         self.assertEqual(form.python_data, {'list': []})
-        self.assert_(not form.accept(MultiDict()))
+        self.assert_(form.accept(MultiDict()))
         self.assertEqual(form.python_data, {'list': []})
-        self.assertEqual(form.errors, {'list': convs.Converter.error_required})
+        self.assertEqual(form.errors, {})
 
     def test_fieldset_is_required(self):
         'Fieldset is required and accepted value is empty'
@@ -209,9 +209,10 @@ class FormClassAcceptTests(unittest.TestCase):
         form = _Form()
         self.assertEqual(form.raw_data, MultiDict([('set.number', '')]))
         self.assertEqual(form.python_data, {'set': {'number': None}})
-        self.assert_(not form.accept(MultiDict()))
+        self.assert_(form.accept({}))
         self.assertEqual(form.python_data, {'set': {'number': None}})
-        self.assertEqual(form.errors, {'set.number': convs.Converter.error_required})
+        self.assertEqual(form.get_field('set.number').raw_value, '')
+        self.assertEqual(form.errors, {})
 
 class FormReadonlyFieldsTest(unittest.TestCase):
 

@@ -65,7 +65,7 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
-    required = True
+    required = False
 
     #: Values are not accepted by Required validator
     error_required = N_('required field')
