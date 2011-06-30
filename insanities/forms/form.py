@@ -28,26 +28,23 @@ class Form(object):
         self.env = FormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
         self.raw_data = raw_data = MultiDict()
-        #NOTE: if you provide initial value for some aggregated field
-        #      you need to provide values for all fields that are in that
-        #      aggregated field, including emty values (None)
+        # NOTE: `initial` is used to set initial display values for fields.
+        #       If you provide initial value for some aggregated field
+        #       you need to provide values for all fields that are in that
+        #       aggregated field, including `None` as empty values.
         self.initial = initial = initial or {}
         self.python_data = initial.copy()
         # clone all fields
         self.fields = [field(parent=self) for field in self.fields]
 
         if permissions is None:
-            # to allow permissions definition in Form class
             permissions = self.permissions
         self.permissions = set(permissions)
 
         for field in self.fields:
-            if field.name in initial:
-                value = initial[field.name]
-            else:
-                # get_default() may return different values for each call, so
-                # we have to insure converted value match python one.
-                value = field.get_default()
+            # NOTE: we do not put `get_initial()` call result in `self.initial`
+            #       because it may differ for each call
+            value = initial.get(field.name, field.get_initial())
             self.python_data[field.name] = value
             field.set_raw_value(field.from_python(value))
         self.errors = {}
