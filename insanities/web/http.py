@@ -13,7 +13,7 @@ from ..utils import cached_property
 logger = logging.getLogger(__name__)
 
 
-class PathPrefixes(object):
+class RouteState(object):
     def __init__(self, request):
         self._prefixes = []
         self._subdomain = ''
@@ -22,6 +22,9 @@ class PathPrefixes(object):
 
     def add_prefix(self, prefix):
         self._prefixes.append(prefix)
+
+    def pop_prefix(self):
+        self._prefixes.pop
 
     def add_subdomain(self, subdomain):
         if self._subdomain and subdomain:

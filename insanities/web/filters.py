@@ -125,7 +125,10 @@ class prefix(WebHandler):
         if matched:
             update_data(data, kwargs)
             env._route_state.add_prefix(self.builder(**kwargs))
-            return next_handler(env, data)
+            result = next_handler(env, data)
+            if result is not None:
+                return result
+            env._route_state.pop_prefix()
         return None
 
     def __repr__(self):

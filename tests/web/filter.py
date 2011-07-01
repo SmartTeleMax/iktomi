@@ -92,6 +92,25 @@ class Prefix(unittest.TestCase):
 
         self.assertEqual(web.ask(app, '/docs/item').status_int, 200)
 
+    def test_prefix_state(self):
+        '''Prefix state correctness'''
+
+        def handler(env, data, nx):
+            return Response()
+
+        app = web.cases(
+            web.match('/', 'index'),
+            web.prefix('/docs') | web.namespace('doc') | web.cases(
+                web.match('/item', '') | handler,
+                web.prefix('/list') | web.cases(
+                    web.match('/item', 'list') | handler)
+                ),
+            web.match('/something', 'something') | handler)
+
+        self.assertEqual(web.ask(app, '/docs/something').status_int, 404)
+        self.assertEqual(web.ask(app, '/docs/list/something').status_int, 404)
+
+
     def test_unicode(self):
         '''Routing rules with unicode'''
         # XXX move to urltemplate and reverse tests?
