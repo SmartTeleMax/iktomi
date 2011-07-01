@@ -263,11 +263,11 @@ class OrderedDict(dict):
         return iter(self._keys)
 
     def pop(self, key, default=missing):
+        self._keys.remove(key)
         if default is missing:
             return dict.pop(self, key)
         elif key not in self:
             return default
-        self._keys.remove(key)
         return dict.pop(self, key, default)
 
     def popitem(self, key):
