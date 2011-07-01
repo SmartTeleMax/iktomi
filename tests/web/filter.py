@@ -56,7 +56,7 @@ class Prefix(unittest.TestCase):
         '''Prefix root'''
 
         def handler(env, data, nx):
-            self.assertEqual(env.request.prefixed_path, '/')
+            self.assertEqual(env._route_state.path, '/')
             return Response()
 
         app = web.cases(
@@ -78,7 +78,7 @@ class Prefix(unittest.TestCase):
         '''Simple prefix'''
 
         def handler(env, data, nx):
-            self.assertEqual(env.request.prefixed_path, '/item')
+            self.assertEqual(env._route_state.path, '/item')
             return Response()
 
         app = web.cases(
@@ -91,6 +91,25 @@ class Prefix(unittest.TestCase):
                     web.match('/tag', 'tag') | handler)))
 
         self.assertEqual(web.ask(app, '/docs/item').status_int, 200)
+
+    def test_prefix_state(self):
+        '''Prefix state correctness'''
+
+        def handler(env, data, nx):
+            return Response()
+
+        app = web.cases(
+            web.match('/', 'index'),
+            web.prefix('/docs') | web.namespace('doc') | web.cases(
+                web.match('/item', '') | handler,
+                web.prefix('/list') | web.cases(
+                    web.match('/item', 'list') | handler)
+                ),
+            web.match('/something', 'something') | handler)
+
+        self.assertEqual(web.ask(app, '/docs/something'), None)
+        self.assertEqual(web.ask(app, '/docs/list/something'), None)
+
 
     def test_unicode(self):
         '''Routing rules with unicode'''
