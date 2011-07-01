@@ -103,12 +103,14 @@ class Prefix(unittest.TestCase):
             web.prefix('/docs') | web.namespace('doc') | web.cases(
                 web.match('/item', '') | handler,
                 web.prefix('/list') | web.cases(
-                    web.match('/item', 'list') | handler)
+                    web.match('/item', 'list') | handler),
+                web.match('/other-thing', 'something') | handler
                 ),
             web.match('/something', 'something') | handler)
 
         self.assertEqual(web.ask(app, '/docs/something'), None)
         self.assertEqual(web.ask(app, '/docs/list/something'), None)
+        self.assertEqual(web.ask(app, '/docs/list/other-thing'), None)
 
 
     def test_unicode(self):
