@@ -239,7 +239,21 @@ Advanced Practices
 Advanced routing tools
 ^^^^^^^^^^^^^^^^^^^^^^
 
-subdomain, methods
+Insanities provides some additional filters, like subdomain::
+
+    web.cases(
+        web.subdomain('') | web.cases(
+            web.match('/', 'index1') | index1,
+        ),
+        web.subdomain('subsite') | web.cases(
+            web.match('/', 'index2') | index2,
+        ),
+        web.subdomain('subsite2') | web.cases(
+            web.match('/', 'index3') | index3,
+        ),
+    )
+
+static_files..., ctype..., 
 
 Custom URL converters
 ^^^^^^^^^^^^^^^^^^^^^
@@ -266,5 +280,26 @@ To include URL converter, pass `convs` argument to handler constructor::
 URL Namespaces
 ^^^^^^^^^^^^^^
 
+URL namespacing is useful to include similar app parts to many places
+in your app, or for plug-in any reusable app from outside without warry 
+about name clashes.::
 
+    def part():
+        def handler(env, data, next_handler):
+            curr_namespace = env.namespace if 'namespace' in env else None
+            en_url = env.url_for('en.index')
+            curr_url = env.url_for('.index')
+            return webob.Response('%s %s %s' % (curr_namespace,
+                                                en_url, curr_url))
+
+        return web.cases(
+            web.match('/index', 'index') | handler,
+        )
+
+    web.cases(
+        # first renders "en /en/index /en/index"
+        web.prefix('/en') | web.namespace('en') | part(),
+        # second renders "ru /en/index /ru/index"
+        web.prefix('/ru') | web.namespace('ru') | part(),
+    )
 
