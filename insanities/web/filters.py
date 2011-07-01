@@ -32,7 +32,7 @@ class match(WebHandler):
         return {self.url_name: {'builders': [self.builder]}}
 
     def handle(self, env, data, next_handler):
-        matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
+        matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched:
             env.current_url_name = self.url_name
             update_data(data, kwargs)
@@ -121,11 +121,14 @@ class prefix(WebHandler):
         return locations
 
     def handle(self, env, data, next_handler):
-        matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
+        matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched:
             update_data(data, kwargs)
-            env.request.add_prefix(self.builder(**kwargs))
-            return next_handler(env, data)
+            env._route_state.add_prefix(self.builder(**kwargs))
+            result = next_handler(env, data)
+            if result is not None:
+                return result
+            env._route_state.pop_prefix()
         return None
 
     def __repr__(self):
@@ -143,7 +146,7 @@ class subdomain(WebHandler):
         return locations
 
     def handle(self, env, data, next_handler):
-        subdomain = env.request.subdomain
+        subdomain = env._route_state.subdomain
         #XXX: here we can get 'idna' encoded sequence, that is the bug
         if self.subdomain:
             slen = len(self.subdomain)
@@ -153,7 +156,7 @@ class subdomain(WebHandler):
             matches = not subdomain
 
         if matches:
-            env.request.add_subdomain(self.subdomain)
+            env._route_state.add_subdomain(self.subdomain)
             return next_handler(env, data)
         return None
 
