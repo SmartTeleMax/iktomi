@@ -107,8 +107,8 @@ class Prefix(unittest.TestCase):
                 ),
             web.match('/something', 'something') | handler)
 
-        self.assertEqual(web.ask(app, '/docs/something').status_int, 404)
-        self.assertEqual(web.ask(app, '/docs/list/something').status_int, 404)
+        self.assertEqual(web.ask(app, '/docs/something'), None)
+        self.assertEqual(web.ask(app, '/docs/list/something'), None)
 
 
     def test_unicode(self):

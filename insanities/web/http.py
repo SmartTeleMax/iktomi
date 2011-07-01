@@ -24,7 +24,7 @@ class RouteState(object):
         self._prefixes.append(prefix)
 
     def pop_prefix(self):
-        self._prefixes.pop
+        self._prefixes.pop()
 
     def add_subdomain(self, subdomain):
         if self._subdomain and subdomain:
