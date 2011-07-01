@@ -184,7 +184,7 @@ For example::
 
     url_for = web.Reverse(web.locations(app))
 
-About `insanities.template` see *in source*.
+About `insanities.template` see in :ref:`corresponding docs <insanities-templates>`.
 
 Scopes of environment and data valiables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

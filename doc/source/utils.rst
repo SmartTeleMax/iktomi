@@ -5,6 +5,9 @@ Various utilities
 
 Template
 --------
+
+.. _insanities-templates:
+
 `insanities.templates.Template` class is originnaly designed to unify 
 template interface for forms, but can be used in anywhere else.
 
