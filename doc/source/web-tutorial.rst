@@ -239,21 +239,67 @@ Advanced Practices
 Advanced routing tools
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Insanities provides some additional filters, like subdomain::
+Insanities provides some additional filters.
+
+A **subdomain** filter allows to select requests with a given domain or subdomain::
 
     web.cases(
-        web.subdomain('') | web.cases(
+        web.subdomain('example.com') | web.cases(
             web.match('/', 'index1') | index1,
         ),
-        web.subdomain('subsite') | web.cases(
+        web.subdomain('example.org') | web.cases(
             web.match('/', 'index2') | index2,
-        ),
-        web.subdomain('subsite2') | web.cases(
-            web.match('/', 'index3') | index3,
         ),
     )
 
-static_files..., ctype..., 
+You can use multiple subdomain filters in a line to select lower-level subdomains.
+To specify a base domain chain one subdomain filter before::
+    
+    web.subdomain('example.com') | web.cases(
+        # all *.example.com requests get here
+        web.subdomain('my') | web.cases(
+            # all *.my.example.com requests get here
+            ...
+        ),
+        ...
+    )
+
+A **ctype** filters allows to select requests with specified Content-Type HTTP header.
+You can also use shortcuts for most common content types (*xml*, *json*, *html*, *xhtml*)::
+
+    web.cases(
+        ctype('text/html') | web.cases(
+            # only html requests get here
+            ...
+        ),
+        ctype(ctype.xml, ctype.json) | web.cases(
+            # only xml or json requests get here
+            ...
+        ),
+    )
+
+A **static_files** handles static files requests and also provides a reverse function to build
+urls for static files::
+
+    static = web.static_files(cfg.STATIC_PATH, cfg.STATIC_URL)
+
+    def environment(env, data, next_handler):
+        ...
+        env.url_for_static = static.construct_reverse()
+        ...
+
+    app = web.handler(environment) | web.cases(
+        static,
+        ...
+    )
+
+.. Check this text
+
+Handling files is provided for development and testing reasons. You can use it to serve static
+file on development server, but it is strictly not recommended to use it for this purpose on
+production (use your web server configuration requests instead of it). Surely, reverse function
+is recommended to use on both production and development servers.
+
 
 Custom URL converters
 ^^^^^^^^^^^^^^^^^^^^^
