@@ -13,16 +13,12 @@ from ..utils import cached_property
 logger = logging.getLogger(__name__)
 
 
-
-class Request(_Request):
-    '''
-    Patched webob Request class
-    '''
-
-    def __init__(self, *args, **kwargs):
-        super(Request, self).__init__(*args, **kwargs)
+class PathPrefixes(object):
+    def __init__(self, request):
         self._prefixes = []
         self._subdomain = ''
+        self._domain = request.server_name.decode('idna')
+        self.request = request
 
     def add_prefix(self, prefix):
         self._prefixes.append(prefix)
@@ -33,19 +29,17 @@ class Request(_Request):
         elif subdomain:
             self._subdomain = subdomain
 
-    # We need to inject code which works with
-    # prefixes
     @property
-    def prefixed_path(self):
-        path = self.path
+    def path(self):
+        path = self.request.path
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
         return path
 
     @property
-    def prefixed_path_qs(self):
-        path = self.path_qs
+    def path_qs(self):
+        path = self.request.path_qs
         if self._prefixes:
             length = sum(map(len, self._prefixes))
             path = path[length:]
@@ -53,10 +47,15 @@ class Request(_Request):
 
     @property
     def subdomain(self):
-        path = self.server_name.decode('idna')
         if self._subdomain:
-            path = path[:-len(self._subdomain)-1]
-        return path
+            return self._domain[:-len(self._subdomain)-1]
+        return self._domain
+
+
+class Request(_Request):
+    '''
+    Patched webob Request class
+    '''
 
     @cached_property
     def FILES(self):

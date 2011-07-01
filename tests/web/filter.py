@@ -56,7 +56,7 @@ class Prefix(unittest.TestCase):
         '''Prefix root'''
 
         def handler(env, data, nx):
-            self.assertEqual(env.request.prefixed_path, '/')
+            self.assertEqual(env._route_state.path, '/')
             return Response()
 
         app = web.cases(
@@ -78,7 +78,7 @@ class Prefix(unittest.TestCase):
         '''Simple prefix'''
 
         def handler(env, data, nx):
-            self.assertEqual(env.request.prefixed_path, '/item')
+            self.assertEqual(env._route_state.path, '/item')
             return Response()
 
         app = web.cases(
