@@ -6,6 +6,7 @@ __all__ = ['WebHandler', 'cases', 'handler', 'Reverse',
 import logging
 import types
 import httplib
+import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
 from ..utils.storage import VersionedStorage
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 def prepare_handler(handler):
     '''Wrapps functions, that they can be usual WebHandler's'''
     if type(handler) in (types.FunctionType, types.MethodType):
-        handler = FunctionWrapper(handler)
+        handler = wrap_function(handler)
     return handler
 
 
@@ -63,11 +64,11 @@ class WebHandler(object):
     def get_next(self):
         if hasattr(self, '_next_handler'):
             return self._next_handler
-        #XXX: may be FunctionWrapper?
+        #XXX: may be _FunctionWrapper?
         return lambda e, d: None
 
     def as_wsgi(self):
-        def wrapper(environ, start_response):
+        def wsgi(environ, start_response):
             env = VersionedStorage()
             env.request = Request(environ, charset='utf-8')
             env._route_state = RouteState(env.request)
@@ -90,7 +91,7 @@ class WebHandler(object):
             headers = response.headers.items()
             start_response(response.status, headers)
             return [response.body]
-        return wrapper
+        return wsgi
 
 
 class Reverse(object):
@@ -161,20 +162,21 @@ class cases(WebHandler):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class FunctionWrapper(WebHandler):
+class _FunctionWrapper(WebHandler):
     '''Wrapper for handler represented by function'''
 
     def __init__(self, func):
-        self.func = func
-
-    def handle(self, env, data, next_handler):
-        return self.func(env, data, next_handler)
+        self.handle = func
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.func.__name__)
 
 
-handler = FunctionWrapper
+def wrap_function(func):
+    return functools.wraps(func)(_FunctionWrapper(func))
+
+
+handler = wrap_function
 
 
 def locations(handler):

@@ -4,6 +4,7 @@ __all__ = ['Chain']
 
 import unittest
 from insanities import web
+from insanities.web.core import _FunctionWrapper
 from insanities.utils.storage import VersionedStorage
 
 
@@ -24,12 +25,12 @@ class Chain(unittest.TestCase):
         chain = web.handler(handler1) | handler2 | handler3
 
         handler = chain._next_handler
-        self.assert_(isinstance(handler, web.handler))
-        self.assertEqual(handler.func, handler2)
+        self.assert_(isinstance(handler, _FunctionWrapper))
+        self.assertEqual(handler.handle, handler2)
 
         handler = chain._next_handler._next_handler
-        self.assert_(isinstance(handler, web.handler))
-        self.assertEqual(handler.func, handler3)
+        self.assert_(isinstance(handler, _FunctionWrapper))
+        self.assertEqual(handler.handle, handler3)
 
     def test_functions_chain_call(self):
         'Functions chain call'
