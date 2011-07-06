@@ -2,7 +2,8 @@
 
 import unittest
 from urllib import quote
-from insanities.web.url import URL, UrlTemplate, Converter, ConvertError
+from insanities.web.reverse import URL
+from insanities.web.url import UrlTemplate, Converter, ConvertError
 
 
 class URLTests(unittest.TestCase):
@@ -21,26 +22,26 @@ class URLTests(unittest.TestCase):
         'Set new param in url'
         u = URL('/path/to/something', query=dict(id=3, page=5, title='title'))
         self.assertEqual(u, '/path/to/something?title=title&id=3&page=5')
-        u = u.set(page=6)
+        u = u.qs_set(page=6)
         self.assertEqual(u, '/path/to/something?title=title&id=3&page=6')
-        u = u.set(page=7, title='land')
+        u = u.qs_set(page=7, title='land')
         self.assertEqual(u, '/path/to/something?id=3&page=7&title=land')
 
     def test_param_get(self):
         'Get param from url'
         u = URL('/path/to/something', query=dict(id=3, page=5, title='title'))
-        page = u.get('page')
+        page = u.qs_get('page')
         self.assertEqual(page, 5)
-        u = u.set(page=7)
-        page = u.get('page')
+        u = u.qs_set(page=7)
+        page = u.qs_get('page')
         self.assertEqual(page, 7)
-        not_here = u.get('not_here')
+        not_here = u.qs_get('not_here')
         self.assertEqual(not_here, None)
 
     def test_quote(self):
         u = URL(quote('/path/to/+'))
         self.assertEqual(u, '/path/to/%2B')
-        u = u.set(page=7)
+        u = u.qs_set(page=7)
         self.assertEqual(u, '/path/to/%2B?page=7')
 
     def test_iri(self):

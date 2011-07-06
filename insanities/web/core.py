@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'handler', 'Reverse',
-           'locations']
+__all__ = ['WebHandler', 'cases', 'handler', 'locations']
 
 import logging
 import types
@@ -9,8 +8,7 @@ import httplib
 from webob.exc import HTTPException
 from .http import Request, Response
 from ..utils.storage import VersionedStorage
-from .url import URL
-
+from .reverse import URL
 
 
 logger = logging.getLogger(__name__)
@@ -90,49 +88,6 @@ class WebHandler(object):
             start_response(response.status, headers)
             return [response.body]
         return wrapper
-
-
-class Reverse(object):
-
-    def __init__(self, urls, env=None):
-        self.urls = urls
-        self.env = env
-
-    @property
-    def namespace(self):
-        if self.env and 'namespace' in self.env:
-            return self.env.namespace
-        return ''
-
-    class smart_namespace:
-        def __init__(self, urls):
-            self.urls = urls
-
-    def __call__(self, name, **kwargs):
-        if name.startswith('.'):
-            local_name = name.lstrip('.')
-            up = len(name) - len(local_name) - 1
-            if up != 0:
-                ns = ''.join(self.namespace.split('.')[:-up])
-            else:
-                ns = self.namespace
-            name = ns + '.' + local_name
-
-        data = self.urls[name]
-
-        host = u'.'.join(data.subdomains)
-        # path - urlencoded str
-        path = ''.join([b(**kwargs) for b in reversed(data.builders)])
-        return URL(path, host=host)
-
-    def __getattr__(self, name):
-        if name in self.__dict__:
-            return self.__dict__[name]
-        raise AttributeError(name)
-
-    @classmethod
-    def from_handler(cls, handler, env=None):
-        return cls(locations(handler), env=env)
 
 
 class cases(WebHandler):

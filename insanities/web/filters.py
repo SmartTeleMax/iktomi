@@ -6,17 +6,14 @@ __all__ = ['match', 'method', 'static_files', 'ctype', 'prefix',
 import logging
 import httplib
 import mimetypes
-import collections
 from os import path
 from urllib import unquote
 from .core import WebHandler
 from .http import Response
-from .url import UrlTemplate
+from .url import UrlTemplate, UrlBuilderData
 
 
 logger = logging.getLogger(__name__)
-
-UrlBuilderData = collections.namedtuple('UrlBuilderData', 'builders subdomains')
 
 
 def update_data(data, new_data):
@@ -32,7 +29,7 @@ class match(WebHandler):
         self.builder = UrlTemplate(url, converters=convs)
 
     def _locations(self):
-        return {self.url_name: UrlBuilderData([self.builder], [])}
+        return {self.url_name: (UrlBuilderData([self.builder], []), None)}
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
@@ -120,7 +117,7 @@ class prefix(WebHandler):
     def _locations(self):
         locations = super(prefix, self)._locations()
         for v in locations.values():
-            v.builders.append(self.builder)
+            v[0].builders.insert(0, self.builder)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -142,7 +139,7 @@ class subdomain(WebHandler):
     def _locations(self):
         locations = super(subdomain, self)._locations()
         for v in locations.values():
-            v.subdomains.append(self.subdomain)
+            v[0].subdomains.append(self.subdomain)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -177,8 +174,5 @@ class namespace(WebHandler):
         return next_handler(env, data)
 
     def _locations(self):
-        locations = super(namespace, self)._locations()
-        new_locations = {}
-        for k, v in locations.items():
-            new_locations[self.namespace+'.'+k if k else self.namespace] = v
-        return new_locations
+        return {self.namespace: (UrlBuilderData([], []), 
+                                 super(namespace, self)._locations())}
