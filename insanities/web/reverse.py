@@ -74,20 +74,37 @@ class URL(str):
         return '<URL %r>' % str.__repr__(self)
 
 
-class Reverse(str):
+class Reverse(object):
+    def __init__(self, locations=None, builder=None, builder_kwargs=None):
+        self._locations = locations or {}
+        self._builder = builder
+        self._builder_kwargs = builder_kwargs or {}
 
-    def __new__(cls, locations):
-        self = str.__new__(cls, '')
-        self._locations = locations
-        return self
+    def _copy(self, **kw):
+        vars = dict(locations=self._locations, 
+                    builder=self._builder, 
+                    builder_kwargs=self._builder_kwargs)
+        vars.update(kw)
+        return self.__class__(**vars)
 
-    def __call__(self, name, **kwargs):
-        pass
+    def __call__(self, **kwargs):
+        return self._copy(builder_kwargs=kwargs)
 
     def __getattr__(self, name):
         if name in self.__dict__:
             return self.__dict__[name]
+        if name in self._locations:
+            value = self._locations[name]
+            return self._copy(locations=value[1], builder=value[0])
         raise AttributeError(name)
+
+    def __str__(self):
+        if self._builder:
+            host = u'.'.join(self._builder.subdomains)
+            # path - urlencoded str
+            path = ''.join([b(**self._builder_kwargs) for b in self._builder.builders])
+            return URL(path, host=host)
+        return URL('')
 
     @classmethod
     def from_handler(cls, handler, env=None):
