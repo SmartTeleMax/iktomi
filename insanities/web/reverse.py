@@ -81,9 +81,11 @@ class Reverse(object):
         self._builder_kwargs = builder_kwargs or {}
 
     def _copy(self, **kw):
+        builder_kwargs = dict(self._builder_kwargs)
+        builder_kwargs.update(kw.pop('builder_kwargs', {}))
         vars = dict(locations=self._locations, 
-                    builder=self._builder, 
-                    builder_kwargs=self._builder_kwargs)
+                    builder=self._builder,
+                    builder_kwargs=builder_kwargs)
         vars.update(kw)
         return self.__class__(**vars)
 
@@ -104,7 +106,11 @@ class Reverse(object):
             # path - urlencoded str
             path = ''.join([b(**self._builder_kwargs) for b in self._builder.builders])
             return URL(path, host=host)
-        return URL('')
+        raise ReverseError('Unknown url %r' % self._locations)
+
+    @property
+    def as_url(self):
+        return str(self)
 
     @classmethod
     def from_handler(cls, handler, env=None):

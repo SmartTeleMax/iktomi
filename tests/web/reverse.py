@@ -119,7 +119,7 @@ class ReverseTests(unittest.TestCase):
     def test_one_handler(self):
         'Reverse one match'
         r = web.Reverse.from_handler(web.match('/', 'index'))
-        self.assertEqual(str(r.index), '/')
+        self.assertEqual(r.index.as_url, '/')
 
     def test_few_handlers(self):
         'Reverse a few handlers'
@@ -129,9 +129,9 @@ class ReverseTests(unittest.TestCase):
             web.match('/news', 'news'),
             )
         r = web.Reverse.from_handler(chain)
-        self.assertEqual(str(r.index), '/')
-        self.assertEqual(str(r.docs), '/docs')
-        self.assertEqual(str(r.news), '/news')
+        self.assertEqual(r.index.as_url, '/')
+        self.assertEqual(r.docs.as_url, '/docs')
+        self.assertEqual(r.news.as_url, '/news')
 
     def test_nested_cases(self):
         'Reverse with nested web.cases'
@@ -142,9 +142,9 @@ class ReverseTests(unittest.TestCase):
                 web.cases(
                     web.match('/news', 'news'))))
         r = web.Reverse.from_handler(chain)
-        self.assertEqual(str(r.index), '/')
-        self.assertEqual(str(r.docs), '/docs')
-        self.assertEqual(str(r.news), '/news')
+        self.assertEqual(r.index.as_url, '/')
+        self.assertEqual(r.docs.as_url, '/docs')
+        self.assertEqual(r.news.as_url, '/news')
 
     def test_nested_cases_with_prefixes(self):
         'Reverse with nested web.cases with web.prefixes'
@@ -158,11 +158,11 @@ class ReverseTests(unittest.TestCase):
                     web.match('/list', 'newslist')))
 
         r = web.Reverse.from_handler(chain)
-        self.assertEqual(str(r.index), '/')
-        self.assertEqual(str(r.docs), '/docs/list')
-        self.assertEqual(str(r.newslist), '/news/list')
-        self.assertEqual(str(r.doc(id=1)), '/docs/1')
-        self.assertEqual(str(r.news(id=1)), '/news/1')
+        self.assertEqual(r.index.as_url, '/')
+        self.assertEqual(r.docs.as_url, '/docs/list')
+        self.assertEqual(r.newslist.as_url, '/news/list')
+        self.assertEqual(r.doc(id=1).as_url, '/docs/1')
+        self.assertEqual(r.news(id=1).as_url, '/news/1')
 
     def test_unicode(self):
         'Reverse with unicode'
@@ -175,7 +175,7 @@ class ReverseTests(unittest.TestCase):
         )
         r = web.Reverse.from_handler(chain)
 
-        self.assertEqual(str(r.unicode1), 'http://xn--o1a/%D0%B7/')
-        self.assertEqual(str(r.unicode2(slug=u'ю')), 'http://xn--o1a/%D0%B7/%D1%8E')
-        self.assertEqual(str(r.unicode3(slug=u'ю')), 'http://xn--o1a/%D0%B4/%D1%8E')
-        self.assertEqual(str(r.unicode4(slug1=u'д', slug2=u'ю')), 'http://xn--o1a/%D0%B4/%D1%8E')
+        self.assertEqual(r.unicode1.as_url, 'http://xn--o1a/%D0%B7/')
+        self.assertEqual(r.unicode2(slug=u'ю').as_url, 'http://xn--o1a/%D0%B7/%D1%8E')
+        self.assertEqual(r.unicode3(slug=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
+        self.assertEqual(r.unicode4(slug1=u'д', slug2=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
