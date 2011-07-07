@@ -211,8 +211,12 @@ class FieldSet(AggregateField):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), 'To set raw value need dict, got %r' % value
         for field in self.fields:
-            subvalue = value[field.name]
-            field.set_raw_value(field.from_python(subvalue))
+            try:
+                subvalue = value[field.name]
+            except KeyError:
+                print 'Key %s not exist in %r' % (field.name, value)
+            else:
+                field.set_raw_value(field.from_python(subvalue))
 
     def accept(self):
         result = self.python_data
