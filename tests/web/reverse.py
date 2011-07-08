@@ -72,23 +72,23 @@ class LocationsTests(unittest.TestCase):
         chain = web.prefix('/items') | web.cases(
             web.match('/', 'index'),
             web.prefix('/news') | web.namespace('news') | web.cases(
-                web.match('/', 'index'),
-                web.match('/<int:id>', 'item')),
-            web.prefix('/docs') | web.namespace('docs') | web.cases(
-                web.match('/', 'index'),
-                web.match('/<int:id>', 'item')))
+                web.match('/', ''),
+                web.match('/<int:id>', 'item'),
+                web.prefix('/docs') | web.namespace('docs') | web.cases(
+                    web.match('/', ''),
+                    web.match('/<int:id>', 'item'))))
         locations = web.locations(chain)
-        self.assertEqual(locations.keys(), ['index', 'docs', 'news'])
+        self.assertEqual(locations.keys(), ['index', 'news'])
         self.assertEqual(locations['index'][0], 
                          Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/'))))
         self.assertEqual(locations['news'][0], 
                          Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/news', match_whole_str=False))))
-        self.assertEqual(locations['news'][1]['index'][0], Location(UrlTemplate('/')))
+        self.assertEqual(locations['news'][1][''][0], Location(UrlTemplate('/')))
         self.assertEqual(locations['news'][1]['item'][0], Location(UrlTemplate('/<int:id>')))
-        self.assertEqual(locations['docs'][0], 
-                         Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/docs', match_whole_str=False))))
-        self.assertEqual(locations['docs'][1]['index'][0], Location(UrlTemplate('/')))
-        self.assertEqual(locations['docs'][1]['item'][0], Location(UrlTemplate('/<int:id>')))
+        self.assertEqual(locations['news'][1]['docs'][0], 
+                         Location(UrlTemplate('/docs', match_whole_str=False)))
+        self.assertEqual(locations['news'][1]['docs'][1][''][0], Location(UrlTemplate('/')))
+        self.assertEqual(locations['news'][1]['docs'][1]['item'][0], Location(UrlTemplate('/<int:id>')))
 
     def test_namespace_with_empty_name(self):
         'Namespaces with empty url name'
@@ -180,3 +180,18 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.unicode2(slug=u'ю').as_url, 'http://xn--o1a/%D0%B7/%D1%8E')
         self.assertEqual(r.unicode3(slug=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
         self.assertEqual(r.unicode4(slug1=u'д', slug2=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
+
+    def test_nested_prefixes(self):
+        'Reverse with nested prefexes'
+        app = web.prefix('/news/<section>') | web.namespace('news') | web.cases(
+                web.match('', ''),
+                web.prefix('/<int:id>') | web.namespace('item') | web.cases(
+                    web.match('', ''),
+                    web.prefix('/docs') | web.namespace('docs') | web.cases(
+                        web.match('', ''),
+                        web.match('/<int:id>', 'item'))))
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.news(section='top').as_url, '/news/top')
+        self.assertEqual(r.news(section='top').item(id=1).as_url, '/news/top/1')
+        self.assertEqual(r.news(section='top').item(id=1).docs.as_url, '/news/top/1/docs')
+        self.assertEqual(r.news(section='top').item(id=1).docs.item(id=2).as_url, '/news/top/1/docs/2')

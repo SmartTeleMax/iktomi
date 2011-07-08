@@ -89,9 +89,9 @@ class URL(str):
 
 
 class Location(object):
-    def __init__(self, *builders):
+    def __init__(self, *builders, **kwargs):
         self.builders = list(builders)
-        self.subdomains = []
+        self.subdomains = kwargs.get('subdomains', [])
 
     @property
     def need_arguments(self):
@@ -110,7 +110,11 @@ class Location(object):
         return u'.'.join(self.subdomains)
 
     def __eq__(self, other):
-        return self.builders == other.builders and self.subdomains == other.subdomains
+        return isinstance(other, self.__class__) and \
+               self.builders == other.builders and self.subdomains == other.subdomains
+
+    def __repr__(self):
+        return '%s(*%r, %r)' % (self.__class__.__name__, self.builders, self.subdomains)
 
 
 class Reverse(object):
@@ -124,10 +128,16 @@ class Reverse(object):
         self._is_scope = bool(self._scope)
 
     def __call__(self, **kwargs):
+        if self._ready:
+            raise Exception('Endpoint do not accept arguments')
         if self._is_endpoint:
-            location = self._scope[''][0] if self._is_scope else self._location
-            host = self._host + location.build_subdomians()
-            path = location.build_path(**kwargs)
+            path, host = self._path, self._host
+            host += self._location.build_subdomians()
+            path += self._location.build_path(**kwargs)
+            if self._scope:
+                location = self._scope[''][0]
+                host += location.build_subdomians()
+                path += location.build_path(**kwargs)
             return self.__class__(self._scope, self._location, path=path, host=host, ready=True)
         raise Exception('Not Endpoint')
 
@@ -140,7 +150,7 @@ class Reverse(object):
             host = self._host
             ready = False
             if not location.need_arguments:
-                path = location.build_path()
+                path += location.build_path()
                 host += location.build_subdomians()
                 ready = True
             return self.__class__(scope, location, path, host, ready=ready)
