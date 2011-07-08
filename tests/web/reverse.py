@@ -6,7 +6,7 @@ import unittest
 from insanities import web
 from insanities.utils.storage import VersionedStorage
 from insanities.web.url import UrlTemplate
-from insanities.web.reverse import Location
+from insanities.web.reverse import Location, UrlBuildingError
 
 
 class LocationsTests(unittest.TestCase):
@@ -191,7 +191,15 @@ class ReverseTests(unittest.TestCase):
                         web.match('', ''),
                         web.match('/<int:id>', 'item'))))
         r = web.Reverse.from_handler(app)
+
+        # Normal behavior
         self.assertEqual(r.news(section='top').as_url, '/news/top')
         self.assertEqual(r.news(section='top').item(id=1).as_url, '/news/top/1')
         self.assertEqual(r.news(section='top').item(id=1).docs.as_url, '/news/top/1/docs')
         self.assertEqual(r.news(section='top').item(id=1).docs.item(id=2).as_url, '/news/top/1/docs/2')
+
+        # Exceptional behavior
+        self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
+        self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item.as_url)
+        self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item(id=1).docs())
+        self.assertRaises(UrlBuildingError, lambda: r.news.item)

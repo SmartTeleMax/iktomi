@@ -117,19 +117,23 @@ class Location(object):
         return '%s(*%r, %r)' % (self.__class__.__name__, self.builders, self.subdomains)
 
 
+class UrlBuildingError(Exception): pass
+
+
 class Reverse(object):
-    def __init__(self, scope, location=None, path='', host='', ready=False):
+    def __init__(self, scope, location=None, path='', host='', ready=False, need_arguments=False):
         self._location = location
         self._scope = scope
-        self._ready = ready
         self._path = path
         self._host = host
+        self._ready = ready
+        self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
 
     def __call__(self, **kwargs):
         if self._ready:
-            raise Exception('Endpoint do not accept arguments')
+            raise UrlBuildingError('Endpoint do not accept arguments')
         if self._is_endpoint:
             path, host = self._path, self._host
             host += self._location.build_subdomians()
@@ -139,12 +143,14 @@ class Reverse(object):
                 host += location.build_subdomians()
                 path += location.build_path(**kwargs)
             return self.__class__(self._scope, self._location, path=path, host=host, ready=True)
-        raise Exception('Not Endpoint')
+        raise UrlBuildingError('Not an endpoint')
 
     def __getattr__(self, name):
         if name in self.__dict__:
             return self.__dict__[name]
         if self._is_scope and name in self._scope:
+            if self._need_arguments:
+                raise UrlBuildingError('Need arguments to build last part of url')
             location, scope = self._scope[name]
             path = self._path
             host = self._host
@@ -153,14 +159,14 @@ class Reverse(object):
                 path += location.build_path()
                 host += location.build_subdomians()
                 ready = True
-            return self.__class__(scope, location, path, host, ready=ready)
+            return self.__class__(scope, location, path, host, ready, need_arguments=location.need_arguments)
         raise AttributeError(name)
 
     @property
     def as_url(self):
         if self._ready:
             return URL(self._path, host=self._host)
-        raise Exception('Not ready')
+        raise UrlBuildingError('Not an endpoint or need arguments to be build')
 
     @classmethod
     def from_handler(cls, handler, env=None):
