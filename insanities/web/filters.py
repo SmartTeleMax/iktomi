@@ -10,7 +10,8 @@ from os import path
 from urllib import unquote
 from .core import WebHandler
 from .http import Response
-from .url import UrlTemplate, UrlBuilderData
+from .url import UrlTemplate
+from .reverse import Location
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class match(WebHandler):
         self.builder = UrlTemplate(url, converters=convs)
 
     def _locations(self):
-        return {self.url_name: (UrlBuilderData([self.builder], []), None)}
+        return {self.url_name: (Location(self.builder), {})}
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env.request.prefixed_path, env=env)
@@ -116,8 +117,8 @@ class prefix(WebHandler):
 
     def _locations(self):
         locations = super(prefix, self)._locations()
-        for v in locations.values():
-            v[0].builders.insert(0, self.builder)
+        for location, scope in locations.values():
+            location.builders.insert(0, self.builder)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -138,8 +139,8 @@ class subdomain(WebHandler):
 
     def _locations(self):
         locations = super(subdomain, self)._locations()
-        for v in locations.values():
-            v[0].subdomains.append(self.subdomain)
+        for location, scope in locations.values():
+            location.subdomains.append(self.subdomain)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -174,5 +175,4 @@ class namespace(WebHandler):
         return next_handler(env, data)
 
     def _locations(self):
-        return {self.namespace: (UrlBuilderData([], []), 
-                                 super(namespace, self)._locations())}
+        return {self.namespace: (Location(), super(namespace, self)._locations())}

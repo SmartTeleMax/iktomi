@@ -4,7 +4,21 @@ __all__ = ['Reverse', 'URL']
 
 import urllib
 from webob.multidict import MultiDict
-from .url import construct_url, urlquote
+from .url import urlquote
+
+
+def construct_url(path, query, host, port, schema):
+    query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
+                            for k,v in query.iteritems()])  \
+             if query else '')
+
+    path = path
+    if host:
+        host = host.encode('idna')
+        port = ':' + port if port else ''
+        return ''.join((schema, '://', host, port, path,  query))
+    else:
+        return path + query
 
 
 class URL(str):
@@ -74,43 +88,69 @@ class URL(str):
         return '<URL %r>' % str.__repr__(self)
 
 
-class Reverse(object):
-    def __init__(self, locations=None, builder=None, builder_kwargs=None):
-        self._locations = locations or {}
-        self._builder = builder
-        self._builder_kwargs = builder_kwargs or {}
+class Location(object):
+    def __init__(self, *builders):
+        self.builders = list(builders)
+        self.subdomains = []
 
-    def _copy(self, **kw):
-        builder_kwargs = dict(self._builder_kwargs)
-        builder_kwargs.update(kw.pop('builder_kwargs', {}))
-        vars = dict(locations=self._locations, 
-                    builder=self._builder,
-                    builder_kwargs=builder_kwargs)
-        vars.update(kw)
-        return self.__class__(**vars)
+    @property
+    def need_arguments(self):
+        for b in self.builders:
+            if b._url_params:
+                return True
+        return False
+
+    def build_path(self, **kwargs):
+        result = []
+        for b in self.builders:
+            result.append(b(**kwargs))
+        return ''.join(result)
+
+    def build_subdomians(self):
+        return u'.'.join(self.subdomains)
+
+    def __eq__(self, other):
+        return self.builders == other.builders and self.subdomains == other.subdomains
+
+
+class Reverse(object):
+    def __init__(self, scope, location=None, path='', host='', ready=False):
+        self._location = location
+        self._scope = scope
+        self._ready = ready
+        self._path = path
+        self._host = host
+        self._is_endpoint = (not self._scope) or ('' in self._scope)
+        self._is_scope = bool(self._scope)
 
     def __call__(self, **kwargs):
-        return self._copy(builder_kwargs=kwargs)
+        if self._is_endpoint:
+            location = self._scope[''][0] if self._is_scope else self._location
+            host = self._host + location.build_subdomians()
+            path = location.build_path(**kwargs)
+            return self.__class__(self._scope, self._location, path=path, host=host, ready=True)
+        raise Exception('Not Endpoint')
 
     def __getattr__(self, name):
         if name in self.__dict__:
             return self.__dict__[name]
-        if name in self._locations:
-            value = self._locations[name]
-            return self._copy(locations=value[1], builder=value[0])
+        if self._is_scope and name in self._scope:
+            location, scope = self._scope[name]
+            path = self._path
+            host = self._host
+            ready = False
+            if not location.need_arguments:
+                path = location.build_path()
+                host += location.build_subdomians()
+                ready = True
+            return self.__class__(scope, location, path, host, ready=ready)
         raise AttributeError(name)
-
-    def __str__(self):
-        if self._builder:
-            host = u'.'.join(self._builder.subdomains)
-            # path - urlencoded str
-            path = ''.join([b(**self._builder_kwargs) for b in self._builder.builders])
-            return URL(path, host=host)
-        raise ReverseError('Unknown url %r' % self._locations)
 
     @property
     def as_url(self):
-        return str(self)
+        if self._ready:
+            return URL(self._path, host=self._host)
+        raise Exception('Not ready')
 
     @classmethod
     def from_handler(cls, handler, env=None):

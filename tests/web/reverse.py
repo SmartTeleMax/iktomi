@@ -5,7 +5,8 @@ __all__ = ['ReverseTests', 'LocationsTests']
 import unittest
 from insanities import web
 from insanities.utils.storage import VersionedStorage
-from insanities.web.url import UrlTemplate, UrlBuilderData
+from insanities.web.url import UrlTemplate
+from insanities.web.reverse import Location
 
 
 class LocationsTests(unittest.TestCase):
@@ -79,15 +80,15 @@ class LocationsTests(unittest.TestCase):
         locations = web.locations(chain)
         self.assertEqual(locations.keys(), ['index', 'docs', 'news'])
         self.assertEqual(locations['index'][0], 
-                         UrlBuilderData([UrlTemplate('/items', match_whole_str=False), UrlTemplate('/')], []))
+                         Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/'))))
         self.assertEqual(locations['news'][0], 
-                         UrlBuilderData([UrlTemplate('/items', match_whole_str=False), UrlTemplate('/news', match_whole_str=False)], []))
-        self.assertEqual(locations['news'][1]['index'][0], UrlBuilderData([UrlTemplate('/')], []))
-        self.assertEqual(locations['news'][1]['item'][0], UrlBuilderData([UrlTemplate('/<int:id>')], []))
+                         Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/news', match_whole_str=False))))
+        self.assertEqual(locations['news'][1]['index'][0], Location(UrlTemplate('/')))
+        self.assertEqual(locations['news'][1]['item'][0], Location(UrlTemplate('/<int:id>')))
         self.assertEqual(locations['docs'][0], 
-                         UrlBuilderData([UrlTemplate('/items', match_whole_str=False), UrlTemplate('/docs', match_whole_str=False)], []))
-        self.assertEqual(locations['docs'][1]['index'][0], UrlBuilderData([UrlTemplate('/')], []))
-        self.assertEqual(locations['docs'][1]['item'][0], UrlBuilderData([UrlTemplate('/<int:id>')], []))
+                         Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/docs', match_whole_str=False))))
+        self.assertEqual(locations['docs'][1]['index'][0], Location(UrlTemplate('/')))
+        self.assertEqual(locations['docs'][1]['item'][0], Location(UrlTemplate('/<int:id>')))
 
     def test_namespace_with_empty_name(self):
         'Namespaces with empty url name'

@@ -4,32 +4,14 @@ import urllib
 import re
 import logging
 import urllib
-import collections
 from inspect import isclass
 from webob.multidict import MultiDict
 
 logger = logging.getLogger(__name__)
 
 
-UrlBuilderData = collections.namedtuple('UrlBuilderData', 'builders subdomains')
-
-
 def urlquote(value):
     return urllib.quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
-
-
-def construct_url(path, query, host, port, schema):
-    query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
-                            for k,v in query.iteritems()])  \
-             if query else '')
-
-    path = path
-    if host:
-        host = host.encode('idna')
-        port = ':' + port if port else ''
-        return ''.join((schema, '://', host, port, path,  query))
-    else:
-        return path + query
 
 
 class ConvertError(Exception):
