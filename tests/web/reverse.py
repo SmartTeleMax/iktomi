@@ -72,10 +72,10 @@ class LocationsTests(unittest.TestCase):
         chain = web.prefix('/items') | web.cases(
             web.match('/', 'index'),
             web.prefix('/news') | web.namespace('news') | web.cases(
-                web.match('/', ''),
+                web.match('/'),
                 web.match('/<int:id>', 'item'),
                 web.prefix('/docs') | web.namespace('docs') | web.cases(
-                    web.match('/', ''),
+                    web.match('/'),
                     web.match('/<int:id>', 'item'))))
         locations = web.locations(chain)
         self.assertEqual(locations.keys(), ['index', 'news'])
@@ -92,7 +92,7 @@ class LocationsTests(unittest.TestCase):
 
     def test_namespace_with_empty_name(self):
         'Namespaces with empty url name'
-        chain = web.namespace('news') | web.match('/', '')
+        chain = web.namespace('news') | web.match('/')
         self.assert_(web.locations(chain).keys(), ['news'])
 
     def test_subdomain(self):
@@ -184,11 +184,11 @@ class ReverseTests(unittest.TestCase):
     def test_nested_prefixes(self):
         'Reverse with nested prefexes'
         app = web.prefix('/news/<section>') | web.namespace('news') | web.cases(
-                web.match('', ''),
+                web.match(),
                 web.prefix('/<int:id>') | web.namespace('item') | web.cases(
-                    web.match('', ''),
+                    web.match(),
                     web.prefix('/docs') | web.namespace('docs') | web.cases(
-                        web.match('', ''),
+                        web.match(),
                         web.match('/<int:id>', 'item'))))
         r = web.Reverse.from_handler(app)
 

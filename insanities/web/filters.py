@@ -24,7 +24,7 @@ def update_data(data, new_data):
 
 class match(WebHandler):
 
-    def __init__(self, url, name, convs=None):
+    def __init__(self, url='', name='', convs=None):
         self.url = url
         self.url_name = name
         self.builder = UrlTemplate(url, converters=convs)
