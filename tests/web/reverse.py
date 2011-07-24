@@ -70,7 +70,7 @@ class LocationsTests(unittest.TestCase):
     def test_mix(self):
         'Loactions mix'
         chain = web.prefix('/items') | web.cases(
-            web.match('/', 'index'),
+            web.match('/'),
             web.prefix('/news') | web.namespace('news') | web.cases(
                 web.match('/'),
                 web.match('/<int:id>', 'item'),
@@ -78,8 +78,8 @@ class LocationsTests(unittest.TestCase):
                     web.match('/'),
                     web.match('/<int:id>', 'item'))))
         locations = web.locations(chain)
-        self.assertEqual(locations.keys(), ['index', 'news'])
-        self.assertEqual(locations['index'][0], 
+        self.assertEqual(locations.keys(), ['', 'news'])
+        self.assertEqual(locations[''][0], 
                          Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/'))))
         self.assertEqual(locations['news'][0], 
                          Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/news', match_whole_str=False))))
@@ -121,6 +121,17 @@ class ReverseTests(unittest.TestCase):
         'Reverse one match'
         r = web.Reverse.from_handler(web.match('/', 'index'))
         self.assertEqual(r.index.as_url, '/')
+
+    def test_deafult_name(self):
+        'Reverse default name'
+        r = web.Reverse.from_handler(web.match('/'))
+        self.assertEqual(r.as_url, '/')
+
+    def test_deafult_name_with_args(self):
+        'Reverse default name with args'
+        r = web.Reverse.from_handler(web.match('/<arg>'))
+        self.assertEqual(r(arg='1').as_url, '/1')
+        self.assertRaises(UrlBuildingError, lambda: r.as_url)
 
     def test_few_handlers(self):
         'Reverse a few handlers'

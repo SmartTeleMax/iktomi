@@ -171,4 +171,15 @@ class Reverse(object):
     @classmethod
     def from_handler(cls, handler, env=None):
         from .core import locations
-        return cls(locations(handler))
+        handler_locations = locations(handler)
+        path = ''
+        host = ''
+        ready = False
+        location = None
+        if '' in handler_locations:
+            location, scope = handler_locations.pop('')
+            if not location.need_arguments:
+                ready = True
+                path += location.build_path()
+                host += location.build_subdomians()
+        return cls(handler_locations, location, ready=ready, path=path, host=host)
