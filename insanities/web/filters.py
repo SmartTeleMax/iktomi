@@ -11,6 +11,7 @@ from urllib import unquote
 from .core import WebHandler
 from .http import Response
 from .url import UrlTemplate
+from .reverse import Location
 
 
 logger = logging.getLogger(__name__)
@@ -23,13 +24,13 @@ def update_data(data, new_data):
 
 class match(WebHandler):
 
-    def __init__(self, url, name, convs=None):
+    def __init__(self, url='', name='', convs=None):
         self.url = url
         self.url_name = name
         self.builder = UrlTemplate(url, converters=convs)
 
     def _locations(self):
-        return {self.url_name: {'builders': [self.builder]}}
+        return {self.url_name: (Location(self.builder), {})}
 
     def handle(self, env, data, next_handler):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
@@ -116,8 +117,8 @@ class prefix(WebHandler):
 
     def _locations(self):
         locations = super(prefix, self)._locations()
-        for v in locations.values():
-            v.setdefault('builders', []).append(self.builder)
+        for location, scope in locations.values():
+            location.builders.insert(0, self.builder)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -141,8 +142,8 @@ class subdomain(WebHandler):
 
     def _locations(self):
         locations = super(subdomain, self)._locations()
-        for v in locations.values():
-            v.setdefault('subdomains', []).append(self.subdomain)
+        for location, scope in locations.values():
+            location.subdomains.append(self.subdomain)
         return locations
 
     def handle(self, env, data, next_handler):
@@ -177,8 +178,4 @@ class namespace(WebHandler):
         return next_handler(env, data)
 
     def _locations(self):
-        locations = super(namespace, self)._locations()
-        new_locations = {}
-        for k, v in locations.items():
-            new_locations[self.namespace+'.'+k if k else self.namespace] = v
-        return new_locations
+        return {self.namespace: (Location(), super(namespace, self)._locations())}

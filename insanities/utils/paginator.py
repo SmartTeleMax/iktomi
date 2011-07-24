@@ -2,7 +2,7 @@
 
 from . import cached_property
 import math, itertools
-from ..web.url import URL
+from ..web.reverse import URL
 
 
 def full_page_range(pages_count, page):

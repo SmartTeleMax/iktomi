@@ -123,8 +123,8 @@ class Prefix(unittest.TestCase):
         )
         encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
 
-        self.assertEqual(web.Reverse.from_handler(app)('percent'), encoded)
-        self.assertEqual(web.Reverse.from_handler(app)('percent').get_readable(), u'/հայերեն/%')
+        self.assertEqual(web.Reverse.from_handler(app).percent.as_url, encoded)
+        self.assertEqual(web.Reverse.from_handler(app).percent.as_url.get_readable(), u'/հայերեն/%')
 
         self.assertNotEqual(web.ask(app, encoded), None)
 
@@ -162,8 +162,8 @@ class Subdomain(unittest.TestCase):
         '''IRI tests'''
         app = web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site') | (lambda e,d,n: Response() )
         encoded = 'http://xn--80aswg.xn--p1ai/'
-        self.assertEqual(web.Reverse.from_handler(app)('site').get_readable(), u'http://сайт.рф/')
-        self.assertEqual(web.Reverse.from_handler(app)('site'), encoded)
+        self.assertEqual(web.Reverse.from_handler(app).site.as_url.get_readable(), u'http://сайт.рф/')
+        self.assertEqual(web.Reverse.from_handler(app).site.as_url, encoded)
         self.assertNotEqual(web.ask(app, encoded), None)
 
 
