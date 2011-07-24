@@ -77,7 +77,7 @@ class CookieAuth(web.WebHandler):
             logger.info('session_storage "%r" is unrichable' % self.session_storage)
         return response
 
-    def logout(self, request):
+    def logout_user(self, request):
         response = web.Response()
         response.delete_cookie(self._cookie_name)
         key = request.cookies[self._cookie_name]
@@ -123,7 +123,7 @@ class CookieAuth(web.WebHandler):
         '''
         def _logout(env, data, next_handler):
             if self._cookie_name in env.request.cookies:
-                response = self.logout(env.request)
+                response = self.logout_user(env.request)
                 response.status = 303
                 response.headers['Location'] = str(redirect_to)
                 return response
