@@ -65,7 +65,7 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
-    required = True
+    required = False
 
     #: Values are not accepted by Required validator
     error_required = N_('required field')
@@ -92,7 +92,7 @@ class Converter(object):
         return self.field.env
 
     def _is_empty(self, value):
-        return value in ('', [])
+        return value in ('', [], {})
 
     def _check(self, method):
         def wrapper(value, **kwargs):
