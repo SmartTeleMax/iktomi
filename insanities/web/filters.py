@@ -52,7 +52,7 @@ class method(WebHandler):
             if env.request.method in self._names:
                 return next_handler(env, data)
             return None
-        self.handle = mathod
+        self.handle = method
 
     def __repr__(self):
         return 'method(*%r)' % self._names
