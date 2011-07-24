@@ -9,7 +9,7 @@ class PasswordConv(convs.Char):
     def from_python(self, value):
         return dict([(field.name, None) for field in self.field.fields])
 
-    def get_default(self):
+    def get_initial(self):
         return ''
 
     def to_python(self, value):
@@ -39,5 +39,5 @@ def PasswordSet(name='password',
         kwargs.setdefault('conv', PasswordConv(null=null))
         kwargs.setdefault('template', 'fieldset-line')
         
-        return fields.FieldSet(name, get_default=lambda: '', **kwargs)
+        return fields.FieldSet(name, get_initial=lambda: '', **kwargs)
 
