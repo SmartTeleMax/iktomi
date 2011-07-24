@@ -58,9 +58,9 @@ class CookieAuth(web.WebHandler):
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
             user_identity = self.session_storage.get(self._cookie_name+':'+key.encode('utf-8'))
-            if value is not None:
+            if user_identity is not None:
                 user = self.identify_user(env, user_identity)
-        logger.info('Authenticated: %r' % user)
+        logger.debug('Authenticated: %r' % user)
         env.user = user
         try:
             result = next_handler(env, data)
@@ -100,12 +100,13 @@ class CookieAuth(web.WebHandler):
             msg = ''
             if env.request.method == 'POST':
                 if form.accept(env.request.POST):
-                    user_id, msg = self._user_by_credential(env, **form.python_data)
-                    if user_id is not None:
-                        response = self.login(user_id)
+                    user_identity = self.get_user_identity(env, **form.python_data)
+                    if user_identity is not None:
+                        response = self.login_identity(user_identity)
                         response.status = 303
                         response.headers['Location'] = next.encode('utf-8')
                         return response
+                    msg = 'user or password is wrong'
             data.form = form
             data.message = msg
             data.login_url = env.root.login.as_url.qs_set(next=next)
@@ -138,3 +139,30 @@ def auth_required(env, data, next_handler):
     response.headers['Location'] = str(env.root.login.as_url.qs_set(next=env.request.path_info))
     return response
 
+
+class SqlaModelAuth(CookieAuth):
+
+    class Mixin(object):
+        def set_password(self, password):
+            self.password = encrypt_password(password)
+
+        def check_password(self, password):
+            return check_password(password, self.password)
+
+        @classmethod
+        def login(cls):
+            return cls.login
+
+        @classmethod
+        def get_user_identity(cls, env, login, password):
+            user = env.db.query(cls).filter(cls.login()==login).first()
+            if user and check_password(password, user.password):
+                return user.id
+            return None
+
+        @classmethod
+        def identify_user(cls, env, user_identity):
+            return env.db.get(cls, id=user_identity)
+
+    def __init__(self, model, session_storage, **kwargs):
+        CookieAuth.__init__(self, model.get_user_identity, model.identify_user, session_storage, **kwargs)
