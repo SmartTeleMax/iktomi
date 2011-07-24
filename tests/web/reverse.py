@@ -124,8 +124,13 @@ class ReverseTests(unittest.TestCase):
 
     def test_deafult_name(self):
         'Reverse default name'
-        r = web.Reverse.from_handler(web.match('/'))
+        app = web.cases(
+            web.match('/'),
+            web.match('/index', 'index'),
+        )
+        r = web.Reverse.from_handler(app)
         self.assertEqual(r.as_url, '/')
+        self.assertEqual(r.index.as_url, '/index')
 
     def test_deafult_name_with_args(self):
         'Reverse default name with args'

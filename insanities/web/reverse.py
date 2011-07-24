@@ -121,7 +121,8 @@ class UrlBuildingError(Exception): pass
 
 
 class Reverse(object):
-    def __init__(self, scope, location=None, path='', host='', ready=False, need_arguments=False):
+    def __init__(self, scope, location=None, path='', host='', ready=False, 
+                 need_arguments=False, root=False):
         self._location = location
         self._scope = scope
         self._path = path
@@ -130,14 +131,16 @@ class Reverse(object):
         self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
+        self._root = root
 
     def __call__(self, **kwargs):
         if self._ready:
             raise UrlBuildingError('Endpoint do not accept arguments')
         if self._is_endpoint:
             path, host = self._path, self._host
-            host += self._location.build_subdomians()
-            path += self._location.build_path(**kwargs)
+            if self._location:
+                host += self._location.build_subdomians()
+                path += self._location.build_path(**kwargs)
             if self._scope:
                 location = self._scope[''][0]
                 host += location.build_subdomians()
@@ -166,20 +169,15 @@ class Reverse(object):
     def as_url(self):
         if self._ready:
             return URL(self._path, host=self._host)
+        elif self._is_endpoint and self._root:
+            location, scope = self._scope['']
+            if not location.need_arguments:
+                path = location.build_path()
+                host = location.build_subdomians()
+                return URL(path, host=host)
         raise UrlBuildingError('Not an endpoint or need arguments to be build')
 
     @classmethod
     def from_handler(cls, handler, env=None):
         from .core import locations
-        handler_locations = locations(handler)
-        path = ''
-        host = ''
-        ready = False
-        location = None
-        if '' in handler_locations:
-            location, scope = handler_locations.pop('')
-            if not location.need_arguments:
-                ready = True
-                path += location.build_path()
-                host += location.build_subdomians()
-        return cls(handler_locations, location, ready=ready, path=path, host=host)
+        return cls(locations(handler), root=True)
