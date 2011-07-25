@@ -24,8 +24,7 @@ class LocalMemStorage(Storage):
     def delete(self, key):
         if key in self.storage:
             del self.storage[key]
-            return True
-        return False
+        return True
 
 
 class MemcachedStorage(Storage):
