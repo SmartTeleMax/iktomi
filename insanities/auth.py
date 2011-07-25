@@ -142,27 +142,20 @@ def auth_required(env, data, next_handler):
 
 class SqlaModelAuth(CookieAuth):
 
-    class Mixin(object):
-        def set_password(self, password):
-            self.password = encrypt_password(password)
+    def __init__(self, model, session_storage, login_field='login', password_field='password', 
+                 **kwargs):
+        self._model = model
+        self._login_field = login_field
+        self._password_field = password_field
+        CookieAuth.__init__(self, self.get_user_identity, self.identify_user, session_storage, **kwargs)
 
-        def check_password(self, password):
-            return check_password(password, self.password)
+    def get_user_identity(self, env, login, password):
+        model = self._model
+        login_field = getattr(model, self._login_field)
+        user = env.db.query(model).filter(login_field==login).first()
+        if user is not None and check_password(password, getattr(user, self._password_field)):
+            return user.id
+        return None
 
-        @classmethod
-        def login(cls):
-            return cls.login
-
-        @classmethod
-        def get_user_identity(cls, env, login, password):
-            user = env.db.query(cls).filter(cls.login()==login).first()
-            if user and check_password(password, user.password):
-                return user.id
-            return None
-
-        @classmethod
-        def identify_user(cls, env, user_identity):
-            return env.db.get(cls, id=user_identity)
-
-    def __init__(self, model, session_storage, **kwargs):
-        CookieAuth.__init__(self, model.get_user_identity, model.identify_user, session_storage, **kwargs)
+    def identify_user(self, env, user_identity):
+        return env.db.query(self._model).get(user_identity)
