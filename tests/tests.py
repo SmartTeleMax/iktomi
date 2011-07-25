@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath('..'))
 import unittest
 from unittest import defaultTestLoader as dtl
 
+from storage import *
 from utils.storage import *
 from utils.html import *
 from utils.url import *
