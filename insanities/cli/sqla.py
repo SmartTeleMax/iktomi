@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from insanities.utils import import_string
 from .base import Cli
 
 __all__ = ['Sqla']
@@ -14,11 +13,23 @@ class Sqla(Cli):
         self.initial = initial
         self.generators = generators or {}
 
+    def _get_binds(self):
+        metadatas = {}
+        for table, engine in self.session._Session__binds.items():
+            metadatas.setdefault(table.metadata, set()).add(engine)
+        return metadatas
+
+    def _schema(self, table):
+        from sqlalchemy.schema import CreateTable
+        return str(CreateTable(table))
+
     def command_create_tables(self):
         print('Creating table(s)...')
-        for table, engine in self.session._Session__binds.items():
-            print('{1}: {0}'.format(table.name, engine))
-            table.metadata.create_all(engine)
+        for metadata, engines in self._get_binds().items():
+            for engine in engines:
+                for table in metadata.sorted_tables:
+                    print('{0}: {1}\n{2}'.format(engine, table.name, self._schema(table)))
+                    metadata.create_all(engine, tables=[table])
 
     def command_drop_tables(self):
         #sys.exit('You must not drop on production server!')
@@ -26,13 +37,12 @@ class Sqla(Cli):
         if answer.strip().lower()!='y':
             sys.exit('Interrupted')
         print('Droping table(s)...')
-        for table, engine in self.session._Session__binds.items():
-            print('{1}: {0}'.format(table.name, engine))
-            table.metadata.drop_all(engine, checkfirst=True)
+        for metadata, engines in self._get_binds().items():
+            for engine in engines:
+                metadata.drop_all(engine)
 
     def command_init(self):
         if self.initial:
-            #TODO: implement per db initial
             self.initial(self.session)
 
     def command_reset(self):
@@ -41,13 +51,12 @@ class Sqla(Cli):
         self.command_init()
 
     def command_schema(self, model_name=None):
-        from sqlalchemy.schema import CreateTable
         for table, engine in self.session._Session__binds.items():
             if model_name:
                 if model_name == table.name:
-                    print(str(CreateTable(table)))
+                    print(self._schema(table))
             else:
-                print(str(CreateTable(table)))
+                print(self._schema(table))
 
     def command_gen(self, *names):
         if not names:
