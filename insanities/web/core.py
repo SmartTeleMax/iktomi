@@ -133,7 +133,7 @@ class _FunctionWrapper(WebHandler):
         self.handle = func
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.func.__name__)
+        return '%s(%s)' % (self.__class__.__name__, self.handle.__name__)
 
 
 def wrap_function(func):

@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 from insanities import web
 from insanities.forms import *
 from insanities.utils import N_
+from insanities.storage import LocalMemStorage
 
 
 def encrypt_password(raw_password, algorithm='sha1', salt=None):
@@ -45,19 +46,20 @@ class LoginForm(Form):
 
 class CookieAuth(web.WebHandler):
 
-    def __init__(self, get_user_identity, identify_user, session_storage,
-                 cookie_name='auth', login_form=LoginForm):
+    def __init__(self, get_user_identity, identify_user, storage=None,
+                 cookie_name='auth', login_form=LoginForm, crash_without_storage=True):
         self.get_user_identity = get_user_identity
         self.identify_user = identify_user
         self._cookie_name = cookie_name
         self._login_form = login_form
-        self.session_storage = session_storage
+        self.storage = LocalMemStorage() if storage is None else storage
+        self.crash_without_storage = crash_without_storage
 
     def handle(self, env, data, next_handler):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
-            user_identity = self.session_storage.get(self._cookie_name+':'+key.encode('utf-8'))
+            user_identity = self.storage.get(self._cookie_name+':'+key.encode('utf-8'))
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
         logger.debug('Authenticated: %r' % user)
@@ -72,9 +74,11 @@ class CookieAuth(web.WebHandler):
         key = os.urandom(10).encode('hex')
         response = web.Response() if response is None else response
         response.set_cookie(self._cookie_name, key, path=path)
-        if not self.session_storage.set(self._cookie_name+':'+key.encode('utf-8'), 
-                                        str(user_identity)):
-            logger.info('session_storage "%r" is unrichable' % self.session_storage)
+        if not self.storage.set(self._cookie_name+':'+key.encode('utf-8'),
+                                str(user_identity)):
+            if self.crash_without_storage:
+                raise Exception('Storage `%r` is gone or down' % self.storage)
+            logger.info('storage "%r" is unrichable' % self.storage)
         return response
 
     def logout_user(self, request):
@@ -82,8 +86,8 @@ class CookieAuth(web.WebHandler):
         response.delete_cookie(self._cookie_name)
         key = request.cookies[self._cookie_name]
         if key is not None:
-            if not self.session_storage.delete(self._cookie_name+':'+key.encode('utf-8')):
-                logger.info('session_storage "%r" is unrichable' % self.session_storage)
+            if not self.storage.delete(self._cookie_name+':'+key.encode('utf-8')):
+                logger.info('storage "%r" is unrichable' % self.storage)
         return response
 
     def login(self, template='login'):
@@ -97,7 +101,7 @@ class CookieAuth(web.WebHandler):
         def _login(env, data, next_handler):
             form = self._login_form(env)
             next = env.request.GET.get('next', '/')
-            msg = ''
+            login_failed = False
             if env.request.method == 'POST':
                 if form.accept(env.request.POST):
                     user_identity = self.get_user_identity(env, **form.python_data)
@@ -106,9 +110,9 @@ class CookieAuth(web.WebHandler):
                         response.status = 303
                         response.headers['Location'] = next.encode('utf-8')
                         return response
-                    msg = 'user or password is wrong'
+                    login_failed = True
             data.form = form
-            data.message = msg
+            data.login_failed = login_failed
             data.login_url = env.root.login.as_url.qs_set(next=next)
             return env.template.render_to_response(template, data.as_dict())
         return web.match('/login', 'login') | _login
@@ -117,7 +121,7 @@ class CookieAuth(web.WebHandler):
         '''
         This property will return component which will handle logout requests.
         It only handles POST requests and do not display any rendered content.
-        This handler deletes session id from `session_storage`. If there is no
+        This handler deletes session id from `storage`. If there is no
         session id provided or id is incorrect handler silently redirects to login
         url and does not throw any exception.
         '''
@@ -131,7 +135,6 @@ class CookieAuth(web.WebHandler):
         return web.match('/logout', 'logout') | web.method('post') | _logout
 
 
-@web.handler
 def auth_required(env, data, next_handler):
     if 'user' in env and env.user is not None:
         return next_handler(env, data)
@@ -142,12 +145,12 @@ def auth_required(env, data, next_handler):
 
 class SqlaModelAuth(CookieAuth):
 
-    def __init__(self, model, session_storage, login_field='login', password_field='password', 
+    def __init__(self, model, storage=None, login_field='login', password_field='password', 
                  **kwargs):
         self._model = model
         self._login_field = login_field
         self._password_field = password_field
-        CookieAuth.__init__(self, self.get_user_identity, self.identify_user, session_storage, **kwargs)
+        CookieAuth.__init__(self, self.get_user_identity, self.identify_user, storage=storage, **kwargs)
 
     def get_user_identity(self, env, login, password):
         model = self._model
