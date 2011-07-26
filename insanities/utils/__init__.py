@@ -58,6 +58,12 @@ class cached_property(object):
         return result
 
 
+def import_string(module_name, item_name=None):
+    if item_name is None:
+        return __import__(module_name, None, None, ['*'])
+    return getattr(__import__(module_name, None, None, ['*']), item_name)
+
+
 # http://www.w3.org/TR/REC-xml/#NT-Char
 # Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | 
 #          [#x10000- #x10FFFF]

@@ -97,10 +97,10 @@ class CookieAuthTests(unittest.TestCase):
 
 class SqlaModelAuthTests(unittest.TestCase):
     def setUp(self):
-        from mage.sqla import construct_maker
         from sqlalchemy import Column, Integer, String
         from sqlalchemy.schema import MetaData
         from sqlalchemy.ext.declarative import declarative_base
+        from insanities.db.sqla import session_maker
         metadata = MetaData()
         Model = declarative_base(metadata=metadata)
         class User(Model):
@@ -112,7 +112,7 @@ class SqlaModelAuthTests(unittest.TestCase):
         @web.handler
         def make_env(env, data, nxt):
             env.root = root
-            env.db = db = construct_maker('sqlite:///:memory:')()
+            env.db = db = session_maker('sqlite:///:memory:')()
             metadata.create_all(db.bind)
             user = User(login='user name', password=encrypt_password('123'))
             db.add(user)
