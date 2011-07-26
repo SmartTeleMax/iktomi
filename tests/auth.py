@@ -55,6 +55,7 @@ class CookieAuthTests(unittest.TestCase):
         '`Auth` anonymouse access'
         response = web.ask(self.app, '/a')
         self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.body, 'ok')
 
         response = web.ask(self.app, '/b')
         self.assertEqual(response.status_int, 303)
@@ -72,6 +73,7 @@ class CookieAuthTests(unittest.TestCase):
         response = self.login('user name', '123')
         response = web.ask(self.app, '/b', headers={'Cookie': response.headers['Set-Cookie']})
         self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.body, 'ok')
 
     def test_logout_anonymouse(self):
         '`Auth` logout of anonymouse'
