@@ -6,8 +6,8 @@ setup(
     name='insanities',
     version='0.3',
     packages=['insanities', 'insanities.utils', 'insanities.forms',
-              'insanities.web', 'insanities.templates', 'insanities.templates.mint',
-              'insanities.templates.jinja2'],
+              'insanities.web', 'insanities.templates', 'insanities.db', 'insanities.cli',
+              'insanities.ext', 'insanities.templates.mint', 'insanities.templates.jinja2'],
     package_dir={
         'insanities.templates.jinja2':'insanities/templates/jinja2',
         'insanities.templates.mint':'insanities/templates/mint',
