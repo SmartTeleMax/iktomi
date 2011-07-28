@@ -1,21 +1,22 @@
-{{ ui.render_field(field.get_field('mode'))|safe }}
-{{ ui.render_field(field.get_field('temp_name'))|safe }}
-{{ ui.render_field(field.get_field('original_name'))|safe }}
+{{ field.get_field('mode').render()|safe }}
+{{ field.get_field('temp_name').render()|safe }}
+{{ field.get_field('original_name').render()|safe }}
 
-{% if mode == 'existing' %}
-    <a target="_blank" href="{{ file_url }}">
-        current file {#{ _('current file') }#}
+{% set value = field.clean_value %}
+
+{% if value %}
+    <a target="_blank" href="{{ value.url }}">
+        {% if value.mode == 'existing' %}
+            current file
+        {% else %}
+            uploaded temporary file
+        {% endif %}
     </a><br/>
-{% elif mode == 'temp' %}
-    <a target="_blank" href="{{ file_url }}">
-        uploaded temporary file {#{ _('temporary file') }#}
-    </a><br/>
-{% endif %}
-{% if mode != 'empty' and not required %}
-    {{ ui.render_field(field.get_field('delete'))|safe }}
-    <label for="{{ field.get_field('delete').id }}">delete</label>
-    <br/>
+    {% if not required %}
+        {{ field.get_field('delete').render()|safe }}
+        <label for="{{ field.get_field('delete').id }}">delete</label>
+        <br/>
+    {% endif %}
 {% endif %}
 
-
-<input type="file" name="{{ field.input_name }}" />
+{{ field.get_field('file').render()|safe }}

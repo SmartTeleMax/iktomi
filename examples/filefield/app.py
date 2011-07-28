@@ -1,32 +1,34 @@
 # -*- coding: utf-8 -*-
-from insanities.web import *
+from insanities import web
 from insanities.web.filters import *
-from insanities.web.wrappers import *
-
-from insanities.ext.jinja2 import render_to, jinja_env
-from insanities.ext.cache import local_cache_env
-from insanities.utils import conf_to_dict
-
+from insanities.templates import jinja2, Template
 
 import cfg
 import handlers as h
 
 static = static_files(cfg.STATIC)
 media = static_files(cfg.MEDIA, '/media/')
+template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR, engines={'html': jinja2.TemplateEngine})
 
-env = (Conf(**conf_to_dict(cfg)) | 
-       jinja_env(extensions=['jinja2.ext.i18n'], autoescape=True) |
-       local_cache_env())
+def environment(env, data, next_handler):
+    env.cfg = cfg
 
-# should be added only in local app, but for simplicity added immediatelly
-env = env | static.add_reverse
+    env.url_for = url_for
+    env.url_for_static = static.construct_reverse()
+    env.template = template
 
-app = env | Map(
+    return next_handler(env, data)
+
+
+
+app = web.handler(environment) | web.cases(
     static, media,
-    match('/', 'files') | Map(
+    match('/', 'files') | web.cases(
         # Playing REST ;)
-        method('GET') | h.list_files | render_to('index.html'),
-        method('POST') | h.post_file | render_to('index.html'),
+        method('GET') | h.list_files | h.render_to('index'),
+        method('POST') | h.list_files | h.post_file | h.render_to('index'),
         #method('DELETE') | h.delete_files,
     ),
 )
+
+url_for = web.Reverse(web.locations(app))
