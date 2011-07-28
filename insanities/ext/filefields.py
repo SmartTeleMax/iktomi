@@ -144,7 +144,6 @@ class FileFieldSetConv(convs.Converter):
         if mode == 'empty':
             if not file and self.required:
                 raise convs.ValidationError(self.error_required)
-                #raise convs.SkipReadonly # XXX This is incorrect
 
         elif mode == 'temp':
             if not original_name:
@@ -162,11 +161,11 @@ class FileFieldSetConv(convs.Converter):
 
         elif mode == 'existing':
             if not file:
-                raise convs.SkipReadonly
+                return self._existing_value
 
         else:
             logger.warning('Unknown mode submitted for FileField: %r', mode)
-            raise convs.SkipReadonly
+            return self._existing_value
 
         if delete:
             return None
@@ -209,9 +208,7 @@ class FileFieldSet(FieldSet):
     def __init__(self, name, conv=FileFieldSetConv, **kwargs):
         kwargs.setdefault('fields', self.fields)
         FieldSet.__init__(self, name, conv=conv, **kwargs)
-        self.get_field('file').conv.required = self.conv.required
+        #self.get_field('file').conv.required = self.conv.required
 
-    def get_default(self):
+    def get_initial(self):
         return None # XXX
-
-

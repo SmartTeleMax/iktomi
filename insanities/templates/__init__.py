@@ -51,7 +51,9 @@ class Template(object):
             return Response(self.render(template_name, **data.as_dict()))
         return wrapper
 
-    def render_to_response(self, template_name, data, content_type='text/html'):
+    def render_to_response(self, template_name, data, env=None, content_type='text/html'):
         'handy method'
+        if env is not None:
+            data['env'] = env
         return Response(self.render(template_name, **data),
                         content_type=content_type)

@@ -99,7 +99,7 @@ class Converter(object):
             field, form = self.field, self.field.form
             if self.required and self._is_empty(value):
                 form.errors[self.field.input_name] = self.error_required
-                return self.field.parent.python_data[field.name]
+                return self._existing_value
             try:
                 value = method(value, **kwargs)
                 for v in self.validators_and_filters:
@@ -109,7 +109,7 @@ class Converter(object):
                 #NOTE: by default value for field is in python_data,
                 #      but this is not true for FieldList where data
                 #      is dynamic, so we set value to None for absent value.
-                value = field.parent.python_data.get(field.name)
+                value = self._existing_value
             return value
         return wrapper
 
@@ -134,6 +134,10 @@ class Converter(object):
         'Shortcut for assertions of certain type'
         if not expression:
             raise ValidationError(msg)
+
+    @property
+    def _existing_value(self):
+        return self.field.parent.python_data.get(self.field.name)
 
 
 class validator(object):
