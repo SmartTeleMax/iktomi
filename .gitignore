@@ -15,3 +15,6 @@ venv
 *.orig
 MANIFEST
 .tox
+.coverage
+nosetests.xml
+coverage.xml

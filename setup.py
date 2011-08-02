@@ -28,4 +28,5 @@ setup(
     url='http://github.com/riffm/insanities-testing/',
     license='MIT',
     keywords='web forms',
+    test_suite='nose.collector',
 )
