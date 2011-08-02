@@ -18,3 +18,4 @@ MANIFEST
 .coverage
 nosetests.xml
 coverage.xml
+examples/filefield/media/

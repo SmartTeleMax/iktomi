@@ -1,46 +1,49 @@
 # -*- coding: utf-8 -*-
 
-import os
+import datetime, os
+from webob.exc import HTTPSeeOther
 
 from forms import FileForm, OptionalFileForm
 from webob.exc import HTTPSeeOther
 
 from insanities.ext.filefields import time_uid
 
-
-def render_to(template):
-    def wrap(env, data, next_handler):
-        template_args = dict(data.as_dict(), url_for=env.url_for)
-        return env.template.render_to_response(template, template_args)
-    return wrap
-
-
-def list_files(env, data, next_handler):
-    dir_ = os.path.join(env.cfg.MEDIA, 'stored')
+def prepair_dir():
+    dir_ = os.path.join(cfg.MEDIA, 'stored')
     if not os.path.isdir(dir_):
         os.makedirs(dir_)
-    data.files = os.listdir(dir_)
-    if env.request.GET.get('not_required', False):
-        data.form = OptionalFileForm(env)
-    else:
-        data.form = FileForm(env)
-    data.url = '/media/stored/'
-    return next_handler(env, data)
+    return dir_
 
-def post_file(env, data, next_handler):
-    dir_ = os.path.join(env.cfg.MEDIA, 'stored')
-    form = data.form
+
+def list_files(env, data, nxt):
+    dir_ = prepair_dir()
+    files = os.listdir(dir_)
+    form = FileForm(env)
+    return env.template.render_to_response('index', {
+        'files':files, 
+        'url':'/media/stored/', 
+        'form':form
+    }, env)
+
+
+def post_file(env, data, nxt):
+    dir_ = prepair_dir()
+    files = os.listdir(dir_)
+    form = FileForm(env)
+    url = '/media/stored/'
 
     if form.accept(env.request.POST, env.request.FILES):
         tmp_file = form.python_data['file']
         if tmp_file and tmp_file.mode == 'temp':
-            filename = time_uid() + tmp_file.ext
-            new_path = os.path.join(dir_, filename)
+            new_path = os.path.join(dir_, tmp_file.uid)
             os.rename(tmp_file.full_path, new_path)
 
         raise HTTPSeeOther(location=env.request.url)
-    #result = dict(result)
-    return next_handler(env, data)
+    return env.template.render_to_response('index', {
+        'files':files, 
+        'url':'/media/stored/', 
+        'form':form
+    }, env)
 
 
 def delete_files(env, data, next_handler):
