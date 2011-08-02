@@ -1,4 +1,0 @@
-jinja2
-html5lib
-simplejson
-webob
