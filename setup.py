@@ -17,7 +17,7 @@ setup(
         'insanities.templates.mint':['templates/*/*.mint'],
     },
     requires=[
-        'webob>=1.1beta1',
+        'webob (>1.1b1)',
     ],
     author='Denis Otkidach',
     author_email='denis.otkidach@gmail.com',
