@@ -154,7 +154,7 @@ class Paginator(object):
     def page_url(self, page):
         '''Returns URL for page.'''
         if page is not None:
-            return self.url.set(**{self.page_param: page})
+            return self.url.qs_set(**{self.page_param: page})
 
     def _page_url_pair(self, page=None):
         return _PageURL(page, self.page_url(page))
