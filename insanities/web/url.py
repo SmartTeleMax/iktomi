@@ -55,16 +55,30 @@ class URL(str):
         kw.update(kwargs)
         return self.__class__(path, **kw)
 
-    def set(self, **kwargs):
+    def set(self, *args, **kwargs):
         '''Sets value of URL's query keys to given values'''
+        if args and kwargs:
+            raise ValueError('Use positional args or keyword args not both')
         query = self.query.copy()
-        for k, v in kwargs.items():
-            query[k] = v
+        if args:
+            mdict = MultiDict(args[0])
+            for k in mdict.keys():
+                if k in query:
+                    del query[k]
+            for k, v in mdict.items():
+                query.add(k, v)
+        else:
+            for k, v in kwargs.items():
+                query[k] = v
         return self._copy(query=query)
 
-    def add(self, **kwargs):
+    def add(self, *args, **kwargs):
         '''Adds values to URL's query'''
         query = self.query.copy()
+        if args:
+            mdict = MultiDict(args[0])
+            for k, v in mdict.items():
+                query.add(k, v)
         for k, v in kwargs.items():
             query.add(k, v)
         return self._copy(query=query)
