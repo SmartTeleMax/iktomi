@@ -14,6 +14,8 @@ from .media import FormMedia
 class FormEnvironment(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
+    def __contains__(self, name):
+        return name in self.__dict__
 
 
 def default_format_error(message_template, **kw):
