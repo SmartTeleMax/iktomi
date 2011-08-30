@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 '''
 Module containing some predefined form converters - objects designed to
-convart and validate form field's data.
+convert and validate form field's data.
 '''
 
 import re
-from ..utils import weakproxy, replace_nontext
 from datetime import datetime
-from ..utils.odict import OrderedDict
+from ..utils import weakproxy, replace_nontext
 from ..utils.dt import strftime
-from ..utils import N_, M_
+from ..utils.odict import OrderedDict
 
 
 class NotSubmitted(Exception): pass
@@ -32,43 +31,11 @@ class ValidationError(Exception):
 
 
 class Converter(object):
-    '''
-    Base converter with chaining support
-    extend this class in order to get custom
-    converter.
-
-    Converting:
-
-    :meth:`to_python` method takes value from form
-    and converts it to python type
-
-    :meth:`from_python` method takes value as python
-    object and converts it to string or something
-    else widget can display
-
-    Chaining:
-
-    Result of first converter is passed as input value
-    to second. for example::
-
-        convs.Char(max_length=2)|convs.Int()
-
-    will be a convertor which first validates
-    if string's length is 2 or less and after
-    that converts it to integer
-
-    Error messages redefinition:
-
-    Set error_<type> parameter to your own message template, for example::
-
-        convs.Char(min_length=5,
-                   error_min_length='At least %(min_length)s characters required')`
-    '''
 
     required = True
 
     #: Values are not accepted by Required validator
-    error_required = N_('required field')
+    error_required = 'required field'
 
     def __init__(self, *args, **kwargs):
         self.field = weakproxy(kwargs.get('field'))
@@ -77,8 +44,6 @@ class Converter(object):
         self.validators_and_filters = args
         self.to_python = self._check(self.to_python)
 
-    # It is defined as read-only property to avoid setting it to True where
-    # converter doesn't support it.
     @property
     def multiple(self):
         '''
@@ -91,13 +56,13 @@ class Converter(object):
     def env(self):
         return self.field.env
 
-    def _is_empty(self, value):
-        return value in ('', [])
+    def is_empty(self, value):
+        return value in ('', [], {})
 
     def _check(self, method):
         def wrapper(value, **kwargs):
             field, form = self.field, self.field.form
-            if self.required and self._is_empty(value):
+            if self.required and self.is_empty(value):
                 form.errors[self.field.input_name] = self.error_required
                 return self.field.parent.python_data[field.name]
             try:
@@ -130,11 +95,6 @@ class Converter(object):
         kwargs.setdefault('field', self.field)
         return self.__class__(*self.validators_and_filters, **kwargs)
 
-    def assert_(self, expression, msg):
-        'Shortcut for assertions of certain type'
-        if not expression:
-            raise ValidationError(msg)
-
 
 class validator(object):
     'Function decorator'
@@ -151,7 +111,7 @@ class validator(object):
 
 def limit(min_length, max_length):
     'Sting length constraint'
-    message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
+    message = 'length should be between %(min)d and %(max)d symbols' % dict(min=min_length, max=max_length)
 
     @validator(message)
     def wrapper(value):
@@ -168,7 +128,7 @@ def limit(min_length, max_length):
 
 def num_limit(min_value, max_value):
     'Numerical values limit'
-    message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
+    message = 'value should be between %(min)d and %(max)d' % dict(min=min_value, max=max_value)
 
     @validator(message)
     def wrapper(value):
@@ -210,7 +170,7 @@ class Char(Converter):
                                     # remove.
     strip=False
 
-    error_regex = N_('field should match %(regex)s')
+    error_regex = 'field should match %(regex)s'
 
     def clean_value(self, value):
         '''
@@ -248,7 +208,7 @@ class Int(Converter):
     integer converter with max and min values support
     """
 
-    error_notvalid = N_('it is not valid integer')
+    error_notvalid = 'it is not valid integer'
 
     def to_python(self, value):
         if value == '':
@@ -295,7 +255,7 @@ class EnumChoice(Converter):
     # choices: [(python_value, label), ...]
     choices = ()
     multiple = False
-    error_required = N_('you must select a value')
+    error_required = 'you must select a value'
 
     def from_python(self, value):
         conv = self.conv(field=self.field)
@@ -343,7 +303,7 @@ class BaseDatetime(Converter):
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
                     ('%m', 'MM'), ('%Y', 'YYYY'))
-    error_wrong_format = N_('Wrong format (%(readable_format)s)')
+    error_wrong_format = 'Wrong format (%(readable_format)s)'
 
     def __init__(self, *args, **kwargs):
         if not 'readable_format' in kwargs or 'format' in kwargs:
@@ -522,11 +482,11 @@ class List(Converter):
 
 class SimpleFile(Converter):
 
-    def _is_empty(self, file):
+    def is_empty(self, file):
         return file == u'' or file is None #XXX WEBOB ONLY !!!
 
     def to_python(self, file):
-        if not self._is_empty(file):
+        if not self.is_empty(file):
             return file
 
     def from_python(self, value):
