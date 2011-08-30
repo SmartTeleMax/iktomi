@@ -33,9 +33,11 @@ class ValidationError(Exception):
 class Converter(object):
 
     required = True
-
-    #: Values are not accepted by Required validator
-    error_required = 'required field'
+    errors = {}
+    default_errors = {
+        'required': u'required field',
+        'incorrect': u'incorrect value',
+    }
 
     def __init__(self, *args, **kwargs):
         self.field = weakproxy(kwargs.get('field'))
@@ -43,6 +45,25 @@ class Converter(object):
         self.__dict__.update(kwargs)
         self.validators_and_filters = args
         self.to_python = self._check(self.to_python)
+
+    class AttributeLookup:
+        def __init__(self, *namespaces):
+            self.namespaces = namespaces
+        def __getattr__(self, name):
+            for namespace in self.namespaces:
+                if name in namespace:
+                    return namespace[name]
+            raise AttributeError(name)
+
+    @property
+    def error_templates(self):
+        env_errors = {}
+        if 'errors' in self.env:
+            env_errors = self.env.errors
+        return self.AttributeLookup(self.errors, env_errors, self.default_errors)
+
+    def raise_error(self, message_template, **kw):
+        raise ValidationError(self.env.format_error(message_template, **kw))
 
     @property
     def multiple(self):
@@ -63,7 +84,7 @@ class Converter(object):
         def wrapper(value, **kwargs):
             field, form = self.field, self.field.form
             if self.required and self.is_empty(value):
-                form.errors[self.field.input_name] = self.error_required
+                form.errors[self.field.input_name] = self.env.format_error(self.error_templates.required)
                 return self.field.parent.python_data[field.name]
             try:
                 value = method(value, **kwargs)
@@ -170,7 +191,7 @@ class Char(Converter):
                                     # remove.
     strip=False
 
-    error_regex = 'field should match %(regex)s'
+    errors = {'regex': u'field should match %(regex)s'}
 
     def clean_value(self, value):
         '''
@@ -194,7 +215,7 @@ class Char(Converter):
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
             if not regex.match(value):
-                raise ValidationError(self.error_regex)
+                self.raise_error(self.error_templates.regex, regex=self.regex)
         return value
 
     def from_python(self, value):
@@ -208,7 +229,7 @@ class Int(Converter):
     integer converter with max and min values support
     """
 
-    error_notvalid = 'it is not valid integer'
+    errors = {'incorrect': u'it is not valid integer'}
 
     def to_python(self, value):
         if value == '':
@@ -216,7 +237,7 @@ class Int(Converter):
         try:
             value = int(value)
         except ValueError:
-            raise ValidationError(self.error_notvalid)
+            self.raise_error(self.error_templates.incorrect)
         return value
 
     def from_python(self, value):
@@ -255,7 +276,7 @@ class EnumChoice(Converter):
     # choices: [(python_value, label), ...]
     choices = ()
     multiple = False
-    error_required = 'you must select a value'
+    errors = {'required': u'you must select a value'}
 
     def from_python(self, value):
         conv = self.conv(field=self.field)
@@ -303,7 +324,7 @@ class BaseDatetime(Converter):
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
                     ('%m', 'MM'), ('%Y', 'YYYY'))
-    error_wrong_format = 'Wrong format (%(readable_format)s)'
+    errors = {'wrong_format': u'Wrong format (%(readable_format)s)'}
 
     def __init__(self, *args, **kwargs):
         if not 'readable_format' in kwargs or 'format' in kwargs:
@@ -326,9 +347,9 @@ class BaseDatetime(Converter):
         try:
             return self.convert_datetime(value)
         except ValueError:
-            raise ValidationError(self.error_wrong_format)
+            self.raise_error(self.error_templates.wrong_format, readable_format=self.readable_format)
         except TypeError, e:
-            raise ValidationError, unicode(e)
+            self.raise_error(unicode(e))
 
 
 class Datetime(BaseDatetime):
@@ -397,22 +418,6 @@ class DatetimeJoiner(Joiner):
 
 
 class Html(Char):
-    '''
-    Converter for flexible cleanup of HTML document fragments.
-    A subclass of :class:`Char<insanities.forms.convs.Char>`.
-
-    Uses :class:`utils.html.Sanitizer<insanities.utils.html.Sanitizer>`
-    instance to sanitize input HTML.
-
-    Construtor collects from given kwargs all of
-    :class:`Sanitizer<insanities.utils.html.Sanitizer>`
-    options and passes them into Sanitizer's constructor.
-
-    For list properties it is allowed to use :meth:`add_%s` interface::
-
-        Html(add_allowed_elements=['span'], add_dom_callbacks=[myfunc])
-    '''
-
     allowed_elements = frozenset(('a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u',
                                   'i', 'b', 'blockquote', 'sub', 'sup'))
     allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
@@ -421,6 +426,7 @@ class Html(Char):
     #: Function returning object marked safe for template engine.
     #: For example: jinja Markup object
     Markup = lambda s, x: x
+    errors = {'incorrect': u'not valid html'}
 
     def _load_arg(self, kwargs, opt):
         if hasattr(self, opt):
@@ -452,7 +458,7 @@ class Html(Char):
         try:
             clean = sanitizer.sanitize(value)
         except ParseError:
-            raise ValidationError(u'not valid html')
+            self.raise_error(self.error_templates.incorrect)
         else:
             return self.Markup(clean)
 
