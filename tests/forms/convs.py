@@ -78,6 +78,13 @@ class ConverterTests(unittest.TestCase):
         except convs.ValidationError, e:
             self.assertEqual(e.message, u'custom message')
 
+    def test_error_required(self):
+        'Converter required=True error (lib is responsible for this error)'
+        conv = init_conv(convs.Converter(required=True), name='field')
+        form = conv.field.form
+        conv.to_python('')
+        self.assertEqual(form.errors, {'field': u'required field'})
+
 
 class IntConverterTests(unittest.TestCase):
 
