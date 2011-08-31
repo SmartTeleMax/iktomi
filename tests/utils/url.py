@@ -27,6 +27,20 @@ class URLTests(unittest.TestCase):
         u = u.qs_set(page=7, title='land')
         self.assertEqual(u, '/path/to/something?id=3&page=7&title=land')
 
+    def test_params_set_args(self):
+        'Use multidict to set params in url'
+        url = URL('/')
+        self.assertEqual(url.qs_set(a=1, b=2), '/?a=1&b=2')
+        url = url.qs_set([('a', '1'), ('a', '2'), ('b', '3')])
+        self.assertEqual(url, '/?a=1&a=2&b=3')
+        self.assertEqual(url.qs_set([('a', '1'), ('c', '2')]), '/?b=3&a=1&c=2')
+        self.assertRaises(TypeError, url.qs_set, [('a', 1)], z=0)
+
+    def test_param_add_args(self):
+        'Add param to url'
+        url = URL('/')
+        self.assertEqual(url.qs_add([('a', 1), ('c', 3)], a=2, b=2), '/?a=1&c=3&a=2&b=2')
+
     def test_param_get(self):
         'Get param from url'
         u = URL('/path/to/something', query=dict(id=3, page=5, title='title'))
