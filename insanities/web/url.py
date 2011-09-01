@@ -58,7 +58,7 @@ class URL(str):
     def set(self, *args, **kwargs):
         '''Sets value of URL's query keys to given values'''
         if args and kwargs:
-            raise ValueError('Use positional args or keyword args not both')
+            raise TypeError('Use positional args or keyword args not both')
         query = self.query.copy()
         if args:
             mdict = MultiDict(args[0])
