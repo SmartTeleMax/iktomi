@@ -58,8 +58,8 @@ class Converter(object):
     @property
     def error_templates(self):
         env_errors = {}
-        if 'errors' in self.env:
-            env_errors = self.env.errors
+        if 'error_templates' in self.env:
+            env_errors = self.env.error_templates
         return self.AttributeLookup(self.errors, env_errors, self.default_errors)
 
     def raise_error(self, message_template, **kw):

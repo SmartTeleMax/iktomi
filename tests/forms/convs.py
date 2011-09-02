@@ -44,7 +44,7 @@ class ConverterTests(unittest.TestCase):
 
     def test_env_errors(self):
         'Converter `env.errors`'
-        conv = init_conv(convs.Converter, env={'errors': {'required': u'another message'}})
+        conv = init_conv(convs.Converter, env={'error_templates': {'required': u'another message'}})
         self.assertEqual(conv.error_templates.required, u'another message')
 
     def test_raise_error(self):
