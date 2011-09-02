@@ -6,7 +6,7 @@ convert and validate form field's data.
 
 import re
 from datetime import datetime
-from ..utils import weakproxy, replace_nontext
+from ..utils import weakproxy, replace_nontext, N_
 from ..utils.dt import strftime
 from ..utils.odict import OrderedDict
 
@@ -35,8 +35,8 @@ class Converter(object):
     required = True
     errors = {}
     default_errors = {
-        'required': u'required field',
-        'incorrect': u'incorrect value',
+        'required': N_(u'required field'),
+        'incorrect': N_(u'incorrect value'),
     }
 
     def __init__(self, *args, **kwargs):
@@ -191,7 +191,7 @@ class Char(Converter):
                                     # remove.
     strip=False
 
-    errors = {'regex': u'field should match %(regex)s'}
+    errors = {'regex': N_(u'field should match %(regex)s')}
 
     def clean_value(self, value):
         '''
@@ -229,7 +229,7 @@ class Int(Converter):
     integer converter with max and min values support
     """
 
-    errors = {'incorrect': u'it is not valid integer'}
+    errors = {'incorrect': N_(u'it is not valid integer')}
 
     def to_python(self, value):
         if value == '':
@@ -276,7 +276,7 @@ class EnumChoice(Converter):
     # choices: [(python_value, label), ...]
     choices = ()
     multiple = False
-    errors = {'required': u'you must select a value'}
+    errors = {'required': N_(u'you must select a value')}
 
     def from_python(self, value):
         conv = self.conv(field=self.field)
@@ -324,7 +324,7 @@ class BaseDatetime(Converter):
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
                     ('%m', 'MM'), ('%Y', 'YYYY'))
-    errors = {'wrong_format': u'Wrong format (%(readable_format)s)'}
+    errors = {'wrong_format': N_(u'wrong format (%(readable_format)s)')}
 
     def __init__(self, *args, **kwargs):
         if not 'readable_format' in kwargs or 'format' in kwargs:
@@ -426,7 +426,7 @@ class Html(Char):
     #: Function returning object marked safe for template engine.
     #: For example: jinja Markup object
     Markup = lambda s, x: x
-    errors = {'incorrect': u'not valid html'}
+    errors = {'incorrect': N_(u'not valid html')}
 
     def _load_arg(self, kwargs, opt):
         if hasattr(self, opt):
