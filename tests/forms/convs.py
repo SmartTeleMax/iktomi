@@ -6,10 +6,10 @@ from insanities.forms import *
 from webob.multidict import MultiDict
 
 
-def init_conv(conv, name='name'):
+def init_conv(conv, name='name', env=None):
     class f(Form):
         fields = [Field(name, conv)]
-    return f().get_field(name).conv
+    return f(env or {}).get_field(name).conv
 
 
 class ConverterTests(unittest.TestCase):
@@ -31,6 +31,59 @@ class ConverterTests(unittest.TestCase):
         conv = init_conv(convs.Converter)
         value = conv.from_python('value')
         self.assertEqual(value, 'value')
+
+    def test_error_template(self):
+        'Converter `error_templates` attribute'
+        conv = init_conv(convs.Converter)
+        self.assertEqual(conv.error_templates.required, u'required field')
+
+    def test_errors(self):
+        'Converter `errors` attribute'
+        conv = init_conv(convs.Converter(errors={'required': u'another message'}))
+        self.assertEqual(conv.error_templates.required, u'another message')
+
+    def test_env_errors(self):
+        'Converter `env.errors`'
+        conv = init_conv(convs.Converter, env={'error_templates': {'required': u'another message'}})
+        self.assertEqual(conv.error_templates.required, u'another message')
+
+    def test_raise_error(self):
+        'Converter `raise_error` method'
+        conv = init_conv(convs.Converter)
+        self.assertRaises(convs.ValidationError, conv.raise_error, conv.error_templates.required)
+        try:
+            conv.raise_error(conv.error_templates.required)
+        except convs.ValidationError, e:
+            self.assertEqual(e.message, u'required field')
+
+    def test_default_format_error(self):
+        'Converter `raise_error` method and `format_error`'
+        conv = init_conv(convs.Converter(errors={'halt': 'message %(location)s'}))
+        self.assertRaises(convs.ValidationError, conv.raise_error, conv.error_templates.halt, location='here')
+        try:
+            conv.raise_error(conv.error_templates.halt, location='here')
+        except convs.ValidationError, e:
+            self.assertEqual(e.message, u'message here')
+
+    def test_custom_format_error(self):
+        'Converter custom `format_error`'
+        conv = init_conv(convs.Converter, env={'format_error': (lambda *a, **kw: u'custom message')})
+        self.assertRaises(convs.ValidationError, conv.raise_error, conv.error_templates.required)
+        try:
+            conv.raise_error(conv.error_templates.required)
+        except convs.ValidationError, e:
+            self.assertEqual(e.message, u'custom message')
+        try:
+            conv.raise_error(conv.error_templates.incorrect)
+        except convs.ValidationError, e:
+            self.assertEqual(e.message, u'custom message')
+
+    def test_error_required(self):
+        'Converter required=True error (lib is responsible for this error)'
+        conv = init_conv(convs.Converter(required=True), name='field')
+        form = conv.field.form
+        conv.to_python('')
+        self.assertEqual(form.errors, {'field': u'required field'})
 
 
 class IntConverterTests(unittest.TestCase):

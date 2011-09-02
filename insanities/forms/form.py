@@ -14,6 +14,12 @@ from .media import FormMedia
 class FormEnvironment(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
+    def __contains__(self, name):
+        return name in self.__dict__
+
+
+def default_format_error(message_template, **kw):
+    return message_template % kw
 
 
 class Form(object):
@@ -26,6 +32,8 @@ class Form(object):
         env = env or {}
         initial = initial or {}
         self.env = FormEnvironment(**env) if isinstance(env, dict) else env
+        if not hasattr(self.env, 'format_error'):
+            self.env.format_error = default_format_error
         self.name = name
         self.raw_data = raw_data = MultiDict()
         #NOTE: if you provide initial value for some aggregated field
