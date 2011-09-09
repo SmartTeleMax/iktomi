@@ -113,7 +113,7 @@ class TempFileConv(convs.SimpleFile):
         return self.field.parent.file_cls
 
     def to_python(self, file):
-        if not self._is_empty(file):
+        if not self.is_empty(file):
             tmp = self.file_cls(original_name=file.filename)
             # file.file - due to FieldStorage interface
             tmp.save_temp(file.file)
