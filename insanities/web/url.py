@@ -231,7 +231,7 @@ _split_pattern = re.compile(r'(<[^<]*>)')
 
 #NOTE: taken from werkzeug
 _converter_pattern = re.compile(r'''^<
-        (?P<converter>[a-zA-Z_][a-zA-Z0-9]+)    # converter name
+        (?P<converter>[a-zA-Z_][a-zA-Z0-9_]+)    # converter name
         (?:\((?P<args>.*?)\))?                  # converter args
         \:?                                     # delimiter
         (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?   # variable name
