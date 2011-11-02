@@ -194,6 +194,20 @@ class Paginator(object):
             return self._page_url_pair()
 
     @cached_property
+    def first(self):
+        if self.page>1:
+            return self._page_url_pair(1)
+        else:
+            return self._page_url_pair()
+
+    @cached_property
+    def last(self):
+        if self.page<self.pages_count:
+            return self._page_url_pair(self.pages_count)
+        else:
+            return self._page_url_pair()
+
+    @cached_property
     def pages(self):
         pages = self.impl(self.pages_count, self.page)
         return [self._page_url_pair(page) for page in pages]
