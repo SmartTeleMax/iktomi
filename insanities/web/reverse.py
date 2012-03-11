@@ -163,8 +163,6 @@ class Reverse(object):
         raise UrlBuildingError('Not an endpoint')
 
     def __getattr__(self, name):
-        if name in self.__dict__:
-            return self.__dict__[name]
         if self._is_scope and name in self._scope:
             if self._need_arguments:
                 raise UrlBuildingError('Need arguments to build last part of url')
