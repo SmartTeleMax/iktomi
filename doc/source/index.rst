@@ -1,55 +1,34 @@
-.. insanities documentation master file, created by
-   sphinx-quickstart on Tue Jul  7 15:06:35 2009.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Insanities
+==========
 
-Welcome to insanities's documentation!
-======================================
+.. What is Insanities?
+.. ^^^^^^^^^^^^^^^^^^^
 
-Contents:
+Insanities is a python package providing some basic tools for creating web applications.
+It contains two independent subpackages, you can use both, or just one of them:
 
-.. toctree::
-   :maxdepth: 2
+* **insanities.web**, a flexible and extensible routing tool, suitable to dispatch HTTP
+  requests between various views (or controllers). 
+* **insanities.forms**, a web forms validation and rendering tool.
 
-.. automodule:: insanities
+Routing
+^^^^^^^
 
+* :ref:`Creating simple app <insanities-web-tutorial>`
+* :ref:`How it works <insanities-web>`
+* :ref:`API reference <insanities-web-api>`
 
 Forms
 ^^^^^
 
-.. automodule:: insanities.forms
+* :ref:`Form processing <insanities-forms-tutorial>`
+* :ref:`How it works <insanities-forms>`
+* :ref:`API reference <insanities-forms-api>`
 
-   * :ref:`Forms <insanities-forms>`
-   * :ref:`Fields <insanities-fields>`
-   * :ref:`Converters <insanities-forms-convs>`
-   * :ref:`Form permissions <insanities-forms-perms>`
-   * :ref:`Files`
-   * :ref:`Widgets <insanities-forms-widgets>`
-   * :ref:`Media <insanities-forms-media>`
+Utilities
+^^^^^^^^^
 
+Unsorted stuff for make insanities working.
 
-Web
-^^^
-
-.. automodule:: insanities.web
-
-   * :ref:`HTTP <insanities-web-http>`
-   * :ref:`Routing <insanities-web-routing>`
-   * :ref:`URL converters <insanities-web-urlconvs>`
-
-
-Other
-^^^^^
-
-* :ref:`Internationalization <insanities-i18n>`
-* :ref:`Management <insanities-management>`
 * :ref:`Utilities <insanities-utils>`
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 

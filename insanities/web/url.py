@@ -57,6 +57,7 @@ class URL(str):
 
     def set(self, **kwargs):
         '''Sets value of URL's query keys to given values'''
+        # XXX How to add a parameter with unicode name? FAIL
         query = self.query.copy()
         for k, v in kwargs.items():
             query[k] = v

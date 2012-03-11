@@ -1,73 +1,53 @@
-Different utilities used in project
-===================================
-
 .. _insanities-utils:
 
-.. toctree::
-   :maxdepth: 2
+Various utilities
+=================
 
-* :ref:`OrderedDict <OrderedDict>`
-* :ref:`HTML Sanitarization <Sanitarization>`
-* :ref:`URL handling <URLS>`
+Template
+--------
 
+.. _insanities-templates:
 
-.. _OrderedDict:
+`insanities.templates.Template` class is originnaly designed to unify 
+template interface for forms, but can be used in anywhere else.
 
-OrderedDict
------------
+`Template` object provides `render`, `render_to_response` methods
+and `render_to` handler factory. The constructor accepts a list of
+directories for search temlates in (as \*args) and following keyworg
+arguments:
 
-.. automodule:: insanities.utils.odict
+    - `globs`.
+    - `cache`.
+    - `engines`.
 
-OrderedDict Interface
-^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: insanities.utils.odict.OrderedDict
-   :members:
+Engine is class providing `render` method, which accepts template name
+and template arguments as keyword args, and returns rendered string.
+The constructor shoul accept templates paths list and option switching
+template cache on/off::
 
-..
-    S.. _MultiDict:
+    class MyEngine(object):
+        def __init__(self, paths, cache=False):
+            self.engine = MyTemplateEngine(paths, cache=cache)
 
-    SMultiDict
-    S-----------
+        def render(self, template_name, **kw):
+            return self.engine.get_template(template_name).render(kw)
 
-    S.. automodule:: insanities.utils.mdict
+For correct form rendering, an env.template value should be defined::
 
-    SMultiDict Interface
-    S^^^^^^^^^^^^^^^^^^^
+    from insanities.templates import jinja2, Template
 
-    S.. autoclass:: insanities.utils.mdict.MultiDict
-    S   :members: items, append, getfirst, getlast
+    template = Template(cfg.TEMPLATES,
+                        engines={'html': jinja2.TemplateEngine,
+                                 'my': MyEngine})
 
+    def environment(env, data, next_handler):
+        ...
+        env.template = template
+        ...
+        return next_handler(env, data)
 
+    app = web.handler(environment) | app   
 
-.. _Sanitarization:
+Utils
+-----
 
-HTML Sanitarization
--------------------
-
-.. automodule:: insanities.utils.html
-
-Sanitizer
-^^^^^^^^^
-
-.. autoclass:: insanities.utils.html.Sanitizer
-   :members:
-
-
-.. _URLS:
-
-URLs handling
--------------
-
-.. automodule:: insanities.utils.url
-
-URL
-^^^
-
-.. autoclass:: insanities.utils.url.URL(path\[query=None][host=None][port=None][schema=None])
-   :members:
-
-UrlTemplate
-^^^^^^^^^^^
-
-.. autoclass:: insanities.utils.url.UrlTemplate
-   :members:
