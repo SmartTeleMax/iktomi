@@ -11,6 +11,7 @@ from .http import Request, Response, RouteState
 from ..utils.storage import VersionedStorage
 from .reverse import URL
 
+from copy import copy
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,13 @@ class WebHandler(object):
     '''Base class for all request handlers.'''
 
     def __or__(self, next_handler):
+        # XXX copy count depends on chain length geometrically!
+        h = self.copy()
         if hasattr(self, '_next_handler'):
-            self._next_handler | next_handler
+            h._next_handler = h._next_handler | next_handler
         else:
-            self._next_handler = prepare_handler(next_handler)
-        return self
+            h._next_handler = prepare_handler(next_handler)
+        return h
 
     def handle(self, env, data, next_handler):
         '''This method should be overridden in subclasses.'''
@@ -64,6 +67,10 @@ class WebHandler(object):
             return self._next_handler
         #XXX: may be _FunctionWrapper?
         return lambda e, d: None
+
+    def copy(self):
+        # to make handlers reusable
+        return copy(self)
 
     def as_wsgi(self):
         def wsgi(environ, start_response):
