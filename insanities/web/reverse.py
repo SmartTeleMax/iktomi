@@ -169,13 +169,31 @@ class Reverse(object):
             location, scope = self._scope[name]
             path = self._path
             host = self._host
-            ready = False
-            if not location.need_arguments:
+            ready = not location.need_arguments
+            if ready:
                 path += location.build_path()
                 host += location.build_subdomians()
-                ready = True
             return self.__class__(scope, location, path, host, ready, need_arguments=location.need_arguments)
         raise AttributeError(name)
+
+    def url_for(self, _name, **kwargs):
+        subreverse = self
+        #if _name.startswith('.'):
+        #    XXX parent navigation?
+        #    local_name = _name.lstrip('.')
+        #    up = len(_name) - len(local_name) - 1
+        #    for i in xrange(up):
+        #        subreverse = subreverse.parent
+        #        if subreverse is None:
+        #            raise UrlBuildingError('No more parent namespaces')
+        #    _name = local_name
+        for part in _name.split('.'):
+            if not subreverse._ready and subreverse._is_endpoint:
+                subreverse = subreverse(**kwargs)
+            subreverse = getattr(subreverse, part)
+        if not subreverse._ready and subreverse._is_endpoint:
+            subreverse = subreverse(**kwargs)
+        return subreverse.as_url
 
     @property
     def as_url(self):

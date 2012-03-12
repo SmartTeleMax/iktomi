@@ -216,6 +216,27 @@ class ReverseTests(unittest.TestCase):
 
         # Exceptional behavior
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
+        # XXX this one raises KeyError, not UrlBuildError
+        self.assertRaises(UrlBuildingError, lambda: r.news(foo='top').as_url)
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item.as_url)
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item(id=1).docs())
         self.assertRaises(UrlBuildingError, lambda: r.news.item)
+
+    def test_string_api(self):
+        'Reverse with nested prefexes'
+        app = web.prefix('/news/<section>') | web.namespace('news') | web.cases(
+                web.match(),
+                web.prefix('/<int:id>') | web.namespace('item') | web.cases(
+                    web.match(),
+                    web.prefix('/docs') | web.namespace('docs') | web.cases(
+                        web.match()
+                    )))
+        r = web.Reverse.from_handler(app)
+
+        # Normal behavior
+        self.assertEqual(r.url_for('news', section='top'), '/news/top')
+        self.assertEqual(r.url_for('news.item', section='top', id=1), '/news/top/1')
+        self.assertEqual(r.url_for('news.item.docs', section='top', id=1), '/news/top/1/docs')
+
+        # Exceptional behavior
+        self.assertRaises(UrlBuildingError, lambda: r.url_for('news'))
