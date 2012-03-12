@@ -4,7 +4,6 @@ __all__ = ['match', 'method', 'static_files', 'ctype', 'prefix',
            'subdomain', 'namespace']
 
 import logging
-import httplib
 import mimetypes
 from os import path
 from urllib import unquote
@@ -179,3 +178,5 @@ class namespace(WebHandler):
 
     def _locations(self):
         return {self.namespace: (Location(), super(namespace, self)._locations())}
+
+
