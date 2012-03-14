@@ -1,5 +1,5 @@
 {% for field in form.fields %}
-<p class="form-row" {% if field.render_type="hidden" %}style="display: none"{% endif %}>
+<p class="form-row" {% if field.render_type=="hidden" %}style="display: none"{% endif %}>
   {% if field.error %}
   <span class="error">{{ field.error }}</span>
   {% endif %}

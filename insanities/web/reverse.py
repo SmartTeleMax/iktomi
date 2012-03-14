@@ -176,7 +176,7 @@ class Reverse(object):
             return self.__class__(scope, location, path, host, ready, need_arguments=location.need_arguments)
         raise AttributeError(name)
 
-    def url_for(self, _name, **kwargs):
+    def build_url(self, _name, **kwargs):
         subreverse = self
         #if _name.startswith('.'):
         #    XXX parent navigation?

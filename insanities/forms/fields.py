@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import re, logging
+import logging
 
+import cgi
 import widgets
 from . import convs
-from ..utils import weakproxy, cached_property
+from ..utils import cached_property
 from ..utils.odict import OrderedDict
 from .perms import FieldPerm
 from .media import FormMedia
@@ -132,6 +133,7 @@ class Field(BaseField):
     #: :class:`Conv` subclass or instance used to convert field data 
     #: and validate it
     conv = convs.Char
+    _null_value = ''
 
     def get_initial(self):
         if hasattr(self, 'initial'):
@@ -159,8 +161,20 @@ class Field(BaseField):
         else:
             raw_data[self.input_name] = value
 
+    def _check_value_type(self, values):
+        if not self.multiple:
+            values = [values]
+        for value in values:
+            if not isinstance(value, basestring):
+                self.form.errors[self.input_name] = 'Given value has incompatible type'
+                return False
+        return True
+
     def accept(self):
-        return self.to_python(self.raw_value)
+        value = self.raw_value
+        if not self._check_value_type(value):
+            value = [] if self.multiple else self._null_value
+        return self.to_python(value)
 
 
 class AggregateField(BaseField):
@@ -319,20 +333,28 @@ class FieldList(AggregateField):
         return media
 
 
-class FileField(BaseField):
+class FileField(Field):
     '''
     The simpliest file field
     '''
 
-    raw_value = None
-
-    def accept(self):
-        file = self.form.files.get(self.input_name, None)
-        return self.to_python(file)
+    _null_value = None
 
     def get_default(self):
         return None # XXX
 
     def set_raw_value(self, value):
         pass
+
+    def _check_value_type(self, values):
+        if not self.multiple:
+            values = [values]
+        for value in values:
+            if value and \
+               not isinstance(value, cgi.FieldStorage) and \
+               not hasattr(value, 'read'): # XXX is this right?
+                self.form.errors[self.input_name] = 'Given value is not file'
+                return False
+        return True
+
 

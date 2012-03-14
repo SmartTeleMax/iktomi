@@ -74,11 +74,11 @@ class WebHandler(object):
 
     def as_wsgi(self):
         from .reverse import Reverse
-        reverse = Reverse.from_handler(self)
+        root = Reverse.from_handler(self)
         def wsgi(environ, start_response):
             env = VersionedStorage()
             env.request = Request(environ, charset='utf-8')
-            env.reverse = reverse
+            env.root = root
             env._route_state = RouteState(env.request)
             data = VersionedStorage()
             try:
