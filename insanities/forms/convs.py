@@ -212,7 +212,7 @@ class Char(Converter):
     regex = None
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
-    strip=False
+    strip=True
 
     error_regex = N_('field should match %(regex)s')
 
