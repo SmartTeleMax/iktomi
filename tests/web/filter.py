@@ -225,3 +225,20 @@ class Match(unittest.TestCase):
             raise Exception('somewhere deep inside')
         app = web.prefix('/prefix') | web.match('/', '') | get_items | raise_exc
         self.assertRaises(Exception, lambda: web.ask(app, '/prefix/'))
+
+    def test_handler_after_case(self):
+        '''Test if the handler next to cases is called'''
+
+        r = Response()
+        def handler(env, data, nx):
+            return r
+
+        app = web.cases(
+            web.match('/first', 'first'),
+            web.match('/second/<int:id>', 'second')
+        ) | handler
+
+        self.assertEqual(web.ask(app, '/first'), r)
+        self.assertEqual(web.ask(app, '/second/2'), r)
+
+
