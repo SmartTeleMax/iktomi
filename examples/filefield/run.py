@@ -5,5 +5,6 @@ from wsgiref.simple_server import make_server
 
 
 if __name__ == '__main__':
-    make_server('', '8000', app)
+    server = make_server('', 8000, app.as_wsgi())
+    server.serve_forever()
 

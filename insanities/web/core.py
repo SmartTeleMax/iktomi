@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'handler', 'Reverse',
-           'locations']
+__all__ = ['WebHandler', 'cases', 'handler', 'locations']
 
 import logging
 import types
 import httplib
+import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
 from ..utils.storage import VersionedStorage
-from .url import URL
+from .reverse import URL
 
-
+from copy import copy
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def prepare_handler(handler):
     '''Wrapps functions, that they can be usual WebHandler's'''
     if type(handler) in (types.FunctionType, types.MethodType):
-        handler = FunctionWrapper(handler)
+        handler = wrap_function(handler)
     return handler
 
 
@@ -27,11 +27,13 @@ class WebHandler(object):
     '''Base class for all request handlers.'''
 
     def __or__(self, next_handler):
+        # XXX copy count depends on chain length geometrically!
+        h = self.copy()
         if hasattr(self, '_next_handler'):
-            self._next_handler | next_handler
+            h._next_handler = h._next_handler | next_handler
         else:
-            self._next_handler = prepare_handler(next_handler)
-        return self
+            h._next_handler = prepare_handler(next_handler)
+        return h
 
     def handle(self, env, data, next_handler):
         '''This method should be overridden in subclasses.'''
@@ -63,11 +65,15 @@ class WebHandler(object):
     def get_next(self):
         if hasattr(self, '_next_handler'):
             return self._next_handler
-        #XXX: may be FunctionWrapper?
+        #XXX: may be _FunctionWrapper?
         return lambda e, d: None
 
+    def copy(self):
+        # to make handlers reusable
+        return copy(self)
+
     def as_wsgi(self):
-        def wrapper(environ, start_response):
+        def wsgi(environ, start_response):
             env = VersionedStorage()
             env.request = Request(environ, charset='utf-8')
             env._route_state = RouteState(env.request)
@@ -90,41 +96,7 @@ class WebHandler(object):
             headers = response.headers.items()
             start_response(response.status, headers)
             return [response.body]
-        return wrapper
-
-
-class Reverse(object):
-
-    def __init__(self, urls, env=None):
-        self.urls = urls
-        self.env = env
-
-    @property
-    def namespace(self):
-        if self.env and 'namespace' in self.env:
-            return self.env.namespace
-        return ''
-
-    def __call__(self, name, **kwargs):
-        if name.startswith('.'):
-            local_name = name.lstrip('.')
-            up = len(name) - len(local_name) - 1
-            if up != 0:
-                ns = ''.join(self.namespace.split('.')[:-up])
-            else:
-                ns = self.namespace
-            name = ns + '.' + local_name
-
-        data = self.urls[name]
-
-        host = u'.'.join(data.get('subdomains', []))
-        # path - urlencoded str
-        path = ''.join([b(**kwargs) for b in reversed(data['builders'])])
-        return URL(path, host=host)
-
-    @classmethod
-    def from_handler(cls, handler, env=None):
-        return cls(locations(handler), env=env)
+        return wsgi
 
 
 class cases(WebHandler):
@@ -136,8 +108,8 @@ class cases(WebHandler):
 
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'
-        for handler in self.handlers:
-            handler | prepare_handler(next_handler)
+        self.handlers = [handler | prepare_handler(next_handler)
+                         for handler in self.handlers]
         return self
 
     def handle(self, env, data, next_handler):
@@ -161,20 +133,21 @@ class cases(WebHandler):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class FunctionWrapper(WebHandler):
+class _FunctionWrapper(WebHandler):
     '''Wrapper for handler represented by function'''
 
     def __init__(self, func):
-        self.func = func
-
-    def handle(self, env, data, next_handler):
-        return self.func(env, data, next_handler)
+        self.handle = func
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.func.__name__)
+        return '%s(%s)' % (self.__class__.__name__, self.handle.__name__)
 
 
-handler = FunctionWrapper
+def wrap_function(func):
+    return functools.wraps(func)(_FunctionWrapper(func))
+
+
+handler = wrap_function
 
 
 def locations(handler):

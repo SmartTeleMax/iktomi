@@ -129,9 +129,9 @@ class Field(BaseField):
     #: and validate it
     conv = convs.Char
 
-    def get_default(self):
-        if hasattr(self, 'default'):
-            return self.default
+    def get_initial(self):
+        if hasattr(self, 'initial'):
+            return self.initial
         if self.multiple:
             return []
         return None
@@ -167,7 +167,7 @@ class AggregateField(BaseField):
         try:
             value = self.clean_value
         except LookupError:
-            value = self.get_default()
+            value = self.get_initial()
         return self.from_python(value)
 
 
@@ -200,8 +200,8 @@ class FieldSet(AggregateField):
                 return field
         return None
 
-    def get_default(self):
-        result = dict((field.name, field.get_default())
+    def get_initial(self):
+        result = dict((field.name, field.get_initial())
                       for field in self.fields)
         return self.to_python(result)
 
@@ -256,7 +256,7 @@ class FieldList(AggregateField):
     def prefix(self):
         return self.input_name+'-'
 
-    def get_default(self):
+    def get_initial(self):
         return []
 
     def get_field(self, name):
@@ -310,3 +310,22 @@ class FieldList(AggregateField):
         media = BaseField.get_media(self)
         media += self.field.get_media()
         return media
+
+
+class FileField(BaseField):
+    '''
+    The simpliest file field
+    '''
+
+    raw_value = None
+
+    def accept(self):
+        file = self.form.files.get(self.input_name, None)
+        return self.to_python(file)
+
+    def get_default(self):
+        return None # XXX
+
+    def set_raw_value(self, value):
+        pass
+

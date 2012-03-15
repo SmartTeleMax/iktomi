@@ -9,14 +9,13 @@
 </ul>
 {% endif %}
 
-<form method="POST" action='{{ VALS.url_for('files') }}' enctype="multipart/form-data">
-<fieldset>
-<table>
-    {{ ui(form).render()|safe }}
-</table>
-</fieldset>
-
-<input type="submit" value='Go!'/>
+<form method="POST" action='{{ env.root.files.as_url }}' enctype="multipart/form-data">
+  <fieldset>
+    <table>
+      {{ form.render()|safe }}
+    </table>
+  </fieldset>
+  <input type="submit" value='Go!'/>
 </form>
 {% endblock %}
 

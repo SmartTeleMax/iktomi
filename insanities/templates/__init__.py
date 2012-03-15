@@ -45,13 +45,14 @@ class Template(object):
                             (pattern, self.dirs))
 
     def render_to(self, template_name):
-        'WebHandler'
-        def wrapper(env, data, next_handler):
+        def render_to(env, data, next_handler):
             data.env = env
             return Response(self.render(template_name, **data.as_dict()))
-        return wrapper
+        return render_to
 
-    def render_to_response(self, template_name, data, content_type='text/html'):
+    def render_to_response(self, template_name, data, env=None, content_type='text/html'):
         'handy method'
+        if env is not None:
+            data['env'] = env
         return Response(self.render(template_name, **data),
                         content_type=content_type)

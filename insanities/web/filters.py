@@ -11,6 +11,7 @@ from urllib import unquote
 from .core import WebHandler
 from .http import Response
 from .url import UrlTemplate
+from .reverse import Location
 
 
 logger = logging.getLogger(__name__)
@@ -23,21 +24,21 @@ def update_data(data, new_data):
 
 class match(WebHandler):
 
-    def __init__(self, url, name, convs=None):
+    def __init__(self, url='', name='', convs=None):
         self.url = url
         self.url_name = name
         self.builder = UrlTemplate(url, converters=convs)
+        def match(env, data, next_handler):
+            matched, kwargs = self.builder.match(env._route_state.path, env=env)
+            if matched:
+                env.current_url_name = self.url_name
+                update_data(data, kwargs)
+                return next_handler(env, data)
+            return None
+        self.handle = match
 
     def _locations(self):
-        return {self.url_name: {'builders': [self.builder]}}
-
-    def handle(self, env, data, next_handler):
-        matched, kwargs = self.builder.match(env._route_state.path, env=env)
-        if matched:
-            env.current_url_name = self.url_name
-            update_data(data, kwargs)
-            return next_handler(env, data)
-        return None
+        return {self.url_name: (Location(self.builder), {})}
 
     def __repr__(self):
         return '%s(\'%s\', \'%s\')' % \
@@ -47,11 +48,11 @@ class match(WebHandler):
 class method(WebHandler):
     def __init__(self, *names):
         self._names = [name.upper() for name in names]
-
-    def handle(self, env, data, next_handler):
-        if env.request.method in self._names:
-            return next_handler(env, data)
-        return None
+        def method(env, data, next_handler):
+            if env.request.method in self._names:
+                return next_handler(env, data)
+            return None
+        self.handle = method
 
     def __repr__(self):
         return 'method(*%r)' % self._names
@@ -66,11 +67,11 @@ class ctype(WebHandler):
 
     def __init__(self, *types):
         self._types = types
-
-    def handle(self, env, data, next_handler):
-        if env.request.content_type in self._types:
-            return next_handler(env, data)
-        return None
+        def ctype(env, data, next_handler):
+            if env.request.content_type in self._types:
+                return next_handler(env, data)
+            return None
+        self.handle = ctype
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self._types)
@@ -113,23 +114,23 @@ class prefix(WebHandler):
     def __init__(self, _prefix, convs=None):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
+        def prefix(env, data, next_handler):
+            matched, kwargs = self.builder.match(env._route_state.path, env=env)
+            if matched:
+                update_data(data, kwargs)
+                env._route_state.add_prefix(self.builder(**kwargs))
+                result = next_handler(env, data)
+                if result is not None:
+                    return result
+                env._route_state.pop_prefix()
+            return None
+        self.handle = prefix
 
     def _locations(self):
         locations = super(prefix, self)._locations()
-        for v in locations.values():
-            v.setdefault('builders', []).append(self.builder)
+        for location, scope in locations.values():
+            location.builders.insert(0, self.builder)
         return locations
-
-    def handle(self, env, data, next_handler):
-        matched, kwargs = self.builder.match(env._route_state.path, env=env)
-        if matched:
-            update_data(data, kwargs)
-            env._route_state.add_prefix(self.builder(**kwargs))
-            result = next_handler(env, data)
-            if result is not None:
-                return result
-            env._route_state.pop_prefix()
-        return None
 
     def __repr__(self):
         return '%s(\'%r\')' % (self.__class__.__name__, self.builder)
@@ -139,26 +140,26 @@ class subdomain(WebHandler):
     def __init__(self, _subdomain):
         self.subdomain = unicode(_subdomain)
 
+        def subdomain(env, data, next_handler):
+            subdomain = env._route_state.subdomain
+            #XXX: here we can get 'idna' encoded sequence, that is the bug
+            if self.subdomain:
+                slen = len(self.subdomain)
+                delimiter = subdomain[-slen-1:-slen]
+                matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
+            else:
+                matches = not subdomain
+            if matches:
+                env._route_state.add_subdomain(self.subdomain)
+                return next_handler(env, data)
+            return None
+        self.handle = subdomain
+
     def _locations(self):
         locations = super(subdomain, self)._locations()
-        for v in locations.values():
-            v.setdefault('subdomains', []).append(self.subdomain)
+        for location, scope in locations.values():
+            location.subdomains.append(self.subdomain)
         return locations
-
-    def handle(self, env, data, next_handler):
-        subdomain = env._route_state.subdomain
-        #XXX: here we can get 'idna' encoded sequence, that is the bug
-        if self.subdomain:
-            slen = len(self.subdomain)
-            delimiter = subdomain[-slen-1:-slen]
-            matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
-        else:
-            matches = not subdomain
-
-        if matches:
-            env._route_state.add_subdomain(self.subdomain)
-            return next_handler(env, data)
-        return None
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.subdomain)
@@ -168,17 +169,13 @@ class namespace(WebHandler):
     def __init__(self, ns):
         # namespace is str
         self.namespace = ns
-
-    def handle(self, env, data, next_handler):
-        if 'namespace' in env:
-            env.namespace += '.' + self.namespace
-        else:
-            env.namespace = self.namespace
-        return next_handler(env, data)
+        def namespace(env, data, next_handler):
+            if 'namespace' in env:
+                env.namespace += '.' + self.namespace
+            else:
+                env.namespace = self.namespace
+            return next_handler(env, data)
+        self.handle = namespace
 
     def _locations(self):
-        locations = super(namespace, self)._locations()
-        new_locations = {}
-        for k, v in locations.items():
-            new_locations[self.namespace+'.'+k if k else self.namespace] = v
-        return new_locations
+        return {self.namespace: (Location(), super(namespace, self)._locations())}

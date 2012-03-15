@@ -103,12 +103,14 @@ class Prefix(unittest.TestCase):
             web.prefix('/docs') | web.namespace('doc') | web.cases(
                 web.match('/item', '') | handler,
                 web.prefix('/list') | web.cases(
-                    web.match('/item', 'list') | handler)
+                    web.match('/item', 'list') | handler),
+                web.match('/other-thing', 'something') | handler
                 ),
             web.match('/something', 'something') | handler)
 
         self.assertEqual(web.ask(app, '/docs/something'), None)
         self.assertEqual(web.ask(app, '/docs/list/something'), None)
+        self.assertEqual(web.ask(app, '/docs/list/other-thing'), None)
 
 
     def test_unicode(self):
@@ -121,8 +123,8 @@ class Prefix(unittest.TestCase):
         )
         encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
 
-        self.assertEqual(web.Reverse.from_handler(app)('percent'), encoded)
-        self.assertEqual(web.Reverse.from_handler(app)('percent').get_readable(), u'/հայերեն/%')
+        self.assertEqual(web.Reverse.from_handler(app).percent.as_url, encoded)
+        self.assertEqual(web.Reverse.from_handler(app).percent.as_url.get_readable(), u'/հայերեն/%')
 
         self.assertNotEqual(web.ask(app, encoded), None)
 
@@ -160,8 +162,8 @@ class Subdomain(unittest.TestCase):
         '''IRI tests'''
         app = web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site') | (lambda e,d,n: Response() )
         encoded = 'http://xn--80aswg.xn--p1ai/'
-        self.assertEqual(web.Reverse.from_handler(app)('site').get_readable(), u'http://сайт.рф/')
-        self.assertEqual(web.Reverse.from_handler(app)('site'), encoded)
+        self.assertEqual(web.Reverse.from_handler(app).site.as_url.get_readable(), u'http://сайт.рф/')
+        self.assertEqual(web.Reverse.from_handler(app).site.as_url, encoded)
         self.assertNotEqual(web.ask(app, encoded), None)
 
 
@@ -214,3 +216,29 @@ class Match(unittest.TestCase):
 
         self.assert_(web.ask(app, '/second/42/') is None)
         self.assert_(web.ask(app, '/second/42s') is None)
+
+    def test_sane_exeptions(self):
+        'Not yet completed test of sane exceptions'
+        def get_items(env, data, nxt):
+            return nxt(env, data)
+        def raise_exc(env, data, nxt):
+            raise Exception('somewhere deep inside')
+        app = web.prefix('/prefix') | web.match('/', '') | get_items | raise_exc
+        self.assertRaises(Exception, lambda: web.ask(app, '/prefix/'))
+
+    def test_handler_after_case(self):
+        '''Test if the handler next to cases is called'''
+
+        r = Response()
+        def handler(env, data, nx):
+            return r
+
+        app = web.cases(
+            web.match('/first', 'first'),
+            web.match('/second/<int:id>', 'second')
+        ) | handler
+
+        self.assertEqual(web.ask(app, '/first'), r)
+        self.assertEqual(web.ask(app, '/second/2'), r)
+
+
