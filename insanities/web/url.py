@@ -3,15 +3,16 @@
 import urllib
 import re
 import logging
-import urllib
 from inspect import isclass
-from webob.multidict import MultiDict
 
 logger = logging.getLogger(__name__)
 
 
 def urlquote(value):
     return urllib.quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
+
+
+class UrlBuildingError(Exception): pass
 
 
 class ConvertError(Exception):
@@ -239,7 +240,10 @@ class UrlTemplate(object):
         for part in self._builder_params:
             if isinstance(part, tuple):
                 var, conv_obj = part
-                value = kwargs[var]
+                try:
+                    value = kwargs[var]
+                except KeyError:
+                    raise UrlBuildingError('Missing argument for URL builder: %s' % var)
                 result += urlquote(conv_obj.to_url(value))
             else:
                 result += part

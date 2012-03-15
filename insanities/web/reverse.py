@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['Reverse', 'URL']
+__all__ = ['Reverse', 'URL', 'UrlBuildingError']
 
 import urllib
 from webob.multidict import MultiDict
-from .url import urlquote
+from .url import urlquote, UrlBuildingError
 
 
 def construct_url(path, query, host, port, schema):
@@ -130,8 +130,6 @@ class Location(object):
     def __repr__(self):
         return '%s(*%r, %r)' % (self.__class__.__name__, self.builders, self.subdomains)
 
-
-class UrlBuildingError(Exception): pass
 
 
 class Reverse(object):

@@ -111,8 +111,8 @@ class cases(WebHandler):
 
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'
-        for handler in self.handlers:
-            handler | prepare_handler(next_handler)
+        self.handlers = [handler | prepare_handler(next_handler)
+                         for handler in self.handlers]
         return self
 
     def handle(self, env, data, next_handler):

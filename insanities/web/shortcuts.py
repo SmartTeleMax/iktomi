@@ -2,8 +2,6 @@
 import json
 from webob.exc import status_map
 from webob import Response
-
-from .core import WebHandler
 from .filters import match
 
 __all__ = ['redirect_to', 'http_error', 'to_json', 'Rule']
