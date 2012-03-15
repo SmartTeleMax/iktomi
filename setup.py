@@ -24,7 +24,7 @@ setup(
     maintainer='Tim Perevezentsev',
     maintainer_email='riffm2005@gmail.com',
     description='A set of insanities of several geeks to show ourselves our coolness.',
-    long_description=open('README').read(),
+    #long_description=open('README').read(),
     url='http://github.com/riffm/insanities-testing/',
     license='MIT',
     keywords='web forms',

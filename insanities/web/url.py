@@ -119,6 +119,9 @@ class Any(Converter):
             return value
         raise ConvertError(self.name, value)
 
+    def to_url(self, value):
+        return unicode(value)
+
 
 convs_dict = dict((item.name or item.__name__, item) \
                   for item in globals().values() \
