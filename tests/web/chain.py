@@ -154,8 +154,8 @@ class Chain(unittest.TestCase):
             return count + 1
 
         h_wrapped = web.handler(h)
-        chain = h_wrapped | h_wrapped | h_wrapped
-        self.assertEqual(chain(VersionedStorage(), VersionedStorage()), 3)
+        chain = h_wrapped | h_wrapped | h_wrapped | h_wrapped
+        self.assertEqual(chain(VersionedStorage(), VersionedStorage()), 4)
 
     def test_chain_reuse_chain(self):
         'Reuse chains'
@@ -175,6 +175,23 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_handler2(self):
         'Reuse handlers, then use only first one and assert nothing has changed'
+        def h(env, data, nx):
+            count = nx(env, data) or 0
+            return count + 1
+
+        h_wrapped = web.handler(h)
+        chain = web.handler(h) | web.cases(h_wrapped,
+                                      h_wrapped)
+        chain1 = chain | h_wrapped
+        chain2 = chain | h_wrapped
+        chain3 = chain2 | h_wrapped
+
+        self.assertEqual(chain1(VersionedStorage(), VersionedStorage()), 3)
+        self.assertEqual(chain2(VersionedStorage(), VersionedStorage()), 3)
+        self.assertEqual(chain3(VersionedStorage(), VersionedStorage()), 4)
+
+    def test_chain_reuse_cases(self):
+        'Reuse cases handler'
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
