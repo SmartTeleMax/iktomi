@@ -180,7 +180,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
                 if variable is None:
                     variable = converter
                     converter = default_converter
-                result += '(?P<%s>[.a-zA-Z0-9_%%-]+)' % variable
+                result += '(?P<%s>[.a-zA-Z0-9_%%-:]+)' % variable
                 try:
                     conv_object = init_converter(converters[converter], args)
                 except KeyError:
