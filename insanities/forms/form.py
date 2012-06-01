@@ -32,7 +32,7 @@ class Form(object):
         #       If you provide initial value for some aggregated field
         #       you need to provide values for all fields that are in that
         #       aggregated field, including `None` as empty values.
-        self.initial = initial = initial or {}
+        self.initial = initial
         self.python_data = initial.copy()
         # clone all fields
         self.fields = [field(parent=self) for field in self.fields]
