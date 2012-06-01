@@ -4,7 +4,7 @@ __all__ = ['UrlTemplateTests', 'Prefix', 'Match', 'Subdomain']
 
 import unittest
 from insanities import web
-from insanities.web.url import UrlTemplate
+from insanities.web.url_templates import UrlTemplate
 from insanities.web.http import Request, Response
 
 class UrlTemplateTests(unittest.TestCase):

@@ -5,7 +5,7 @@ __all__ = ['ReverseTests', 'LocationsTests']
 import unittest
 from insanities import web
 from insanities.utils.storage import VersionedStorage
-from insanities.web.url import UrlTemplate
+from insanities.web.url_templates import UrlTemplate
 from insanities.web.reverse import Location, UrlBuildingError
 
 

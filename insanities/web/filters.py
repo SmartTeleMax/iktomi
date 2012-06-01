@@ -9,7 +9,7 @@ from os import path
 from urllib import unquote
 from .core import WebHandler
 from .http import Response
-from .url import UrlTemplate
+from .url_templates import UrlTemplate
 from .reverse import Location
 
 

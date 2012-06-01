@@ -8,7 +8,6 @@ __all__ = ['redirect_to', 'http_error', 'to_json', 'Rule']
 
 def redirect_to(endpoint, _code=303, qs=None, **kwargs):
     def handle(env, data, nxt):
-        # to make this work, we should fix env.reverse name
         url = env.root.build_url(endpoint, **kwargs)
         if qs is not None:
             url = url.qs_set(qs)
