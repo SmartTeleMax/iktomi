@@ -103,7 +103,7 @@ class Converter(object):
             try:
                 value = method(value, **kwargs)
                 for v in self.validators_and_filters:
-                    value = v(value)
+                    value = v(self, value)
             except ValidationError, e:
                 form.errors[field.input_name] = e.message
                 #NOTE: by default value for field is in python_data,
@@ -145,8 +145,8 @@ class validator(object):
     def __init__(self, message):
         self.message = message
     def __call__(self, func):
-        def wrapper(value):
-            if not func(value):
+        def wrapper(conv, value):
+            if not func(conv, value):
                 raise ValidationError(self.message)
             return value
         return wrapper
@@ -158,7 +158,7 @@ def limit(min_length, max_length):
     message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
 
     @validator(message)
-    def wrapper(value):
+    def wrapper(conv, value):
         if not value:
             # it meens that this value is not required
             return True
@@ -175,7 +175,7 @@ def num_limit(min_value, max_value):
     message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
 
     @validator(message)
-    def wrapper(value):
+    def wrapper(conv, value):
         if not value:
             # it meens that this value is not required
             return True
@@ -190,7 +190,7 @@ def num_limit(min_value, max_value):
 def length(*args):
     'Exact string lengths'
     @validator(u'Length of value is limited to ' + ','.join([str(a) for a in args]))
-    def wrapper(value):
+    def wrapper(conv, value):
         if not value:
             return True
         if not len(str(value)) in args:
@@ -200,7 +200,7 @@ def length(*args):
 
 
 @validator(u'Value must be positive')
-def positive_num(value):
+def positive_num(conv, value):
     if not value:
         return True
     return value > 0
