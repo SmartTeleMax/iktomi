@@ -4,6 +4,7 @@ __all__ = ['Reverse', 'UrlBuildingError']
 
 from .url import URL
 from .url_templates import UrlBuildingError
+from ..utils import cached_property
 
 
 
@@ -28,6 +29,10 @@ class Location(object):
     def build_subdomians(self):
         return u'.'.join(self.subdomains)
 
+    @property
+    def url_arguments(self):
+        return reduce(lambda x,y: x|set(y._url_params), self.builders, set())
+
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \
                self.builders == other.builders and self.subdomains == other.subdomains
@@ -40,6 +45,7 @@ class Location(object):
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
                  need_arguments=False, root=False):
+        # XXX document, what is scope and what is location!
         self._location = location
         self._scope = scope
         self._path = path
@@ -65,6 +71,16 @@ class Reverse(object):
             return self.__class__(self._scope, self._location, path=path, host=host, ready=True)
         raise UrlBuildingError('Not an endpoint')
 
+    @cached_property
+    def url_arguments(self):
+        args = set()
+        if self._is_endpoint:
+            if self._location:
+                args |= self._location.url_arguments
+            if self._scope:
+                args |= self._scope[''][0].url_arguments
+        return args
+
     def __getattr__(self, name):
         if self._is_scope and name in self._scope:
             if self._need_arguments:
@@ -81,21 +97,19 @@ class Reverse(object):
 
     def build_url(self, _name, **kwargs):
         subreverse = self
-        #if _name.startswith('.'):
-        #    XXX parent navigation?
-        #    local_name = _name.lstrip('.')
-        #    up = len(_name) - len(local_name) - 1
-        #    for i in xrange(up):
-        #        subreverse = subreverse.parent
-        #        if subreverse is None:
-        #            raise UrlBuildingError('No more parent namespaces')
-        #    _name = local_name
+        used_args = set()
         for part in _name.split('.'):
             if not subreverse._ready and subreverse._is_endpoint:
+                used_args |= subreverse.url_arguments
                 subreverse = subreverse(**kwargs)
             subreverse = getattr(subreverse, part)
         if not subreverse._ready and subreverse._is_endpoint:
+            used_args |= subreverse.url_arguments
             subreverse = subreverse(**kwargs)
+
+        if set(kwargs).difference(used_args):
+            raise UrlBuildingError('Not all arguments are used during URL building: %s' %
+                                   ', '.join(set(kwargs).difference(used_args)))
         return subreverse.as_url
 
     @property

@@ -9,7 +9,6 @@ import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
 from ..utils.storage import VersionedStorage
-from .reverse import URL
 
 from copy import copy
 

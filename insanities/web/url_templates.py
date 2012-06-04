@@ -213,10 +213,11 @@ class UrlTemplate(object):
         self.template = template
         self.match_whole_str = match_whole_str
         self._allowed_converters = self._init_converters(converters)
-        self._pattern, self._url_params, self._builder_params = construct_re(template, 
-                                                                             match_whole_str=match_whole_str,
-                                                                             converters=self._allowed_converters,
-                                                                             default_converter=default_converter)
+        self._pattern, self._url_params, self._builder_params = \
+            construct_re(template,
+                         match_whole_str=match_whole_str,
+                         converters=self._allowed_converters,
+                         default_converter=default_converter)
 
     def match(self, path, **kw):
         '''
