@@ -20,11 +20,11 @@ class Template(object):
         for d in dirs:
             self.dirs.append(d)
         self.engines = {}
-        for template_type, engine_class in kwargs.get('engines', {}).items():
-            self.engines[template_type] = engine_class(self.dirs[:], cache=self.cache)
+        for template_type, engine in kwargs.get('engines', {}).items():
+            self.engines[template_type] = engine
 
     def render(self, template_name, **kw):
-        logger.debug('Rendering template "%s"' % template_name)
+        logger.debug('Rendering template "%s"', template_name)
         vars = self.globs.copy()
         vars.update(kw)
         resolved_name, engine = self.resolve(template_name)
@@ -44,15 +44,46 @@ class Template(object):
         raise TemplateError('Template or engine for template "%s" not found. Dirs %r' % \
                             (pattern, self.dirs))
 
-    def render_to(self, template_name):
-        def render_to(env, data, next_handler):
-            data.env = env
-            return Response(self.render(template_name, **data.as_dict()))
-        return render_to
 
-    def render_to_response(self, template_name, data, env=None, content_type='text/html'):
-        'handy method'
-        if env is not None:
-            data['env'] = env
-        return Response(self.render(template_name, **data),
+class BoundTemplate(object):
+    '''
+    Usage:
+        template = Template(...) # global var
+
+        def environment(env, data, nxt):
+            ...
+            env.template = BoundTemplate(env, template)
+    '''
+
+    def __init__(self, env, template):
+        self.template = template
+        self.env = env
+
+    def get_template_vars(self, data=None, **kw):
+        if hasattr(data, 'as_dict'):
+            d = data.as_dict()
+        elif data is not None:
+            d = dict(data)
+        else:
+            d = {}
+        d.update(kw)
+        return d
+
+    def render(self, template_name, data=None, **kw):
+        data = self.get_template_vars(data, **kw)
+        return self.template.render(template_name, **data)
+
+    def render_to_response(self, template_name, data, content_type="text/html"):
+        data = self.get_template_vars(data)
+        return Response(self.template.render(template_name, **data),
                         content_type=content_type)
+
+
+def render_to(self, template_name):
+    def render_to(env, data, next_handler):
+        data.env = env
+        return Response(env.template.render(template_name, **data))
+    return render_to
+
+
+
