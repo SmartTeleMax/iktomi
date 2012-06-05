@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
 Module containing some predefined form converters - objects designed to
-convart and validate form field's data.
+convert and validate form field's data.
 '''
 
 import re
