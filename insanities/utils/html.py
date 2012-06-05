@@ -10,7 +10,6 @@ import re
 from xml.sax.saxutils import escape, unescape
 from html5lib import HTMLParser, sanitizer, treebuilders, treewalkers, serializer
 from html5lib.constants import tokenTypes
-from html5lib.html5parser import ParseError
 
 
 SAFE_CLASSES = {}
