@@ -23,7 +23,7 @@ def list_files(env, data, nxt):
         'files':files, 
         'url':'/media/stored/', 
         'form':form
-    }, env)
+    })
 
 
 def post_file(env, data, nxt):
@@ -42,7 +42,7 @@ def post_file(env, data, nxt):
         'files':files, 
         'url':'/media/stored/', 
         'form':form
-    }, env)
+    })
 
 
 def delete_files(env, data, next_handler):
