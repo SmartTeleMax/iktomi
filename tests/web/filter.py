@@ -49,6 +49,21 @@ class UrlTemplateTests(unittest.TestCase):
         ut = UrlTemplate('/simple/<int:id>/data')
         self.assertEqual(ut(id=2), '/simple/2/data')
 
+    def test_only_converter_is_present(self):
+        ut = UrlTemplate('<int:id>')
+        self.assertEqual(ut(id=2), '2')
+
+    def test_default_converter(self):
+        ut = UrlTemplate('<message>')
+        self.assertEqual(ut(message='hello'), 'hello')
+
+    def test_var_name_with_underscore(self):
+        ut = UrlTemplate('<message_uid>')
+        self.assertEqual(ut(message_uid='uid'), 'uid')
+
+    def test_incorrect_converter_def(self):
+        self.assertRaises(ValueError, UrlTemplate, '<int:id:>')
+
 
 class Prefix(unittest.TestCase):
 
