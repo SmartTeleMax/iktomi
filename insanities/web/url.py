@@ -85,30 +85,6 @@ class Integer(Converter):
         return str(value)
 
 
-class Boolean(Converter):
-    '''
-    Translates on/off, true/false, True/False, yes/no strings to python bool.
-
-    The converter's name is 'bool'.
-    '''
-
-    name='bool'
-    _true = ['on', 'true', 'True', 'yes']
-    _false = ['off', 'false', 'False', 'no']
-
-    def to_python(self, value, **kwargs):
-        if value in self._true:
-            return True
-        elif value in self._false:
-            return False
-        raise ConvertError(self.name, value)
-
-    def to_url(self, value):
-        if value:
-            return 'yes'
-        return 'no'
-
-
 class Any(Converter):
     name='any'
     def __init__(self, *values):
