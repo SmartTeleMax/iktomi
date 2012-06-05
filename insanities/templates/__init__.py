@@ -59,22 +59,22 @@ class BoundTemplate(object):
         self.template = template
         self.env = env
 
-    def get_template_vars(self, data=None, **kw):
-        if hasattr(data, 'as_dict'):
-            d = data.as_dict()
-        elif data is not None:
-            d = dict(data)
+    def get_template_vars(self, __data=None, **kw):
+        if hasattr(__data, 'as_dict'):
+            d = __data.as_dict()
+        elif __data is not None:
+            d = dict(__data)
         else:
             d = {}
         d.update(kw)
         return d
 
-    def render(self, template_name, data=None, **kw):
-        data = self.get_template_vars(data, **kw)
+    def render(self, template_name, __data=None, **kw):
+        data = self.get_template_vars(__data, **kw)
         return self.template.render(template_name, **data)
 
-    def render_to_response(self, template_name, data, content_type="text/html"):
-        data = self.get_template_vars(data)
+    def render_to_response(self, template_name, __data, content_type="text/html"):
+        data = self.get_template_vars(__data)
         return Response(self.template.render(template_name, **data),
                         content_type=content_type)
 
