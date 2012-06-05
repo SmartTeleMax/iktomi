@@ -27,12 +27,12 @@ class Form(object):
         initial = initial or {}
         self.env = FormEnvironment(**env) if isinstance(env, dict) else env
         self.name = name
-        self.raw_data = raw_data = MultiDict()
+        self.raw_data = MultiDict()
         # NOTE: `initial` is used to set initial display values for fields.
         #       If you provide initial value for some aggregated field
         #       you need to provide values for all fields that are in that
         #       aggregated field, including `None` as empty values.
-        self.initial = initial = initial or {}
+        self.initial = initial
         self.python_data = initial.copy()
         # clone all fields
         self.fields = [field(parent=self) for field in self.fields]
@@ -87,9 +87,8 @@ class Form(object):
             media += field.get_media()
         return media
 
-    def accept(self, data, files=None):
+    def accept(self, data):
         self.raw_data = MultiDict(data)
-        self.files = files or MultiDict()
         self.errors = {}
         for field in self.fields:
             if field.writable:

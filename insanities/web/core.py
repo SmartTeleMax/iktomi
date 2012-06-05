@@ -9,7 +9,6 @@ import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
 from ..utils.storage import VersionedStorage
-from .reverse import URL
 
 from copy import copy
 
@@ -73,9 +72,12 @@ class WebHandler(object):
         return copy(self)
 
     def as_wsgi(self):
+        from .reverse import Reverse
+        root = Reverse.from_handler(self)
         def wsgi(environ, start_response):
             env = VersionedStorage()
             env.request = Request(environ, charset='utf-8')
+            env.root = root
             env._route_state = RouteState(env.request)
             data = VersionedStorage()
             try:
@@ -108,9 +110,10 @@ class cases(WebHandler):
 
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'
-        self.handlers = [handler | prepare_handler(next_handler)
-                         for handler in self.handlers]
-        return self
+        h = self.copy()
+        h.handlers = [handler | prepare_handler(next_handler)
+                      for handler in self.handlers]
+        return h
 
     def handle(self, env, data, next_handler):
         for handler in self.handlers:

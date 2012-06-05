@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from insanities.web.url import *
+from insanities.web.url_templates import *
 
 
 class IntConverter(unittest.TestCase):

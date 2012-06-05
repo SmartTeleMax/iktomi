@@ -8,6 +8,7 @@ from insanities.web.core import _FunctionWrapper
 from insanities.utils.storage import VersionedStorage
 
 skip = getattr(unittest, 'skip', lambda x: None)
+VS = VersionedStorage
 
 class Chain(unittest.TestCase):
 
@@ -44,7 +45,7 @@ class Chain(unittest.TestCase):
 
         chain = web.handler(handler1) | handler2
 
-        self.assert_(chain(VersionedStorage(), VersionedStorage()) is None)
+        self.assert_(chain(VS(), VS()) is None)
 
     def test_List(self):
         'cases handle'
@@ -65,7 +66,7 @@ class Chain(unittest.TestCase):
 
         chain = web.cases(h1, h2, h3)
         count = VersionedStorage(count=0)
-        self.assert_(chain(count, VersionedStorage()) is None)
+        self.assert_(chain(count, VS()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_list_of_chains(self):
@@ -86,8 +87,8 @@ class Chain(unittest.TestCase):
             return nh(env, data)
 
         chain = web.cases(h1, web.handler(h2) | h3)
-        count = VersionedStorage(count=0)
-        self.assert_(chain(count, VersionedStorage()) is None)
+        count = VS(count=0)
+        self.assert_(chain(count, VS()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_chain_with_list(self):
@@ -108,8 +109,8 @@ class Chain(unittest.TestCase):
             return nh(env, data)
 
         chain = web.handler(h) | web.cases(h1, web.handler(h1) | h2)
-        count = VersionedStorage(count=0)
-        self.assert_(chain(count, VersionedStorage()) is None)
+        count = VS(count=0)
+        self.assert_(chain(count, VS()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_chain_with_list_and_postfix(self):
@@ -129,8 +130,8 @@ class Chain(unittest.TestCase):
             env['count'] = env['count'] + 1
 
         chain = web.handler(h) | web.cases(h1, web.handler(h1) | h2) | h2
-        count = VersionedStorage(count=0)
-        self.assert_(chain(count, VersionedStorage()) is None)
+        count = VS(count=0)
+        self.assert_(chain(count, VS()) is None)
         self.assertEqual(count['count'], 0)
 
     def test_chain_of_lists(self):
@@ -145,7 +146,7 @@ class Chain(unittest.TestCase):
             return nx(env, data)
 
         chain = web.cases(h) | web.cases(h1, h1)
-        chain(VersionedStorage(), VersionedStorage())
+        chain(VS(), VS())
 
     def test_chain_reuse_handler(self):
         'Reuse handlers'
@@ -154,8 +155,8 @@ class Chain(unittest.TestCase):
             return count + 1
 
         h_wrapped = web.handler(h)
-        chain = h_wrapped | h_wrapped | h_wrapped
-        self.assertEqual(chain(VersionedStorage(), VersionedStorage()), 3)
+        chain = h_wrapped | h_wrapped | h_wrapped | h_wrapped
+        self.assertEqual(chain(VS(), VS()), 4)
 
     def test_chain_reuse_chain(self):
         'Reuse chains'
@@ -169,9 +170,9 @@ class Chain(unittest.TestCase):
         chain1 = web.handler(h(4)) | reusable | h(8)
         chain2 = web.handler(h(16)) | reusable | h(32)
 
-        self.assertEqual(reusable(VersionedStorage(), VersionedStorage()), 3)
-        self.assertEqual(chain1(VersionedStorage(), VersionedStorage()), 15)
-        self.assertEqual(chain2(VersionedStorage(), VersionedStorage()), 51)
+        self.assertEqual(reusable(VS(), VS()), 3)
+        self.assertEqual(chain1(VS(), VS()), 15)
+        self.assertEqual(chain2(VS(), VS()), 51)
 
     def test_chain_reuse_handler2(self):
         'Reuse handlers, then use only first one and assert nothing has changed'
@@ -180,9 +181,26 @@ class Chain(unittest.TestCase):
             return count + 1
 
         h_wrapped = web.handler(h)
+        chain = web.handler(h) | web.cases(h_wrapped,
+                                      h_wrapped)
+        chain1 = chain | h_wrapped
+        chain2 = chain | h_wrapped
+        chain3 = chain2 | h_wrapped
+
+        self.assertEqual(chain1(VS(), VS()), 3)
+        self.assertEqual(chain2(VS(), VS()), 3)
+        self.assertEqual(chain3(VS(), VS()), 4)
+
+    def test_chain_reuse_cases(self):
+        'Reuse cases handler'
+        def h(env, data, nx):
+            count = nx(env, data) or 0
+            return count + 1
+
+        h_wrapped = web.handler(h)
         chain = h_wrapped | h_wrapped | h_wrapped
         chain = h_wrapped
-        self.assertEqual(chain(VersionedStorage(), VersionedStorage()), 1)
+        self.assertEqual(chain(VS(), VS()), 1)
 
     @skip
     def test_chain_reuse_copy_count(self):

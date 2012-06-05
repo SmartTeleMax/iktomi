@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import cgi
-import string
 from os import path
 import os, struct, tempfile, time, logging
-from PIL import Image
 
-from ..utils import weakproxy, cached_property
+from ..utils import cached_property
 from ..forms import convs, widgets
 from ..forms.fields import Field, FieldSet, FileField
 
@@ -101,7 +99,7 @@ def check_file_path(value):
     if value and '/' in value:
         logger.warning('Hacking attempt: submitted temp_name '\
                        'for FileField contains "/"')
-        raise ValidationError('Invalid filename')
+        raise convs.ValidationError('Invalid filename')
     return value
 
 

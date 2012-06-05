@@ -27,25 +27,25 @@ class FileForm(Form):
                      template='fileinput.html'),
     ]
 
-class OptionalFileForm(Form):
-
-    fields = [
-        Field('accept', label='I accept the terms of service',
-              conv=convs.Bool(required=True),
-              widget=widgets.CheckBox()),
-        FileFieldSet('file', label='File',
-                     file_cls=MyUploadedFile,
-                     conv=FileFieldSetConv(required=False),
-                     template='fileinput.html'),
-    ]
+#class OptionalFileForm(Form):
+#
+#    fields = [
+#        Field('accept', label='I accept the terms of service',
+#              conv=convs.Bool(required=True),
+#              widget=widgets.CheckBox()),
+#        FileFieldSet('file', label='File',
+#                     file_cls=MyUploadedFile,
+#                     conv=FileFieldSetConv(required=False),
+#                     template='fileinput.html'),
+#    ]
 
 
 class SimpleFileForm(Form):
-    template='forms/paragraph.html'
+    #template='forms/paragraph.html'
 
     fields = [
         FileField('file', label='File',
                   conv=convs.SimpleFile(),
-                  widget=widgets.Widget(template='fileinput.html')),
+                  widget=widgets.Widget(template='widgets/file.html')),
     ]
 

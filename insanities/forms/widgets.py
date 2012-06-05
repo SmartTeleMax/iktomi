@@ -14,6 +14,13 @@ class Widget(object):
     media = []
     #: Value of HTML element's *class* attribute
     classname = ''
+    #: describes how the widget is rendered.
+    #: the following values are supported by default:
+    #: 'default': label is rendered in usual place
+    #: 'checkbox': label and widget are rendered close to each other
+    #: 'full-width': for table-like templates, otherwise should be rendered as default
+    #: 'hidden': label is not rendered
+    render_type = 'default'
 
     def __init__(self, field=None, **kwargs):
         self.field = weakproxy(field)
@@ -71,6 +78,7 @@ class TextInput(Widget):
 
 class HiddenInput(Widget):
 
+    render_type = 'hidden'
     template = 'widgets/hiddeninput'
 
 
@@ -170,6 +178,7 @@ class CheckBoxSelect(Select):
 
 class CheckBox(Widget):
 
+    render_type = 'checkbox'
     template = 'widgets/checkbox'
 
 

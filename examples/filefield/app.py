@@ -25,8 +25,8 @@ app = web.handler(environment) | web.cases(
     static, media,
     match('/', 'files') | web.cases(
         # Playing REST ;)
-        method('GET') | h.list_files | h.render_to('index'),
-        method('POST') | h.list_files | h.post_file | h.render_to('index'),
+        method('GET') | h.list_files,
+        method('POST') | h.post_file,
         #method('DELETE') | h.delete_files,
     ),
 )

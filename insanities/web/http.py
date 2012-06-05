@@ -3,12 +3,7 @@
 __all__ = ['Request', 'Response']
 
 import logging
-import httplib
-import cgi
-from webob import Request as _Request, Response
-from webob.multidict import MultiDict, NoVars, UnicodeMultiDict
-
-from ..utils import cached_property
+from webob import Request, Response
 
 logger = logging.getLogger(__name__)
 
@@ -55,24 +50,3 @@ class RouteState(object):
         return self._domain
 
 
-class Request(_Request):
-    '''
-    Patched webob Request class
-    '''
-
-    @cached_property
-    def FILES(self):
-        return self._sub_post(lambda x: isinstance(x[1], cgi.FieldStorage))
-
-    @cached_property
-    def POST(self):
-        return self._sub_post(lambda x: not isinstance(x[1], cgi.FieldStorage))
-
-    def _sub_post(self, condition):
-        post = super(Request, self).str_POST
-        if isinstance(post, NoVars):
-            return post
-        return UnicodeMultiDict(MultiDict(filter(condition, post.items())),
-                                encoding=self.charset,
-                                errors=self.unicode_errors,
-                                decode_keys=self.decode_param_names)
