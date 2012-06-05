@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import re
 from . import convs, widgets, fields
+from ..utils import N_
 
 
 class PasswordConv(convs.Char):
@@ -15,10 +15,10 @@ class PasswordConv(convs.Char):
     def to_python(self, value):
         etalon = value[list(value)[0]]
         for field in self.field.fields:
-            self._assert(value[field.name] == etalon,
-                         'password and confirm mismatch', 'mismatch')
-        self._assert(etalon not in (None, '')  or self.null,
-                     'password required', 'required')
+            self.assert_(value[field.name] == etalon,
+                         N_('password and confirm mismatch'))
+        self.assert_(etalon not in (None, '')  or self.null,
+                     N_('password required'))
         return etalon
 
 
