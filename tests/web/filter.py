@@ -71,6 +71,18 @@ class UrlTemplateTests(unittest.TestCase):
     def test_trailing_delimiter(self):
         self.assertRaises(ValueError, UrlTemplate, '<int:id:>')
 
+    def test_empty_param(self):
+        self.assertRaises(ValueError, UrlTemplate, '<>')
+
+    def test_delimiter_only(self):
+        self.assertRaises(ValueError, UrlTemplate, '<:>')
+
+    def test_type_and_delimiter(self):
+        self.assertRaises(ValueError, UrlTemplate, '<int:>')
+
+    def test_empty_type(self):
+        self.assertRaises(ValueError, UrlTemplate, '<:id>')
+
     def test_no_delimiter(self):
         self.assertRaises(ValueError, UrlTemplate, '<any(x,y)slug>')
 
