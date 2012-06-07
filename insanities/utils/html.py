@@ -4,12 +4,13 @@ Module containing classes for easy and flexible HTML cleanup
 '''
 
 __all__ = ['Sanitizer', 'sanitize', 'remove_a_tags_without_href', 'strip_empty_tags',
-           'strip_empty_tags_nested']
+           'strip_empty_tags_nested', 'ParseError']
 
 import re
 from xml.sax.saxutils import escape, unescape
 from html5lib import HTMLParser, sanitizer, treebuilders, treewalkers, serializer
 from html5lib.constants import tokenTypes
+from html5lib.html5parser import ParseError
 
 
 SAFE_CLASSES = {}
