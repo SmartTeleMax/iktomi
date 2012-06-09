@@ -14,6 +14,15 @@ class MockUser(object):
         return isinstance(other, self.__class__) and other.name == self.name
 
 
+class MockTemplateManager(object):
+    templates = {
+        'login': 'please login',
+    }
+    def render_to_response(self, template, data):
+        return web.Response(self.templates[template])
+
+
+
 def get_user_identity(env, login, password):
     if password == '123':
         return 'user-identity'
@@ -112,6 +121,7 @@ class SqlaModelAuthTests(unittest.TestCase):
         @web.handler
         def make_env(env, data, nxt):
             env.root = root
+            env.template = MockTemplateManager()
             env.db = db = session_maker('sqlite:///:memory:')()
             metadata.create_all(db.bind)
             user = User(login='user name', password=encrypt_password('123'))

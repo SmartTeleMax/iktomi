@@ -108,10 +108,12 @@ _split_pattern = re.compile(r'(<[^<]*>)')
 
 #NOTE: taken from werkzeug
 _converter_pattern = re.compile(r'''^<
-        (?P<converter>[a-zA-Z_][a-zA-Z0-9_]+)   # converter name
-        (?:\((?P<args>.*?)\))?                  # converter args
-        \:?                                     # delimiter
-        (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?   # variable name
+        (?:
+            (?P<converter>[a-zA-Z_][a-zA-Z0-9_]+)   # converter name
+            (?:\((?P<args>.*?)\))?                  # converter args
+            \:                                      # delimiter
+        )?
+        (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)        # variable name
         >$''', re.VERBOSE | re.U)
 
 _static_url_pattern = re.compile(r'^[^<]*?$')
@@ -149,19 +151,14 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             continue
         is_converter = _converter_pattern.match(part)
         if is_converter:
-            converter = is_converter.groupdict()['converter']
-            args = is_converter.groupdict()['args']
-            variable = is_converter.groupdict()['variable']
-            if variable is None:
-                variable = converter
-                converter = default_converter
-            result += '(?P<%s>[.a-zA-Z0-9_%%-]+)' % variable
-            try:
-                conv_object = init_converter(converters[converter], args)
-            except KeyError:
-                raise KeyError('There is no converter named "%s"' % converter)
+            groups = is_converter.groupdict()
+            converter_name = groups['converter'] or default_converter
+            conv_object = init_converter(converters[converter_name],
+                                         groups['args'])
+            variable = groups['variable']
             builder_params.append((variable, conv_object))
             url_params[variable] = conv_object
+            result += '(?P<%s>[.a-zA-Z0-9_%%-]+)' % variable
             continue
         raise ValueError('Incorrect url template "%s"' % url_template)
     if match_whole_str:
