@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 from glob import glob
 from ..web import Response
+from ..utils import cached_property
 
 __all__ = ('Template',)
 
@@ -61,6 +62,10 @@ class BoundTemplate(object):
 
     def get_template_vars(self):
         return {}
+
+    @cached_property
+    def engines(self):
+        return self.template.engines
 
     def _vars(self, __data, **kw):
         if hasattr(__data, 'as_dict'):
