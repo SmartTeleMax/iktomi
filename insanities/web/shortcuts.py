@@ -2,7 +2,8 @@
 import json
 from webob.exc import status_map
 from webob import Response
-from .filters import match
+from .core import cases
+from . import filters
 
 __all__ = ['redirect_to', 'http_error', 'to_json', 'Rule']
 
@@ -22,10 +23,13 @@ def http_error(_code, **kwargs):
 def to_json(data):
     return Response(json.dumps(data))
 
-def Rule(path, handler, method=None):
+def Rule(path, handler, method=None, name=None):
     # werkzeug-style Rule
-    h = match(path, handler.func_name)
+    if name is None:
+        name = handler.func_name
+    h = filters.match(path, name)
     if method is not None:
-        h = h | method(method)
+        h = h | cases(filters.method(method),
+                      http_error(405))
     return h | handler
 
