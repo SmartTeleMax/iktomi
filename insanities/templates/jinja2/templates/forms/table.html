@@ -7,31 +7,31 @@
   </tr>
   {% endif %}
   <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}{% if field.classname %} {{ field.classname }}{% endif %}">
-  {% if subfield.render_type == 'checkbox' %}
+  {% if field.render_type == 'checkbox' %}
     <th></th>
     <td>
-      {{ subfield.render()|safe }}
-      {% if subfield.label %}
-      <label for="{{ subfield.id }}">{{ subfield.label }}</label>
+      {{ field.render()|safe }}
+      {% if field.label %}
+      <label for="{{ field.id }}">{{ field.label }}</label>
       {% endif %}
     </td>
-  {% elif subfield.render_type == 'hidden' %}
-    <td style="display: none" colspan="2">{{ subfield.render()|safe }}</td>
-  {% elif subfield.render_type == 'full-width' %}
+  {% elif field.render_type == 'hidden' %}
+    <td style="display: none" colspan="2">{{ field.render()|safe }}</td>
+  {% elif field.render_type == 'full-width' %}
     <td colspan="2">
-      {% if subfield.label %}
-      <p class="th"><label for="{{ subfield.id }}">{{ subfield.label }}</label></p>
+      {% if field.label %}
+      <p class="th"><label for="{{ field.id }}">{{ field.label }}</label></p>
       {% endif %}
-      {{ subfield.render()|safe }}
+      {{ field.render()|safe }}
     </td>
   {% else %}
     <th>
-      {% if subfield.label %}
-      <label for="{{ subfield.id }}">{{ subfield.label }}</label>
+      {% if field.label %}
+      <label for="{{ field.id }}">{{ field.label }}</label>
       {% endif %}
     </th>
     <td>
-      {{ subfield.render()|safe }}
+      {{ field.render()|safe }}
     </td>
   {% endif %}
 

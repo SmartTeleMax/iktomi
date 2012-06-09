@@ -7,7 +7,14 @@ from insanities import web
 from insanities.web.url_templates import UrlTemplate
 from insanities.web.http import Request, Response
 
+
 class UrlTemplateTests(unittest.TestCase):
+
+    def test_empty_match(self):
+        'UrlTemplate match method with empty template'
+        ut = UrlTemplate('')
+        self.assertEqual(ut.match(''), (True, {}))
+        self.assertEqual(ut.match('/'), (False, {}))
 
     def test_match_without_params(self):
         'UrlTemplate match method without params'
@@ -48,6 +55,36 @@ class UrlTemplateTests(unittest.TestCase):
         'UrlTemplate builder method (with params)'
         ut = UrlTemplate('/simple/<int:id>/data')
         self.assertEqual(ut(id=2), '/simple/2/data')
+
+    def test_only_converter_is_present(self):
+        ut = UrlTemplate('<int:id>')
+        self.assertEqual(ut(id=2), '2')
+
+    def test_default_converter(self):
+        ut = UrlTemplate('<message>')
+        self.assertEqual(ut(message='hello'), 'hello')
+
+    def test_var_name_with_underscore(self):
+        ut = UrlTemplate('<message_uid>')
+        self.assertEqual(ut(message_uid='uid'), 'uid')
+
+    def test_trailing_delimiter(self):
+        self.assertRaises(ValueError, UrlTemplate, '<int:id:>')
+
+    def test_empty_param(self):
+        self.assertRaises(ValueError, UrlTemplate, '<>')
+
+    def test_delimiter_only(self):
+        self.assertRaises(ValueError, UrlTemplate, '<:>')
+
+    def test_type_and_delimiter(self):
+        self.assertRaises(ValueError, UrlTemplate, '<int:>')
+
+    def test_empty_type(self):
+        self.assertRaises(ValueError, UrlTemplate, '<:id>')
+
+    def test_no_delimiter(self):
+        self.assertRaises(ValueError, UrlTemplate, '<any(x,y)slug>')
 
 
 class Prefix(unittest.TestCase):

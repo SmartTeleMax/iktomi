@@ -85,30 +85,6 @@ class Integer(Converter):
         return str(value)
 
 
-class Boolean(Converter):
-    '''
-    Translates on/off, true/false, True/False, yes/no strings to python bool.
-
-    The converter's name is 'bool'.
-    '''
-
-    name='bool'
-    _true = ['on', 'true', 'True', 'yes']
-    _false = ['off', 'false', 'False', 'no']
-
-    def to_python(self, value, **kwargs):
-        if value in self._true:
-            return True
-        elif value in self._false:
-            return False
-        raise ConvertError(self.name, value)
-
-    def to_url(self, value):
-        if value:
-            return 'yes'
-        return 'no'
-
-
 class Any(Converter):
     name='any'
     def __init__(self, *values):
@@ -132,7 +108,7 @@ _split_pattern = re.compile(r'(<[^<]*>)')
 
 #NOTE: taken from werkzeug
 _converter_pattern = re.compile(r'''^<
-        (?P<converter>[a-zA-Z_][a-zA-Z0-9]+)    # converter name
+        (?P<converter>[a-zA-Z_][a-zA-Z0-9_]+)   # converter name
         (?:\((?P<args>.*?)\))?                  # converter args
         \:?                                     # delimiter
         (?P<variable>[a-zA-Z_][a-zA-Z0-9_]*)?   # variable name
@@ -161,37 +137,33 @@ def construct_re(url_template, match_whole_str=False, converters=None,
     parts = _split_pattern.split(url_template)
     total_parts = len(parts)
     for i, part in enumerate(parts):
-        if part:
-            is_url_pattern = _static_url_pattern.match(part)
-            if is_url_pattern:
-                #NOTE: right order:
-                #      - make part str if it was unicode
-                #      - urlquote part
-                #      - escape all specific for re chars in part
-                part = urlquote(unicode(part).encode('utf-8'))
-                result += re.escape(part)
-                builder_params.append(part)
-                continue
-            is_converter = _converter_pattern.match(part)
-            if is_converter:
-                converter = is_converter.groupdict()['converter']
-                args = is_converter.groupdict()['args']
-                variable = is_converter.groupdict()['variable']
-                if variable is None:
-                    variable = converter
-                    converter = default_converter
-                result += '(?P<%s>[.a-zA-Z0-9_%%-]+)' % variable
-                try:
-                    conv_object = init_converter(converters[converter], args)
-                except KeyError:
-                    raise KeyError('There is no converter named "%s"' % converter)
-                builder_params.append((variable, conv_object))
-                url_params[variable] = conv_object
-                continue
-            raise ValueError('Incorrect url template "%s"' % url_template)
-        else:
-            if i < total_parts - 1:
-                raise ValueError('Incorrect url template "%s"' % url_template)
+        is_url_pattern = _static_url_pattern.match(part)
+        if is_url_pattern:
+            #NOTE: right order:
+            #      - make part str if it was unicode
+            #      - urlquote part
+            #      - escape all specific for re chars in part
+            part = urlquote(unicode(part).encode('utf-8'))
+            result += re.escape(part)
+            builder_params.append(part)
+            continue
+        is_converter = _converter_pattern.match(part)
+        if is_converter:
+            converter = is_converter.groupdict()['converter']
+            args = is_converter.groupdict()['args']
+            variable = is_converter.groupdict()['variable']
+            if variable is None:
+                variable = converter
+                converter = default_converter
+            result += '(?P<%s>[.a-zA-Z0-9_%%-]+)' % variable
+            try:
+                conv_object = init_converter(converters[converter], args)
+            except KeyError:
+                raise KeyError('There is no converter named "%s"' % converter)
+            builder_params.append((variable, conv_object))
+            url_params[variable] = conv_object
+            continue
+        raise ValueError('Incorrect url template "%s"' % url_template)
     if match_whole_str:
         result += '$'
     return re.compile(result), url_params, builder_params

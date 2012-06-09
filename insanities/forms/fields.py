@@ -258,6 +258,7 @@ class FieldList(AggregateField):
     '''
 
     order = False
+    template = 'widgets/fieldlist'
     render_type = 'default'
 
     def __init__(self, name, conv=convs.List, field=Field(None),

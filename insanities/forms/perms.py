@@ -23,6 +23,7 @@ property:
 
 DEFAULT_PERMISSIONS = set('rwc')
 
+
 class BasePerm(object):
     """
     Permission getters base class.
@@ -100,7 +101,3 @@ class SimplePerm(FieldPerm):
         
     def check(self, field):
         return self.permissions
-
-
-'''
-'''
