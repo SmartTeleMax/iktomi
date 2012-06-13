@@ -175,7 +175,9 @@ class FileFieldSetConv(convs.Converter):
                 logger.warning('Missing temp_name for FileField in mode "temp"')
                 raise convs.ValidationError(self.hacking)
 
-            temp_file = self.file_cls(temp_name=temp_name, original_name=original_name)
+            temp_file = self.file_cls(filename=temp_name,
+                                      original_name=original_name,
+                                      form_field=self.field)
             if file:
                 temp_file.delete()
             else:
