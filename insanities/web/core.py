@@ -77,7 +77,7 @@ class WebHandler(object):
         def wsgi(environ, start_response):
             env = VersionedStorage()
             env.request = Request(environ, charset='utf-8')
-            env.root = root
+            env.root = root.bind_to_request(env.request)
             env._route_state = RouteState(env.request)
             data = VersionedStorage()
             try:
