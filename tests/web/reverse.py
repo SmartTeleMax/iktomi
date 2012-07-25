@@ -3,8 +3,8 @@
 __all__ = ['ReverseTests', 'LocationsTests']
 
 import unittest
+from webob import Response
 from insanities import web
-from insanities.utils.storage import VersionedStorage
 from insanities.web.url_templates import UrlTemplate
 from insanities.web.reverse import Location, UrlBuildingError
 
@@ -240,3 +240,33 @@ class ReverseTests(unittest.TestCase):
 
         # Exceptional behavior
         self.assertRaises(UrlBuildingError, lambda: r.build_url('news'))
+
+    def test_external_urls(self):
+        def config(env, data, nxt):
+            env.root = root.bind_to_request(env.request)
+            return nxt(env, data)
+
+        def host1(env, data, nxt):
+            self.assertEqual(env.root.host1.as_url.with_host(), 'http://host1.example.com/url')
+            self.assertEqual(env.root.host2.as_url, 'http://host2.example.com/url')
+            self.assertEqual(env.root.host1.as_url, '/url')
+            self.host1_called = True
+            return Response()
+
+        def host2(env, data, nxt):
+            self.assertEqual(env.root.host2.as_url.with_host(), 'https://host2.example.com/url')
+            self.assertEqual(env.root.host1.as_url, 'https://host1.example.com/url')
+            self.assertEqual(env.root.host2.as_url, '/url')
+            self.host2_called = True
+            return Response()
+
+        app = web.handler(config) | web.subdomain('example.com') | web.cases (
+            web.subdomain('host1') | web.match('/url', 'host1') | host1,
+            web.subdomain('host2') | web.match('/url', 'host2') | host2,
+        )
+        root = web.Reverse.from_handler(app)
+
+        assert web.ask(app, 'http://host1.example.com/url')
+        assert web.ask(app, 'https://host2.example.com/url')
+        assert self.host1_called and self.host2_called
+        

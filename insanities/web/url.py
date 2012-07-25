@@ -74,7 +74,7 @@ class URL(str):
             query.add(k, v)
         return self._copy(query=query)
 
-    def show_host(self):
+    def with_host(self):
         return self._copy(show_host=True)
 
     def qs_delete(self, key):

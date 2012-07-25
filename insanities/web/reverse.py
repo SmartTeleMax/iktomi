@@ -137,12 +137,21 @@ class Reverse(object):
                 raise UrlBuildingError('Need arguments to be build')
         else:
             raise UrlBuildingError('Not an endpoint')
-
+        
         if self._bound_request:
+            bound_domain, bound_port = self._bound_request.host.split(':')
+            scheme_port = {'http': '80',
+                           'https': '443'}.get(self._bound_request.scheme, '80')
+            if ':' in host:
+                domain, port = host.split(':')
+            else:
+                domain = host
+                port = scheme_port
+
             return URL(path, host=host,
-                       port=self._bound_request.port,
-                       schema=self.bound_request.schema,
-                       show_host=host and host != self._bound_request.host)
+                       port=port if port != scheme_port else None,
+                       schema=self._bound_request.scheme,
+                       show_host=host and (domain != bound_domain or port != bound_port))
         return URL(path, host=host, show_host=True)
 
     @classmethod
