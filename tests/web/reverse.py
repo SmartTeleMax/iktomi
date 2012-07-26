@@ -242,6 +242,7 @@ class ReverseTests(unittest.TestCase):
         self.assertRaises(UrlBuildingError, lambda: r.build_url('news'))
 
     def test_external_urls(self):
+        'External URL reverse'
         def config(env, data, nxt):
             env.root = root.bind_to_request(env.request)
             return nxt(env, data)
@@ -269,4 +270,35 @@ class ReverseTests(unittest.TestCase):
         assert web.ask(app, 'http://host1.example.com/url')
         assert web.ask(app, 'https://host2.example.com/url')
         assert self.host1_called and self.host2_called
+
+    def test_external_urls_no_subdomain(self):
+        'External URL reverse with no subdomains provided in location'
+        def config(env, data, nxt):
+            env.root = root.bind_to_request(env.request)
+            return nxt(env, data)
+
+        called_urls = []
+
+        def get_handler(num, result):
+            def handler(env, data, nxt):
+                self.assertEqual(env.root.url1.as_url.with_host(), result)
+                called_urls.append(num)
+                return Response()
+            return handler
+
+        url1 = get_handler(1, 'http://example.com/url')
+        url2 = get_handler(2, 'http://example.com:8000/url')
+        url3 = get_handler(3, 'https://example.com:80/url')
+
+        app = web.handler(config) | web.cases(
+                web.match('/url', 'url1') | url1,
+                web.match('/url2', 'url2') | url2,
+                web.match('/url3', 'url3') | url3,
+                )
+        root = web.Reverse.from_handler(app)
+
+        assert web.ask(app, 'http://example.com/url')
+        assert web.ask(app, 'http://example.com:8000/url2')
+        assert web.ask(app, 'https://example.com:80/url3')
+        assert called_urls == [1,2,3]
         

@@ -137,22 +137,26 @@ class Reverse(object):
                 raise UrlBuildingError('Need arguments to be build')
         else:
             raise UrlBuildingError('Not an endpoint')
-        
+
+        # XXX there is a little mess with `domain` and `host` terms
+        if ':' in host:
+            domain, port = host.split(':')
+        else:
+            domain = host
+            port = None
+
         if self._bound_request:
             bound_domain, bound_port = self._bound_request.host.split(':')
             scheme_port = {'http': '80',
                            'https': '443'}.get(self._bound_request.scheme, '80')
-            if ':' in host:
-                domain, port = host.split(':')
-            else:
-                domain = host
-                port = scheme_port
+            port = port or bound_port
 
-            return URL(path, host=host,
+            return URL(path, host=domain or bound_domain,
                        port=port if port != scheme_port else None,
                        schema=self._bound_request.scheme,
-                       show_host=host and (domain != bound_domain or port != bound_port))
-        return URL(path, host=host, show_host=True)
+                       show_host=host and (domain != bound_domain \
+                                           or port != bound_port))
+        return URL(path, host=domain, port=port, show_host=True)
 
     @classmethod
     def from_handler(cls, handler, env=None):
