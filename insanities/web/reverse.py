@@ -44,7 +44,7 @@ class Location(object):
 
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, root=False):
+                 need_arguments=False, root=False, bound_request=None):
         # XXX document, what is scope and what is location!
         self._location = location
         self._scope = scope
@@ -55,6 +55,7 @@ class Reverse(object):
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
         self._root = root
+        self._bound_request = bound_request
 
     def __call__(self, **kwargs):
         if self._ready:
@@ -68,8 +69,17 @@ class Reverse(object):
                 location = self._scope[''][0]
                 host += location.build_subdomians()
                 path += location.build_path(**kwargs)
-            return self.__class__(self._scope, self._location, path=path, host=host, ready=True)
+            return self.__class__(self._scope, self._location, path=path, host=host,
+                                  bound_request=self._bound_request, ready=True)
         raise UrlBuildingError('Not an endpoint')
+
+    def bind_to_request(self, bound_request):
+        return self.__class__(self._scope, self._location,
+                              path=self._path, host=self._host,
+                              ready=self._ready,
+                              need_arguments=self._need_arguments,
+                              root=self._root,
+                              bound_request=bound_request)
 
     @cached_property
     def url_arguments(self):
@@ -92,7 +102,9 @@ class Reverse(object):
             if ready:
                 path += location.build_path()
                 host += location.build_subdomians()
-            return self.__class__(scope, location, path, host, ready, need_arguments=location.need_arguments)
+            return self.__class__(scope, location, path, host, ready,
+                                  bound_request=self._bound_request,
+                                  need_arguments=location.need_arguments)
         raise AttributeError(name)
 
     def build_url(self, _name, **kwargs):
@@ -115,14 +127,36 @@ class Reverse(object):
     @property
     def as_url(self):
         if self._ready:
-            return URL(self._path, host=self._host)
+            path, host = self._path, self._host
         elif self._is_endpoint and self._root:
             location, scope = self._scope['']
             if not location.need_arguments:
                 path = location.build_path()
                 host = location.build_subdomians()
-                return URL(path, host=host)
-        raise UrlBuildingError('Not an endpoint or need arguments to be build')
+            else:
+                raise UrlBuildingError('Need arguments to be build')
+        else:
+            raise UrlBuildingError('Not an endpoint')
+
+        # XXX there is a little mess with `domain` and `host` terms
+        if ':' in host:
+            domain, port = host.split(':')
+        else:
+            domain = host
+            port = None
+
+        if self._bound_request:
+            bound_domain, bound_port = self._bound_request.host.split(':')
+            scheme_port = {'http': '80',
+                           'https': '443'}.get(self._bound_request.scheme, '80')
+            port = port or bound_port
+
+            return URL(path, host=domain or bound_domain,
+                       port=port if port != scheme_port else None,
+                       schema=self._bound_request.scheme,
+                       show_host=host and (domain != bound_domain \
+                                           or port != bound_port))
+        return URL(path, host=domain, port=port, show_host=True)
 
     @classmethod
     def from_handler(cls, handler, env=None):

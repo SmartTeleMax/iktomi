@@ -22,7 +22,7 @@ def construct_url(path, query, host, port, schema):
 
 
 class URL(str):
-    def __new__(cls, path, query=None, host=None, port=None, schema=None):
+    def __new__(cls, path, query=None, host=None, port=None, schema=None, show_host=True):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
@@ -31,18 +31,20 @@ class URL(str):
         host = host or ''
         port = port or ''
         schema = schema or 'http'
-        self = str.__new__(cls, construct_url(path, query, host, port,schema))
+        self = str.__new__(cls, construct_url(path, query, host if show_host else '', port,schema))
         self.path = path
         self.query = query
         self.host = host
         self.port = port
         self.schema = schema
+        self.show_host = show_host
         return self
 
     def _copy(self, **kwargs):
         path = kwargs.pop('path', self.path)
         kw = dict(query=self.query, host=self.host, 
-                  port=self.port, schema=self.schema)
+                  port=self.port, schema=self.schema,
+                  show_host=self.show_host)
         kw.update(kwargs)
         return self.__class__(path, **kw)
 
@@ -71,6 +73,9 @@ class URL(str):
         for k, v in kwargs.items():
             query.add(k, v)
         return self._copy(query=query)
+
+    def with_host(self):
+        return self._copy(show_host=True)
 
     def qs_delete(self, key):
         query = self.query.copy()
