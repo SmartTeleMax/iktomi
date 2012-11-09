@@ -149,6 +149,12 @@ class Prefix(unittest.TestCase):
         self.assertEqual(web.ask(app, '/docs/list/something'), None)
         self.assertEqual(web.ask(app, '/docs/list/other-thing'), None)
 
+    def test_namespace_with_dot(self):
+        app = web.cases(
+                web.namespace("docs.news") | web.match('/item', 'item')
+                )
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.docs.news.item.as_url, '/item')
 
     def test_unicode(self):
         '''Routing rules with unicode'''
