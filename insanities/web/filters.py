@@ -177,6 +177,10 @@ class namespace(WebHandler):
         self.handle = namespace
 
     def _locations(self):
-        return {self.namespace: (Location(), super(namespace, self)._locations())}
+        namespaces = self.namespace.split('.')
+        locations = super(namespace, self)._locations()
+        for ns in namespaces[::-1]:
+            locations = {ns: (Location(), locations)}
+        return locations
 
 

@@ -151,10 +151,10 @@ class Prefix(unittest.TestCase):
 
     def test_namespace_with_dot(self):
         app = web.cases(
-                web.namespace("docs.news") | web.match('/item', 'item')
+                web.namespace("english.docs.news") | web.match('/item', 'item'),
                 )
         r = web.Reverse.from_handler(app)
-        self.assertEqual(r.docs.news.item.as_url, '/item')
+        self.assertEqual(r.english.docs.news.item.as_url, '/item')
 
     def test_unicode(self):
         '''Routing rules with unicode'''
