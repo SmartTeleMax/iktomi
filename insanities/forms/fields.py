@@ -195,10 +195,11 @@ class FieldSet(AggregateField):
     '''
     template = 'widgets/fieldset'
     render_type = 'default'
+    conv = convs.Converter
 
-    def __init__(self, name, conv=convs.Converter, fields=[], **kwargs):
+    def __init__(self, name, conv=None, fields=[], **kwargs):
         if kwargs.get('parent'):
-            conv = conv(field=self)
+            conv = (conv or self.conv)(field=self)
             fields = [field(parent=self) for field in fields]
         kwargs.update(dict(
             name=name,
@@ -260,11 +261,12 @@ class FieldList(AggregateField):
     order = False
     template = 'widgets/fieldlist'
     render_type = 'default'
+    conv = convs.List
 
-    def __init__(self, name, conv=convs.List, field=Field(None),
+    def __init__(self, name, conv=None, field=Field(None),
                  parent=None, **kwargs):
         if parent:
-            conv = conv(field=self)
+            conv = (conv or self.conv)(field=self)
             field = field(parent=self)
         kwargs.update(dict(
             parent=parent,
@@ -322,6 +324,8 @@ class FieldList(AggregateField):
             subfield = self.field(name=index)
             subfield.set_raw_value(subfield.from_python(subvalue))
             indeces.append(index)
+        if self.indeces_input_name in self.form.raw_data:
+            del self.form.raw_data[self.indeces_input_name]
         for index in indeces:
             self.form.raw_data.add(self.indeces_input_name, index)
 
