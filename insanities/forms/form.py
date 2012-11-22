@@ -123,3 +123,27 @@ class Form(object):
                     return field.get_field(names[1])
                 return field
         return None
+
+    def get_data(self, compact=True):
+        '''
+        Returns data representing current state of the form. While
+        Form.raw_data may contain alien fields and invalid data, this method
+        returns only valid fields that belong to this form only. It's designed
+        to pass somewhere current state of the form (as query string or by
+        other means).
+        '''
+        # Dirty hack due to lame (more convenient in cost of flexibility)
+        # interface of Field.set_raw_value()
+        raw_data, self.raw_data = self.raw_data, MultiDict()
+        for field in self.fields:
+            raw_value = field.from_python(self.python_data[field.name])
+            field.set_raw_value(raw_value)
+        data, self.raw_data = self.raw_data, raw_data
+        if compact:
+            compact_data = MultiDict()
+            for key in data:
+                values = filter(None, data.getall(key))
+                for value in values:
+                    compact_data.add(key, value)
+            data = compact_data
+        return data
