@@ -58,9 +58,12 @@ class String(Converter):
 
     name='string'
 
+    min = 1
+    max = None
+
     def __init__(self, min=None, max=None):
-        self.min = min
-        self.max = max
+        self.min = min if min is not None else self.min
+        self.max = max or self.max
 
     def to_python(self, value, env=None):
         self.check_len(value)
@@ -71,7 +74,7 @@ class String(Converter):
 
     def check_len(self, value):
         length = len(value)
-        if self.min and length < self.min or \
+        if length < self.min or \
            self.max and length > self.max:
             raise ConvertError(self.name, value)
 
