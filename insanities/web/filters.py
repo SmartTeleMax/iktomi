@@ -27,14 +27,16 @@ class match(WebHandler):
         self.url = url
         self.url_name = name
         self.builder = UrlTemplate(url, converters=convs)
-        def match(env, data, next_handler):
-            matched, kwargs = self.builder.match(env._route_state.path, env=env)
-            if matched:
-                env.current_url_name = self.url_name
-                update_data(data, kwargs)
-                return next_handler(env, data)
-            return None
-        self.handle = match
+
+
+    def match(self, env, data, next_handler):
+        matched, kwargs = self.builder.match(env._route_state.path, env=env)
+        if matched:
+            env.current_url_name = self.url_name
+            update_data(data, kwargs)
+            return next_handler(env, data)
+        return None
+    handle = match # for beutiful tracebacks
 
     def _locations(self):
         return {self.url_name: (Location(self.builder), {})}
@@ -47,11 +49,12 @@ class match(WebHandler):
 class method(WebHandler):
     def __init__(self, *names):
         self._names = [name.upper() for name in names]
-        def method(env, data, next_handler):
-            if env.request.method in self._names:
-                return next_handler(env, data)
-            return None
-        self.handle = method
+
+    def method(self, env, data, next_handler):
+        if env.request.method in self._names:
+            return next_handler(env, data)
+        return None
+    handle = method
 
     def __repr__(self):
         return 'method(*%r)' % self._names
@@ -113,17 +116,18 @@ class prefix(WebHandler):
     def __init__(self, _prefix, convs=None):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
-        def prefix(env, data, next_handler):
-            matched, kwargs = self.builder.match(env._route_state.path, env=env)
-            if matched:
-                update_data(data, kwargs)
-                env._route_state.add_prefix(self.builder(**kwargs))
-                result = next_handler(env, data)
-                if result is not None:
-                    return result
-                env._route_state.pop_prefix()
-            return None
-        self.handle = prefix
+
+    def prefix(self, env, data, next_handler):
+        matched, kwargs = self.builder.match(env._route_state.path, env=env)
+        if matched:
+            update_data(data, kwargs)
+            env._route_state.add_prefix(self.builder(**kwargs))
+            result = next_handler(env, data)
+            if result is not None:
+                return result
+            env._route_state.pop_prefix()
+        return None
+    handle = prefix
 
     def _locations(self):
         locations = super(prefix, self)._locations()
@@ -139,20 +143,20 @@ class subdomain(WebHandler):
     def __init__(self, _subdomain):
         self.subdomain = unicode(_subdomain)
 
-        def subdomain(env, data, next_handler):
-            subdomain = env._route_state.subdomain
-            #XXX: here we can get 'idna' encoded sequence, that is the bug
-            if self.subdomain:
-                slen = len(self.subdomain)
-                delimiter = subdomain[-slen-1:-slen]
-                matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
-            else:
-                matches = not subdomain
-            if matches:
-                env._route_state.add_subdomain(self.subdomain)
-                return next_handler(env, data)
-            return None
-        self.handle = subdomain
+    def subdomain(self, env, data, next_handler):
+        subdomain = env._route_state.subdomain
+        #XXX: here we can get 'idna' encoded sequence, that is the bug
+        if self.subdomain:
+            slen = len(self.subdomain)
+            delimiter = subdomain[-slen-1:-slen]
+            matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
+        else:
+            matches = not subdomain
+        if matches:
+            env._route_state.add_subdomain(self.subdomain)
+            return next_handler(env, data)
+        return None
+    handle = subdomain
 
     def _locations(self):
         locations = super(subdomain, self)._locations()
@@ -168,13 +172,14 @@ class namespace(WebHandler):
     def __init__(self, ns):
         # namespace is str
         self.namespace = ns
-        def namespace(env, data, next_handler):
-            if 'namespace' in env:
-                env.namespace += '.' + self.namespace
-            else:
-                env.namespace = self.namespace
-            return next_handler(env, data)
-        self.handle = namespace
+
+    def namespace(self, env, data, next_handler):
+        if 'namespace' in env:
+            env.namespace += '.' + self.namespace
+        else:
+            env.namespace = self.namespace
+        return next_handler(env, data)
+    handle = namespace
 
     def _locations(self):
         namespaces = self.namespace.split('.')
