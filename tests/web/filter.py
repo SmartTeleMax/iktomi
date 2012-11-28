@@ -64,6 +64,20 @@ class UrlTemplateTests(unittest.TestCase):
         ut = UrlTemplate('<message>')
         self.assertEqual(ut(message='hello'), 'hello')
 
+    def test_redefine_converters(self):
+        from insanities.web.url_templates import Integer
+
+        class DoubleInt(Integer):
+            def to_python(self, value, env=None):
+                return Integer.to_python(self, value, env) * 2
+            def to_url(self, value):
+                return str(value / 2)
+
+        ut = UrlTemplate('/simple/<int:id>',
+                         converters=(DoubleInt,))
+        self.assertEqual(ut(id=2), '/simple/1')
+        self.assertEqual(ut.match('/simple/1'), (True, {'id': 2}))
+
     def test_var_name_with_underscore(self):
         ut = UrlTemplate('<message_uid>')
         self.assertEqual(ut(message_uid='uid'), 'uid')

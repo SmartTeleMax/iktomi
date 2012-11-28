@@ -160,15 +160,12 @@ def construct_re(url_template, match_whole_str=False, converters=None,
               dict {url param name: [converter name, converter args (str)]},
               list of (variable name, converter name, converter args name))
     '''
-    converters = converters or {}
-    converters.update(convs_dict)
     # needed for reverse url building (or not needed?)
     builder_params = []
     # found url params and their converters
     url_params = {}
     result = r'^'
     parts = _split_pattern.split(url_template)
-    total_parts = len(parts)
     for i, part in enumerate(parts):
         is_url_pattern = _static_url_pattern.match(part)
         if is_url_pattern:

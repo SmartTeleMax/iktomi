@@ -23,7 +23,7 @@ def http_error(_code, **kwargs):
 def to_json(data):
     return Response(json.dumps(data))
 
-def Rule(path, handler, method=None, name=None):
+def Rule(path, handler, method=None, name=None, convs=None):
     # werkzeug-style Rule
     if name is None:
         name = handler.func_name
