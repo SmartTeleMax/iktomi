@@ -302,3 +302,25 @@ class ReverseTests(unittest.TestCase):
         assert web.ask(app, 'https://example.com:80/url3')
         assert called_urls == [1,2,3]
         
+    def test_url_building_errors(self):
+        'UrlBuildingError'
+        app = web.namespace('news') | web.cases(
+                web.match('/', 'index'),
+                web.match('/<int:id>', 'item'),
+                )
+
+        r = web.Reverse.from_handler(app)
+        self.assertRaises(UrlBuildingError, r.build_url, '')
+        self.assertRaises(UrlBuildingError, lambda: r.as_url)
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'main')
+        self.assertRaises(UrlBuildingError, lambda: r.main)
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.item')
+        self.assertRaises(UrlBuildingError, lambda: r.news.item.as_url)
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.item', section='x')
+        self.assertRaises(UrlBuildingError, lambda: r.news.item(section='x'))
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news')
+        self.assertRaises(UrlBuildingError, lambda: r.news.as_url)

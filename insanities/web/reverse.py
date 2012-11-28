@@ -44,7 +44,7 @@ class Location(object):
 
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, root=False, bound_request=None):
+                 need_arguments=False, is_root=False, bound_request=None):
         # XXX document, what is scope and what is location!
         self._location = location
         self._scope = scope
@@ -54,7 +54,7 @@ class Reverse(object):
         self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
-        self._root = root
+        self._is_root = is_root # XXX is_root
         self._bound_request = bound_request
 
     def __call__(self, **kwargs):
@@ -78,7 +78,7 @@ class Reverse(object):
                               path=self._path, host=self._host,
                               ready=self._ready,
                               need_arguments=self._need_arguments,
-                              root=self._root,
+                              is_root=self._is_root,
                               bound_request=bound_request)
 
     @cached_property
@@ -105,7 +105,8 @@ class Reverse(object):
             return self.__class__(scope, location, path, host, ready,
                                   bound_request=self._bound_request,
                                   need_arguments=location.need_arguments)
-        raise AttributeError(name)
+        raise UrlBuildingError('Namespace or endpoint %s does not exist'
+                               % name)
 
     def build_url(self, _name, **kwargs):
         subreverse = self
@@ -126,9 +127,12 @@ class Reverse(object):
 
     @property
     def as_url(self):
+        if not self._is_endpoint:
+            raise UrlBuildingError('Not an endpoint')
+
         if self._ready:
             path, host = self._path, self._host
-        elif self._is_endpoint and self._root:
+        elif self._is_root:
             location, scope = self._scope['']
             if not location.need_arguments:
                 path = location.build_path()
@@ -161,4 +165,4 @@ class Reverse(object):
     @classmethod
     def from_handler(cls, handler, env=None):
         from .core import locations
-        return cls(locations(handler), root=True)
+        return cls(locations(handler), is_root=True)
