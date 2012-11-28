@@ -57,11 +57,22 @@ class String(Converter):
 
     name='string'
 
+    def __init__(self, min=None, max=None):
+        self.min = min
+        self.max = max
+
     def to_python(self, value, **kwargs):
+        self.check_len(value)
         return value
 
     def to_url(self, value):
         return unicode(value)
+
+    def check_len(self, value):
+        length = len(value)
+        if self.min and length < self.min or \
+           self.max and length > self.max:
+            raise ConvertError(self.name, value)
 
 
 class Integer(Converter):

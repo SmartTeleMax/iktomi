@@ -23,13 +23,16 @@ class IntConverter(unittest.TestCase):
 
 class StringConverter(unittest.TestCase):
 
+    def test_url_template(self):
+        ut = UrlTemplate('/<string(min=3, max=6):message>')
+
+        self.assertEqual(ut.match('/si'), (False, {}))
+        self.assertEqual(ut.match('/siga'), (True, {'message': 'siga'}))
+        self.assertEqual(ut.match('/sigadzuk'), (False, {}))
+
+
     def test_to_python(self):
-        conv = String()
-        value = conv.to_python('%60%25%27')
-        #XXX: new converters interface
-        #self.assertEqual(value, '`%\'')
+        self.assertEqual(String().to_python(u'a'), u'a')
 
     def test_to_url(self):
-        conv = String()
-        value = conv.to_url('`%\'')
-        #self.assertEqual(value, '%60%25%27')
+        self.assertEqual(String().to_url(u'a'), u'a')
