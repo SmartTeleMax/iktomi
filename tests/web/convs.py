@@ -2,6 +2,7 @@
 
 import unittest
 from insanities.web.url_templates import *
+from datetime import date
 
 
 class IntConverter(unittest.TestCase):
@@ -23,7 +24,7 @@ class IntConverter(unittest.TestCase):
 
 class StringConverter(unittest.TestCase):
 
-    def test_url_template(self):
+    def test_min_max(self):
         ut = UrlTemplate('/<string(min=3, max=6):message>')
 
         self.assertEqual(ut.match('/si'), (False, {}))
@@ -36,3 +37,21 @@ class StringConverter(unittest.TestCase):
 
     def test_to_url(self):
         self.assertEqual(String().to_url(u'a'), u'a')
+
+
+class DateConverter(unittest.TestCase):
+
+    def test_to_python(self):
+        self.assertEqual(Date().to_python('2012-10-24'),
+                         date(year=2012, month=10, day=24))
+
+        self.assertEqual(Date(format="%Y%m%d").to_python('20121024'),
+                         date(year=2012, month=10, day=24))
+
+        self.assertRaises(ConvertError,
+                          Date().to_python, '20121024')
+
+    def test_to_url(self):
+        self.assertEqual(Date().to_url(
+                             date(year=2012, month=10, day=24)),
+                         u'2012-10-24')

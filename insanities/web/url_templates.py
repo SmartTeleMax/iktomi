@@ -4,6 +4,7 @@ import urllib
 import re
 import logging
 from inspect import isclass
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class Converter(object):
     #: A key significating what converter is used in particular url template
     name=None
 
-    def to_python(self, value, **kwargs):
+    def to_python(self, value, env=None):
         '''
         Accepts unicode url part and returns python object.
         Should be implemented in subclasses
@@ -61,7 +62,7 @@ class String(Converter):
         self.min = min
         self.max = max
 
-    def to_python(self, value, **kwargs):
+    def to_python(self, value, env=None):
         self.check_len(value)
         return value
 
@@ -84,7 +85,7 @@ class Integer(Converter):
 
     name='int'
 
-    def to_python(self, value, **kwargs):
+    def to_python(self, value, env=None):
         try:
             value = int(value)
         except ValueError:
@@ -101,13 +102,32 @@ class Any(Converter):
     def __init__(self, *values):
         self.values = values
 
-    def to_python(self, value, **kwargs):
+    def to_python(self, value, env=None):
         if value in self.values:
             return value
         raise ConvertError(self.name, value)
 
     def to_url(self, value):
         return unicode(value)
+
+
+class Date(Converter):\
+
+    name="date"
+    format = "%Y-%m-%d"
+
+    def __init__(self, format=None):
+        if format is not None:
+            self.format = format
+
+    def to_python(self, value, env=None):
+        try:
+            return datetime.strptime(value, self.format).date()
+        except ValueError:
+            raise ConvertError(self.name, value)
+
+    def to_url(self, value):
+        return value.strftime(self.format)
 
 
 convs_dict = dict((item.name or item.__name__, item) \
