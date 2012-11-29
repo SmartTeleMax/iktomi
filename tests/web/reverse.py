@@ -15,13 +15,6 @@ class LocationsTests(unittest.TestCase):
         'Locations of web.match'
         self.assert_(web.locations(web.match('/', 'name')).keys(), ['name'])
 
-    def test_match_dublication(self):
-        'Raise error on same url names'
-        self.assertRaises(ValueError, lambda: web.locations(
-                web.cases(
-                    web.match('/', 'index'),
-                    web.match('/index', 'index'))))
-
     def test_cases(self):
         'Locations of web.cases'
         chain = web.cases(
@@ -41,8 +34,8 @@ class LocationsTests(unittest.TestCase):
         'Locations of web.match with prefix'
         chain = web.prefix('/news') | web.match('/', 'index')
         self.assert_(web.locations(chain).keys(), ['index'])
-        self.assert_(web.locations(chain)['index'][0].builders)
-        self.assertEqual(len(web.locations(chain)['index'][0].builders), 2)
+        self.assert_(web.locations(chain)['index'][0].locations[0].builders)
+        self.assertEqual(len(web.locations(chain)['index'][0].locations[0].builders), 2)
 
     def test_prefix_and_cases(self):
         'Locations of web.cases with prefix'
@@ -51,8 +44,8 @@ class LocationsTests(unittest.TestCase):
                 web.match('/docs', 'docs'))
         for k in ('index', 'docs'):
             self.assert_(web.locations(chain).keys(), [k])
-            self.assert_(web.locations(chain)[k][0].builders)
-            self.assertEqual(len(web.locations(chain)[k][0].builders), 2)
+            self.assert_(web.locations(chain)[k][0].locations[0].builders)
+            self.assertEqual(len(web.locations(chain)[k][0].locations[0].builders), 2)
 
     def test_namespace(self):
         'Locations namespace'
@@ -99,8 +92,8 @@ class LocationsTests(unittest.TestCase):
         'Locations and subdomains'
         chain = web.subdomain('news') | web.match('/', 'index')
         self.assert_(web.locations(chain).keys(), ['index'])
-        self.assert_(web.locations(chain)['index'][0].subdomains)
-        self.assertEqual(web.locations(chain)['index'][0].subdomains, 
+        self.assert_(web.locations(chain)['index'][0].locations[0].subdomains)
+        self.assertEqual(web.locations(chain)['index'][0].locations[0].subdomains, 
                          ['news'])
 
     def test_subdomains_and_cases(self):
@@ -110,9 +103,24 @@ class LocationsTests(unittest.TestCase):
                 web.match('/docs', 'docs'))
         for k in ('index', 'docs'):
             self.assert_(web.locations(chain).keys(), [k])
-            self.assert_(web.locations(chain)[k][0].subdomains)
-            self.assertEqual(web.locations(chain)[k][0].subdomains,
+            self.assert_(web.locations(chain)[k][0].locations[0].subdomains)
+            self.assertEqual(web.locations(chain)[k][0].locations[0].subdomains,
                              ['news'])
+
+    def test_samename_locations(self):
+        'Locations of the same name'
+        chain = web.subdomain('news') | web.prefix('/w') | web.cases(
+                web.match('/', 'index'),
+                web.match('/page/<int:page>', 'index'))
+
+        locations = web.locations(chain)['index'][0].locations
+
+        self.assertEqual(len(locations), 2)
+        self.assertEqual(len(locations[0].builders), 2)
+        self.assertEqual(len(locations[1].builders), 2)
+        self.assertEqual(len(locations[0].subdomains), 1)
+        self.assertEqual(len(locations[1].subdomains), 1)
+
 
 
 class ReverseTests(unittest.TestCase):
@@ -216,7 +224,6 @@ class ReverseTests(unittest.TestCase):
 
         # Exceptional behavior
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
-        # XXX this one raises KeyError, not UrlBuildError
         self.assertRaises(UrlBuildingError, lambda: r.news(foo='top').as_url)
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item.as_url)
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item(id=1).docs())
@@ -324,3 +331,21 @@ class ReverseTests(unittest.TestCase):
 
         self.assertRaises(UrlBuildingError, r.build_url, 'news')
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
+
+    def test_samename_reverse(self):
+        'Samename reverse'
+        app = web.prefix('/w') | web.cases(
+                web.match('/', 'index'),
+                web.match('/docs', 'docs'),
+                web.match('/page/<int:page>', 'index'))
+        r = web.Reverse.from_handler(app)
+
+        # Normal behavior
+        self.assertEqual(r.build_url('index'), '/w/')
+        print '----------------'
+        self.assertEqual(r.build_url('index', page=2), '/w/page/2')
+        self.assertEqual(r.build_url('docs'), '/w/docs')
+
+        # Exceptional behavior
+        self.assertRaises(UrlBuildingError, lambda: r.build_url('index', section='top'))
+

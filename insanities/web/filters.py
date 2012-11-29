@@ -132,7 +132,8 @@ class prefix(WebHandler):
     def _locations(self):
         locations = super(prefix, self)._locations()
         for location, scope in locations.values():
-            location.builders.insert(0, self.builder)
+            for l in location.locations:
+                l.builders.insert(0, self.builder)
         return locations
 
     def __repr__(self):
@@ -161,7 +162,8 @@ class subdomain(WebHandler):
     def _locations(self):
         locations = super(subdomain, self)._locations()
         for location, scope in locations.values():
-            location.subdomains.append(self.subdomain)
+            for b in location.locations:
+                b.subdomains.append(self.subdomain)
         return locations
 
     def __repr__(self):
