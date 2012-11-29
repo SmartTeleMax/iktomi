@@ -3,7 +3,8 @@
 import unittest
 from urllib import quote
 from insanities.web.reverse import URL
-from insanities.web.url_templates import UrlTemplate, Converter, ConvertError
+from insanities.web.url_templates import UrlTemplate
+from insanities.web.url_converters import Converter, ConvertError
 
 
 class URLTests(unittest.TestCase):

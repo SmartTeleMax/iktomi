@@ -2,6 +2,7 @@
 
 import unittest
 from insanities.web.url_templates import *
+from insanities.web.url_converters import *
 from datetime import date
 
 

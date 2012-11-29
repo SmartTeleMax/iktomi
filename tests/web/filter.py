@@ -65,7 +65,7 @@ class UrlTemplateTests(unittest.TestCase):
         self.assertEqual(ut(message='hello'), 'hello')
 
     def test_redefine_converters(self):
-        from insanities.web.url_templates import Integer
+        from insanities.web.url_converters import Integer
 
         class DoubleInt(Integer):
             def to_python(self, value, env=None):
