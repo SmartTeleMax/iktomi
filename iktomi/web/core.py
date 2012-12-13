@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def prepare_handler(handler):
     '''Wrapps functions, that they can be usual WebHandler's'''
-    if not isinstance(handler, WebHandler):
+    if type(handler) in (types.FunctionType, types.MethodType):
         handler = request_endpoint(handler)
     return handler
 
