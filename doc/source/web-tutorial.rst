@@ -12,7 +12,7 @@ Basic Practices
 Hello, World
 ^^^^^^^^^^^^
 
-Insanities routing engine produces WSGI application from a couple of own web handlers.
+Iktomi routing engine produces WSGI application from a couple of own web handlers.
 In most cases, web handler is represented by function.
 
 Here is the common interface of web handlers::
@@ -52,7 +52,7 @@ Basic Routing
 There is a couple of handlers to match different url parts or other request
 properties: `web.match`, `web.prefix`, `web.methods`, `web.subdomain`, etc.
 
-Insanities routing is based on `web.cases` and `web.match` class. Constructor 
+Iktomi routing is based on `web.cases` and `web.match` class. Constructor 
 of class accepts a couple of other handlers. When called the instance calls 
 each of handlers until it returns `webob.Response` object. 
 
@@ -95,13 +95,13 @@ If URL contains data that should be used in heandlers (object ids, slugs, ets),
 These handlers use common url parsing engine. They get parameters' values from url and
 put them to `data` object by `__setattr__`.
 
-Insanities provides some basic url converterss: `string` (default), `int`, `bool`, `any`. 
+Iktomi provides some basic url converterss: `string` (default), `int`, `bool`, `any`. 
 It also allows you to create and use own ones (see below).
 
 Nested handlers
 ^^^^^^^^^^^^^^^
 For more complex projects a simple combinations of `web.cases` and `web.match`
-does not satisfy. Insanities provides some handlers to create complex routing
+does not satisfy. Iktomi provides some handlers to create complex routing
 rules and allows to create your own handlers. And you can combine handlers as you want. 
 Here is an example::
 
@@ -120,7 +120,7 @@ Here is an example::
 
 Building URLs
 ^^^^^^^^^^^^^
-Insanities provides url building (or reversing) engine. 
+Iktomi provides url building (or reversing) engine. 
 
 URL reverse object is a callable that can be created for any handler::
 
@@ -132,7 +132,7 @@ And this function can be used anywhere::
 
 Controlling execution flow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Insanities allows to natively implement many use cases without any extra essences
+Iktomi allows to natively implement many use cases without any extra essences
 like Django-middlewares, etc.
 
 For example, to implement "middleware" you can do something like::
@@ -224,7 +224,7 @@ URL as human-readable unicode string::
 
 Throwing HTTPException
 ^^^^^^^^^^^^^^^^^^^^^^
-Insanities uses webob HTTP exceptions::
+Iktomi uses webob HTTP exceptions::
 
     from webob import exc
 
@@ -239,7 +239,7 @@ Advanced Practices
 Advanced routing tools
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Insanities provides some additional filters.
+Iktomi provides some additional filters.
 
 A **subdomain** filter allows to select requests with a given domain or subdomain::
 

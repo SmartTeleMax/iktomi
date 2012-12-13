@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
 """
-Insanities
-==========
-
-Insanities - a set of iktomi of several geeks to show ourselves our coolness.
+Iktomi. A compact web library including forms, routing and other useful features.
 """

@@ -1,10 +1,10 @@
-Insanities
+Iktomi
 ==========
 
-.. What is Insanities?
+.. What is Iktomi?
 .. ^^^^^^^^^^^^^^^^^^^
 
-Insanities is a python package providing some basic tools for creating web applications.
+Iktomi is a python package providing some basic tools for creating web applications.
 It contains two independent subpackages, you can use both, or just one of them:
 
 * **iktomi.web**, a flexible and extensible routing tool, suitable to dispatch HTTP
