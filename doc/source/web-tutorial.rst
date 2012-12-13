@@ -35,12 +35,12 @@ So, here is an example for very basic web handler::
         name = env.request.GET.get('name', 'world')
         return webob.Response('Hello, %s!' %name)
 
-This function can be converted to WebHandler object by `web.handler`
+This function can be converted to WebHandler object by `web.request_filter`
 function. And any handler can be converted to WSGI app::
 
     from iktomi import web
 
-    wsgi_app = web.handler(hello_world).as_wsgi()
+    wsgi_app = web.request_filter(hello_world).as_wsgi()
 
 Here it is! You can use the given object as common WSGI application, make server,
 for example, using `Flup`.
@@ -143,7 +143,7 @@ For example, to implement "middleware" you can do something like::
         do_something_else(result)
         return result
 
-    wrapped_app = web.handler(wrapper) | app
+    wrapped_app = web.request_filter(wrapper) | app
 
 It is transparent, obvious and native way. Also, it is possible to use try...except
 statements with next_handler::
@@ -180,7 +180,7 @@ For example::
         finally:
             env.db.close()
 
-    app = web.handler(environment) | app
+    app = web.request_filter(environment) | app
 
     url_for = web.Reverse(web.locations(app))
 
@@ -288,7 +288,7 @@ urls for static files::
         env.url_for_static = static.construct_reverse()
         ...
 
-    app = web.handler(environment) | web.cases(
+    app = web.request_filter(environment) | web.cases(
         static,
         ...
     )

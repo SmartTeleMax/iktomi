@@ -98,6 +98,7 @@ class CookieAuth(web.WebHandler):
 
             auth.login(template='login.html')
         '''
+        @web.request_filter
         def _login(env, data, next_handler):
             form = self._login_form(env)
             next = env.request.GET.get('next', '/')
@@ -125,6 +126,7 @@ class CookieAuth(web.WebHandler):
         session id provided or id is incorrect handler silently redirects to login
         url and does not throw any exception.
         '''
+        @web.request_filter
         def _logout(env, data, next_handler):
             if self._cookie_name in env.request.cookies:
                 response = self.logout_user(env.request)
@@ -135,12 +137,15 @@ class CookieAuth(web.WebHandler):
         return web.match('/logout', 'logout') | web.method('post') | _logout
 
 
-def auth_required(env, data, next_handler):
-    if 'user' in env and env.user is not None:
-        return next_handler(env, data)
-    response = web.Response(status=303)
-    response.headers['Location'] = str(env.root.login.as_url.qs_set(next=env.request.path_info))
-    return response
+def auth_required():
+    @web.request_filter
+    def _auth_required(env, data, next_handler):
+        if 'user' in env and env.user is not None:
+            return next_handler(env, data)
+        response = web.Response(status=303)
+        response.headers['Location'] = str(env.root.login.as_url.qs_set(next=env.request.path_info))
+        return response
+    return _auth_required
 
 
 class SqlaModelAuth(CookieAuth):

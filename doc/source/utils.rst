@@ -46,7 +46,7 @@ For correct form rendering, an env.template value should be defined::
         ...
         return next_handler(env, data)
 
-    app = web.handler(environment) | app   
+    app = web.request_filter(environment) | app   
 
 Utils
 -----

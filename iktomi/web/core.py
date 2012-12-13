@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'handler', 'locations']
+__all__ = ['WebHandler', 'cases', 'locations', 'request_endpoint', 'request_filter']
 
 import logging
 import types
 import httplib
-import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
-from ..utils.storage import VersionedStorage
+from iktomi.utils.storage import VersionedStorage
 
 from copy import copy
 
@@ -17,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 def prepare_handler(handler):
     '''Wrapps functions, that they can be usual WebHandler's'''
-    if type(handler) in (types.FunctionType, types.MethodType):
-        handler = wrap_function(handler)
+    if not isinstance(handler, WebHandler):
+        handler = request_endpoint(handler)
     return handler
 
 
@@ -64,7 +63,7 @@ class WebHandler(object):
     def get_next(self):
         if hasattr(self, '_next_handler'):
             return self._next_handler
-        #XXX: may be _FunctionWrapper?
+        #XXX: may be request_handler?
         return lambda e, d: None
 
     def copy(self):
@@ -136,21 +135,33 @@ class cases(WebHandler):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class _FunctionWrapper(WebHandler):
-    '''Wrapper for handler represented by function'''
+class request_endpoint(WebHandler):
+    '''
+    Wrapper for handler represented by function 
+    (2 args, new-style)
+    '''
+
+    def __init__(self, func):
+        self.handler = func
+
+    def handle(self, env, data, nxt):
+        return self.handler(env, data)
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.handle)
+
+
+class request_filter(WebHandler):
+    '''
+    Wrapper for handler represented by function 
+    (3 args, old-style)
+    '''
 
     def __init__(self, func):
         self.handle = func
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, self.handle.__name__)
-
-
-def wrap_function(func):
-    return functools.wraps(func)(_FunctionWrapper(func))
-
-
-handler = wrap_function
+        return '%s(%r)' % (self.__class__.__name__, self.handle)
 
 
 def locations(handler):

@@ -106,7 +106,7 @@ class Prefix(unittest.TestCase):
     def test_prefix_root(self):
         '''Prefix root'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             self.assertEqual(env._route_state.path, '/')
             return Response()
 
@@ -128,7 +128,7 @@ class Prefix(unittest.TestCase):
     def test_prefix_leaf(self):
         '''Simple prefix'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             self.assertEqual(env._route_state.path, '/item')
             return Response()
 
@@ -146,7 +146,7 @@ class Prefix(unittest.TestCase):
     def test_prefix_state(self):
         '''Prefix state correctness'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             return Response()
 
         app = web.cases(
@@ -175,7 +175,7 @@ class Prefix(unittest.TestCase):
         # XXX move to urltemplate and reverse tests?
         app = web.cases(
             web.prefix(u'/հայերեն') | web.cases(
-                web.match(u'/%', 'percent') | (lambda e,d,n: Response())
+                web.match(u'/%', 'percent') | (lambda e,d: Response())
             )
         )
         encoded = '/%D5%B0%D5%A1%D5%B5%D5%A5%D6%80%D5%A5%D5%B6/%25'
@@ -195,7 +195,7 @@ class Subdomain(unittest.TestCase):
     def test_subdomain(self):
         '''Subdomain filter'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             self.assertEqual(env.request.path, '/')
             return Response()
 
@@ -217,7 +217,7 @@ class Subdomain(unittest.TestCase):
 
     def test_unicode(self):
         '''IRI tests'''
-        app = web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site') | (lambda e,d,n: Response() )
+        app = web.subdomain(u'рф') | web.subdomain(u'сайт') | web.match('/', 'site') | (lambda e,d: Response() )
         encoded = 'http://xn--80aswg.xn--p1ai/'
         self.assertEqual(web.Reverse.from_handler(app).site.as_url.get_readable(), u'http://сайт.рф/')
         self.assertEqual(web.Reverse.from_handler(app).site.as_url, encoded)
@@ -229,7 +229,7 @@ class Match(unittest.TestCase):
     def test_simple_match(self):
         '''Check simple case of match'''
 
-        app = web.match('/first', 'first') | (lambda env, data, nx: Response())
+        app = web.match('/first', 'first') | (lambda e,d: Response())
 
         self.assertEqual(web.ask(app, '/first').status_int, 200)
         self.assertEqual(web.ask(app, '/second'), None)
@@ -237,7 +237,7 @@ class Match(unittest.TestCase):
     def test_int_converter(self):
         '''Check int converter'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             self.assertEqual(data.id, 42)
             return Response()
 
@@ -250,7 +250,7 @@ class Match(unittest.TestCase):
     def test_multiple_int_convs(self):
         '''Check multiple int converters'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             self.assertEqual(data.id, 42)
             self.assertEqual(data.param, 23)
             return Response()
@@ -264,7 +264,7 @@ class Match(unittest.TestCase):
     def test_not_found(self):
         '''Check int converter with handler which accepts params'''
 
-        def handler(env, data, nx):
+        def handler(env, data):
             return Response()
 
         app = web.cases(
@@ -287,7 +287,7 @@ class Match(unittest.TestCase):
         '''Test if the handler next to cases is called'''
 
         r = Response()
-        def handler(env, data, nx):
+        def handler(env, data):
             return r
 
         app = web.cases(

@@ -21,7 +21,7 @@ def environment(env, data, next_handler):
 
 
 
-app = web.handler(environment) | web.cases(
+app = web.request_filter(environment) | web.cases(
     static, media,
     match('/', 'files') | web.cases(
         # Playing REST ;)
