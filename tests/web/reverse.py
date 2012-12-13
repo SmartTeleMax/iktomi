@@ -4,9 +4,9 @@ __all__ = ['ReverseTests', 'LocationsTests']
 
 import unittest
 from webob import Response
-from insanities import web
-from insanities.web.url_templates import UrlTemplate
-from insanities.web.reverse import Location, UrlBuildingError
+from iktomi import web
+from iktomi.web.url_templates import UrlTemplate
+from iktomi.web.reverse import Location, UrlBuildingError
 
 
 class LocationsTests(unittest.TestCase):

@@ -2,7 +2,7 @@
 
 from sqlalchemy import orm, types, create_engine
 from sqlalchemy.orm.query import Query
-from insanities.utils import cached_property, import_string
+from iktomi.utils import cached_property, import_string
 
 
 class DBSession(orm.session.Session):

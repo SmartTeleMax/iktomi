@@ -5,7 +5,7 @@ virtualenv --no-site-packages venv
 echo Install PIP inside virtual environment
 ./venv/bin/easy_install pip
 
-echo Install insanities inside virtual environment
+echo Install iktomi inside virtual environment
 cd ../..
 ./examples/blogs/venv/bin/python setup.py develop
 cd ./examples/blogs/

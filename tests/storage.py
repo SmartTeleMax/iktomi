@@ -3,7 +3,7 @@
 __all__ = ['LocalMemStorageTest', 'MemcachedStorageTest']
 
 import unittest
-from insanities.storage import LocalMemStorage, MemcachedStorage
+from iktomi.storage import LocalMemStorage, MemcachedStorage
 
 
 class LocalMemStorageTest(unittest.TestCase):

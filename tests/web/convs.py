@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from insanities.web.url_templates import *
-from insanities.web.url_converters import *
+from iktomi.web.url_templates import *
+from iktomi.web.url_converters import *
 from datetime import date
 
 

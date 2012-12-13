@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from insanities.forms import *
+from iktomi.forms import *
 
 
 class MediaTests(unittest.TestCase):

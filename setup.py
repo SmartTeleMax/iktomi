@@ -3,18 +3,18 @@
 from distutils.core import setup
 
 setup(
-    name='insanities',
+    name='iktomi',
     version='0.3',
-    packages=['insanities', 'insanities.utils', 'insanities.forms',
-              'insanities.web', 'insanities.templates', 'insanities.db', 'insanities.cli',
-              'insanities.ext', 'insanities.templates.mint', 'insanities.templates.jinja2'],
+    packages=['iktomi', 'iktomi.utils', 'iktomi.forms',
+              'iktomi.web', 'iktomi.templates', 'iktomi.db', 'iktomi.cli',
+              'iktomi.ext', 'iktomi.templates.mint', 'iktomi.templates.jinja2'],
     package_dir={
-        'insanities.templates.jinja2':'insanities/templates/jinja2',
-        'insanities.templates.mint':'insanities/templates/mint',
+        'iktomi.templates.jinja2':'iktomi/templates/jinja2',
+        'iktomi.templates.mint':'iktomi/templates/mint',
     },
     package_data={
-        'insanities.templates.jinja2':['templates/*/*.html'],
-        'insanities.templates.mint':['templates/*/*.mint'],
+        'iktomi.templates.jinja2':['templates/*/*.html'],
+        'iktomi.templates.mint':['templates/*/*.mint'],
     },
     requires=[
         'webob (>1.1b1)',
@@ -23,9 +23,9 @@ setup(
     author_email='denis.otkidach@gmail.com',
     maintainer='Tim Perevezentsev',
     maintainer_email='riffm2005@gmail.com',
-    description='A set of insanities of several geeks to show ourselves our coolness.',
+    description='A set of iktomi of several geeks to show ourselves our coolness.',
     #long_description=open('README').read(),
-    url='http://github.com/riffm/insanities-testing/',
+    url='http://github.com/riffm/iktomi-testing/',
     license='MIT',
     keywords='web forms',
 )

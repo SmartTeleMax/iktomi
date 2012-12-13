@@ -16,7 +16,7 @@ def manage(commands, argv=None, delim=':'):
     Parses argv and runs neccessary command. Is to be used in manage.py file.
 
     Accept a dict with digest name as keys and instances of
-    :class:`Cli<insanities.management.commands.Cli>`
+    :class:`Cli<iktomi.management.commands.Cli>`
     objects as values.
 
     The format of command is the following::
@@ -25,7 +25,7 @@ def manage(commands, argv=None, delim=':'):
 
     where command_name is a part of digest instance method name, args and kwargs
     are passed to the method. For details, see
-    :class:`Cli<insanities.management.commands.Cli>` docs.
+    :class:`Cli<iktomi.management.commands.Cli>` docs.
     '''
     argv = sys.argv if argv is None else argv
     if len(argv) > 1:

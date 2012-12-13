@@ -1,4 +1,4 @@
-.. _insanities-web-tutorial:
+.. _iktomi-web-tutorial:
 
 Creating a simple app
 =====================
@@ -21,7 +21,7 @@ Here is the common interface of web handlers::
         ...
         return response
 
-`env` is an insanities application's current environment object. Basically it 
+`env` is an iktomi application's current environment object. Basically it 
 contains only one significant attribute: `webob.Request` object in `env.request`.
 `data` and `next handler` will be described below.
 
@@ -38,7 +38,7 @@ So, here is an example for very basic web handler::
 This function can be converted to WebHandler object by `web.handler`
 function. And any handler can be converted to WSGI app::
 
-    from insanities import web
+    from iktomi import web
 
     wsgi_app = web.handler(hello_world).as_wsgi()
 
@@ -161,8 +161,8 @@ function that puts all config parameters into `env` and chain it before app.
 For example::
 
     import cfg
-    from insanities import web
-    from insanities.templates import jinja2, Template
+    from iktomi import web
+    from iktomi.templates import jinja2, Template
 
     template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR,
                         engines={'html': jinja2.TemplateEngine})
@@ -184,7 +184,7 @@ For example::
 
     url_for = web.Reverse(web.locations(app))
 
-About `insanities.template` see in :ref:`corresponding docs <insanities-templates>`.
+About `iktomi.template` see in :ref:`corresponding docs <iktomi-templates>`.
 
 Scopes of environment and data valiables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

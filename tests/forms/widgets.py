@@ -2,7 +2,7 @@
 import unittest
 from copy import copy
 
-from insanities.forms import fields, convs, form, widgets, media, perms
+from iktomi.forms import fields, convs, form, widgets, media, perms
 
 
 class TestFormClass(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestFormClass(unittest.TestCase):
     def env(self):
         from os import path
         import jinja2
-        from insanities.ext import jinja2 as jnj
+        from iktomi.ext import jinja2 as jnj
 
         DIR = jnj.__file__
         DIR = path.dirname(path.abspath(DIR))

@@ -2,7 +2,7 @@
 
 import unittest
 import datetime
-from insanities.cli.base import Cli, manage, argument
+from iktomi.cli.base import Cli, manage, argument
 
 __all__ = ['CliTest']
 

@@ -6,7 +6,7 @@ from webob.exc import HTTPSeeOther
 from forms import FileForm as FileForm
 from webob.exc import HTTPSeeOther
 
-#from insanities.ext.filefields import time_uid
+#from iktomi.ext.filefields import time_uid
 
 def prepair_dir(env):
     dir_ = os.path.join(env.cfg.MEDIA, 'stored')

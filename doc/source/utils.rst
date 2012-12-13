@@ -1,4 +1,4 @@
-.. _insanities-utils:
+.. _iktomi-utils:
 
 Various utilities
 =================
@@ -6,9 +6,9 @@ Various utilities
 Template
 --------
 
-.. _insanities-templates:
+.. _iktomi-templates:
 
-`insanities.templates.Template` class is originnaly designed to unify 
+`iktomi.templates.Template` class is originnaly designed to unify 
 template interface for forms, but can be used in anywhere else.
 
 `Template` object provides `render`, `render_to_response` methods
@@ -34,7 +34,7 @@ template cache on/off::
 
 For correct form rendering, an env.template value should be defined::
 
-    from insanities.templates import jinja2, Template
+    from iktomi.templates import jinja2, Template
 
     template = Template(cfg.TEMPLATES,
                         engines={'html': jinja2.TemplateEngine,

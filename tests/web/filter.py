@@ -3,9 +3,9 @@
 __all__ = ['UrlTemplateTests', 'Prefix', 'Match', 'Subdomain']
 
 import unittest
-from insanities import web
-from insanities.web.url_templates import UrlTemplate
-from insanities.web.http import Request, Response
+from iktomi import web
+from iktomi.web.url_templates import UrlTemplate
+from iktomi.web.http import Request, Response
 
 
 class UrlTemplateTests(unittest.TestCase):
@@ -65,7 +65,7 @@ class UrlTemplateTests(unittest.TestCase):
         self.assertEqual(ut(message='hello'), 'hello')
 
     def test_redefine_converters(self):
-        from insanities.web.url_converters import Integer
+        from iktomi.web.url_converters import Integer
 
         class DoubleInt(Integer):
             def to_python(self, value, env=None):

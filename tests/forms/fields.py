@@ -2,7 +2,7 @@
 import unittest
 from copy import copy
 
-from insanities.forms import *
+from iktomi.forms import *
 from webob.multidict import MultiDict
 
 

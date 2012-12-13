@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from insanities import web
-from insanities.web.filters import *
-from insanities.templates import jinja2, Template
+from iktomi import web
+from iktomi.web.filters import *
+from iktomi.templates import jinja2, Template
 
 import cfg
 import handlers as h

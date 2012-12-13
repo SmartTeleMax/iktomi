@@ -443,13 +443,13 @@ class DatetimeJoiner(Joiner):
 class Html(Char):
     '''
     Converter for flexible cleanup of HTML document fragments.
-    A subclass of :class:`Char<insanities.forms.convs.Char>`.
+    A subclass of :class:`Char<iktomi.forms.convs.Char>`.
 
-    Uses :class:`utils.html.Sanitizer<insanities.utils.html.Sanitizer>`
+    Uses :class:`utils.html.Sanitizer<iktomi.utils.html.Sanitizer>`
     instance to sanitize input HTML.
 
     Construtor collects from given kwargs all of
-    :class:`Sanitizer<insanities.utils.html.Sanitizer>`
+    :class:`Sanitizer<iktomi.utils.html.Sanitizer>`
     options and passes them into Sanitizer's constructor.
 
     For list properties it is allowed to use :meth:`add_%s` interface::

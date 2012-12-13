@@ -1,1 +1,1 @@
-recursive-include insanities/templates *.html *.mint
+recursive-include iktomi/templates *.html *.mint

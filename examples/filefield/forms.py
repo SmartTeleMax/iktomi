@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 
-from insanities.forms import *
-from insanities.forms import widgets
-from insanities.ext.filefields import FileFieldSet, FileFieldSetConv, \
+from iktomi.forms import *
+from iktomi.forms import widgets
+from iktomi.ext.filefields import FileFieldSet, FileFieldSetConv, \
                                       UploadedFile
 
 import cfg

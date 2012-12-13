@@ -6,10 +6,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from insanities import web
-from insanities.forms import *
-from insanities.utils import N_
-from insanities.storage import LocalMemStorage
+from iktomi import web
+from iktomi.forms import *
+from iktomi.utils import N_
+from iktomi.storage import LocalMemStorage
 
 
 def encrypt_password(raw_password, algorithm='sha1', salt=None):

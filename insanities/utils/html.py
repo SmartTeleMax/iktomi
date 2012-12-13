@@ -141,7 +141,7 @@ class Sanitizer(object):
     '''
     Sanitizer object customizing sanitarization
     and providing method for sanitizing string.
-    Is used by :class:`forms.convs.Html<insanities.forms.convs.Html>`.
+    Is used by :class:`forms.convs.Html<iktomi.forms.convs.Html>`.
 
     There are some options accepted by constructor:
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from insanities.utils.odict import OrderedDict
+from iktomi.utils.odict import OrderedDict
 
 
 class OrderedDictTests(unittest.TestCase):

@@ -2,7 +2,7 @@
 import unittest
 import os
 import re
-from insanities.utils import html
+from iktomi.utils import html
 from copy import deepcopy
 
 class TestSanitizer(unittest.TestCase):

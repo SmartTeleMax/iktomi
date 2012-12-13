@@ -6,9 +6,9 @@ from ..utils import cached_property
 class FormMedia(object):
     '''
     Instance encapsulating media items assigned to instances of
-    :class:`Form <insanities.forms.form.Form>`,
-    :class:`Field <insanities.forms.fields.Field>` and
-    :class:`Widget <insanities.forms.widgets.Widget>`
+    :class:`Form <iktomi.forms.form.Form>`,
+    :class:`Field <iktomi.forms.fields.Field>` and
+    :class:`Widget <iktomi.forms.widgets.Widget>`
     '''
 
     def __init__(self, items=None, env=None):
@@ -49,7 +49,7 @@ class FormMedia(object):
 class FormMediaAtom(object):
     '''
     Media item representing JS, CSS or some other media stuff linked to
-    :class:`Form <insanities.forms.form.Form>` or it's parts.
+    :class:`Form <iktomi.forms.form.Form>` or it's parts.
     '''
 
     macro = None # Must be overwritten

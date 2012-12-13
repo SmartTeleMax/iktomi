@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# insanities documentation build configuration file, created by
+# iktomi documentation build configuration file, created by
 # sphinx-quickstart on Tue Jul  7 15:06:35 2009.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -37,7 +37,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'insanities'
+project = u'iktomi'
 copyright = u'2009, Denis Otkidach'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -158,7 +158,7 @@ html_static_path = ['_static']
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'insanitiesdoc'
+htmlhelp_basename = 'iktomidoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -172,7 +172,7 @@ htmlhelp_basename = 'insanitiesdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'insanities.tex', u'insanities Documentation',
+  ('index', 'iktomi.tex', u'iktomi Documentation',
    u'Denis Otkidach', 'manual'),
 ]
 

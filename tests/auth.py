@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from insanities import web
-from insanities.auth import CookieAuth, SqlaModelAuth, auth_required, encrypt_password
+from iktomi import web
+from iktomi.auth import CookieAuth, SqlaModelAuth, auth_required, encrypt_password
 
 __all__ = ['CookieAuthTests', 'SqlaModelAuthTests']
 
@@ -109,7 +109,7 @@ class SqlaModelAuthTests(unittest.TestCase):
         from sqlalchemy import Column, Integer, String
         from sqlalchemy.schema import MetaData
         from sqlalchemy.ext.declarative import declarative_base
-        from insanities.db.sqla import session_maker
+        from iktomi.db.sqla import session_maker
         metadata = MetaData()
         Model = declarative_base(metadata=metadata)
         class User(Model):

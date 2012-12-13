@@ -3,9 +3,9 @@
 __all__ = ['Chain']
 
 import unittest
-from insanities import web
-from insanities.web.core import _FunctionWrapper
-from insanities.utils.storage import VersionedStorage
+from iktomi import web
+from iktomi.web.core import _FunctionWrapper
+from iktomi.utils.storage import VersionedStorage
 
 skip = getattr(unittest, 'skip', lambda x: None)
 VS = VersionedStorage

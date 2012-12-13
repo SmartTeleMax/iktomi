@@ -4,5 +4,5 @@
 Insanities
 ==========
 
-Insanities - a set of insanities of several geeks to show ourselves our coolness.
+Insanities - a set of iktomi of several geeks to show ourselves our coolness.
 """

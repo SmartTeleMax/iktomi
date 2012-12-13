@@ -3,7 +3,7 @@
 __all__ = ['VersionedStorageTests']
 
 import unittest
-from insanities.utils.storage import VersionedStorage
+from iktomi.utils.storage import VersionedStorage
 
 
 class VersionedStorageTests(unittest.TestCase):

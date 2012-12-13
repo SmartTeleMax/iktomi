@@ -9,7 +9,7 @@ class Widget(object):
 
     #: Template to render widget
     template = None
-    #: List of :class:`FormMediaAtom<insanities.forms.media.FormMediaAtom>`
+    #: List of :class:`FormMediaAtom<iktomi.forms.media.FormMediaAtom>`
     #: objects associated with the widget
     media = []
     #: Value of HTML element's *class* attribute
