@@ -4,6 +4,7 @@ __all__ = ['Chain']
 
 import unittest
 from iktomi import web
+from iktomi.web.core import _FunctionWrapper2, _FunctionWrapper3
 from iktomi.utils.storage import VersionedStorage
 
 skip = getattr(unittest, 'skip', lambda x: None)
@@ -28,11 +29,11 @@ class Chain(unittest.TestCase):
         chain = F(handler1) | F(handler2) | handler3
 
         handler = chain._next_handler
-        self.assert_(isinstance(handler, F))
+        self.assert_(isinstance(handler, _FunctionWrapper3))
         self.assertEqual(handler.handle, handler2)
 
         handler = chain._next_handler._next_handler
-        self.assert_(isinstance(handler, web.request_endpoint))
+        self.assert_(isinstance(handler, _FunctionWrapper2))
         self.assertEqual(handler.handler, handler3)
 
     def test_functions_chain_call(self):

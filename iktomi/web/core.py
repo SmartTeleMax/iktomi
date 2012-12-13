@@ -5,6 +5,7 @@ __all__ = ['WebHandler', 'cases', 'locations', 'request_endpoint', 'request_filt
 import logging
 import types
 import httplib
+import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
 from iktomi.utils.storage import VersionedStorage
@@ -135,7 +136,7 @@ class cases(WebHandler):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class request_endpoint(WebHandler):
+class _FunctionWrapper2(WebHandler):
     '''
     Wrapper for handler represented by function 
     (2 args, new-style)
@@ -151,7 +152,7 @@ class request_endpoint(WebHandler):
         return '%s(%r)' % (self.__class__.__name__, self.handle)
 
 
-class request_filter(WebHandler):
+class _FunctionWrapper3(WebHandler):
     '''
     Wrapper for handler represented by function 
     (3 args, old-style)
@@ -162,6 +163,13 @@ class request_filter(WebHandler):
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.handle)
+
+
+def request_endpoint(func):
+    return functools.wraps(func)(_FunctionWrapper2(func))
+
+def request_filter(func):
+    return functools.wraps(func)(_FunctionWrapper3(func))
 
 
 def locations(handler):
