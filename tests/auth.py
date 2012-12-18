@@ -52,7 +52,7 @@ class CookieAuthTests(unittest.TestCase):
             auth.logout(),
             auth | web.cases(
                 web.match('/a', 'a') | anonymouse,
-                web.match('/b', 'b') | auth_required() | no_anonymouse,
+                web.match('/b', 'b') | auth_required | no_anonymouse,
             ),
         )
         root = web.Reverse.from_handler(self.app)
@@ -144,7 +144,7 @@ class SqlaModelAuthTests(unittest.TestCase):
             auth.logout(),
             auth | web.cases(
                 web.match('/a', 'a') | anonymouse,
-                web.match('/b', 'b') | auth_required() | no_anonymouse,
+                web.match('/b', 'b') | auth_required | no_anonymouse,
             ),
         )
         root = web.Reverse.from_handler(self.app)
