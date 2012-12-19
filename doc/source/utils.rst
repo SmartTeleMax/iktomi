@@ -35,18 +35,20 @@ template cache on/off::
 For correct form rendering, an env.template value should be defined::
 
     from iktomi.templates import jinja2, Template
+    from iktomi import web
 
     template = Template(cfg.TEMPLATES,
                         engines={'html': jinja2.TemplateEngine,
                                  'my': MyEngine})
 
+    @web.request_filter
     def environment(env, data, next_handler):
         ...
         env.template = template
         ...
         return next_handler(env, data)
 
-    app = web.request_filter(environment) | app   
+    app = environment | app
 
 Utils
 -----

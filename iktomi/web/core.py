@@ -34,12 +34,12 @@ class WebHandler(object):
             h._next_handler = prepare_handler(next_handler)
         return h
 
-    def handle(self, env, data, next_handler):
+    def handle(self, env, data):
         '''This method should be overridden in subclasses.'''
-        return next_handler(env, data)
+        return self.next_handler(env, data)
 
     def _locations(self):
-        next_handler = self.get_next()
+        next_handler = self.next_handler
         # if next_handler is lambda - the end of chain
         if not type(next_handler) is types.FunctionType:
             return next_handler._locations()
@@ -50,10 +50,9 @@ class WebHandler(object):
         return '%s()' % self.__class__.__name__
 
     def __call__(self, env, data):
-        next_handler = self.get_next()
         env._commit()
         data._commit()
-        result = self.handle(env, data, next_handler)
+        result = self.handle(env, data)
         if result is None:
             if env._modified:
                 env._rollback()
@@ -61,7 +60,8 @@ class WebHandler(object):
                 data._rollback()
         return result
 
-    def get_next(self):
+    @property
+    def next_handler(self):
         if hasattr(self, '_next_handler'):
             return self._next_handler
         #XXX: may be request_handler?
@@ -115,7 +115,7 @@ class cases(WebHandler):
                       for handler in self.handlers]
         return h
 
-    def handle(self, env, data, next_handler):
+    def handle(self, env, data):
         for handler in self.handlers:
             result = handler(env, data)
             if result is None:
@@ -143,10 +143,7 @@ class _FunctionWrapper2(WebHandler):
     '''
 
     def __init__(self, func):
-        self.handler = func
-
-    def handle(self, env, data, nxt):
-        return self.handler(env, data)
+        self.handle = func
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.handle)
@@ -159,10 +156,13 @@ class _FunctionWrapper3(WebHandler):
     '''
 
     def __init__(self, func):
-        self.handle = func
+        self.handler = func
+
+    def handle(self, env, data):
+        return self.handler(env, data, self.next_handler)
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.handle)
+        return '%s(%r)' % (self.__class__.__name__, self.handler)
 
 
 def request_endpoint(func):

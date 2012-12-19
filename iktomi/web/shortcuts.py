@@ -8,7 +8,7 @@ from . import filters
 __all__ = ['redirect_to', 'http_error', 'to_json', 'Rule']
 
 def redirect_to(endpoint, _code=303, qs=None, **kwargs):
-    def handle(env, data, nxt):
+    def handle(env, data):
         url = env.root.build_url(endpoint, **kwargs)
         if qs is not None:
             url = url.qs_set(qs)
@@ -16,7 +16,7 @@ def redirect_to(endpoint, _code=303, qs=None, **kwargs):
     return handle
 
 def http_error(_code, **kwargs):
-    def handle(env, data, nxt):
+    def handle(env, data):
         raise status_map[_code](**kwargs)
     return handle
 

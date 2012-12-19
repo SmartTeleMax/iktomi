@@ -17,7 +17,7 @@ In most cases, web handler is represented by function.
 
 Here is the common interface of web handlers::
 
-    def handler(env, data, next_handler):
+    def handler(env, data):
         ...
         return response
 
@@ -31,7 +31,7 @@ So, here is an example for very basic web handler::
 
     import webob
 
-    def hello_world(env, data, next_handler):
+    def hello_world(env, data):
         name = env.request.GET.get('name', 'world')
         return webob.Response('Hello, %s!' %name)
 
@@ -40,7 +40,7 @@ function. And any handler can be converted to WSGI app::
 
     from iktomi import web
 
-    wsgi_app = web.request_filter(hello_world).as_wsgi()
+    wsgi_app = web.request_endpoint(hello_world).as_wsgi()
 
 Here it is! You can use the given object as common WSGI application, make server,
 for example, using `Flup`.
@@ -137,6 +137,7 @@ like Django-middlewares, etc.
 
 For example, to implement "middleware" you can do something like::
 
+    @web.request_filter
     def wrapper(env, data, next_handler):
         do_something()
         result = next_handler(env, data)
@@ -148,6 +149,7 @@ For example, to implement "middleware" you can do something like::
 It is transparent, obvious and native way. Also, it is possible to use try...except
 statements with next_handler::
 
+    @web.request_filter
     def wrapper(env, data, next_handler):
         try:
             return next_handler(env, data)
@@ -167,6 +169,7 @@ For example::
     template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR,
                         engines={'html': jinja2.TemplateEngine})
 
+    @web.request_filter
     def environment(env, data, next_handler):
         env.cfg = cfg
 
@@ -228,6 +231,7 @@ Iktomi uses webob HTTP exceptions::
 
     from webob import exc
 
+    @web.request_filter
     def handler(env, data, next_handler):
         if not is_allowed(env):
             raise exc.HTTPForbidden()
@@ -283,6 +287,7 @@ urls for static files::
 
     static = web.static_files(cfg.STATIC_PATH, cfg.STATIC_URL)
 
+    @web.request_filter
     def environment(env, data, next_handler):
         ...
         env.url_for_static = static.construct_reverse()
@@ -331,7 +336,7 @@ in your app, or for plug-in any reusable app from outside without warry
 about name clashes.::
 
     def part():
-        def handler(env, data, next_handler):
+        def handler(env, data):
             curr_namespace = env.namespace if 'namespace' in env else None
             en_url = env.url_for('en.index')
             curr_url = env.url_for('.index')

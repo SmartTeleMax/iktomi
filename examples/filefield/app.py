@@ -10,6 +10,8 @@ static = static_files(cfg.STATIC)
 media = static_files(cfg.MEDIA, '/media/')
 template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR, engines={'html': jinja2.TemplateEngine})
 
+
+@web.request_filter
 def environment(env, data, next_handler):
     env.cfg = cfg
 
@@ -21,7 +23,7 @@ def environment(env, data, next_handler):
 
 
 
-app = web.request_filter(environment) | web.cases(
+app = environment | web.cases(
     static, media,
     match('/', 'files') | web.cases(
         # Playing REST ;)

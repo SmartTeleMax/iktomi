@@ -30,11 +30,11 @@ class Chain(unittest.TestCase):
 
         handler = chain._next_handler
         self.assert_(isinstance(handler, _FunctionWrapper3))
-        self.assertEqual(handler.handle, handler2)
+        self.assertEqual(handler.handler, handler2)
 
         handler = chain._next_handler._next_handler
         self.assert_(isinstance(handler, _FunctionWrapper2))
-        self.assertEqual(handler.handler, handler3)
+        self.assertEqual(handler.handle, handler3)
 
     def test_functions_chain_call(self):
         'Functions chain call'

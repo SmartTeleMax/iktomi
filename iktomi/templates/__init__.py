@@ -4,7 +4,7 @@ import os
 import logging
 logger = logging.getLogger(__name__)
 from glob import glob
-from ..web import Response
+from ..web import Response, request_filter
 from ..utils import cached_property
 
 __all__ = ('Template',)
@@ -90,6 +90,7 @@ class BoundTemplate(object):
 
 
 def render_to(self, template_name):
+    @request_filter
     def render_to(env, data, next_handler):
         data.env = env
         return Response(env.template.render(template_name, **data))

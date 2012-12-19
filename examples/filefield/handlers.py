@@ -15,7 +15,7 @@ def prepair_dir(env):
     return dir_
 
 
-def list_files(env, data, nxt):
+def list_files(env, data):
     dir_ = prepair_dir(env)
     files = os.listdir(dir_)
     form = FileForm(env)
@@ -26,7 +26,7 @@ def list_files(env, data, nxt):
     })
 
 
-def post_file(env, data, nxt):
+def post_file(env, data):
     dir_ = prepair_dir(env)
     files = os.listdir(dir_)
     form = FileForm(env)
@@ -45,7 +45,7 @@ def post_file(env, data, nxt):
     })
 
 
-def delete_files(env, data, next_handler):
+def delete_files(env, data):
     dir_ = os.path.join(env.cfg.MEDIA, 'stored')
     f = env.request.GET.get('filename', '')
     filepath = os.path.join(dir_, f)

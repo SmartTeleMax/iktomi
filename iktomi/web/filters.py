@@ -29,12 +29,12 @@ class match(WebHandler):
         self.builder = UrlTemplate(url, converters=convs)
 
 
-    def match(self, env, data, next_handler):
+    def match(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched:
             env.current_url_name = self.url_name
             update_data(data, kwargs)
-            return next_handler(env, data)
+            return self.next_handler(env, data)
         return None
     handle = match # for beutiful tracebacks
 
@@ -50,9 +50,9 @@ class method(WebHandler):
     def __init__(self, *names):
         self._names = [name.upper() for name in names]
 
-    def method(self, env, data, next_handler):
+    def method(self, env, data):
         if env.request.method in self._names:
-            return next_handler(env, data)
+            return self.next_handler(env, data)
         return None
     handle = method
 
@@ -69,9 +69,9 @@ class ctype(WebHandler):
 
     def __init__(self, *types):
         self._types = types
-        def ctype(env, data, next_handler):
+        def ctype(env, data):
             if env.request.content_type in self._types:
-                return next_handler(env, data)
+                return self.next_handler(env, data)
             return None
         self.handle = ctype
 
@@ -91,7 +91,7 @@ class static_files(WebHandler):
             return path.join(self.url, part)
         return url_for_static
 
-    def handle(self, env, data, next_handler):
+    def handle(self, env, data):
         path_info = unquote(env.request.path)
         if path_info.startswith(self.url):
             static_path = path_info[len(self.url):]
@@ -117,12 +117,12 @@ class prefix(WebHandler):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
 
-    def prefix(self, env, data, next_handler):
+    def prefix(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched:
             update_data(data, kwargs)
             env._route_state.add_prefix(self.builder(**kwargs))
-            result = next_handler(env, data)
+            result = self.next_handler(env, data)
             if result is not None:
                 return result
             env._route_state.pop_prefix()
@@ -143,7 +143,7 @@ class subdomain(WebHandler):
     def __init__(self, _subdomain):
         self.subdomain = unicode(_subdomain)
 
-    def subdomain(self, env, data, next_handler):
+    def subdomain(self, env, data):
         subdomain = env._route_state.subdomain
         #XXX: here we can get 'idna' encoded sequence, that is the bug
         if self.subdomain:
@@ -154,7 +154,7 @@ class subdomain(WebHandler):
             matches = not subdomain
         if matches:
             env._route_state.add_subdomain(self.subdomain)
-            return next_handler(env, data)
+            return self.next_handler(env, data)
         return None
     handle = subdomain
 
@@ -173,12 +173,12 @@ class namespace(WebHandler):
         # namespace is str
         self.namespace = ns
 
-    def namespace(self, env, data, next_handler):
+    def namespace(self, env, data):
         if 'namespace' in env:
             env.namespace += '.' + self.namespace
         else:
             env.namespace = self.namespace
-        return next_handler(env, data)
+        return self.next_handler(env, data)
     handle = namespace
 
     def _locations(self):

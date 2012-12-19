@@ -55,7 +55,7 @@ class CookieAuth(web.WebHandler):
         self.storage = LocalMemStorage() if storage is None else storage
         self.crash_without_storage = crash_without_storage
 
-    def handle(self, env, data, next_handler):
+    def handle(self, env, data):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
@@ -65,7 +65,7 @@ class CookieAuth(web.WebHandler):
         logger.debug('Authenticated: %r' % user)
         env.user = user
         try:
-            result = next_handler(env, data)
+            result = self.next_handler(env, data)
         finally:
             del env.user
         return result
