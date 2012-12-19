@@ -48,7 +48,9 @@ class match(WebHandler):
 
 class method(WebHandler):
     def __init__(self, *names):
-        self._names = [name.upper() for name in names]
+        self._names = set([name.upper() for name in names])
+        if 'GET' in self._names:
+            self._names.add('HEAD')
 
     def method(self, env, data):
         if env.request.method in self._names:
@@ -57,7 +59,7 @@ class method(WebHandler):
     handle = method
 
     def __repr__(self):
-        return 'method(*%r)' % self._names
+        return 'method(*%r)' % list(self._names)
 
 
 class ctype(WebHandler):
