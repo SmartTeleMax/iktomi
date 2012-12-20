@@ -54,7 +54,7 @@ class Reverse(object):
         self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
-        self._is_root = is_root # XXX is_root
+        self._is_root = is_root
         self._bound_request = bound_request
 
     def __call__(self, **kwargs):
@@ -163,6 +163,6 @@ class Reverse(object):
         return URL(path, host=domain, port=port, show_host=True)
 
     @classmethod
-    def from_handler(cls, handler, env=None):
+    def from_handler(cls, handler):
         from .core import locations
         return cls(locations(handler), is_root=True)
