@@ -22,6 +22,12 @@ def prepare_handler(handler):
     #    handler = request_endpoint(handler)
     return handler
 
+def is_chainable(handler):
+    while isinstance(handler, WebHandler):
+        if not hasattr(handler, '_next_handler'):
+            return True
+        handler = handler._next_handler
+    return False
 
 class AppEnvironment(VersionedStorage):
 
@@ -109,7 +115,9 @@ class cases(WebHandler):
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'
         h = self.copy()
-        h.handlers = [handler | prepare_handler(next_handler)
+        h.handlers = [(handler | prepare_handler(next_handler)
+                            if is_chainable(handler) 
+                            else handler)
                       for handler in self.handlers]
         return h
 

@@ -168,12 +168,12 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_handler(self):
         'Reuse handlers'
+        @F
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
 
-        h_wrapped = F(h)
-        chain = h_wrapped | h_wrapped | h_wrapped | h_wrapped
+        chain = h | h | h | h
         self.assertEqual(chain(VS(), VS()), 4)
 
     def test_chain_reuse_chain(self):
@@ -194,16 +194,15 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_handler2(self):
         'Reuse handlers, then use only first one and assert nothing has changed'
+        @F
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
 
-        h_wrapped = F(h)
-        chain = F(h) | web.cases(h_wrapped,
-                                 h_wrapped)
-        chain1 = chain | h_wrapped
-        chain2 = chain | h_wrapped
-        chain3 = chain2 | h_wrapped
+        chain = h | web.cases(h, h)
+        chain1 = chain | h
+        chain2 = chain | h
+        chain3 = chain2 | h
 
         self.assertEqual(chain1(VS(), VS()), 3)
         self.assertEqual(chain2(VS(), VS()), 3)
@@ -211,13 +210,13 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_cases(self):
         'Reuse cases handler'
+        @F
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
 
-        h_wrapped = F(h)
-        chain = h_wrapped | h_wrapped | h_wrapped
-        chain = h_wrapped
+        chain = h | h | h
+        chain = h
         self.assertEqual(chain(VS(), VS()), 1)
 
     @skip
@@ -240,4 +239,21 @@ class Chain(unittest.TestCase):
             CountHandler(5)| CountHandler(6)| CountHandler(7)
 
         self.assertEqual(CountHandler.copies, 7)
+
+    def test_chain_to_cases_with_functions(self):
+        @F
+        def h(env, data, nx):
+            count = nx(env, data) or 0
+            return count + 1
+
+        def e(env, data):
+            return 10
+
+        chain = web.cases(h | e, h) | h
+        self.assertEqual(chain(VS(), VS()), 11)
+
+        chain = web.cases(e, h) | h
+        self.assertEqual(chain(VS(), VS()), 10)
+
+
 
