@@ -10,7 +10,8 @@ from .core import AppEnvironment
 
 def ask(application, url, method='get', data=None,
         headers=None, additional_env=None, additional_data=None,
-        EnvCls=AppEnvironment):
+        EnvCls=None):
+    EnvCls = EnvCls or application.EnvCls
     root = Reverse.from_handler(application)
     request = Request.blank(url, POST=data, headers=headers)
     env = EnvCls(request, root, **(additional_env or {}))

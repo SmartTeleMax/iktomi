@@ -36,6 +36,8 @@ class AppEnvironment(VersionedStorage):
 class WebHandler(object):
     '''Base class for all request handlers.'''
 
+    EnvCls = AppEnvironment
+
     def __or__(self, next_handler):
         # XXX copy count depends on chain length geometrically!
         h = self.copy()
@@ -71,9 +73,10 @@ class WebHandler(object):
         # to make handlers reusable
         return copy(self)
 
-    def as_wsgi(self, EnvCls=AppEnvironment):
+    def as_wsgi(self, EnvCls=None):
         from .reverse import Reverse
         root = Reverse.from_handler(self)
+        EnvCls = EnvCls or self.EnvCls
         def wsgi(environ, start_response):
             request = Request(environ, charset='utf-8')
             env = EnvCls(request, root)
