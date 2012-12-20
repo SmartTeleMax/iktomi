@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'locations', 'request_endpoint', 'request_filter', 
+__all__ = ['WebHandler', 'cases', 'locations', 'request_filter', 
            'AppEnvironment']
 
 import logging
@@ -15,12 +15,6 @@ from copy import copy
 
 logger = logging.getLogger(__name__)
 
-
-def prepare_handler(handler):
-    '''Wrapps functions, that they can be usual WebHandler's'''
-    #if type(handler) in (types.FunctionType, types.MethodType):
-    #    handler = request_endpoint(handler)
-    return handler
 
 def is_chainable(handler):
     while isinstance(handler, WebHandler):
@@ -48,7 +42,7 @@ class WebHandler(object):
         if hasattr(self, '_next_handler'):
             h._next_handler = h._next_handler | next_handler
         else:
-            h._next_handler = prepare_handler(next_handler)
+            h._next_handler = next_handler
         return h
 
     def _locations(self):
@@ -110,12 +104,12 @@ class cases(WebHandler):
     def __init__(self, *handlers, **kwargs):
         self.handlers = []
         for handler in handlers:
-            self.handlers.append(prepare_handler(handler))
+            self.handlers.append(handler)
 
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'
         h = self.copy()
-        h.handlers = [(handler | prepare_handler(next_handler)
+        h.handlers = [(handler | next_handler
                             if is_chainable(handler) 
                             else handler)
                       for handler in self.handlers]
@@ -145,19 +139,6 @@ class cases(WebHandler):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-#class _FunctionWrapper2(WebHandler):
-#    '''
-#    Wrapper for handler represented by function 
-#    (2 args, new-style)
-#    '''
-#
-#    def __init__(self, func):
-#        self.handle = func
-#
-#    def __repr__(self):
-#        return '%s(%r)' % (self.__class__.__name__, self.handle)
-
-
 class _FunctionWrapper3(WebHandler):
     '''
     Wrapper for handler represented by function 
@@ -174,10 +155,6 @@ class _FunctionWrapper3(WebHandler):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.handler)
 
-
-def request_endpoint(func):
-    #return functools.wraps(func)(_FunctionWrapper2(func))
-    return func
 
 def request_filter(func):
     return functools.wraps(func)(_FunctionWrapper3(func))

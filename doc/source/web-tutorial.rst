@@ -40,7 +40,8 @@ function. And any handler can be converted to WSGI app::
 
     from iktomi import web
 
-    wsgi_app = web.request_endpoint(hello_world).as_wsgi()
+    app = web.match('/', 'index') | hello_world
+    wsgi_app = app.as_wsgi()
 
 Here it is! You can use the given object as common WSGI application, make server,
 for example, using `Flup`.
