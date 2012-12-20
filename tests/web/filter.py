@@ -274,12 +274,15 @@ class Match(unittest.TestCase):
         self.assert_(web.ask(app, '/second/42/') is None)
         self.assert_(web.ask(app, '/second/42s') is None)
 
-    def test_sane_exeptions(self):
+    def test_sane_exceptions(self):
+        # XXX what is this? 0_o
         'Not yet completed test of sane exceptions'
+        @web.request_filter
         def get_items(env, data, nxt):
             return nxt(env, data)
-        def raise_exc(env, data, nxt):
+        def raise_exc(env, data):
             raise Exception('somewhere deep inside')
+
         app = web.prefix('/prefix') | web.match('/', '') | get_items | raise_exc
         self.assertRaises(Exception, lambda: web.ask(app, '/prefix/'))
 

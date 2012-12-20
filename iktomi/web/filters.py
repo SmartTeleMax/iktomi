@@ -28,7 +28,6 @@ class match(WebHandler):
         self.url_name = name
         self.builder = UrlTemplate(url, converters=convs)
 
-
     def match(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched:
@@ -36,7 +35,7 @@ class match(WebHandler):
             update_data(data, kwargs)
             return self.next_handler(env, data)
         return None
-    handle = match # for beutiful tracebacks
+    __call__ = match # for beautiful tracebacks
 
     def _locations(self):
         return {self.url_name: (Location(self.builder), {})}
@@ -56,7 +55,7 @@ class method(WebHandler):
         if env.request.method in self._names:
             return self.next_handler(env, data)
         return None
-    handle = method
+    __call__ = method
 
     def __repr__(self):
         return 'method(*%r)' % list(self._names)
@@ -71,11 +70,12 @@ class ctype(WebHandler):
 
     def __init__(self, *types):
         self._types = types
-        def ctype(env, data):
-            if env.request.content_type in self._types:
-                return self.next_handler(env, data)
-            return None
-        self.handle = ctype
+
+    def ctype(self, env, data):
+        if env.request.content_type in self._types:
+            return self.next_handler(env, data)
+        return None
+    __call__ = ctype
 
     def __repr__(self):
         return '%s(*%r)' % (self.__class__.__name__, self._types)
@@ -93,7 +93,7 @@ class static_files(WebHandler):
             return path.join(self.url, part)
         return url_for_static
 
-    def handle(self, env, data):
+    def static_files(self, env, data):
         path_info = unquote(env.request.path)
         if path_info.startswith(self.url):
             static_path = path_info[len(self.url):]
@@ -112,6 +112,7 @@ class static_files(WebHandler):
                 logger.info('Client requested non existent static data "%s"' % file_path)
                 return Response(status=404)
         return None
+    __call__ = static_files
 
 
 class prefix(WebHandler):
@@ -129,7 +130,7 @@ class prefix(WebHandler):
                 return result
             env._route_state.pop_prefix()
         return None
-    handle = prefix
+    __call__ = prefix
 
     def _locations(self):
         locations = super(prefix, self)._locations()
@@ -158,7 +159,7 @@ class subdomain(WebHandler):
             env._route_state.add_subdomain(self.subdomain)
             return self.next_handler(env, data)
         return None
-    handle = subdomain
+    __call__ = subdomain
 
     def _locations(self):
         locations = super(subdomain, self)._locations()
@@ -181,7 +182,7 @@ class namespace(WebHandler):
         else:
             env.namespace = self.namespace
         return self.next_handler(env, data)
-    handle = namespace
+    __call__ = namespace
 
     def _locations(self):
         namespaces = self.namespace.split('.')

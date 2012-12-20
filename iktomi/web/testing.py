@@ -2,15 +2,18 @@
 
 __all__ = ['ask']
 
-from .http import Request, RouteState
+from .http import Request
+from .reverse import Reverse
 from ..utils.storage import VersionedStorage
+from .core import AppEnvironment
 
 
 def ask(application, url, method='get', data=None,
-        headers=None, additional_env=None, additional_data=None):
-    env = VersionedStorage(additional_env or {})
+        headers=None, additional_env=None, additional_data=None,
+        EnvCls=AppEnvironment):
+    root = Reverse.from_handler(application)
+    request = Request.blank(url, POST=data, headers=headers)
+    env = EnvCls(request, root, **(additional_env or {}))
     #TODO: may be later process cookies separatly
-    env.request = Request.blank(url, POST=data, headers=headers)
-    env._route_state = RouteState(env.request)
-    data = VersionedStorage(additional_data or {})
+    data = VersionedStorage(**(additional_data or {}))
     return application(env, data)

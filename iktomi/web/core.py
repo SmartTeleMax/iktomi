@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'locations', 'request_endpoint', 'request_filter']
+__all__ = ['WebHandler', 'cases', 'locations', 'request_endpoint', 'request_filter', 
+           'AppEnvironment']
 
 import logging
 import types
@@ -17,9 +18,19 @@ logger = logging.getLogger(__name__)
 
 def prepare_handler(handler):
     '''Wrapps functions, that they can be usual WebHandler's'''
-    if type(handler) in (types.FunctionType, types.MethodType):
-        handler = request_endpoint(handler)
+    #if type(handler) in (types.FunctionType, types.MethodType):
+    #    handler = request_endpoint(handler)
     return handler
+
+
+class AppEnvironment(VersionedStorage):
+
+    def __init__(self, request, root, _data=None, _parent_storage=None):
+        VersionedStorage.__init__(self, _data=_data,
+                                  _parent_storage=_parent_storage)
+        self.request = request
+        self.root = root.bind_to_request(request)
+        self._route_state = RouteState(request)
 
 
 class WebHandler(object):
@@ -34,10 +45,6 @@ class WebHandler(object):
             h._next_handler = prepare_handler(next_handler)
         return h
 
-    def handle(self, env, data):
-        '''This method should be overridden in subclasses.'''
-        return self.next_handler(env, data)
-
     def _locations(self):
         next_handler = self.next_handler
         # if next_handler is lambda - the end of chain
@@ -50,15 +57,8 @@ class WebHandler(object):
         return '%s()' % self.__class__.__name__
 
     def __call__(self, env, data):
-        env._commit()
-        data._commit()
-        result = self.handle(env, data)
-        if result is None:
-            if env._modified:
-                env._rollback()
-            if data._modified:
-                data._rollback()
-        return result
+        '''This method should be overridden in subclasses.'''
+        raise NotImplementedError("__call__ is not implemented in %r" % self)
 
     @property
     def next_handler(self):
@@ -71,14 +71,12 @@ class WebHandler(object):
         # to make handlers reusable
         return copy(self)
 
-    def as_wsgi(self):
+    def as_wsgi(self, EnvCls=AppEnvironment):
         from .reverse import Reverse
         root = Reverse.from_handler(self)
         def wsgi(environ, start_response):
-            env = VersionedStorage()
-            env.request = Request(environ, charset='utf-8')
-            env.root = root.bind_to_request(env.request)
-            env._route_state = RouteState(env.request)
+            request = Request(environ, charset='utf-8')
+            env = EnvCls(request, root)
             data = VersionedStorage()
             try:
                 response = self(env, data)
@@ -115,12 +113,15 @@ class cases(WebHandler):
                       for handler in self.handlers]
         return h
 
-    def handle(self, env, data):
+    def cases(self, env, data):
         for handler in self.handlers:
-            result = handler(env, data)
+            result = handler(VersionedStorage(_parent_storage=env),
+                             VersionedStorage(_parent_storage=data))
             if result is None:
                 continue
             return result
+    # for readable tracebacks
+    __call__ = cases
 
     def _locations(self):
         locations = {}
@@ -136,17 +137,17 @@ class cases(WebHandler):
         return '%s(*%r)' % (self.__class__.__name__, self.handlers)
 
 
-class _FunctionWrapper2(WebHandler):
-    '''
-    Wrapper for handler represented by function 
-    (2 args, new-style)
-    '''
-
-    def __init__(self, func):
-        self.handle = func
-
-    def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.handle)
+#class _FunctionWrapper2(WebHandler):
+#    '''
+#    Wrapper for handler represented by function 
+#    (2 args, new-style)
+#    '''
+#
+#    def __init__(self, func):
+#        self.handle = func
+#
+#    def __repr__(self):
+#        return '%s(%r)' % (self.__class__.__name__, self.handle)
 
 
 class _FunctionWrapper3(WebHandler):
@@ -158,15 +159,17 @@ class _FunctionWrapper3(WebHandler):
     def __init__(self, func):
         self.handler = func
 
-    def handle(self, env, data):
+    def function_wrapper(self, env, data):
         return self.handler(env, data, self.next_handler)
+    __call__ = function_wrapper
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.handler)
 
 
 def request_endpoint(func):
-    return functools.wraps(func)(_FunctionWrapper2(func))
+    #return functools.wraps(func)(_FunctionWrapper2(func))
+    return func
 
 def request_filter(func):
     return functools.wraps(func)(_FunctionWrapper3(func))

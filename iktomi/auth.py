@@ -55,7 +55,7 @@ class CookieAuth(web.WebHandler):
         self.storage = LocalMemStorage() if storage is None else storage
         self.crash_without_storage = crash_without_storage
 
-    def handle(self, env, data):
+    def cookie_auth(self, env, data):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
@@ -69,6 +69,7 @@ class CookieAuth(web.WebHandler):
         finally:
             del env.user
         return result
+    __call__ = cookie_auth
 
     def login_identity(self, user_identity, response=None, path='/'):
         key = os.urandom(10).encode('hex')

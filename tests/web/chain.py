@@ -4,7 +4,7 @@ __all__ = ['Chain']
 
 import unittest
 from iktomi import web
-from iktomi.web.core import _FunctionWrapper2, _FunctionWrapper3
+from iktomi.web.core import _FunctionWrapper3
 from iktomi.utils.storage import VersionedStorage
 
 skip = getattr(unittest, 'skip', lambda x: None)
@@ -33,8 +33,7 @@ class Chain(unittest.TestCase):
         self.assertEqual(handler.handler, handler2)
 
         handler = chain._next_handler._next_handler
-        self.assert_(isinstance(handler, _FunctionWrapper2))
-        self.assertEqual(handler.handle, handler3)
+        self.assertEqual(handler, handler3)
 
     def test_functions_chain_call(self):
         'Functions chain call'
@@ -125,7 +124,7 @@ class Chain(unittest.TestCase):
         chain = h | web.cases(h1, h1 | h2)
         count = VS(count=0)
         self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        self.assertEqual(count['count'], 1)
 
     def test_chain_with_list_and_postfix(self):
         'Chain with cases and postfix'
@@ -146,10 +145,10 @@ class Chain(unittest.TestCase):
             self.assertEqual(env.count, 2)
             env['count'] = env['count'] + 1
 
-        chain = h | web.cases(h1, h1 | h2) | h2
+        chain = h | web.cases(h1 | h2, h1) | h2
         count = VS(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        self.assertEqual(chain(count, VS()), None)
+        self.assertEqual(count['count'], 1)
 
     def test_chain_of_lists(self):
         'Chain of lists, data check'
