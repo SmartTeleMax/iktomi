@@ -55,25 +55,25 @@ class Chain(unittest.TestCase):
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h3(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         chain = web.cases(h1, h2, h3)
-        count = VersionedStorage(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        env = VersionedStorage(count=0)
+        self.assert_(chain(env, VS()) is None)
+        self.assertEqual(env.count, 0)
 
     def test_list_of_chains(self):
         'cases of chains'
@@ -81,74 +81,74 @@ class Chain(unittest.TestCase):
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h3(env, data, nh):
             self.assertEqual(env.count, 1)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         chain = web.cases(h1, h2 | h3)
-        count = VS(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        env = VS(count=0)
+        self.assert_(chain(env, VS()) is None)
+        self.assertEqual(env.count, 0)
 
     def test_chain_with_list(self):
         'Chain with cases'
         @F
         def h(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 1)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 2)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         chain = h | web.cases(h1, h1 | h2)
-        count = VS(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 1)
+        env = VS(count=0)
+        self.assert_(chain(env, VS()) is None)
+        self.assertEqual(env.count, 1)
 
     def test_chain_with_list_and_postfix(self):
         'Chain with cases and postfix'
         @F
         def h(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 1)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 2)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
 
         chain = h | web.cases(h1 | h2, h1) | h2
-        count = VS(count=0)
-        self.assertEqual(chain(count, VS()), None)
-        self.assertEqual(count['count'], 1)
+        env = VS(count=0)
+        self.assertEqual(chain(env, VS()), None)
+        self.assertEqual(env.count, 1)
 
     def test_chain_of_lists(self):
         'Chain of lists, data check'
@@ -159,7 +159,7 @@ class Chain(unittest.TestCase):
 
         @F
         def h1(env, data, nx):
-            self.assert_('count' in data)
+            self.assert_(hasattr(data, 'count'))
             self.assertEqual(data.count, 1)
             return nx(env, data)
 

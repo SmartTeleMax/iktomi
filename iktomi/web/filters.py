@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def update_data(data, new_data):
     for k,v in new_data.items():
-        data[k] = v
+        setattr(data, k, v)
 
 
 class match(WebHandler):
@@ -177,7 +177,7 @@ class namespace(WebHandler):
         self.namespace = ns
 
     def namespace(self, env, data):
-        if 'namespace' in env:
+        if hasattr(env, 'namespace'):
             env.namespace += '.' + self.namespace
         else:
             env.namespace = self.namespace

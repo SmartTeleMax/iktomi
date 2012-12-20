@@ -8,16 +8,16 @@ from iktomi.utils.storage import VersionedStorage
 
 class VersionedStorageTests(unittest.TestCase):
 
-    def test_contains(self):
+    def test_hasattr(self):
         'VersionedStorage __contains__ method'
         a = VersionedStorage(a=1)
         b = VersionedStorage(_parent_storage=a, b=2)
         c = VersionedStorage(_parent_storage=b, c=3, b=4)
 
-        self.assert_('a' in c)
-        self.assert_('b' in c)
-        self.assert_('c' in c)
-        self.assert_('d' not in c)
+        self.assert_(hasattr(c, 'a'))
+        self.assert_(hasattr(c, 'b'))
+        self.assert_(hasattr(c, 'c'))
+        self.assert_(not hasattr(c, 'd'))
 
     def test_as_dict(self):
         'VersionedStorage __contains__ method'

@@ -140,7 +140,7 @@ class CookieAuth(web.WebHandler):
 
 @web.request_filter
 def auth_required(env, data, next_handler):
-    if 'user' in env and env.user is not None:
+    if getattr(env, 'user', None) is not None:
         return next_handler(env, data)
     response = web.Response(status=303)
     response.headers['Location'] = str(env.root.login.as_url.qs_set(next=env.request.path_info))
