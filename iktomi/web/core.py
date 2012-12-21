@@ -9,7 +9,7 @@ import httplib
 import functools
 from webob.exc import HTTPException
 from .http import Request, Response, RouteState
-from iktomi.utils.storage import VersionedStorage
+from iktomi.utils.storage import VersionedStorage, StorageFrame
 
 from copy import copy
 
@@ -23,11 +23,10 @@ def is_chainable(handler):
         handler = handler._next_handler
     return False
 
-class AppEnvironment(VersionedStorage):
+class AppEnvironment(StorageFrame):
 
-    def __init__(self, request, root, _data=None, _parent_storage=None):
-        VersionedStorage.__init__(self, _data=_data,
-                                  _parent_storage=_parent_storage)
+    def __init__(self, request, root, _parent_storage=None, **kwargs):
+        StorageFrame.__init__(self, _parent_storage=_parent_storage, **kwargs)
         self.request = request
         self.root = root.bind_to_request(request)
         self._route_state = RouteState(request)
@@ -77,7 +76,7 @@ class WebHandler(object):
         EnvCls = EnvCls or self.EnvCls
         def wsgi(environ, start_response):
             request = Request(environ, charset='utf-8')
-            env = EnvCls(request, root)
+            env = VersionedStorage(EnvCls, request, root)
             data = VersionedStorage()
             try:
                 response = self(env, data)
@@ -118,11 +117,15 @@ class cases(WebHandler):
 
     def cases(self, env, data):
         for handler in self.handlers:
-            result = handler(VersionedStorage(_parent_storage=env),
-                             VersionedStorage(_parent_storage=data))
-            if result is None:
-                continue
-            return result
+            env._push()
+            data._push()
+            try:
+                result = handler(env, data)
+            finally:
+                env._pop()
+                data._pop()
+            if result is not None:
+                return result
     # for readable tracebacks
     __call__ = cases
 

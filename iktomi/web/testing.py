@@ -5,7 +5,6 @@ __all__ = ['ask']
 from .http import Request
 from .reverse import Reverse
 from ..utils.storage import VersionedStorage
-from .core import AppEnvironment
 
 
 def ask(application, url, method='get', data=None,
@@ -14,7 +13,7 @@ def ask(application, url, method='get', data=None,
     EnvCls = EnvCls or application.EnvCls
     root = Reverse.from_handler(application)
     request = Request.blank(url, POST=data, headers=headers)
-    env = EnvCls(request, root, **(additional_env or {}))
+    env = VersionedStorage(EnvCls, request, root, **(additional_env or {}))
     #TODO: may be later process cookies separatly
     data = VersionedStorage(**(additional_data or {}))
     return application(env, data)
