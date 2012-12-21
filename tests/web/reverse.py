@@ -114,6 +114,15 @@ class LocationsTests(unittest.TestCase):
             self.assertEqual(web.locations(chain)[k][0].subdomains,
                              ['news'])
 
+    def test_function(self):
+        'Reverse working with chained functions'
+        app = web.cases(
+            web.match('/', 'index') | (lambda e, d: None),
+            web.prefix('/xx') | (lambda e, d: None),
+            (lambda e, d: None),
+        )
+        self.assertEqual(web.locations(app).keys(), ['index'])
+
 
 class ReverseTests(unittest.TestCase):
 
@@ -131,16 +140,6 @@ class ReverseTests(unittest.TestCase):
         r = web.Reverse.from_handler(app)
         self.assertEqual(r.as_url, '/')
         self.assertEqual(r.index.as_url, '/index')
-
-    def test_function(self):
-        'Reverse working with chained functions'
-        app = web.cases(
-            web.match('/', 'index') | (lambda e, d: None),
-            (lambda e, d: None),
-        )
-        r = web.Reverse.from_handler(app)
-        self.assertEqual(r.index.as_url, '/')
-
 
     def test_deafult_name_with_args(self):
         'Reverse default name with args'

@@ -49,7 +49,6 @@ class WebHandler(object):
 
     def _locations(self):
         next_handler = self.next_handler
-        # if next_handler is lambda - the end of chain
         if isinstance(next_handler, WebHandler):
             return next_handler._locations()
         # we are last in chain
@@ -66,7 +65,6 @@ class WebHandler(object):
     def next_handler(self):
         if hasattr(self, '_next_handler'):
             return self._next_handler
-        #XXX: may be request_handler?
         return lambda e, d: None
 
     def copy(self):
@@ -131,13 +129,12 @@ class cases(WebHandler):
     def _locations(self):
         locations = {}
         for handler in self.handlers:
-            if not isinstance(handler, WebHandler):
-                continue
-            handler_locations = handler._locations()
-            for k, v in handler_locations.items():
-                if k in locations:
-                    raise ValueError('Location "%s" already exists' % k)
-                locations[k] = v
+            if isinstance(handler, WebHandler):
+                handler_locations = handler._locations()
+                for k, v in handler_locations.items():
+                    if k in locations:
+                        raise ValueError('Location "%s" already exists' % k)
+                    locations[k] = v
         return locations
 
     def __repr__(self):
