@@ -50,7 +50,7 @@ class WebHandler(object):
     def _locations(self):
         next_handler = self.next_handler
         # if next_handler is lambda - the end of chain
-        if not type(next_handler) is types.FunctionType:
+        if isinstance(next_handler, WebHandler):
             return next_handler._locations()
         # we are last in chain
         return {}
@@ -131,6 +131,8 @@ class cases(WebHandler):
     def _locations(self):
         locations = {}
         for handler in self.handlers:
+            if not isinstance(handler, WebHandler):
+                continue
             handler_locations = handler._locations()
             for k, v in handler_locations.items():
                 if k in locations:
