@@ -3,6 +3,7 @@
 import unittest
 from iktomi import web
 from iktomi.auth import CookieAuth, SqlaModelAuth, auth_required, encrypt_password
+from iktomi.utils import cached_property
 
 __all__ = ['CookieAuthTests', 'SqlaModelAuthTests']
 
@@ -35,10 +36,6 @@ def identify_user(env, user_identity):
 class CookieAuthTests(unittest.TestCase):
     def setUp(self):
         auth = self.auth = CookieAuth(get_user_identity, identify_user)
-        @web.request_filter
-        def make_env(env, data, nxt):
-            env.root = root
-            return nxt(env, data)
         def anonymouse(env, data):
             self.assert_(hasattr(env, 'user'))
             self.assertEqual(env.user, None)
@@ -47,7 +44,7 @@ class CookieAuthTests(unittest.TestCase):
             self.assert_(hasattr(env, 'user'))
             self.assertEqual(env.user, MockUser(name='user name'))
             return web.Response('ok')
-        self.app = make_env | web.cases(
+        self.app = web.cases(
             auth.login(),
             auth.logout(),
             auth | web.cases(
@@ -55,7 +52,6 @@ class CookieAuthTests(unittest.TestCase):
                 web.match('/b', 'b') | auth_required | no_anonymouse,
             ),
         )
-        root = web.Reverse.from_handler(self.app)
 
     def login(self, login, password):
         return web.ask(self.app, '/login', data={'login':login, 'password':password})
@@ -118,27 +114,38 @@ class SqlaModelAuthTests(unittest.TestCase):
             login = Column(String(255), nullable=False, unique=True)
             password = Column(String(255), nullable=False)
         auth = SqlaModelAuth(User)
+
+        class Env(web.AppEnvironment):
+
+            @cached_property
+            def db(self):
+                return session_maker('sqlite:///:memory:')()
+
+            @cached_property
+            def template(self):
+                return MockTemplateManager()
+
         @web.request_filter
         def make_env(env, data, nxt):
-            env.root = root
-            env.template = MockTemplateManager()
-            env.db = db = session_maker('sqlite:///:memory:')()
-            metadata.create_all(db.bind)
+            metadata.create_all(env.db.bind)
             user = User(login='user name', password=encrypt_password('123'))
-            db.add(user)
-            db.commit()
+            env.db.add(user)
+            env.db.commit()
             try:
                 return nxt(env, data)
             finally:
-                db.close()
+                env.db.close()
+
         def anonymouse(env, data):
             self.assert_(hasattr(env, 'user'))
             self.assertEqual(env.user, None)
             return web.Response('ok')
+
         def no_anonymouse(env, data):
             self.assert_(hasattr(env, 'user'))
             self.assertEqual(env.user.login, 'user name')
             return web.Response('ok')
+
         self.app = make_env | web.cases(
             auth.login(),
             auth.logout(),
@@ -147,7 +154,7 @@ class SqlaModelAuthTests(unittest.TestCase):
                 web.match('/b', 'b') | auth_required | no_anonymouse,
             ),
         )
-        root = web.Reverse.from_handler(self.app)
+        self.app.EnvCls = Env
 
     def login(self, login, password):
         return web.ask(self.app, '/login', data={'login':login, 'password':password})

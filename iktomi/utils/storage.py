@@ -1,50 +1,18 @@
 # -*- coding: utf-8 -*-
 
 class VersionedStorage(object):
-    def __init__(self, *args, **kwargs):
-        self.__stack = [{}]
-        self.__dict__.update(dict(*args, **kwargs))
 
-    def _get_dict(self):
-        d = self.__dict__.copy()
-        del d['_VersionedStorage__stack']
-        return d
+    def __init__(self, _parent_storage=None, **kwargs):
+        self._parent_storage = _parent_storage
+        self.__dict__.update(kwargs)
 
-    def _set_dict(self, value):
-        value['_VersionedStorage__stack'] = self.__stack
-        self.__dict__ = value
-
-    _dict_ = property(_get_dict, _set_dict)
-
-    @property
-    def _modified(self):
-        return self.__stack[-1] != self._dict_
-
-    def _commit(self):
-        if self._modified:
-            self.__stack.append(self._dict_)
-
-    def _rollback(self):
-        if len(self.__stack) > 1:
-            self._dict_ = self.__stack.pop()
+    def __getattr__(self, name):
+        return getattr(self._parent_storage, name)
 
     def as_dict(self):
-        return self._dict_
+        d = dict(self._parent_storage.as_dict() if self._parent_storage else {},
+                 **self.__dict__)
+        # XXX delete _parent_storage?
+        del d['_parent_storage']
+        return d
 
-    def __getitem__(self, k):
-        return self.__dict__[k]
-
-    def __delitem__(self, k):
-        del self.__dict__[k]
-
-    __setitem__ = object.__setattr__
-
-    def __contains__(self, k):
-        return k in self._dict_
-
-    def __repr__(self):
-        return repr(self._dict_)
-
-    def __call__(self, **kwargs):
-        self.__dict__.update(**kwargs)
-        return self

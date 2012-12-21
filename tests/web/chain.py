@@ -4,7 +4,7 @@ __all__ = ['Chain']
 
 import unittest
 from iktomi import web
-from iktomi.web.core import _FunctionWrapper2, _FunctionWrapper3
+from iktomi.web.core import _FunctionWrapper3
 from iktomi.utils.storage import VersionedStorage
 
 skip = getattr(unittest, 'skip', lambda x: None)
@@ -33,8 +33,7 @@ class Chain(unittest.TestCase):
         self.assertEqual(handler.handler, handler2)
 
         handler = chain._next_handler._next_handler
-        self.assert_(isinstance(handler, _FunctionWrapper2))
-        self.assertEqual(handler.handle, handler3)
+        self.assertEqual(handler, handler3)
 
     def test_functions_chain_call(self):
         'Functions chain call'
@@ -56,25 +55,25 @@ class Chain(unittest.TestCase):
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h3(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         chain = web.cases(h1, h2, h3)
-        count = VersionedStorage(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        env = VersionedStorage(count=0)
+        self.assert_(chain(env, VS()) is None)
+        self.assertEqual(env.count, 0)
 
     def test_list_of_chains(self):
         'cases of chains'
@@ -82,74 +81,74 @@ class Chain(unittest.TestCase):
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h3(env, data, nh):
             self.assertEqual(env.count, 1)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         chain = web.cases(h1, h2 | h3)
-        count = VS(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        env = VS(count=0)
+        self.assert_(chain(env, VS()) is None)
+        self.assertEqual(env.count, 0)
 
     def test_chain_with_list(self):
         'Chain with cases'
         @F
         def h(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 1)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 2)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         chain = h | web.cases(h1, h1 | h2)
-        count = VS(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        env = VS(count=0)
+        self.assert_(chain(env, VS()) is None)
+        self.assertEqual(env.count, 1)
 
     def test_chain_with_list_and_postfix(self):
         'Chain with cases and postfix'
         @F
         def h(env, data, nh):
             self.assertEqual(env.count, 0)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h1(env, data, nh):
             self.assertEqual(env.count, 1)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
             return nh(env, data)
 
         @F
         def h2(env, data, nh):
             self.assertEqual(env.count, 2)
-            env['count'] = env['count'] + 1
+            env.count = env.count + 1
 
-        chain = h | web.cases(h1, h1 | h2) | h2
-        count = VS(count=0)
-        self.assert_(chain(count, VS()) is None)
-        self.assertEqual(count['count'], 0)
+        chain = h | web.cases(h1 | h2, h1) | h2
+        env = VS(count=0)
+        self.assertEqual(chain(env, VS()), None)
+        self.assertEqual(env.count, 1)
 
     def test_chain_of_lists(self):
         'Chain of lists, data check'
@@ -160,7 +159,7 @@ class Chain(unittest.TestCase):
 
         @F
         def h1(env, data, nx):
-            self.assert_('count' in data)
+            self.assert_(hasattr(data, 'count'))
             self.assertEqual(data.count, 1)
             return nx(env, data)
 
@@ -169,12 +168,12 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_handler(self):
         'Reuse handlers'
+        @F
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
 
-        h_wrapped = F(h)
-        chain = h_wrapped | h_wrapped | h_wrapped | h_wrapped
+        chain = h | h | h | h
         self.assertEqual(chain(VS(), VS()), 4)
 
     def test_chain_reuse_chain(self):
@@ -195,16 +194,15 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_handler2(self):
         'Reuse handlers, then use only first one and assert nothing has changed'
+        @F
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
 
-        h_wrapped = F(h)
-        chain = F(h) | web.cases(h_wrapped,
-                                 h_wrapped)
-        chain1 = chain | h_wrapped
-        chain2 = chain | h_wrapped
-        chain3 = chain2 | h_wrapped
+        chain = h | web.cases(h, h)
+        chain1 = chain | h
+        chain2 = chain | h
+        chain3 = chain2 | h
 
         self.assertEqual(chain1(VS(), VS()), 3)
         self.assertEqual(chain2(VS(), VS()), 3)
@@ -212,13 +210,13 @@ class Chain(unittest.TestCase):
 
     def test_chain_reuse_cases(self):
         'Reuse cases handler'
+        @F
         def h(env, data, nx):
             count = nx(env, data) or 0
             return count + 1
 
-        h_wrapped = F(h)
-        chain = h_wrapped | h_wrapped | h_wrapped
-        chain = h_wrapped
+        chain = h | h | h
+        chain = h
         self.assertEqual(chain(VS(), VS()), 1)
 
     @skip
@@ -241,4 +239,21 @@ class Chain(unittest.TestCase):
             CountHandler(5)| CountHandler(6)| CountHandler(7)
 
         self.assertEqual(CountHandler.copies, 7)
+
+    def test_chain_to_cases_with_functions(self):
+        @F
+        def h(env, data, nx):
+            count = nx(env, data) or 0
+            return count + 1
+
+        def e(env, data):
+            return 10
+
+        chain = web.cases(h | e, h) | h
+        self.assertEqual(chain(VS(), VS()), 11)
+
+        chain = web.cases(e, h) | h
+        self.assertEqual(chain(VS(), VS()), 10)
+
+
 
