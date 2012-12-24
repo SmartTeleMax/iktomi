@@ -3,7 +3,8 @@
 __all__ = ['VersionedStorageTests']
 
 import unittest
-from iktomi.utils.storage import VersionedStorage, StorageFrame
+from iktomi.utils.storage import VersionedStorage, StorageFrame, \
+        storage_property, storage_cached_property, storage_method
 
 
 class VersionedStorageTests(unittest.TestCase):
@@ -48,18 +49,34 @@ class VersionedStorageTests(unittest.TestCase):
         self.assertEqual(vs.as_dict(), {'a': 1})
 
     def test_storage_properties(self):
-        from iktomi.utils import cached_property
-
         class Env(StorageFrame):
 
-            @cached_property
+            @storage_cached_property
             def var(self):
                 return self.value + 3
 
-            def var2(self):
+            @storage_property
+            def var1(self):
                 return self.value + 5
-        
+
+            @storage_method
+            def var2(self):
+                return self.value + 7
+
         vs = VersionedStorage(Env)
         vs._push(value=4)
         self.assertEqual(vs.var, 7)
-        self.assertEqual(vs.var2(), 9)
+        self.assertEqual(vs.var1, 9)
+        self.assertEqual(vs.var2(), 11)
+
+        vs._push(value=1)
+        self.assertEqual(vs.var, 7)
+        self.assertEqual(vs.var1, 6)
+        self.assertEqual(vs.var2(), 8)
+
+        vs._pop()
+        vs._pop()
+        self.assertEqual(vs.var, 7)
+        self.assertRaises(AttributeError, lambda: vs.var1)
+        self.assertRaises(AttributeError, vs.var2)
+
