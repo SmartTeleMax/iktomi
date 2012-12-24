@@ -7,6 +7,9 @@ class StorageFrame(object):
         self.__dict__.update(kwargs)
 
     def __getattr__(self, name):
+        #if self._parent_storage is None:
+        #    raise AttributeError("'%s' object has no attribute '%s'" % 
+        #                    (self.__class__.__name__, name))
         return getattr(self._parent_storage, name)
 
     def as_dict(self):
@@ -21,9 +24,10 @@ class VersionedStorage(object):
     def __init__(self, cls=StorageFrame, *args, **kwargs):
         self._storage = cls(*args, **kwargs)
 
-    def _push(self):
+    def _push(self, **kwargs):
         self._storage = VersionedStorage(
-                    _parent_storage=self._storage)
+                            _parent_storage=self._storage, **kwargs)
+        return self._storage
 
     def _pop(self):
         self._storage = self._storage._parent_storage
