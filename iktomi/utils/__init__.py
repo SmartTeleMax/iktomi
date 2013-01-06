@@ -25,6 +25,7 @@ def quoteattrs(data):
 def quote_js(text):
     '''Quotes text to be used as JavaScript string in HTML templates. The
     result doesn't contain surrounding quotes.'''
+    text = unicode(text) # for Jinja2 Markup
     text = text.replace('\\', '\\\\');
     text = text.replace('\n', '\\n');
     text = text.replace('\r', '');
