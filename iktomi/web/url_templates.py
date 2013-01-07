@@ -66,7 +66,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             variable = groups['variable']
             builder_params.append((variable, conv_object))
             url_params[variable] = conv_object
-            result += '(?P<%s>[.a-zA-Z0-9_%%-:]+)' % variable
+            result += '(?P<%s>[.a-zA-Z0-9_%%:-]+)' % variable
             continue
         raise ValueError('Incorrect url template "%s"' % url_template)
     if match_whole_str:
