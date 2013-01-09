@@ -149,8 +149,7 @@ class Field(BaseField):
         else:
             return self.form.raw_data.get(self.input_name, '')
 
-    def set_raw_value(self, value):
-        raw_data = self.form.raw_data
+    def set_raw_value(self, raw_data, value):
         if self.multiple:
             try:
                 del raw_data[self.input_name]
@@ -226,12 +225,12 @@ class FieldSet(AggregateField):
                       for field in self.fields)
         return self.to_python(result)
 
-    def set_raw_value(self, value):
+    def set_raw_value(self, raw_data, value):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), 'To set raw value need dict, got %r' % value
         for field in self.fields:
             subvalue = value[field.name]
-            field.set_raw_value(field.from_python(subvalue))
+            field.set_raw_value(raw_data, field.from_python(subvalue))
 
     def accept(self):
         result = dict(self.python_data)
@@ -240,7 +239,8 @@ class FieldSet(AggregateField):
                 result[field.name] = field.accept()
             else:
                 # readonly field
-                field.set_raw_value(field.from_python(result[field.name]))
+                field.set_raw_value(self.form.raw_data,
+                                    field.from_python(result[field.name]))
         return self.to_python(result)
 
     def render(self):
@@ -316,13 +316,13 @@ class FieldList(AggregateField):
                 result[field.name] = field.accept()
         return self.to_python(result)
 
-    def set_raw_value(self, value):
+    def set_raw_value(self, raw_data, value):
         indeces = []
         for index in range(1, len(value)+1):
             index = str(index)
             subvalue = value[index]
             subfield = self.field(name=index)
-            subfield.set_raw_value(subfield.from_python(subvalue))
+            subfield.set_raw_value(raw_data, subfield.from_python(subvalue))
             indeces.append(index)
         if self.indeces_input_name in self.form.raw_data:
             del self.form.raw_data[self.indeces_input_name]
@@ -348,7 +348,7 @@ class FileField(Field):
     def get_default(self):
         return None # XXX
 
-    def set_raw_value(self, value):
+    def set_raw_value(self, raw_data, value):
         pass
 
     def _check_value_type(self, values):

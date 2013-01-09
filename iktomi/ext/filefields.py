@@ -197,7 +197,8 @@ class FileFieldSetConv(convs.Converter):
     def to_python(self, value):
         value = self._to_python(**value)
         #XXX Hack
-        self.field.set_raw_value(self.from_python(value))
+        self.field.set_raw_value(self.field.form.raw_data, 
+                                 self.from_python(value))
         return value
 
 

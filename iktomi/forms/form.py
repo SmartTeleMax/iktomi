@@ -46,7 +46,8 @@ class Form(object):
             #       because it may differ for each call
             value = initial.get(field.name, field.get_initial())
             self.python_data[field.name] = value
-            field.set_raw_value(field.from_python(value))
+            field.set_raw_value(self.raw_data,
+                                field.from_python(value))
         self.errors = {}
 
     @cached_property
@@ -95,7 +96,8 @@ class Form(object):
                 self.python_data[field.name] = field.accept()
             else:
                 # readonly field
-                field.set_raw_value(field.from_python(self.python_data[field.name]))
+                value = self.python_data[field.name]
+                field.set_raw_value(self.raw_data, field.from_python(value))
 
         if not self.is_valid:
             return False
@@ -123,3 +125,19 @@ class Form(object):
                     return field.get_field(names[1])
                 return field
         return None
+
+    def get_data(self, compact=True):
+        '''
+        Returns data representing current state of the form. While
+        Form.raw_data may contain alien fields and invalid data, this method
+        returns only valid fields that belong to this form only. It's designed
+        to pass somewhere current state of the form (as query string or by
+        other means).
+        '''
+        data = MultiDict()
+        for field in self.fields:
+            raw_value = field.from_python(self.python_data[field.name])
+            field.set_raw_value(data, raw_value)
+        if compact:
+            data = MultiDict([(k, v) for k, v in data.items() if v])
+        return data
