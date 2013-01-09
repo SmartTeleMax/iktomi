@@ -189,6 +189,24 @@ class Prefix(unittest.TestCase):
         # rctx have prefixes, so we need new one
         self.assertEqual(web.ask(app, encoded).status_int, 200)
 
+    def test_prefix_with_zeros_in_int(self):
+        '''Simple prefix'''
+
+        def handler(env, data):
+            return Response()
+
+        app = web.cases(
+            web.prefix('/section/<int:section_id>') | 
+                web.match('/item', 'doc') |
+                handler)
+
+        #self.assertEqual(web.ask(app, '/section/1').status_int, 200)
+        self.assertEqual(web.ask(app, '/section/1/item').status_int, 200)
+        self.assertEqual(web.ask(app, '/section/001/item').status_int, 200)
+        # XXX this test fails because of bug in prefix handler:
+        # self.builder(**kwargs) - prefix is built from converted value and
+        # contains no zeros
+
 
 class Subdomain(unittest.TestCase):
 
