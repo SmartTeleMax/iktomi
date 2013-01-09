@@ -111,9 +111,9 @@ class UrlTemplate(object):
                     kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
                 except ConvertError, err:
                     logger.debug('ConvertError by "%s", value "%s"' % (err.converter, err.value.encode('utf-8')))
-                    return False, {}
-            return True, kwargs
-        return False, {}
+                    return None, {}
+            return m.group(), kwargs
+        return None, {}
 
     def __call__(self, **kwargs):
         'Url building with url params values taken from kwargs. (reverse)'

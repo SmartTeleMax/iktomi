@@ -6,6 +6,10 @@ from iktomi.web.reverse import URL
 from iktomi.web.url_templates import UrlTemplate
 from iktomi.web.url_converters import Converter, ConvertError
 
+def ut_match(ut, *args, **kwargs):
+    m, kw = ut.match(*args, **kwargs)
+    return (m is not None, kw)
+
 
 class URLTests(unittest.TestCase):
 
@@ -74,50 +78,50 @@ class UrlTemplateTest(unittest.TestCase):
     def test_match(self):
         'Simple match'
         t = UrlTemplate('/')
-        self.assertEqual(t.match('/'), (True, {}))
+        self.assertEqual(ut_match(t, '/'), (True, {}))
 
     def test_static_text(self):
         'Simple text match'
         t = UrlTemplate('/test/url')
-        self.assertEqual(t.match('/test/url'), (True, {}))
+        self.assertEqual(ut_match(t, '/test/url'), (True, {}))
 
     def test_converter(self):
         'Simple text match'
         t = UrlTemplate('/<string:name>')
-        self.assertEqual(t.match('/somevalue'), (True, {'name': 'somevalue'}))
+        self.assertEqual(ut_match(t, '/somevalue'), (True, {'name': 'somevalue'}))
 
     def test_default_converter(self):
         'Default converter test'
         t = UrlTemplate('/<name>')
-        self.assertEqual(t.match('/somevalue'), (True, {'name': 'somevalue'}))
+        self.assertEqual(ut_match(t, '/somevalue'), (True, {'name': 'somevalue'}))
 
     def test_multiple_converters(self):
         'Multiple converters'
         t = UrlTemplate('/<name>/text/<action>')
-        self.assertEqual(t.match(quote('/this/text/edit')), (True, {'name': 'this', 'action': 'edit'}))
+        self.assertEqual(ut_match(t, quote('/this/text/edit')), (True, {'name': 'this', 'action': 'edit'}))
 
     def test_multiple_converters_postfix(self):
         'Multiple converters with postfix data'
         t = UrlTemplate('/<name>/text/<action>/post')
-        self.assertEqual(t.match(quote(u'/this/text/edit/post')), (True, {'name': 'this', 'action': 'edit'}))
-        self.assertEqual(t.match(quote(u'/this/text/edit')), (False, {}))
+        self.assertEqual(ut_match(t, quote(u'/this/text/edit/post')), (True, {'name': 'this', 'action': 'edit'}))
+        self.assertEqual(ut_match(t, quote(u'/this/text/edit')), (False, {}))
 
     def test_unicode(self):
         'Unicode values of converters'
         t = UrlTemplate('/<name>/text/<action>')
-        self.assertEqual(t.match(quote(u'/имя/text/действие'.encode('utf-8'))), (True, {'name': u'имя', 'action': u'действие'}))
+        self.assertEqual(ut_match(t, quote(u'/имя/text/действие'.encode('utf-8'))), (True, {'name': u'имя', 'action': u'действие'}))
 
     def test_incorrect_value(self):
         'Incorrect url encoded value'
         t = UrlTemplate('/<name>')
         value = quote(u'/имя'.encode('utf-8'))[:-1]
-        self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\ufffd%8'}))
+        self.assertEqual(ut_match(t, value), (True, {'name': u'\u0438\u043c\ufffd%8'}))
 
     def test_incorrect_urlencoded_path(self):
         'Incorrect url encoded path'
         t = UrlTemplate('/<name>')
         value = quote(u'/имя'.encode('utf-8'))+'%r1'
-        self.assertEqual(t.match(value), (True, {'name': u'\u0438\u043c\u044f%r1'}))
+        self.assertEqual(ut_match(t, value), (True, {'name': u'\u0438\u043c\u044f%r1'}))
 
     def test_converter_with_args(self):
         'Converter with args'
@@ -130,11 +134,11 @@ class UrlTemplateTest(unittest.TestCase):
                 return value
         t = UrlTemplate('/<conv(u"text", u"test"):name>', converters=[Conv])
         value = quote(u'/имя'.encode('utf-8'))
-        self.assertEqual(t.match(value), (False, {}))
+        self.assertEqual(ut_match(t, value), (False, {}))
         value = quote(u'/text'.encode('utf-8'))
-        self.assertEqual(t.match(value), (True, {'name': u'text'}))
+        self.assertEqual(ut_match(t, value), (True, {'name': u'text'}))
         value = quote(u'/test'.encode('utf-8'))
-        self.assertEqual(t.match(value), (True, {'name': u'test'}))
+        self.assertEqual(ut_match(t, value), (True, {'name': u'test'}))
 
     def test_incorrect_url_template(self):
         'Incorrect url template'

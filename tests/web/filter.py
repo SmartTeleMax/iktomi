@@ -7,44 +7,47 @@ from iktomi import web
 from iktomi.web.url_templates import UrlTemplate
 from iktomi.web.http import Request, Response
 
+def ut_match(ut, *args, **kwargs):
+    m, kw = ut.match(*args, **kwargs)
+    return (m is not None, kw)
 
 class UrlTemplateTests(unittest.TestCase):
 
     def test_empty_match(self):
         'UrlTemplate match method with empty template'
         ut = UrlTemplate('')
-        self.assertEqual(ut.match(''), (True, {}))
-        self.assertEqual(ut.match('/'), (False, {}))
+        self.assertEqual(ut_match(ut, ''), (True, {}))
+        self.assertEqual(ut_match(ut, '/'), (False, {}))
 
     def test_match_without_params(self):
         'UrlTemplate match method without params'
         ut = UrlTemplate('simple')
-        self.assertEqual(ut.match('simple'), (True, {}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut_match(ut, 'simple'), (True, {}))
+        self.assertEqual(ut_match(ut, '/simple'), (False, {}))
 
     def test_match_with_params(self):
         'UrlTemplate match method with params'
         ut = UrlTemplate('/simple/<int:id>')
-        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
-        self.assertEqual(ut.match('/simple/d'), (False, {}))
+        self.assertEqual(ut_match(ut, '/simple/2'), (True, {'id':2}))
+        self.assertEqual(ut_match(ut, '/simple'), (False, {}))
+        self.assertEqual(ut_match(ut, '/simple/d'), (False, {}))
 
     def test_match_from_begining_without_params(self):
         'UrlTemplate match method without params (from begining of str)'
         ut = UrlTemplate('simple', match_whole_str=False)
-        self.assertEqual(ut.match('simple'), (True, {}))
-        self.assertEqual(ut.match('simple/sdffds'), (True, {}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
-        self.assertEqual(ut.match('/simple/'), (False, {}))
+        self.assertEqual(ut_match(ut, 'simple'), (True, {}))
+        self.assertEqual(ut_match(ut, 'simple/sdffds'), (True, {}))
+        self.assertEqual(ut_match(ut, '/simple'), (False, {}))
+        self.assertEqual(ut_match(ut, '/simple/'), (False, {}))
 
     def test_match_from_begining_with_params(self):
         'UrlTemplate match method with params (from begining of str)'
         ut = UrlTemplate('/simple/<int:id>', match_whole_str=False)
-        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
-        self.assertEqual(ut.match('/simple/2/sdfsf'), (True, {'id':2}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
-        self.assertEqual(ut.match('/simple/d'), (False, {}))
-        self.assertEqual(ut.match('/simple/d/sdfsdf'), (False, {}))
+        self.assertEqual(ut_match(ut, '/simple/2'), (True, {'id':2}))
+        self.assertEqual(ut_match(ut, '/simple/2/sdfsf'), (True, {'id':2}))
+        self.assertEqual(ut_match(ut, '/simple'), (False, {}))
+        self.assertEqual(ut_match(ut, '/simple/d'), (False, {}))
+        self.assertEqual(ut_match(ut, '/simple/d/sdfsdf'), (False, {}))
 
     def test_builder_without_params(self):
         'UrlTemplate builder method (without params)'
@@ -76,7 +79,7 @@ class UrlTemplateTests(unittest.TestCase):
         ut = UrlTemplate('/simple/<int:id>',
                          converters=(DoubleInt,))
         self.assertEqual(ut(id=2), '/simple/1')
-        self.assertEqual(ut.match('/simple/1'), (True, {'id': 2}))
+        self.assertEqual(ut_match(ut, '/simple/1'), (True, {'id': 2}))
 
     def test_var_name_with_underscore(self):
         ut = UrlTemplate('<message_uid>')
@@ -183,10 +186,6 @@ class Prefix(unittest.TestCase):
         self.assertEqual(web.Reverse.from_handler(app).percent.as_url, encoded)
         self.assertEqual(web.Reverse.from_handler(app).percent.as_url.get_readable(), u'/հայերեն/%')
 
-        self.assertNotEqual(web.ask(app, encoded), None)
-
-        # ???
-        # rctx have prefixes, so we need new one
         self.assertEqual(web.ask(app, encoded).status_int, 200)
 
     def test_prefix_with_zeros_in_int(self):
@@ -196,16 +195,14 @@ class Prefix(unittest.TestCase):
             return Response()
 
         app = web.cases(
-            web.prefix('/section/<int:section_id>') | 
-                web.match('/item', 'doc') |
+            web.prefix(u'/секция/<int:section_id>') | 
+                web.match(u'/документ', 'doc') |
                 handler)
 
+        from urllib import quote
         #self.assertEqual(web.ask(app, '/section/1').status_int, 200)
-        self.assertEqual(web.ask(app, '/section/1/item').status_int, 200)
-        self.assertEqual(web.ask(app, '/section/001/item').status_int, 200)
-        # XXX this test fails because of bug in prefix handler:
-        # self.builder(**kwargs) - prefix is built from converted value and
-        # contains no zeros
+        self.assertEqual(web.ask(app, quote(u'/секция/1/документ'.encode('utf-8'))).status_int, 200)
+        self.assertEqual(web.ask(app, quote(u'/секция/001/документ'.encode('utf-8'))).status_int, 200)
 
 
 class Subdomain(unittest.TestCase):

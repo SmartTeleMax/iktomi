@@ -5,6 +5,9 @@ from iktomi.web.url_templates import *
 from iktomi.web.url_converters import *
 from datetime import date
 
+def ut_match(ut, *args, **kwargs):
+    m, kw = ut.match(*args, **kwargs)
+    return (m is not None, kw)
 
 class IntConverter(unittest.TestCase):
 
@@ -28,9 +31,9 @@ class StringConverter(unittest.TestCase):
     def test_min_max(self):
         ut = UrlTemplate('/<string(min=3, max=6):message>')
 
-        self.assertEqual(ut.match('/si'), (False, {}))
-        self.assertEqual(ut.match('/siga'), (True, {'message': 'siga'}))
-        self.assertEqual(ut.match('/sigadzuk'), (False, {}))
+        self.assertEqual(ut_match(ut, '/si'), (False, {}))
+        self.assertEqual(ut_match(ut, '/siga'), (True, {'message': 'siga'}))
+        self.assertEqual(ut_match(ut, '/sigadzuk'), (False, {}))
 
 
     def test_to_python(self):
