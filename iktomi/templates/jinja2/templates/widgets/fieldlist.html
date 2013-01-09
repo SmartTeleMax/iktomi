@@ -1,6 +1,6 @@
 <table class="fieldlist" id="{{ field.input_name }}">
     <tbody>
-    {% for index in field.form.raw_data.getlist(field.indeces_input_name) %}
+    {% for index in field.form.raw_data.getall(field.indeces_input_name) %}
     
         <tr class="fieldlist-item">
             <td class="fieldlist-cell">

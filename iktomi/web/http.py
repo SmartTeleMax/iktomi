@@ -12,7 +12,7 @@ class RouteState(object):
     def __init__(self, request):
         self._prefixes = []
         self._subdomain = ''
-        self._domain = request.server_name.decode('idna')
+        self._domain = request.host.split(':', 1)[0].decode('idna')
         self.request = request
 
     def add_prefix(self, prefix):
