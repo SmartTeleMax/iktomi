@@ -7,6 +7,7 @@ import logging
 import mimetypes
 from os import path
 from urllib import unquote
+from webob.exc import HTTPMethodNotAllowed
 from .core import WebHandler
 from .http import Response
 from .url_templates import UrlTemplate
@@ -46,14 +47,17 @@ class match(WebHandler):
 
 
 class method(WebHandler):
-    def __init__(self, *names):
+    def __init__(self, *names, **kw):
         self._names = set([name.upper() for name in names])
         if 'GET' in self._names:
             self._names.add('HEAD')
+        self.strict = kw.get('strict', False)
 
     def method(self, env, data):
         if env.request.method in self._names:
             return self.next_handler(env, data)
+        if self.strict:
+            raise HTTPMethodNotAllowed()
         return None
     __call__ = method
 

@@ -320,3 +320,21 @@ class Match(unittest.TestCase):
         self.assertEqual(web.ask(app, '/second/2'), r)
 
 
+class Method(unittest.TestCase):
+
+    def test_simple_match(self):
+        '''Method'''
+        from webob.exc import HTTPMethodNotAllowed
+
+        app = web.cases(
+                web.match('/', 'simple') | web.method('post'),
+                web.match('/strict', 'strict') | web.method('post', strict=True)
+            ) | (lambda e,d: Response())
+
+        self.assertEqual(web.ask(app, '/'), None)
+        self.assertEqual(web.ask(app, '/', method='post').status_int, 200)
+
+        self.assertRaises(HTTPMethodNotAllowed, lambda: web.ask(app, '/strict').status_int)
+        self.assertEqual(web.ask(app, '/strict', method='post').status_int, 200)
+
+
