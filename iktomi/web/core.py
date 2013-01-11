@@ -93,9 +93,7 @@ class WebHandler(object):
                 logger.exception(e)
                 raise
 
-            headers = response.headers.items()
-            start_response(response.status, headers)
-            return [response.body]
+            return response(environ, start_response)
         return wsgi
 
 
