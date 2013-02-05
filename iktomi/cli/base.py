@@ -82,7 +82,6 @@ def _command_list(commands):
         sys.stdout.write('\n')
 
 
-
 class Cli(object):
     ''
 
