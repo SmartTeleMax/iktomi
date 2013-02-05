@@ -55,47 +55,64 @@ def manage(commands, argv=None, delim=':'):
         try:
             digest = commands[digest_name]
         except KeyError:
-            sys.stdout.write('Commands:\n')
-            for k in commands.keys():
-                sys.stdout.write(str(k))
-                sys.stdout.write('\n')
+            _command_list(commands)
             sys.exit('Command "%s" not found' % digest_name)
         try:
             if command is None:
                 if isinstance(digest, Cli):
-                    sys.stdout.write(digest.description())
+                    help_ = digest.description(argv[0], digest_name)
+                    sys.stdout.write(help_)
                     sys.exit('ERROR: "%s" is command digest' % digest_name)
                     return
                 digest(*args, **kwargs)
             else:
                 digest(command, *args, **kwargs)
         except CommandNotFound:
-            sys.stdout.write(commands[digest_name].description())
+            help_ = digest.description(argv[0], digest_name)
+            sys.stdout.write(help_)
             sys.exit('Command "%s:%s" not found' % (digest_name, command))
     else:
+        _command_list(commands)
         sys.exit('Please provide any command')
+
+def _command_list(commands):
+    sys.stdout.write('Commands:\n')
+    for k in commands.keys():
+        sys.stdout.write(str(k))
+        sys.stdout.write('\n')
+
 
 
 class Cli(object):
     ''
 
-    def description(self):
+    def description(self, argv0='manage.py', command=None):
         '''Description outputed to console'''
-        _help = self.__class__.__doc__ if self.__class__.__doc__ else ''
-        for k in dir(self):
-            if k.startswith('command_'):
-                _help += '\n'
-                cmd_doc = getattr(self, k).__doc__
-                if cmd_doc:
-                    _help += cmd_doc
+        command = command or self.__class__.__name__.lower()
+
+        import inspect
+        _help = ''
+        if self.__doc__:
+            _help += '%s\n' % self.__doc__
+        else:
+            _help += '%s\n' % command
+        for attr in dir(self):
+            if attr.startswith('command'):
+                func = getattr(self, attr)
+                if func.__doc__:
+                    _help += "\t%s\n" % func.__doc__
+                else:
+                    comm = attr.replace('command_', '', 1)
+                    args = inspect.getargspec(func).args[1:]
+                    args = (' [' + '] ['.join(args) + ']') if args else ''
+
+                    _help += "\t./%s %s:%s%s\n" % \
+                                     (argv0, command, comm, args)
         return _help
 
     def __call__(self, command_name, *args, **kwargs):
         if command_name == 'help':
-            sys.stdout.write(self.__doc__)
-            for k in self.__dict__.keys():
-                if k.startswith('command_'):
-                    sys.stdout.write(k.__doc__)
+            sys.stdout.write(self.description())
         elif hasattr(self, 'command_'+command_name):
             try:
                 getattr(self, 'command_'+command_name)(*args, **kwargs)
@@ -104,8 +121,6 @@ class Cli(object):
                                  'command "%s" is wrong:\n' % command_name)
                 sys.stderr.write(str(e))
         else:
-            if self.__class__.__doc__:
-                sys.stdout.write(self.__class__.__doc__)
             raise CommandNotFound()
 
 

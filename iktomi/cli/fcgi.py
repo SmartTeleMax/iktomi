@@ -11,6 +11,7 @@ from .base import Cli
 
 
 class Flup(Cli):
+    'Flup FCGI application'
 
     def __init__(self, app):
         self.app = app

@@ -7,6 +7,7 @@ __all__ = ['Sqla']
 
 
 class Sqla(Cli):
+    'SQLAlchemy database handling'
 
     def __init__(self, session_maker, initial=None, generators=None):
         self.session = session_maker()

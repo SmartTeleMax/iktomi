@@ -39,6 +39,7 @@ def flush_fds():
 
 
 class App(Cli):
+    'Development application'
     format = '%(levelname)s [%(name)s] %(message)s'
 
     def __init__(self, app, shell_namespace=None, extra_files=None, bootstrap=None):
@@ -48,7 +49,6 @@ class App(Cli):
         self.bootstrap = bootstrap
 
     def command_serve(self, host='', port='8000', level='debug'):
-        '''python manage.py app:serve [host] [port]'''
         logging.basicConfig(level=getattr(logging, level.upper()), format=self.format)
         if self.bootstrap:
             logger.info('Bootstraping...')
