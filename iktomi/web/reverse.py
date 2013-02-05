@@ -166,3 +166,6 @@ class Reverse(object):
     def from_handler(cls, handler):
         from .core import locations
         return cls(locations(handler), is_root=True)
+
+    def __str__(self):
+        return str(self.as_url)
