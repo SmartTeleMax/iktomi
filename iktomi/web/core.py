@@ -7,7 +7,7 @@ import logging
 import types
 import httplib
 import functools
-from webob.exc import HTTPException
+from webob.exc import HTTPException, HTTPInternalServerError
 from .http import Request, Response, RouteState
 from iktomi.utils.storage import VersionedStorage, StorageFrame
 
@@ -91,7 +91,7 @@ class WebHandler(object):
                 response = e
             except Exception, e:
                 logger.exception(e)
-                raise
+                response = HTTPInternalServerError()
 
             return response(environ, start_response)
         return wsgi
