@@ -319,6 +319,17 @@ class Match(unittest.TestCase):
         self.assertEqual(web.ask(app, '/first'), r)
         self.assertEqual(web.ask(app, '/second/2'), r)
 
+    def test_match_empty_pattern(self):
+        '''Test if match() works proper with empty patterns'''
+
+        r = Response()
+        def handler(env, data):
+            return r
+
+        app = web.prefix('/') | web.match('', 'index') | handler
+
+        self.assertEqual(web.ask(app, '/'), r)
+
 
 class Method(unittest.TestCase):
 

@@ -31,7 +31,7 @@ class match(WebHandler):
 
     def match(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
-        if matched:
+        if matched is not None:
             env.current_url_name = self.url_name
             update_data(data, kwargs)
             return self.next_handler(env, data)
@@ -127,7 +127,7 @@ class prefix(WebHandler):
 
     def prefix(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
-        if matched:
+        if matched is not None:
             update_data(data, kwargs)
             env._route_state.add_prefix(matched)
             result = self.next_handler(env, data)
