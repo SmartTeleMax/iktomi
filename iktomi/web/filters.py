@@ -128,7 +128,7 @@ class prefix(WebHandler):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched:
             update_data(data, kwargs)
-            env._route_state.add_prefix(self.builder(**kwargs))
+            env._route_state.add_prefix(matched)
             result = self.next_handler(env, data)
             if result is not None:
                 return result
