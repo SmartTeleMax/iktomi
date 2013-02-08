@@ -13,38 +13,38 @@ class UrlTemplateTests(unittest.TestCase):
     def test_empty_match(self):
         'UrlTemplate match method with empty template'
         ut = UrlTemplate('')
-        self.assertEqual(ut.match(''), (True, {}))
-        self.assertEqual(ut.match('/'), (False, {}))
+        self.assertEqual(ut.match(''), ('', {}))
+        self.assertEqual(ut.match('/'), (None, {}))
 
     def test_match_without_params(self):
         'UrlTemplate match method without params'
         ut = UrlTemplate('simple')
-        self.assertEqual(ut.match('simple'), (True, {}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
+        self.assertEqual(ut.match('simple'), ('simple', {}))
+        self.assertEqual(ut.match('/simple'), (None, {}))
 
     def test_match_with_params(self):
         'UrlTemplate match method with params'
         ut = UrlTemplate('/simple/<int:id>')
-        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
-        self.assertEqual(ut.match('/simple/d'), (False, {}))
+        self.assertEqual(ut.match('/simple/2'), ('/simple/2', {'id':2}))
+        self.assertEqual(ut.match('/simple'), (None, {}))
+        self.assertEqual(ut.match('/simple/d'), (None, {}))
 
     def test_match_from_begining_without_params(self):
         'UrlTemplate match method without params (from begining of str)'
         ut = UrlTemplate('simple', match_whole_str=False)
-        self.assertEqual(ut.match('simple'), (True, {}))
-        self.assertEqual(ut.match('simple/sdffds'), (True, {}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
-        self.assertEqual(ut.match('/simple/'), (False, {}))
+        self.assertEqual(ut.match('simple'), ('simple', {}))
+        self.assertEqual(ut.match('simple/sdffds'), ('simple', {}))
+        self.assertEqual(ut.match('/simple'), (None, {}))
+        self.assertEqual(ut.match('/simple/'), (None, {}))
 
     def test_match_from_begining_with_params(self):
         'UrlTemplate match method with params (from begining of str)'
         ut = UrlTemplate('/simple/<int:id>', match_whole_str=False)
-        self.assertEqual(ut.match('/simple/2'), (True, {'id':2}))
-        self.assertEqual(ut.match('/simple/2/sdfsf'), (True, {'id':2}))
-        self.assertEqual(ut.match('/simple'), (False, {}))
-        self.assertEqual(ut.match('/simple/d'), (False, {}))
-        self.assertEqual(ut.match('/simple/d/sdfsdf'), (False, {}))
+        self.assertEqual(ut.match('/simple/2'), ('/simple/2', {'id':2}))
+        self.assertEqual(ut.match('/simple/2/sdfsf'), ('/simple/2', {'id':2}))
+        self.assertEqual(ut.match('/simple'), (None, {}))
+        self.assertEqual(ut.match('/simple/d'), (None, {}))
+        self.assertEqual(ut.match('/simple/d/sdfsdf'), (None, {}))
 
     def test_builder_without_params(self):
         'UrlTemplate builder method (without params)'
@@ -76,7 +76,7 @@ class UrlTemplateTests(unittest.TestCase):
         ut = UrlTemplate('/simple/<int:id>',
                          converters=(DoubleInt,))
         self.assertEqual(ut(id=2), '/simple/1')
-        self.assertEqual(ut.match('/simple/1'), (True, {'id': 2}))
+        self.assertEqual(ut.match('/simple/1'), ('/simple/1', {'id': 2}))
 
     def test_var_name_with_underscore(self):
         ut = UrlTemplate('<message_uid>')

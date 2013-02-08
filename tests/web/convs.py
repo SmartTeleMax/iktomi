@@ -28,9 +28,9 @@ class StringConverter(unittest.TestCase):
     def test_min_max(self):
         ut = UrlTemplate('/<string(min=3, max=6):message>')
 
-        self.assertEqual(ut.match('/si'), (False, {}))
-        self.assertEqual(ut.match('/siga'), (True, {'message': 'siga'}))
-        self.assertEqual(ut.match('/sigadzuk'), (False, {}))
+        self.assertEqual(ut.match('/si'), (None, {}))
+        self.assertEqual(ut.match('/siga'), ('/siga', {'message': 'siga'}))
+        self.assertEqual(ut.match('/sigadzuk'), (None, {}))
 
 
     def test_to_python(self):
