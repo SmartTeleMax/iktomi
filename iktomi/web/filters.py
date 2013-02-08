@@ -113,7 +113,8 @@ class static_files(WebHandler):
                     response.write(f.read())
                 return response
             else:
-                logger.info('Client requested non existent static data "%s"' % file_path)
+                logger.info('Client requested non existent static data "%s"',
+                            file_path)
                 return Response(status=404)
         return None
     __call__ = static_files

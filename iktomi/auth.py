@@ -3,6 +3,7 @@
 import os
 import hashlib
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -62,7 +63,7 @@ class CookieAuth(web.WebHandler):
             user_identity = self.storage.get(self._cookie_name+':'+key.encode('utf-8'))
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
-        logger.debug('Authenticated: %r' % user)
+        logger.debug('Authenticated: %r', user)
         env.user = user
         try:
             result = self.next_handler(env, data)
@@ -79,7 +80,7 @@ class CookieAuth(web.WebHandler):
                                 str(user_identity)):
             if self.crash_without_storage:
                 raise Exception('Storage `%r` is gone or down' % self.storage)
-            logger.info('storage "%r" is unrichable' % self.storage)
+            logger.info('storage "%r" is unrichable', self.storage)
         return response
 
     def logout_user(self, request):
@@ -88,7 +89,7 @@ class CookieAuth(web.WebHandler):
         key = request.cookies[self._cookie_name]
         if key is not None:
             if not self.storage.delete(self._cookie_name+':'+key.encode('utf-8')):
-                logger.info('storage "%r" is unrichable' % self.storage)
+                logger.info('storage "%r" is unrichable', self.storage)
         return response
 
     def login(self, template='login'):

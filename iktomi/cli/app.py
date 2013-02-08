@@ -59,7 +59,7 @@ class App(Cli):
             for filename in reloader_loop(extra_files=self.extra_files):
                 server_thread.running = False
                 server_thread.join()
-                logger.info('Changes in file "%s"' % filename)
+                logger.info('Changes in file "%s"', filename)
                 logger.info('Reloading...')
                 # Smart reload of current process.
                 # Main goal is to reload all modules
@@ -96,7 +96,7 @@ class DevServerThread(threading.Thread):
         super(DevServerThread, self).__init__()
 
     def run(self):
-        logger.info('Devserver is running on port %s\n' % self.port)
+        logger.info('Devserver is running on port %s\n', self.port)
         while self.running:
             self.server.handle_request()
 

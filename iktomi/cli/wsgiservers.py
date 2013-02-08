@@ -8,8 +8,7 @@ from os import path
 logger = logging.getLogger(__name__)
 
 
-def config_logger(logger=None, name=None, handler=None,
-                  level=None, 
+def config_logger(logger=None, name=None, handler=None, level=None, 
                   format='%(asctime)s: %(levelname)-5s: %(name)-15s: %(message)s'):
     if not logger:
         logger = name and logging.getLogger(name) or logging.getLogger()
@@ -102,8 +101,8 @@ def daemonize(pidfile, logfile, cur_dir=None):
             print 'process allready running'
             sys.exit(1)
         except OSError, err:
-            logger.info('Process allready running: (%d) %s\n' % \
-                    (err.errno, err.strerror))
+            logger.info('Process allready running: (%d) %s\n',
+                        err.errno, err.strerror)
     doublefork(pidfile, logfile, cur_dir)
 
 
@@ -126,5 +125,5 @@ def flup_fastcgi(wsgi_app, cur_dir=None, bind='', pidfile='', logfile='',
     if daemon:
         daemonize(pidfile, logfile, cur_dir)
 
-    logger.info("Starting FastCGI server (flup), current dir '%s'" % cur_dir)
+    logger.info("Starting FastCGI server (flup), current dir '%s'", cur_dir)
     fcgi.WSGIServer(wsgi_app, bindAddress=bind, umask=777, debug=False).run()
