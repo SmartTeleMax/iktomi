@@ -6,6 +6,7 @@ from datetime import datetime
 __all__ = ['ConvertError', 'convs_dict', 'Converter', 'String',
            'Integer', 'Any', 'Date']
 
+
 class ConvertError(Exception):
 
     @property
@@ -21,7 +22,7 @@ class Converter(object):
     '''A base class for urlconverters'''
 
     #: A key significating what converter is used in particular url template
-    name=None
+    name = None
 
     def to_python(self, value, env=None):
         '''
@@ -46,7 +47,7 @@ class String(Converter):
     The converter's name is 'string'
     '''
 
-    name='string'
+    name = 'string'
 
     min = 1
     max = None
@@ -64,8 +65,7 @@ class String(Converter):
 
     def check_len(self, value):
         length = len(value)
-        if length < self.min or \
-           self.max and length > self.max:
+        if length < self.min or self.max and length > self.max:
             raise ConvertError(self.name, value)
 
 
@@ -76,7 +76,7 @@ class Integer(Converter):
     The converter's name is 'int'
     '''
 
-    name='int'
+    name = 'int'
 
     def to_python(self, value, env=None):
         try:
@@ -91,7 +91,7 @@ class Integer(Converter):
 
 
 class Any(Converter):
-    name='any'
+    name = 'any'
     def __init__(self, *values):
         self.values = values
 
@@ -104,9 +104,9 @@ class Any(Converter):
         return unicode(value)
 
 
-class Date(Converter):\
+class Date(Converter):
 
-    name="date"
+    name = "date"
     format = "%Y-%m-%d"
 
     def __init__(self, format=None):
