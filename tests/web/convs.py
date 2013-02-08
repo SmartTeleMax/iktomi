@@ -16,6 +16,7 @@ class IntConverter(unittest.TestCase):
     def test_to_python_fail(self):
         conv = Integer()
         self.assertRaises(ConvertError, lambda : conv.to_python(u'4w'))
+        self.assertRaises(ConvertError, lambda : conv.to_python(u'004'))
 
     def test_to_url(self):
         conv = Integer()

@@ -191,12 +191,27 @@ class Prefix(unittest.TestCase):
 
     def test_prefix_with_zeros_in_int(self):
         '''Simple prefix'''
+        from iktomi.web.url_converters import Integer, ConvertError
 
         def handler(env, data):
             return Response()
 
+        class ZeroInt(Integer):
+            name = 'int'
+
+            def to_python(self, value, env=None):
+                try:
+                    value = int(value)
+                except ValueError:
+                    raise ConvertError(self.name, value)
+                else:
+                    return value
+
+            def to_url(self, value):
+                return str(value)
+
         app = web.cases(
-            web.prefix('/section/<int:section_id>') | 
+            web.prefix('/section/<int:section_id>', convs=[ZeroInt]) |
                 web.match('/item', 'doc') |
                 handler)
 

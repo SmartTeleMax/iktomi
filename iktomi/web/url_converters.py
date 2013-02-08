@@ -23,6 +23,7 @@ class Converter(object):
 
     #: A key significating what converter is used in particular url template
     name = None
+    regex = '[.a-zA-Z0-9:@&+$,_%%-]+'
 
     def to_python(self, value, env=None):
         '''
@@ -77,8 +78,11 @@ class Integer(Converter):
     '''
 
     name = 'int'
+    #regex = '[1-9]\d*'
 
     def to_python(self, value, env=None):
+        if value.startswith('0'):
+            raise ConvertError(self.name, value)
         try:
             value = int(value)
         except ValueError:
