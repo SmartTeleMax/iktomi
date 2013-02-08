@@ -83,7 +83,7 @@ class CookieAuthTests(unittest.TestCase):
     def test_logout_anonymouse(self):
         '`Auth` logout of anonymouse'
         response = web.ask(self.app, '/logout', data={})
-        self.assertEqual(response, None)
+        self.assertEqual(response.status_int, 303)
 
     def test_logout_by_get(self):
         '`Auth` logout by GET metod'

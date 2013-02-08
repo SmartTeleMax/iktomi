@@ -3,6 +3,7 @@
 import os
 import hashlib
 import logging
+from webob.exc import HTTPSeeOther
 
 logger = logging.getLogger(__name__)
 
@@ -83,14 +84,13 @@ class CookieAuth(web.WebHandler):
             logger.info('storage "%r" is unrichable', self.storage)
         return response
 
-    def logout_user(self, request):
-        response = web.Response()
-        response.delete_cookie(self._cookie_name)
-        key = request.cookies[self._cookie_name]
-        if key is not None:
-            if not self.storage.delete(self._cookie_name+':'+key.encode('utf-8')):
-                logger.info('storage "%r" is unrichable', self.storage)
-        return response
+    def logout_user(self, request, response):
+        if self._cookie_name in request.cookies:
+            response.delete_cookie(self._cookie_name)
+            key = request.cookies[self._cookie_name]
+            if key is not None:
+                if not self.storage.delete(self._cookie_name+':'+key.encode('utf-8')):
+                    logger.info('storage "%r" is unrichable', self.storage)
 
     def login(self, template='login'):
         '''
@@ -100,8 +100,7 @@ class CookieAuth(web.WebHandler):
 
             auth.login(template='login.html')
         '''
-        @web.request_filter
-        def _login(env, data, next_handler):
+        def _login(env, data):
             form = self._login_form(env)
             next = env.request.GET.get('next', '/')
             login_failed = False
@@ -128,14 +127,10 @@ class CookieAuth(web.WebHandler):
         session id provided or id is incorrect handler silently redirects to login
         url and does not throw any exception.
         '''
-        @web.request_filter
-        def _logout(env, data, next_handler):
-            if self._cookie_name in env.request.cookies:
-                response = self.logout_user(env.request)
-                response.status = 303
-                response.headers['Location'] = str(redirect_to)
-                return response
-            return next_handler(env, data)
+        def _logout(env, data):
+            response = HTTPSeeOther(location=str(redirect_to))
+            self.logout_user(env.request, response)
+            return response
         return web.match('/logout', 'logout') | web.method('post') | _logout
 
 
