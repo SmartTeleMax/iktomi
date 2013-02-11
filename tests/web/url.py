@@ -129,14 +129,16 @@ class UrlTemplateTest(unittest.TestCase):
                 if value not in self.items:
                     raise ConvertError(self, value)
                 return value
-        t = UrlTemplate('/<conv(u"text", u"test"):name>',
+        t = UrlTemplate(u'/<conv(u"text", u"тест", noquote):name>',
                         converters={'conv': Conv})
         value = quote(u'/имя'.encode('utf-8'))
         self.assertEqual(t.match(value), (None, {}))
         value = quote(u'/text'.encode('utf-8'))
         self.assertEqual(t.match(value), (value, {'name': u'text'}))
-        value = quote(u'/test'.encode('utf-8'))
-        self.assertEqual(t.match(value), (value, {'name': u'test'}))
+        value = quote(u'/тест'.encode('utf-8'))
+        self.assertEqual(t.match(value), (value, {'name': u'тест'}))
+        value = quote(u'/noquote'.encode('utf-8'))
+        self.assertEqual(t.match(value), (value, {'name': u'noquote'}))
 
     def test_incorrect_url_template(self):
         'Incorrect url template'
