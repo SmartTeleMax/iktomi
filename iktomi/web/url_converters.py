@@ -78,11 +78,9 @@ class Integer(Converter):
     '''
 
     name = 'int'
-    #regex = '[1-9]\d*'
+    regex = '[1-9]\d*'
 
     def to_python(self, value, env=None):
-        if value.startswith('0'):
-            raise ConvertError(self.name, value)
         try:
             value = int(value)
         except ValueError:

@@ -191,12 +191,12 @@ class Prefix(unittest.TestCase):
 
     def test_prefix_with_zeros_in_int(self):
         '''Simple prefix'''
-        from iktomi.web.url_converters import Integer, ConvertError
+        from iktomi.web.url_converters import Converter, ConvertError
 
         def handler(env, data):
             return Response()
 
-        class ZeroInt(Integer):
+        class ZeroInt(Converter):
             name = 'int'
 
             def to_python(self, value, env=None):

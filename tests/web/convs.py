@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 import unittest
 from iktomi.web.url_templates import *
 from iktomi.web.url_converters import *
@@ -16,7 +17,10 @@ class IntConverter(unittest.TestCase):
     def test_to_python_fail(self):
         conv = Integer()
         self.assertRaises(ConvertError, lambda : conv.to_python(u'4w'))
-        self.assertRaises(ConvertError, lambda : conv.to_python(u'004'))
+        assert not re.match(conv.regex, '004')
+        assert not re.match(conv.regex, '  4')
+        #self.assertRaises(ConvertError, lambda : conv.to_python(u'004'))
+        #self.assertRaises(ConvertError, lambda : conv.to_python(u'  4'))
 
     def test_to_url(self):
         conv = Integer()
