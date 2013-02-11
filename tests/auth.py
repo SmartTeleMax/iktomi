@@ -146,7 +146,7 @@ class SqlaModelAuthTests(unittest.TestCase):
             self.assertEqual(env.user.login, 'user name')
             return web.Response('ok')
 
-        self.app = make_env | web.cases(
+        app = make_env | web.cases(
             auth.login(),
             auth.logout(),
             auth | web.cases(
@@ -154,7 +154,7 @@ class SqlaModelAuthTests(unittest.TestCase):
                 web.match('/b', 'b') | auth_required | no_anonymouse,
             ),
         )
-        self.app.EnvCls = Env
+        self.app = web.Application(app, Env)
 
     def login(self, login, password):
         return web.ask(self.app, '/login', data={'login':login, 'password':password})

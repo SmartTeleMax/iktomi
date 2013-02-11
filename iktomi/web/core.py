@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['WebHandler', 'cases', 'locations', 'request_filter', 
-           'AppEnvironment']
+__all__ = ['WebHandler', 'cases', 'locations', 'request_filter']
 
 import logging
-import types
-import httplib
 import functools
-from webob.exc import HTTPException, HTTPInternalServerError
-from .http import Request, Response, RouteState
-from iktomi.utils.storage import VersionedStorage, StorageFrame
 
 from copy import copy
 
@@ -23,19 +17,9 @@ def is_chainable(handler):
         handler = handler._next_handler
     return False
 
-class AppEnvironment(StorageFrame):
-
-    def __init__(self, request, root, _parent_storage=None, **kwargs):
-        StorageFrame.__init__(self, _parent_storage=_parent_storage, **kwargs)
-        self.request = request
-        self.root = root.bind_to_request(request)
-        self._route_state = RouteState(request)
-
 
 class WebHandler(object):
     '''Base class for all request handlers.'''
-
-    EnvCls = AppEnvironment
 
     def __or__(self, next_handler):
         # XXX copy count depends on chain length geometrically!
@@ -69,32 +53,6 @@ class WebHandler(object):
     def copy(self):
         # to make handlers reusable
         return copy(self)
-
-    def as_wsgi(self, EnvCls=None):
-        from .reverse import Reverse
-        root = Reverse.from_handler(self)
-        EnvCls = EnvCls or self.EnvCls
-        def wsgi(environ, start_response):
-            request = Request(environ, charset='utf-8')
-            env = VersionedStorage(EnvCls, request, root)
-            data = VersionedStorage()
-            try:
-                response = self(env, data)
-                if response is None:
-                    logger.debug('Application returned None '
-                                 'instead of Response object')
-                    status_int = httplib.NOT_FOUND
-                    response = Response(status=status_int, 
-                                        body='%d %s' % (status_int, 
-                                                        httplib.responses[status_int]))
-            except HTTPException, e:
-                response = e
-            except Exception, e:
-                logger.exception(e)
-                response = HTTPInternalServerError()
-
-            return response(environ, start_response)
-        return wsgi
 
 
 class cases(WebHandler):
