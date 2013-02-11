@@ -110,7 +110,9 @@ class UrlTemplate(object):
                 try:
                     kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
                 except ConvertError, err:
-                    logger.debug('ConvertError by "%s", value "%s"',
+                    logger.debug('ConvertError in parameter "%s" '
+                                 'by "%s", value "%s"',
+                                 url_arg_name,
                                  err.converter, err.value.encode('utf-8'))
                     return None, {}
             return m.group(), kwargs
