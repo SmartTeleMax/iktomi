@@ -11,7 +11,7 @@ class ConvertError(Exception):
 
     @property
     def converter(self):
-        return self.args[0].__class__.__name__
+        return self.args[0]
 
     @property
     def value(self):
