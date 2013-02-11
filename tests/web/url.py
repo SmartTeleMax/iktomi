@@ -127,9 +127,10 @@ class UrlTemplateTest(unittest.TestCase):
                 self.items = items
             def to_python(self, value, **kw):
                 if value not in self.items:
-                    raise ConvertError(self.name, value)
+                    raise ConvertError(self, value)
                 return value
-        t = UrlTemplate('/<conv(u"text", u"test"):name>', converters=[Conv])
+        t = UrlTemplate('/<conv(u"text", u"test"):name>',
+                        converters={'conv': Conv})
         value = quote(u'/имя'.encode('utf-8'))
         self.assertEqual(t.match(value), (None, {}))
         value = quote(u'/text'.encode('utf-8'))

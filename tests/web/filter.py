@@ -74,7 +74,7 @@ class UrlTemplateTests(unittest.TestCase):
                 return str(value / 2)
 
         ut = UrlTemplate('/simple/<int:id>',
-                         converters=(DoubleInt,))
+                         converters={'int': DoubleInt})
         self.assertEqual(ut(id=2), '/simple/1')
         self.assertEqual(ut.match('/simple/1'), ('/simple/1', {'id': 2}))
 
@@ -197,7 +197,6 @@ class Prefix(unittest.TestCase):
             return Response()
 
         class ZeroInt(Converter):
-            name = 'int'
 
             def to_python(self, value, env=None):
                 try:
@@ -211,7 +210,8 @@ class Prefix(unittest.TestCase):
                 return str(value)
 
         app = web.cases(
-            web.prefix('/section/<int:section_id>', convs=[ZeroInt]) |
+              web.prefix('/section/<int:section_id>',
+                         convs={'int': ZeroInt}) |
                 web.match('/item', 'doc') |
                 handler)
 

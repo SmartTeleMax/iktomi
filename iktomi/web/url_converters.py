@@ -11,7 +11,7 @@ class ConvertError(Exception):
 
     @property
     def converter(self):
-        return self.args[0]
+        return self.args[0].__class__.__name__
 
     @property
     def value(self):
@@ -21,8 +21,6 @@ class ConvertError(Exception):
 class Converter(object):
     '''A base class for urlconverters'''
 
-    #: A key significating what converter is used in particular url template
-    name = None
     regex = '[.a-zA-Z0-9:@&+$,_%%-]+'
 
     def to_python(self, value, env=None):
@@ -44,11 +42,7 @@ class Converter(object):
 class String(Converter):
     '''
     Unquotes urlencoded string.
-
-    The converter's name is 'string'
     '''
-
-    name = 'string'
 
     min = 1
     max = None
@@ -67,24 +61,21 @@ class String(Converter):
     def check_len(self, value):
         length = len(value)
         if length < self.min or self.max and length > self.max:
-            raise ConvertError(self.name, value)
+            raise ConvertError(self, value)
 
 
 class Integer(Converter):
     '''
     Extracts integer value from url part.
-
-    The converter's name is 'int'
     '''
 
-    name = 'int'
     regex = '[1-9]\d*'
 
     def to_python(self, value, env=None):
         try:
             value = int(value)
         except ValueError:
-            raise ConvertError(self.name, value)
+            raise ConvertError(self, value)
         else:
             return value
 
@@ -93,14 +84,14 @@ class Integer(Converter):
 
 
 class Any(Converter):
-    name = 'any'
+
     def __init__(self, *values):
         self.values = values
 
     def to_python(self, value, env=None):
         if value in self.values:
             return value
-        raise ConvertError(self.name, value)
+        raise ConvertError(self, value)
 
     def to_url(self, value):
         return unicode(value)
@@ -108,7 +99,6 @@ class Any(Converter):
 
 class Date(Converter):
 
-    name = "date"
     format = "%Y-%m-%d"
 
     def __init__(self, format=None):
@@ -119,12 +109,21 @@ class Date(Converter):
         try:
             return datetime.strptime(value, self.format).date()
         except ValueError:
-            raise ConvertError(self.name, value)
+            raise ConvertError(self, value)
 
     def to_url(self, value):
         return value.strftime(self.format)
 
 
-convs_dict = dict((item.name or item.__name__, item) \
-                  for item in globals().values() \
-                  if isclass(item) and issubclass(item, Converter))
+convs_dict = {'string': String,
+              'int': Integer,
+              'any': Any,
+              'date': Date}
+
+# assert all defined converters are registered
+for item in globals().values():
+    if isclass(item) and \
+       issubclass(item, Converter) and \
+       not item is Converter:
+        assert item in convs_dict.values(), item
+

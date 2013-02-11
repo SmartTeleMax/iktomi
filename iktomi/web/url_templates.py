@@ -135,9 +135,7 @@ class UrlTemplate(object):
     def _init_converters(self, converters):
         convs = convs_dict.copy()
         if converters is not None:
-            for conv in converters:
-                 name = conv.name or conv.__name__.lower()
-                 convs[name] = conv
+            convs.update(converters)
         return convs
 
     def __eq__(self, other):
