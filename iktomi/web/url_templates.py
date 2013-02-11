@@ -3,7 +3,7 @@
 import urllib
 import re
 import logging
-from .url_converters import convs_dict, ConvertError
+from .url_converters import default_converters, ConvertError
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ class UrlTemplate(object):
         return result
 
     def _init_converters(self, converters):
-        convs = convs_dict.copy()
+        convs = default_converters.copy()
         if converters is not None:
             convs.update(converters)
         return convs

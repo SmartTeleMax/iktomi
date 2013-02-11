@@ -3,7 +3,7 @@
 from inspect import isclass
 from datetime import datetime
 
-__all__ = ['ConvertError', 'convs_dict', 'Converter', 'String',
+__all__ = ['ConvertError', 'default_converters', 'Converter', 'String',
            'Integer', 'Any', 'Date']
 
 
@@ -115,15 +115,15 @@ class Date(Converter):
         return value.strftime(self.format)
 
 
-convs_dict = {'string': String,
-              'int': Integer,
-              'any': Any,
-              'date': Date}
+default_converters = {'string': String,
+                      'int': Integer,
+                      'any': Any,
+                      'date': Date}
 
 # assert all defined converters are registered
 for item in globals().values():
     if isclass(item) and \
        issubclass(item, Converter) and \
        not item is Converter:
-        assert item in convs_dict.values(), item
+        assert item in default_converters.values(), item
 
