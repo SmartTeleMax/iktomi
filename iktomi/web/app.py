@@ -30,7 +30,11 @@ class Application(object):
         self.EnvCls = EnvCls or AppEnvironment
         self.root = Reverse.from_handler(handler)
 
-    def get_response(self, env, data):
+    def handle_error(self, env):
+        logging.exception('Exception for %s %s :',
+                          env.request.method, env.request.url)
+
+    def handle(self, env, data):
         try:
             response = self.handler(env, data)
             if response is None:
@@ -40,7 +44,7 @@ class Application(object):
         except HTTPException, e:
             response = e
         except Exception, e:
-            logger.exception(e)
+            self.handle_error(env)
             response = HTTPInternalServerError()
         return response
 
@@ -48,5 +52,5 @@ class Application(object):
         request = Request(environ, charset='utf-8')
         env = VersionedStorage(self.EnvCls, request, self.root)
         data = VersionedStorage()
-        response = self.get_response(env, data)
+        response = self.handle(env, data)
         return response(environ, start_response)
