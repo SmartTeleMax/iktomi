@@ -97,7 +97,8 @@ class cases(WebHandler):
         return locations
 
     def __repr__(self):
-        return '%s(*%r)' % (self.__class__.__name__, self.handlers)
+        return '%s(%s)' % (self.__class__.__name__,
+                           ', '.join(repr(h) for h in self.handlers))
 
 
 class _FunctionWrapper3(WebHandler):
