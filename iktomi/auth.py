@@ -49,7 +49,8 @@ class LoginForm(Form):
 class CookieAuth(web.WebHandler):
 
     def __init__(self, get_user_identity, identify_user, storage=None,
-                 cookie_name='auth', login_form=LoginForm, crash_without_storage=True):
+                 cookie_name='auth', login_form=LoginForm,
+                 crash_without_storage=True):
         self.get_user_identity = get_user_identity
         self.identify_user = identify_user
         self._cookie_name = cookie_name
@@ -61,7 +62,8 @@ class CookieAuth(web.WebHandler):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
-            user_identity = self.storage.get(self._cookie_name+':'+key.encode('utf-8'))
+            user_identity = self.storage.get(self._cookie_name + ':' + 
+                                                    key.encode('utf-8'))
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
         logger.debug('Authenticated: %r', user)
@@ -89,14 +91,13 @@ class CookieAuth(web.WebHandler):
             response.delete_cookie(self._cookie_name)
             key = request.cookies[self._cookie_name]
             if key is not None:
-                if not self.storage.delete(self._cookie_name+':'+key.encode('utf-8')):
+                if not self.storage.delete(self._cookie_name + ':' + \
+                                                key.encode('utf-8')):
                     logger.info('storage "%r" is unrichable', self.storage)
 
     def login(self, template='login'):
         '''
         This property will return component which will handle login requests.
-        It is good idea to append some template rendering handler after this component
-        to see `login_form`.
 
             auth.login(template='login.html')
         '''
@@ -106,7 +107,8 @@ class CookieAuth(web.WebHandler):
             login_failed = False
             if env.request.method == 'POST':
                 if form.accept(env.request.POST):
-                    user_identity = self.get_user_identity(env, **form.python_data)
+                    user_identity = self.get_user_identity(
+                                                env, **form.python_data)
                     if user_identity is not None:
                         response = self.login_identity(user_identity)
                         response.status = 303
@@ -124,8 +126,8 @@ class CookieAuth(web.WebHandler):
         This property will return component which will handle logout requests.
         It only handles POST requests and do not display any rendered content.
         This handler deletes session id from `storage`. If there is no
-        session id provided or id is incorrect handler silently redirects to login
-        url and does not throw any exception.
+        session id provided or id is incorrect handler silently redirects to
+        login url and does not throw any exception.
         '''
         def _logout(env, data):
             response = HTTPSeeOther(location=str(redirect_to))
@@ -139,24 +141,27 @@ def auth_required(env, data, next_handler):
     if getattr(env, 'user', None) is not None:
         return next_handler(env, data)
     response = web.Response(status=303)
-    response.headers['Location'] = str(env.root.login.as_url.qs_set(next=env.request.path_info))
+    response.headers['Location'] = str(
+                env.root.login.as_url.qs_set(next=env.request.path_info))
     return response
 
 
 class SqlaModelAuth(CookieAuth):
 
-    def __init__(self, model, storage=None, login_field='login', password_field='password', 
-                 **kwargs):
+    def __init__(self, model, storage=None, login_field='login',
+                 password_field='password', **kwargs):
         self._model = model
         self._login_field = login_field
         self._password_field = password_field
-        CookieAuth.__init__(self, self.get_user_identity, self.identify_user, storage=storage, **kwargs)
+        CookieAuth.__init__(self, self.get_user_identity, self.identify_user,
+                            storage=storage, **kwargs)
 
     def get_user_identity(self, env, login, password):
         model = self._model
         login_field = getattr(model, self._login_field)
         user = env.db.query(model).filter(login_field==login).first()
-        if user is not None and check_password(password, getattr(user, self._password_field)):
+        stored_password = getattr(user, self._password_field)
+        if user is not None and check_password(password, stored_password):
             return user.id
         return None
 
