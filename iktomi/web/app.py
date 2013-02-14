@@ -23,11 +23,12 @@ class AppEnvironment(StorageFrame):
 
 class Application(object):
 
-    EnvCls = AppEnvironment
+    env_class = AppEnvironment
 
-    def __init__(self, handler, EnvCls=None):
+    def __init__(self, handler, env_class=None):
         self.handler = handler
-        self.EnvCls = EnvCls or AppEnvironment
+        if env_class is not None:
+            self.env_class = env_class
         self.root = Reverse.from_handler(handler)
 
     def handle_error(self, env):
@@ -50,7 +51,7 @@ class Application(object):
 
     def __call__(self, environ, start_response):
         request = Request(environ, charset='utf-8')
-        env = VersionedStorage(self.EnvCls, request, self.root)
+        env = VersionedStorage(self.env_class, request, self.root)
         data = VersionedStorage()
         response = self.handle(env, data)
         return response(environ, start_response)
