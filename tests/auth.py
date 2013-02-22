@@ -176,8 +176,14 @@ class SqlaModelAuthTests(unittest.TestCase):
         self.assertEqual(response.headers['Location'], '/')
         self.assert_(response.headers['Set-Cookie'].startswith('auth=; Max-Age=0; Path=/;'))
 
-    def test_login_fail(self):
+    def test_login_fail_wrong_pass(self):
         '`SqlaModelAuth` login fail'
         response = self.login('user name', '12')
+        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.body, 'please login')
+
+    def test_login_fail_no_user(self):
+        '`SqlaModelAuth` login fail'
+        response = self.login('user', '12')
         self.assertEqual(response.status_int, 200)
         self.assertEqual(response.body, 'please login')
