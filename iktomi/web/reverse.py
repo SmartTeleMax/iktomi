@@ -150,9 +150,12 @@ class Reverse(object):
             port = None
 
         if self._bound_request:
-            bound_domain, bound_port = self._bound_request.host.split(':')
             scheme_port = {'http': '80',
                            'https': '443'}.get(self._bound_request.scheme, '80')
+            if ':' in self._bound_request.host:
+                bound_domain, bound_port = self._bound_request.host.split(':')
+            else:
+                bound_domain, bound_port = self._bound_request.host, scheme_port
             port = port or bound_port
 
             return URL(path, host=domain or bound_domain,
