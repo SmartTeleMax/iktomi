@@ -47,6 +47,7 @@ class match(WebHandler):
 
 
 class method(WebHandler):
+
     def __init__(self, *names, **kw):
         self._names = set([name.upper() for name in names])
         if 'GET' in self._names:
@@ -62,7 +63,7 @@ class method(WebHandler):
     __call__ = method
 
     def __repr__(self):
-        return 'method(*%r)' % list(self._names)
+        return 'method(%s)' % ', '.join(repr(n) for n in self._names)
 
 
 class ctype(WebHandler):
@@ -82,10 +83,12 @@ class ctype(WebHandler):
     __call__ = ctype
 
     def __repr__(self):
-        return '%s(*%r)' % (self.__class__.__name__, self._types)
+        return '%s(%s)' % (self.__class__.__name__,
+                           ', '.join(repr(t) for t in self._types))
 
 
 class static_files(WebHandler):
+
     def __init__(self, location, url='/static/'):
         self.location = location
         self.url = url
@@ -121,6 +124,7 @@ class static_files(WebHandler):
 
 
 class prefix(WebHandler):
+
     def __init__(self, _prefix, convs=None):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
@@ -148,6 +152,7 @@ class prefix(WebHandler):
 
 
 class subdomain(WebHandler):
+
     def __init__(self, _subdomain):
         self.subdomain = unicode(_subdomain)
 
@@ -177,6 +182,7 @@ class subdomain(WebHandler):
 
 
 class namespace(WebHandler):
+
     def __init__(self, ns):
         # namespace is str
         self.namespace = ns
