@@ -253,11 +253,6 @@ class ReverseTests(unittest.TestCase):
     def test_external_urls(self):
         'External URL reverse'
 
-        @web.request_filter
-        def config(env, data, nxt):
-            env.root = root.bind_to_request(env.request)
-            return nxt(env, data)
-
         def host1(env, data):
             self.assertEqual(env.root.host1.as_url.with_host(), 'http://host1.example.com/url')
             self.assertEqual(env.root.host2.as_url, 'http://host2.example.com/url')
@@ -272,15 +267,34 @@ class ReverseTests(unittest.TestCase):
             self.host2_called = True
             return Response()
 
-        app = config | web.subdomain('example.com') | web.cases (
+        app = web.subdomain('example.com') | web.cases (
             web.subdomain('host1') | web.match('/url', 'host1') | host1,
             web.subdomain('host2') | web.match('/url', 'host2') | host2,
         )
-        root = web.Reverse.from_handler(app)
 
         assert web.ask(app, 'http://host1.example.com/url')
         assert web.ask(app, 'https://host2.example.com/url')
         assert self.host1_called and self.host2_called
+
+    def test_external_urls_no_port(self):
+        'External URL reverse with no port in Request.host (sometimes happens using Flup)'
+
+        def host1(env, data):
+            if ':' in env.request.host:
+                env.request.host = env.request.host.split(':')[0]
+            self.assertEqual(env.root.host1.as_url.with_host(), 'http://host1.example.com/url')
+            self.assertEqual(env.root.host2.as_url, 'http://host2.example.com/url')
+            self.assertEqual(env.root.host1.as_url, '/url')
+            self.host1_called = True
+            return Response()
+
+        app = web.subdomain('example.com') | web.cases (
+            web.subdomain('host1') | web.match('/url', 'host1') | host1,
+            web.subdomain('host2') | web.match('/url', 'host2'),
+        )
+
+        assert web.ask(app, 'http://host1.example.com/url')
+        assert self.host1_called
 
     def test_external_urls_no_subdomain(self):
         'External URL reverse with no subdomains provided in location'
@@ -335,3 +349,4 @@ class ReverseTests(unittest.TestCase):
 
         self.assertRaises(UrlBuildingError, r.build_url, 'news')
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
+
