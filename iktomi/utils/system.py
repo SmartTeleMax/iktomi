@@ -4,7 +4,7 @@ import os
 import sys
 
 
-def prepare_dirs(*files):
+def safe_makedirs(*files):
     for filename in files:
         dirname = os.path.dirname(filename)
         if not os.path.isdir(dirname):

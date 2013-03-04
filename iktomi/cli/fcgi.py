@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .base import Cli
-from iktomi.utils.system import prepare_dirs, doublefork
+from iktomi.utils.system import safe_makedirs, doublefork
 
 
 def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
@@ -47,7 +47,7 @@ class Flup(Cli):
             port = int(port)
         else:
             bind = os.path.abspath(bind or os.path.join(self.cwd, 'fcgi.sock'))
-            prepare_dirs(bind)
+            safe_makedirs(bind)
         self.bind = bind
         self.umask = umask
         self.logfile = logfile or os.path.join(self.cwd, 'fcgi.log')
@@ -56,7 +56,7 @@ class Flup(Cli):
 
     def command_start(self, daemonize=False):
         if daemonize:
-            prepare_dirs(self.logfile, self.pidfile)
+            safe_makedirs(self.logfile, self.pidfile)
         flup_fastcgi(self.app, bind=self.bind, pidfile=self.pidfile,
                      logfile=self.logfile, daemonize=daemonize,
                      cwd=self.cwd, umask=self.umask, **self.fastcgi_params)
