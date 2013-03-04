@@ -1,5 +1,6 @@
 # -*- codingL: utf-8 -*-
 
+import logging
 from sqlalchemy import orm, types, create_engine
 from sqlalchemy.orm.query import Query
 from iktomi.utils import cached_property, import_string
@@ -17,24 +18,25 @@ class DBSession(orm.session.Session):
     #TODO: implement `get_or_404`
 
 
-def session_maker(databases, query_cls=Query, engine_params=None,
+def session_maker(databases, query_cls=Query, models_location='models',
+                  engine_params=None, session_params=None,
                   session_class=DBSession):
     engine_params = engine_params or {}
-    db_dict = {}
+    session_params = session_params or {'autoflush': False}
+    binds = {}
     if isinstance(databases, basestring):
         engine = create_engine(databases, **engine_params)
         return orm.sessionmaker(class_=session_class, query_cls=query_cls,
-                                bind=engine, autoflush=False)
+                                bind=engine, **session_params)
     for ref, uri in databases.items():
-        md_ref = '.'.join(filter(None, ['models', ref]))
+        md_ref = '.'.join(filter(None, [models_location, ref]))
         metadata = import_string(md_ref, 'metadata')
         engine = create_engine(uri, **engine_params)
-        #TODO: find out why this is broken since sqlalchemy 0.7
-        #engine.logger.logger.name += '(%s)' % ref
+        engine.logger = logging.getLogger('sqlalchemy.engine.[%s]' % ref)
         for table in metadata.sorted_tables:
-            db_dict[table] = engine
-    return orm.sessionmaker(class_=session_class, query_cls=query_cls, binds=db_dict,
-                            autoflush=False)
+            binds[table] = engine
+    return orm.sessionmaker(class_=session_class, query_cls=query_cls,
+                            binds=binds, **session_params)
 
 
 class StringList(types.TypeDecorator):
