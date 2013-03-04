@@ -13,7 +13,7 @@ from iktomi.utils.system import prepare_dirs, doublefork
 
 
 def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
-                 daemonize=False, umask=None, level=None, **params):
+                 daemonize=False, umask=None, **params):
     if params.pop('preforked', False):
         from flup.server import fcgi_fork as fcgi
     else:
@@ -39,7 +39,7 @@ def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
 class Flup(Cli):
 
     def __init__(self, app, bind='', logfile=None, pidfile=None,
-                 cwd='.', umask=002, level=logging.INFO, fastcgi_params=None):
+                 cwd='.', umask=002, fastcgi_params=None):
         self.app = app
         self.cwd = os.path.abspath(cwd)
         if ':' in bind:
@@ -50,7 +50,6 @@ class Flup(Cli):
             prepare_dirs(bind)
         self.bind = bind
         self.umask = umask
-        self.level = level
         self.logfile = logfile or os.path.join(self.cwd, 'fcgi.log')
         self.pidfile = pidfile or os.path.join(self.cwd, 'fcgi.pid')
         self.fastcgi_params = fastcgi_params or {}
@@ -60,8 +59,7 @@ class Flup(Cli):
             prepare_dirs(self.logfile, self.pidfile)
         flup_fastcgi(self.app, bind=self.bind, pidfile=self.pidfile,
                      logfile=self.logfile, daemonize=daemonize,
-                     cwd=self.cwd, umask=self.umask, level=self.level,
-                     **self.fastcgi_params)
+                     cwd=self.cwd, umask=self.umask, **self.fastcgi_params)
 
     def command_stop(self):
         if self.pidfile:
