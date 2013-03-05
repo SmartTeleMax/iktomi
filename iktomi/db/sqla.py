@@ -22,7 +22,8 @@ def session_maker(databases, query_cls=Query, models_location='models',
                   engine_params=None, session_params=None,
                   session_class=DBSession):
     engine_params = engine_params or {}
-    session_params = session_params or {'autoflush': False}
+    session_params = dict(session_params or {})
+    session_params.setdefault('autoflush', False)
     binds = {}
     if isinstance(databases, basestring):
         engine = create_engine(databases, **engine_params)
