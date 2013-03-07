@@ -59,6 +59,84 @@ class IntConverterTests(unittest.TestCase):
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
 
+class EnumChoiceConverterTests(unittest.TestCase):
+
+    def test_accept_valid(self):
+        'Accept method of Int converter'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int()))
+
+        value = conv.to_python('1')
+        self.assertEqual(value, 1)
+
+    def test_accept_null_value(self):
+        'Accept method of EnumChoice converter for None value'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=False))
+
+        value = conv.to_python('')
+        self.assertEqual(value, None)
+
+    def test_accept_invalid_value(self):
+        'Accept method of EnumChoice converter for None value'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=False))
+
+        value = conv.to_python('unknown')
+        self.assertEqual(value, None)
+
+    def test_accept_missing_value(self):
+        'Accept method of EnumChoice converter for None value'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=False))
+
+        value = conv.to_python('2')
+        self.assertEqual(value, None)
+
+    def test_decline_null_value(self):
+        'Accept method of EnumChoice required converter for None value'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=True))
+
+        value = conv.to_python('')
+        self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors.keys(),
+                         [conv.field.name])
+
+    def test_decline_invalid_value(self):
+        'Accept method of EnumChoice required converter for invalid value'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=True))
+        value = conv.to_python('invalid')
+        self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors.keys(),
+                         [conv.field.name])
+
+    def test_decline_missing_value(self):
+        'Accept method of EnumChoice required converter for missing value'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=True))
+        value = conv.to_python('2')
+        self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors.keys(),
+                         [conv.field.name])
+
+    def test_from_python(self):
+        'EnumChoice Converter from_python method'
+        conv = init_conv(convs.EnumChoice(choices=[
+            (1, 'result')
+        ], conv=convs.Int(), required=False))
+
+        value = conv.from_python(1)
+        self.assertEqual(value, u'1')
+
 
 class CharConverterTests(unittest.TestCase):
 
