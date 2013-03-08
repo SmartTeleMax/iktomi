@@ -269,20 +269,6 @@ To specify a base domain chain one subdomain filter before::
         ...
     )
 
-A **ctype** filters allows to select requests with specified Content-Type HTTP header.
-You can also use shortcuts for most common content types (*xml*, *json*, *html*, *xhtml*)::
-
-    web.cases(
-        ctype('text/html') | web.cases(
-            # only html requests get here
-            ...
-        ),
-        ctype(ctype.xml, ctype.json) | web.cases(
-            # only xml or json requests get here
-            ...
-        ),
-    )
-
 A **static_files** handles static files requests and also provides a reverse function to build
 urls for static files::
 

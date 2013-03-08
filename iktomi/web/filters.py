@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['match', 'method', 'static_files', 'ctype', 'prefix', 
+__all__ = ['match', 'method', 'static_files', 'prefix', 
            'subdomain', 'namespace']
 
 import logging
@@ -64,27 +64,6 @@ class method(WebHandler):
 
     def __repr__(self):
         return 'method(%s)' % ', '.join(repr(n) for n in self._names)
-
-
-class ctype(WebHandler):
-
-    xml = 'application/xml'
-    json = 'application/json'
-    html = 'text/html'
-    xhtml = 'application/xhtml+xml'
-
-    def __init__(self, *types):
-        self._types = types
-
-    def ctype(self, env, data):
-        if env.request.content_type in self._types:
-            return self.next_handler(env, data)
-        return None
-    __call__ = ctype
-
-    def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__,
-                           ', '.join(repr(t) for t in self._types))
 
 
 class static_files(WebHandler):
