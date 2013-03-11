@@ -92,16 +92,16 @@ class Converter(object):
         return self.field.env
 
     def _is_empty(self, value):
-        return value in ('', [], {})
+        return value in ('', [], {}, None)
 
     def _check(self, method):
         def wrapper(value, **kwargs):
             field, form = self.field, self.field.form
-            if self.required and self._is_empty(value):
-                form.errors[self.field.input_name] = self.error_required
-                return self._existing_value
             try:
                 value = method(value, **kwargs)
+                if self.required and self._is_empty(value):
+                    form.errors[self.field.input_name] = self.error_required
+                    return self._existing_value
                 for v in self.validators_and_filters:
                     value = v(self, value)
             except ValidationError, e:
