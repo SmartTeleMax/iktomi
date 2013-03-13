@@ -160,9 +160,15 @@ class CharConverterTests(unittest.TestCase):
 
     def test_regex_error(self):
         conv = init_conv(convs.Char(regex='ZZZ', required=True))
-        with self.assertRaises(convs.ValidationError) as cm:
-            conv.to_python('AAA')
-        self.assertIn(conv.regex, cm.exception.message)
+        # XXX This should look like the following:
+        #with self.assertRaises(convs.ValidationError) as cm:
+        #    conv.to_python('AAA')
+        #self.assertIn(conv.regex, cm.exception.message)
+        conv.to_python('AAA')
+        field_name = conv.field.name
+        errors = conv.field.form.errors
+        self.assertIn(field_name, errors)
+        self.assertIn(conv.regex, errors[field_name])
 
     def test_to_python(self):
         'Char Converter to_python method'
