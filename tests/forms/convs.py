@@ -19,12 +19,14 @@ class ConverterTests(unittest.TestCase):
         conv = init_conv(convs.Converter)
         value = conv.to_python('value')
         self.assertEqual(value, 'value')
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_to_python(self):
         'Converter to_python method'
         conv = init_conv(convs.Converter)
         value = conv.to_python('value')
         self.assertEqual(value, 'value')
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_from_python(self):
         'Converter from_python method'
@@ -40,18 +42,14 @@ class IntConverterTests(unittest.TestCase):
         conv = init_conv(convs.Int)
         value = conv.to_python('12')
         self.assertEqual(value, 12)
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value(self):
         'Accept method of Int converter for None value'
         conv = init_conv(convs.Int(required=False))
         value = conv.to_python('')
         self.assertEqual(value, None)
-
-    def test_to_python(self):
-        'Int Converter to_python method'
-        conv = init_conv(convs.Int)
-        value = conv.to_python('12')
-        self.assertEqual(value, 12)
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_from_python(self):
         'Int Converter from_python method'
@@ -69,6 +67,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.to_python('1')
         self.assertEqual(value, 1)
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value(self):
         'Accept method of EnumChoice converter for None value'
@@ -78,6 +77,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.to_python('')
         self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_invalid_value(self):
         'Accept method of EnumChoice converter for None value'
@@ -87,6 +87,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.to_python('unknown')
         self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
 
     def test_accept_missing_value(self):
         'Accept method of EnumChoice converter for None value'
@@ -96,6 +97,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.to_python('2')
         self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_decline_null_value(self):
         'Accept method of EnumChoice required converter for None value'
@@ -145,18 +147,21 @@ class CharConverterTests(unittest.TestCase):
         conv = init_conv(convs.Char)
         value = conv.to_python('12')
         self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value(self):
         'Accept method of Char converter for None value'
         conv = init_conv(convs.Char(required=False))
         value = conv.to_python('')
         self.assertEqual(value, '')
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value_regex(self):
         'Accept empty value by Char converter with non-empty regexp'
         conv = init_conv(convs.Char(regex='.+', required=False))
         value = conv.to_python('')
         self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_regex_error(self):
         conv = init_conv(convs.Char(regex='ZZZ', required=True))
@@ -167,20 +172,15 @@ class CharConverterTests(unittest.TestCase):
         conv.to_python('AAA')
         field_name = conv.field.name
         errors = conv.field.form.errors
-        self.assertIn(field_name, errors)
+        self.assertEqual(conv.field.form.errors.keys(), [field_name])
         self.assertIn(conv.regex, errors[field_name])
-
-    def test_to_python(self):
-        'Char Converter to_python method'
-        conv = init_conv(convs.Char)
-        value = conv.to_python('12')
-        self.assertEqual(value, u'12')
 
     def test_from_python(self):
         'Char Converter from_python method'
         conv = init_conv(convs.Char)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
+
 
 class TestDate(unittest.TestCase):
 
@@ -189,6 +189,7 @@ class TestDate(unittest.TestCase):
         from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.to_python('31.01.1999'), date(1999, 1, 31))
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_readable_format(self):
         '''Ensure that readable format string for DateTime conv is generated correctly'''
@@ -214,6 +215,7 @@ class TestDate(unittest.TestCase):
         self.assertEqual(conv.from_python(date(1899, 1, 31)), '31.01.99')
         self.assertEqual(conv.from_python(date(5, 1, 31)), '31.01.05')
 
+
 class TestTime(unittest.TestCase):
 
     def test_from_python(self):
@@ -227,4 +229,4 @@ class TestTime(unittest.TestCase):
         from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.to_python('12:30'), time(12, 30))
-
+        self.assertEqual(conv.field.form.errors, {})
