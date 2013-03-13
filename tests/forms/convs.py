@@ -152,6 +152,12 @@ class CharConverterTests(unittest.TestCase):
         value = conv.to_python('')
         self.assertEqual(value, '')
 
+    def test_accept_null_value_regex(self):
+        'Accept empty value by Char converter with non-empty regexp'
+        conv = init_conv(convs.Char(regex='.+', required=False))
+        value = conv.to_python('')
+        self.assertEqual(value, None)
+
     def test_to_python(self):
         'Char Converter to_python method'
         conv = init_conv(convs.Char)
