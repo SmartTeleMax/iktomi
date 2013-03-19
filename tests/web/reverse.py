@@ -350,3 +350,45 @@ class ReverseTests(unittest.TestCase):
         self.assertRaises(UrlBuildingError, r.build_url, 'news')
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
 
+    def test_multiple_params(self):
+        app = web.prefix('/persons/<int:person_id>') | web.namespace('persons') |\
+                web.cases(
+                  web.prefix('/news') | web.namespace('news') |
+                     web.match('/<int:news_id>', 'item')
+                )
+        r = web.Reverse.from_handler(app)
+        r1 = r.persons(person_id=1).news.item(news_id=2)
+        self.assertEqual(r1.as_url, '/persons/1/news/2')
+        self.assertEqual(r.build_url('persons.news.item', person_id=1,
+                                     news_id=2),
+                         '/persons/1/news/2')
+
+    def test_multiple_params2(self):
+        app = web.prefix('/persons') | web.namespace('persons') |\
+                web.prefix('/<int:person_id>') | web.cases(
+                  web.prefix('/news') | web.namespace('news') |
+                     web.match('/<int:news_id>', 'item')
+                )
+        r = web.Reverse.from_handler(app)
+        r1 = r.persons.news(person_id=1).item(news_id=2)
+        self.assertEqual(r1.as_url, '/persons/1/news/2')
+        self.assertEqual(r.build_url('persons.news.item', person_id=1,
+                                     news_id=2),
+                         '/persons/1/news/2')
+
+    def test_multiple_params_with_endpoints(self):
+        app = web.prefix('/persons/<int:person_id>') | web.namespace('persons') |\
+                web.cases(
+                  web.match('', ''),
+                  web.prefix('/news') | web.namespace('news') |
+                     web.match('', ''),
+                     web.match('/<int:news_id>', 'item')
+                )
+        r = web.Reverse.from_handler(app)
+        r1 = r.persons(person_id=1).news.item(news_id=2)
+        self.assertEqual(r1.as_url, '/persons/1/news/2')
+        self.assertEqual(r.build_url('persons.news.item', person_id=1,
+                                     news_id=2),
+                         '/persons/1/news/2')
+
+

@@ -60,36 +60,19 @@ class Reverse(object):
     def __call__(self, **kwargs):
         if self._ready:
             raise UrlBuildingError('Endpoint do not accept arguments')
-        if self._is_endpoint:
+        if self._is_endpoint or self._need_arguments:
             path, host = self._path, self._host
             if self._location:
                 host += self._location.build_subdomians()
                 path += self._location.build_path(**kwargs)
-            if self._scope:
+            if self._is_endpoint and self._scope:
                 location = self._scope[''][0]
                 host += location.build_subdomians()
                 path += location.build_path(**kwargs)
             return self.__class__(self._scope, self._location, path=path, host=host,
-                                  bound_request=self._bound_request, ready=True)
+                                  bound_request=self._bound_request, 
+                                  ready=self._is_endpoint)
         raise UrlBuildingError('Not an endpoint')
-
-    def bind_to_request(self, bound_request):
-        return self.__class__(self._scope, self._location,
-                              path=self._path, host=self._host,
-                              ready=self._ready,
-                              need_arguments=self._need_arguments,
-                              is_root=self._is_root,
-                              bound_request=bound_request)
-
-    @cached_property
-    def url_arguments(self):
-        args = set()
-        if self._is_endpoint:
-            if self._location:
-                args |= self._location.url_arguments
-            if self._scope:
-                args |= self._scope[''][0].url_arguments
-        return args
 
     def __getattr__(self, name):
         if self._is_scope and name in self._scope:
@@ -108,11 +91,29 @@ class Reverse(object):
         raise UrlBuildingError('Namespace or endpoint %s does not exist'
                                % name)
 
+    def bind_to_request(self, bound_request):
+        return self.__class__(self._scope, self._location,
+                              path=self._path, host=self._host,
+                              ready=self._ready,
+                              need_arguments=self._need_arguments,
+                              is_root=self._is_root,
+                              bound_request=bound_request)
+
+    @cached_property
+    def url_arguments(self):
+        args = set()
+        if self._is_endpoint or self._need_arguments:
+            if self._location:
+                args |= self._location.url_arguments
+            if self._is_endpoint and self._scope:
+                args |= self._scope[''][0].url_arguments
+        return args
+
     def build_url(self, _name, **kwargs):
         subreverse = self
         used_args = set()
         for part in _name.split('.'):
-            if not subreverse._ready and subreverse._is_endpoint:
+            if not subreverse._ready and subreverse._need_arguments:
                 used_args |= subreverse.url_arguments
                 subreverse = subreverse(**kwargs)
             subreverse = getattr(subreverse, part)
