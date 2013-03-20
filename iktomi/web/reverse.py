@@ -44,9 +44,13 @@ class Location(object):
 
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, is_root=False, bound_request=None):
-        # XXX document, what is scope and what is location!
+                 need_arguments=False, is_root=False, bound_request=None,
+                 finalize_params=None):
+        # location is stuff containing builders for current reverse step
+        # (builds url part for particular namespace or endpoint)
         self._location = location
+        # scope is a dict having nested namespace and endpoint names as key and
+        # (location, nested scope) tuple as values for the current namespace
         self._scope = scope
         self._path = path
         self._host = host
@@ -56,22 +60,23 @@ class Reverse(object):
         self._is_scope = bool(self._scope)
         self._is_root = is_root
         self._bound_request = bound_request
+        self._finalize_params = finalize_params or {}
 
     def __call__(self, **kwargs):
         if self._ready:
             raise UrlBuildingError('Endpoint do not accept arguments')
         if self._is_endpoint or self._need_arguments:
+            finalize_params = {}
             path, host = self._path, self._host
             if self._location:
                 host += self._location.build_subdomians()
                 path += self._location.build_path(**kwargs)
-            if self._is_endpoint and self._scope:
-                location = self._scope[''][0]
-                host += location.build_subdomians()
-                path += location.build_path(**kwargs)
+            if '' in self._scope:
+                finalize_params = kwargs
             return self.__class__(self._scope, self._location, path=path, host=host,
                                   bound_request=self._bound_request, 
-                                  ready=self._is_endpoint)
+                                  ready=self._is_endpoint,
+                                  finalize_params=finalize_params)
         raise UrlBuildingError('Not an endpoint')
 
     def __getattr__(self, name):
@@ -91,12 +96,27 @@ class Reverse(object):
         raise UrlBuildingError('Namespace or endpoint "%s" does not exist'
                                % name)
 
+    def _finalize(self):
+        # deferred build of the last part of url for endpoints that
+        # also have nested scopes
+        # i.e. finalization of __call__ for as_url
+        if self._need_arguments:
+            raise UrlBuildingError('Need arguments to build last part of url')
+        path, host = self._path, self._host
+        location = self._scope[''][0]
+        host += location.build_subdomians()
+        path += location.build_path(**self._finalize_params)
+        return self.__class__({}, self._location, path=path, host=host,
+                              bound_request=self._bound_request, 
+                              ready=self._is_endpoint)
+
     def bind_to_request(self, bound_request):
         return self.__class__(self._scope, self._location,
                               path=self._path, host=self._host,
                               ready=self._ready,
                               need_arguments=self._need_arguments,
                               is_root=self._is_root,
+                              finalize_params=self._finalize_params,
                               bound_request=bound_request)
 
     @cached_property
@@ -128,6 +148,9 @@ class Reverse(object):
 
     @property
     def as_url(self):
+        if '' in self._scope:
+            return self._finalize().as_url
+
         if not self._is_endpoint:
             raise UrlBuildingError('Not an endpoint')
 

@@ -392,4 +392,22 @@ class ReverseTests(unittest.TestCase):
                                      news_id=2),
                          '/persons/1/news/2')
 
+    def test_multiple_params_with_params_in_endpoints(self):
+        app = web.prefix('/persons/<int:person_id>') | web.namespace('persons') |\
+                web.cases(
+                  web.match('/index/<page>', ''),
+                  web.prefix('/news') | web.namespace('news') | web.cases(
+                     web.match('/index/<news_page>', ''),
+                     web.match('/<int:news_id>', 'item')
+                  )
+                )
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.persons(person_id=1, page=2).as_url, '/persons/1/index/2')
+        self.assertEqual(r.build_url('persons', person_id=1, page=2),
+                         '/persons/1/index/2')
+        self.assertRaises(UrlBuildingError,
+                          lambda: r.persons(person_id=1).as_url)
+        self.assertRaises(UrlBuildingError,
+                          lambda: r.persons(person_id=1).news.as_url)
+
 
