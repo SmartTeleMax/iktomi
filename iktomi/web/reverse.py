@@ -88,7 +88,7 @@ class Reverse(object):
             return self.__class__(scope, location, path, host, ready,
                                   bound_request=self._bound_request,
                                   need_arguments=location.need_arguments)
-        raise UrlBuildingError('Namespace or endpoint %s does not exist'
+        raise UrlBuildingError('Namespace or endpoint "%s" does not exist'
                                % name)
 
     def bind_to_request(self, bound_request):

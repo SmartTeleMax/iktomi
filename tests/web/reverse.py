@@ -379,10 +379,11 @@ class ReverseTests(unittest.TestCase):
     def test_multiple_params_with_endpoints(self):
         app = web.prefix('/persons/<int:person_id>') | web.namespace('persons') |\
                 web.cases(
-                  web.match('', ''),
-                  web.prefix('/news') | web.namespace('news') |
-                     web.match('', ''),
+                  web.match('/index', ''),
+                  web.prefix('/news') | web.namespace('news') | web.cases(
+                     web.match('/index', ''),
                      web.match('/<int:news_id>', 'item')
+                  )
                 )
         r = web.Reverse.from_handler(app)
         r1 = r.persons(person_id=1).news.item(news_id=2)
