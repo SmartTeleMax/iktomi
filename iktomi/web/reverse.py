@@ -62,6 +62,12 @@ class Reverse(object):
         self._bound_request = bound_request
         self._finalize_params = finalize_params or {}
 
+    def _attach_subdomain(self, host, location):
+        subdomain = location.build_subdomians()
+        if not host:
+            return subdomain
+        return subdomain + '.' + host
+
     def __call__(self, **kwargs):
         if self._ready:
             raise UrlBuildingError('Endpoint do not accept arguments')
@@ -69,7 +75,7 @@ class Reverse(object):
             finalize_params = {}
             path, host = self._path, self._host
             if self._location:
-                host += self._location.build_subdomians()
+                host = self._attach_subdomain(host, self._location)
                 path += self._location.build_path(**kwargs)
             if '' in self._scope:
                 finalize_params = kwargs
@@ -89,7 +95,7 @@ class Reverse(object):
             ready = not location.need_arguments
             if ready:
                 path += location.build_path()
-                host += location.build_subdomians()
+                host = self._attach_subdomain(host, location)
             return self.__class__(scope, location, path, host, ready,
                                   bound_request=self._bound_request,
                                   need_arguments=location.need_arguments)
@@ -104,7 +110,7 @@ class Reverse(object):
             raise UrlBuildingError('Need arguments to build last part of url')
         path, host = self._path, self._host
         location = self._scope[''][0]
-        host += location.build_subdomians()
+        host = self._attach_subdomain(host, location)
         path += location.build_path(**self._finalize_params)
         return self.__class__({}, self._location, path=path, host=host,
                               bound_request=self._bound_request, 

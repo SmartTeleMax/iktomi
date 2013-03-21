@@ -411,3 +411,9 @@ class ReverseTests(unittest.TestCase):
                           lambda: r.persons(person_id=1).news.as_url)
 
 
+    def test_subdomains_and_namespace(self):
+        app = web.subdomain('d2') | web.namespace('subdomain') | \
+                web.subdomain('d1') | web.match('/', 'index')
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.subdomain.index.as_url, 'http://d1.d2/')
+
