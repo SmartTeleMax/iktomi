@@ -413,7 +413,8 @@ class ReverseTests(unittest.TestCase):
 
     def test_subdomains_and_namespace(self):
         app = web.subdomain('d2') | web.namespace('subdomain') | \
-                web.subdomain('d1') | web.match('/', 'index')
+                web.subdomain('d1') | web.namespace('more') | \
+                web.match('/', 'index')
         r = web.Reverse.from_handler(app)
-        self.assertEqual(r.subdomain.index.as_url, 'http://d1.d2/')
+        self.assertEqual(r.subdomain.more.index.as_url, 'http://d1.d2/')
 

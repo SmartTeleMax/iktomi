@@ -66,7 +66,9 @@ class Reverse(object):
         subdomain = location.build_subdomians()
         if not host:
             return subdomain
-        return subdomain + '.' + host
+        if subdomain:
+            return subdomain + '.' + host
+        return host
 
     def __call__(self, **kwargs):
         if self._ready:
