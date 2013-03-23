@@ -48,11 +48,33 @@ class VersionedStorageTests(unittest.TestCase):
         vs._pop()
         self.assertEqual(vs.as_dict(), {'a': 1})
 
+    def test_setattr(self):
+        'VersionedStorage setattr and push/pop'
+        vs = VersionedStorage(a=1)
+        vs._push()
+        vs.b = 2
+        self.assertEqual(vs.as_dict(), {'a': 1, 'b': 2})
+
+        vs._push()
+        vs.c = 3
+        vs.b = 4
+        self.assertEqual(vs.as_dict(), {'a': 1, 'b': 4, 'c': 3})
+
+        vs._pop()
+        self.assertEqual(vs.as_dict(), {'a': 1, 'b': 2})
+
+        vs._pop()
+        self.assertEqual(vs.as_dict(), {'a': 1})
+
     def test_storage_properties(self):
         class Env(StorageFrame):
 
             @storage_cached_property
             def storage_cached(self):
+                return self.value
+
+            @storage_cached_property
+            def storage_cached_2(self):
                 return self.value
 
             @storage_property
@@ -71,12 +93,14 @@ class VersionedStorageTests(unittest.TestCase):
 
         vs._push(value=1)
         self.assertEqual(vs.storage_cached, 4)
+        self.assertEqual(vs.storage_cached_2, 1) # XXX is this right?
         self.assertEqual(vs.storage, 1)
         self.assertEqual(vs.method(), 1)
 
         vs._pop()
         vs._pop()
         self.assertEqual(vs.storage_cached, 4)
+        self.assertEqual(vs.storage_cached_2, 1) # XXX is this right?
         self.assertRaises(AttributeError, lambda: vs.storage)
         self.assertRaises(AttributeError, vs.method)
 
