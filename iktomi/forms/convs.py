@@ -12,15 +12,6 @@ from ..utils.dt import strftime
 from ..utils import N_, M_
 
 
-class NotSubmitted(Exception): pass
-
-
-class SkipReadonly(NotSubmitted): pass
-
-
-class NestedError(NotSubmitted): pass
-
-
 class ValidationError(Exception):
 
     @property
@@ -289,7 +280,7 @@ class DisplayOnly(Converter):
         return value
 
     def to_python(self, value):
-        raise SkipReadonly
+        return self._existing_value
 
 
 class EnumChoice(Converter):
