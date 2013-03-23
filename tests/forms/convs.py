@@ -33,6 +33,7 @@ class ConverterTests(unittest.TestCase):
         conv = init_conv(convs.Converter)
         value = conv.from_python('value')
         self.assertEqual(value, 'value')
+        self.assertEqual(conv.field.form.errors, {})
 
 
 class IntConverterTests(unittest.TestCase):
@@ -56,6 +57,8 @@ class IntConverterTests(unittest.TestCase):
         conv = init_conv(convs.Int)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
+
 
 class EnumChoiceConverterTests(unittest.TestCase):
 
@@ -138,6 +141,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.from_python(1)
         self.assertEqual(value, u'1')
+        self.assertEqual(conv.field.form.errors, {})
 
 
 class CharConverterTests(unittest.TestCase):
@@ -160,7 +164,7 @@ class CharConverterTests(unittest.TestCase):
         'Accept empty value by Char converter with non-empty regexp'
         conv = init_conv(convs.Char(regex='.+', required=False))
         value = conv.to_python('')
-        self.assertEqual(value, None)
+        self.assertEqual(value, '')
         self.assertEqual(conv.field.form.errors, {})
 
     def test_regex_error(self):
@@ -173,13 +177,14 @@ class CharConverterTests(unittest.TestCase):
         field_name = conv.field.name
         errors = conv.field.form.errors
         self.assertEqual(conv.field.form.errors.keys(), [field_name])
-        self.assertIn(conv.regex, errors[field_name])
+        self.assert_(conv.regex in errors[field_name])
 
     def test_from_python(self):
         'Char Converter from_python method'
         conv = init_conv(convs.Char)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
 
 
 class TestDate(unittest.TestCase):
@@ -223,6 +228,7 @@ class TestTime(unittest.TestCase):
         from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.from_python(time(12, 30)), '12:30')
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_to_python(self):
         '''Time converter to_python method'''

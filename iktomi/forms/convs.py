@@ -233,12 +233,13 @@ class Char(Converter):
     def to_python(self, value):
         # converting
         value = self.clean_value(value)
-        if self.regex:
+        if value and self.regex:
             regex = self.regex
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
             if not regex.match(value):
-                raise ValidationError(self.error_regex)
+                error = self.error_regex % {'regex': self.regex}
+                raise ValidationError(error)
         return value
 
     def from_python(self, value):
@@ -523,6 +524,7 @@ class List(Converter):
         if self.filter is not None:
             items = filter(self.filter, items)
         return items
+
 
 class SimpleFile(Converter):
 
