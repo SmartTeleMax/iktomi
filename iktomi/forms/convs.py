@@ -56,12 +56,18 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
+    # obsolete parameters from previous versions
+    _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max'])
     required = False
 
     #: Values are not accepted by Required validator
     error_required = N_('required field')
 
     def __init__(self, *args, **kwargs):
+        if self._obsolete & set(kwargs):
+            raise DeprecationWarning(
+                    'Obsolete parameters are used: %s',
+                        self._obsolete & set(kwargs))
         self.field = weakproxy(kwargs.get('field'))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)

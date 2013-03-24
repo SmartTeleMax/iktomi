@@ -35,6 +35,10 @@ class ConverterTests(unittest.TestCase):
         self.assertEqual(value, 'value')
         self.assertEqual(conv.field.form.errors, {})
 
+    def test_obsolete(self):
+        'Convertor accepting obsolete parameters'
+        self.assertRaises(DeprecationWarning, convs.Converter, null=True)
+
 
 class IntConverterTests(unittest.TestCase):
 
