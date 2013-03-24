@@ -164,7 +164,7 @@ class CharConverterTests(unittest.TestCase):
         'Accept empty value by Char converter with non-empty regexp'
         conv = init_conv(convs.Char(regex='.+', required=False))
         value = conv.to_python('')
-        self.assertEqual(value, '')
+        self.assertEqual(value, '') # XXX
         self.assertEqual(conv.field.form.errors, {})
 
     def test_regex_error(self):
@@ -185,6 +185,62 @@ class CharConverterTests(unittest.TestCase):
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
         self.assertEqual(conv.field.form.errors, {})
+
+    def test_strip(self):
+        'convs.Char.strip tests'
+        conv = init_conv(convs.Char(regex="\d+"))
+        value = conv.to_python(' 12')
+        self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
+
+        conv = init_conv(convs.Char(strip=False))
+        value = conv.to_python(' 12')
+        self.assertEqual(value, u' 12')
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_strip_required(self):
+        'convs.Char.strip tests for required'
+        conv = init_conv(convs.Char(required=True, strip=True))
+        value = conv.to_python(' ')
+        self.assertEqual(value, None) # XXX
+        field_name = conv.field.name
+        self.assertEqual(conv.field.form.errors.keys(), [field_name])
+
+
+class BoolConverterTests(unittest.TestCase):
+
+    def test_accept_true(self):
+        conv = init_conv(convs.Bool)
+        value = conv.to_python('xx')
+        self.assertEqual(value, True)
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_accept_false(self):
+        conv = init_conv(convs.Bool)
+        value = conv.to_python('')
+        self.assertEqual(value, False)
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_required(self):
+        conv = init_conv(convs.Bool(required=True))
+        value = conv.to_python('')
+        self.assertEqual(value, False) # XXX is this right?
+        field_name = conv.field.name
+        self.assertEqual(conv.field.form.errors, {})
+
+
+class DisplayOnlyTests(unittest.TestCase):
+
+    def test_accept_true(self):
+
+        class f(Form):
+            fields = [Field('readonly',
+                            conv=convs.DisplayOnly())]
+        form = f(initial={'readonly': 'init'})
+        form.accept(MultiDict({'readonly': 'value'}))
+
+        self.assertEqual(form.errors, {})
+        self.assertEqual(form.python_data, {'readonly': 'init'})
 
 
 class TestDate(unittest.TestCase):
