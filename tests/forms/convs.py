@@ -232,7 +232,6 @@ class BoolConverterTests(unittest.TestCase):
 class DisplayOnlyTests(unittest.TestCase):
 
     def test_accept_true(self):
-
         class f(Form):
             fields = [Field('readonly',
                             conv=convs.DisplayOnly())]
@@ -292,3 +291,60 @@ class TestTime(unittest.TestCase):
         conv = init_conv(convs.Time)
         self.assertEqual(conv.to_python('12:30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
+
+
+class SplitDateTime(unittest.TestCase):
+
+    def get_form(self, **kwargs):
+        class f(Form):
+            fields = [FieldSet('dt',
+                               conv=convs.SplitDateTime(**kwargs),
+                               fields=[
+                                Field('date',
+                                      conv=convs.Date()),
+                                Field('time',
+                                      conv=convs.Time()),
+                               ])]
+        return f
+
+
+    def test_to_python(self):
+        from datetime import datetime
+        form = self.get_form()()
+        form.accept(MultiDict({'dt.date': '24.03.2013',
+                               'dt.time': '13:32'}))
+        self.assertEqual(form.python_data, {
+            'dt': datetime(2013, 3, 24, 13, 32)
+        })
+        self.assertEqual(form.errors, {})
+
+    def test_null(self):
+        Form = self.get_form()
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '',
+                               'dt.time': '13:32'}))
+        self.assertEqual(form.python_data, {'dt': None})
+        self.assertEqual(form.errors, {})
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '24.03.2013',
+                               'dt.time': ''}))
+        self.assertEqual(form.python_data, {'dt': None})
+        self.assertEqual(form.errors, {})
+
+    def test_required(self):
+        Form = self.get_form(required=True)
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '',
+                               'dt.time': '13:32'}))
+        self.assertEqual(form.errors.keys(), ['dt'])
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '24.03.2013',
+                               'dt.time': ''}))
+        self.assertEqual(form.errors.keys(), ['dt'])
+
+
+# XXX tests for SplitDateTime

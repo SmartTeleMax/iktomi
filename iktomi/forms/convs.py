@@ -403,33 +403,10 @@ class SplitDateTime(Converter):
         return {'date':value, 'time':value}
 
     def to_python(self, value):
-        if value['date'] is None:
+        if value['date'] is None or value['time'] is None:
             return None
         res = datetime.combine(value['date'], value['time'])
         return res
-
-
-class Joiner(object):
-
-    def join(self, values):
-        return values
-
-    def split(self, value):
-        return value
-
-    def __call__(self):
-        return self.__class__()
-
-
-class DatetimeJoiner(Joiner):
-    # XXX Two classes to split and join datetimes?
-    def join(self, values):
-        return datetime.combine(*values)
-
-    def split(self, value):
-        if not value:
-            return None, None
-        return value.date(), value.time()
 
 
 class Html(Char):
