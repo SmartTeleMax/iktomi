@@ -6,6 +6,7 @@ import logging
 import functools
 
 from copy import copy
+from webob import Response
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +18,24 @@ def is_chainable(handler):
         handler = handler._next_handler
     return False
 
+def respond(response):
+    def response_wrapper(env, data):
+        return response
+    return response_wrapper
+
 
 class WebHandler(object):
     '''Base class for all request handlers.'''
 
     def __or__(self, next_handler):
-        # XXX copy count depends on chain length geometrically!
+        # XXX copy count depends on chain length arithmetically!
         h = self.copy()
+        if isinstance(next_handler, Response):
+            next_handler = respond(next_handler)
+        elif isinstance(next_handler, type) and \
+             issubclass(next_handler, Response):
+            next_handler = respond(next_handler())
+
         if hasattr(self, '_next_handler'):
             h._next_handler = h._next_handler | next_handler
         else:
