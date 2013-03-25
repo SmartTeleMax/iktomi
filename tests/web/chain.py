@@ -257,25 +257,10 @@ class Chain(unittest.TestCase):
         self.assertEqual(chain(VS(), VS()), 10)
 
     def test_response_chaining(self):
-        # make shure that webob responses can be used twice
-        #wsgi_response = {}
-        #def start_response(status, headers):
-        #    wsgi_response['status'] = int(status.split()[0])
-        #    wsgi_response['headers'] = headers
-
         nf = HTTPNotFound()
         chain = web.request_filter(lambda e,d,n: n(e,d)) | nf
         response = chain(VS(), VS())
         self.assert_(response is nf)
-        #resp = response({'REQUEST_METHOD': 'GET'}, start_response)
-        #self.assert_('404' in resp[0])
-        #self.assertEqual(wsgi_response['status'], 404)
-
-        #response = chain(VS(), VS())
-        #self.assert_(response is nf)
-        #resp = response({'REQUEST_METHOD': 'GET'}, start_response)
-        #self.assert_('404' in resp[0])
-        #self.assertEqual(wsgi_response['status'], 404)
 
     def test_response_class_chaining(self):
         nf = HTTPNotFound
