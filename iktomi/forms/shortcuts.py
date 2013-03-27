@@ -31,7 +31,7 @@ def PasswordSet(name='password',
                  **kwargs):
         # class implementation has problem with Fieldset copying:
         # it requires to save all kwargs in object's __dict__
-        char = convs.Char(min_length=min_length, max_length=max_length, null=null)
+        char = convs.Char(convs.limit(min_length, max_length), null=null)
         items = (('pass', password_label), ('conf', confirm_label))
         
         kwargs['fields'] = [fields.Field(subfieldname,

@@ -351,4 +351,45 @@ class SplitDateTime(unittest.TestCase):
         self.assertEqual(form.errors.keys(), ['dt'])
 
 
+class PasswordConv(unittest.TestCase):
+
+    def get_form(self, **kwargs):
+        from iktomi.forms.shortcuts import PasswordConv
+        class f(Form):
+            fields = [FieldSet('pass',
+                               conv=PasswordConv(**kwargs),
+                               fields=[
+                                Field('pass'),
+                                Field('conf'),
+                               ])]
+        return f
+
+
+    def test_to_python(self):
+        form = self.get_form()()
+        form.accept(MultiDict({'pass.pass': '123123',
+                               'pass.conf': '123123'}))
+        self.assertEqual(form.python_data, {
+            'pass': '123123'
+        })
+        self.assertEqual(form.errors, {})
+
+    def test_mismatch(self):
+        Form = self.get_form()
+        form = Form()
+
+        form.accept(MultiDict({'pass.pass': '123123',
+                               'pass.conf': '123'}))
+        self.assertEqual(form.python_data, {'pass': None})
+        self.assertEqual(form.errors.keys(), ['pass'])
+
+    def test_required(self):
+        Form = self.get_form(required=True)
+
+        form = Form()
+        form.accept(MultiDict({'pass.pass': '',
+                               'pass.conf': ''}))
+        self.assertEqual(form.errors.keys(), ['pass'])
+
+
 # XXX tests for SplitDateTime
