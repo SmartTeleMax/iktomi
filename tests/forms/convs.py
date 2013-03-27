@@ -33,6 +33,11 @@ class ConverterTests(unittest.TestCase):
         conv = init_conv(convs.Converter)
         value = conv.from_python('value')
         self.assertEqual(value, 'value')
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_obsolete(self):
+        'Convertor accepting obsolete parameters'
+        self.assertRaises(DeprecationWarning, convs.Converter, null=True)
 
 
 class IntConverterTests(unittest.TestCase):
@@ -56,6 +61,8 @@ class IntConverterTests(unittest.TestCase):
         conv = init_conv(convs.Int)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
+
 
 class EnumChoiceConverterTests(unittest.TestCase):
 
@@ -138,6 +145,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.from_python(1)
         self.assertEqual(value, u'1')
+        self.assertEqual(conv.field.form.errors, {})
 
 
 class CharConverterTests(unittest.TestCase):
@@ -160,7 +168,7 @@ class CharConverterTests(unittest.TestCase):
         'Accept empty value by Char converter with non-empty regexp'
         conv = init_conv(convs.Char(regex='.+', required=False))
         value = conv.to_python('')
-        self.assertEqual(value, None)
+        self.assertEqual(value, '') # XXX
         self.assertEqual(conv.field.form.errors, {})
 
     def test_regex_error(self):
@@ -173,13 +181,69 @@ class CharConverterTests(unittest.TestCase):
         field_name = conv.field.name
         errors = conv.field.form.errors
         self.assertEqual(conv.field.form.errors.keys(), [field_name])
-        self.assertIn(conv.regex, errors[field_name])
+        self.assert_(conv.regex in errors[field_name])
 
     def test_from_python(self):
         'Char Converter from_python method'
         conv = init_conv(convs.Char)
         value = conv.from_python(12)
         self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_strip(self):
+        'convs.Char.strip tests'
+        conv = init_conv(convs.Char(regex="\d+"))
+        value = conv.to_python(' 12')
+        self.assertEqual(value, u'12')
+        self.assertEqual(conv.field.form.errors, {})
+
+        conv = init_conv(convs.Char(strip=False))
+        value = conv.to_python(' 12')
+        self.assertEqual(value, u' 12')
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_strip_required(self):
+        'convs.Char.strip tests for required'
+        conv = init_conv(convs.Char(required=True, strip=True))
+        value = conv.to_python(' ')
+        self.assertEqual(value, None) # XXX
+        field_name = conv.field.name
+        self.assertEqual(conv.field.form.errors.keys(), [field_name])
+
+
+class BoolConverterTests(unittest.TestCase):
+
+    def test_accept_true(self):
+        conv = init_conv(convs.Bool)
+        value = conv.to_python('xx')
+        self.assertEqual(value, True)
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_accept_false(self):
+        conv = init_conv(convs.Bool)
+        value = conv.to_python('')
+        self.assertEqual(value, False)
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_required(self):
+        conv = init_conv(convs.Bool(required=True))
+        value = conv.to_python('')
+        self.assertEqual(value, False) # XXX is this right?
+        field_name = conv.field.name
+        self.assertEqual(conv.field.form.errors, {})
+
+
+class DisplayOnlyTests(unittest.TestCase):
+
+    def test_accept_true(self):
+        class f(Form):
+            fields = [Field('readonly',
+                            conv=convs.DisplayOnly())]
+        form = f(initial={'readonly': 'init'})
+        form.accept(MultiDict({'readonly': 'value'}))
+
+        self.assertEqual(form.errors, {})
+        self.assertEqual(form.python_data, {'readonly': 'init'})
 
 
 class TestDate(unittest.TestCase):
@@ -223,6 +287,7 @@ class TestTime(unittest.TestCase):
         from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.from_python(time(12, 30)), '12:30')
+        self.assertEqual(conv.field.form.errors, {})
 
     def test_to_python(self):
         '''Time converter to_python method'''
@@ -230,3 +295,60 @@ class TestTime(unittest.TestCase):
         conv = init_conv(convs.Time)
         self.assertEqual(conv.to_python('12:30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
+
+
+class SplitDateTime(unittest.TestCase):
+
+    def get_form(self, **kwargs):
+        class f(Form):
+            fields = [FieldSet('dt',
+                               conv=convs.SplitDateTime(**kwargs),
+                               fields=[
+                                Field('date',
+                                      conv=convs.Date()),
+                                Field('time',
+                                      conv=convs.Time()),
+                               ])]
+        return f
+
+
+    def test_to_python(self):
+        from datetime import datetime
+        form = self.get_form()()
+        form.accept(MultiDict({'dt.date': '24.03.2013',
+                               'dt.time': '13:32'}))
+        self.assertEqual(form.python_data, {
+            'dt': datetime(2013, 3, 24, 13, 32)
+        })
+        self.assertEqual(form.errors, {})
+
+    def test_null(self):
+        Form = self.get_form()
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '',
+                               'dt.time': '13:32'}))
+        self.assertEqual(form.python_data, {'dt': None})
+        self.assertEqual(form.errors, {})
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '24.03.2013',
+                               'dt.time': ''}))
+        self.assertEqual(form.python_data, {'dt': None})
+        self.assertEqual(form.errors, {})
+
+    def test_required(self):
+        Form = self.get_form(required=True)
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '',
+                               'dt.time': '13:32'}))
+        self.assertEqual(form.errors.keys(), ['dt'])
+
+        form = Form()
+        form.accept(MultiDict({'dt.date': '24.03.2013',
+                               'dt.time': ''}))
+        self.assertEqual(form.errors.keys(), ['dt'])
+
+
+# XXX tests for SplitDateTime

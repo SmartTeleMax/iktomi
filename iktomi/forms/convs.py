@@ -12,15 +12,6 @@ from ..utils.dt import strftime
 from ..utils import N_, M_
 
 
-class NotSubmitted(Exception): pass
-
-
-class SkipReadonly(NotSubmitted): pass
-
-
-class NestedError(NotSubmitted): pass
-
-
 class ValidationError(Exception):
 
     @property
@@ -65,12 +56,18 @@ class Converter(object):
                    error_min_length='At least %(min_length)s characters required')`
     '''
 
+    # obsolete parameters from previous versions
+    _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max'])
     required = False
 
     #: Values are not accepted by Required validator
     error_required = N_('required field')
 
     def __init__(self, *args, **kwargs):
+        if self._obsolete & set(kwargs):
+            raise DeprecationWarning(
+                    'Obsolete parameters are used: %s',
+                        list(self._obsolete & set(kwargs)))
         self.field = weakproxy(kwargs.get('field'))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
@@ -233,12 +230,13 @@ class Char(Converter):
     def to_python(self, value):
         # converting
         value = self.clean_value(value)
-        if self.regex:
+        if value and self.regex:
             regex = self.regex
             if isinstance(self.regex, basestring):
                 regex = re.compile(self.regex, re.U)
             if not regex.match(value):
-                raise ValidationError(self.error_regex)
+                error = self.error_regex % {'regex': self.regex}
+                raise ValidationError(error)
         return value
 
     def from_python(self, value):
@@ -288,7 +286,7 @@ class DisplayOnly(Converter):
         return value
 
     def to_python(self, value):
-        raise SkipReadonly
+        return self._existing_value
 
 
 class EnumChoice(Converter):
@@ -411,33 +409,10 @@ class SplitDateTime(Converter):
         return {'date':value, 'time':value}
 
     def to_python(self, value):
-        if value['date'] is None:
+        if value['date'] is None or value['time'] is None:
             return None
         res = datetime.combine(value['date'], value['time'])
         return res
-
-
-class Joiner(object):
-
-    def join(self, values):
-        return values
-
-    def split(self, value):
-        return value
-
-    def __call__(self):
-        return self.__class__()
-
-
-class DatetimeJoiner(Joiner):
-    # XXX Two classes to split and join datetimes?
-    def join(self, values):
-        return datetime.combine(*values)
-
-    def split(self, value):
-        if not value:
-            return None, None
-        return value.date(), value.time()
 
 
 class Html(Char):
@@ -523,6 +498,7 @@ class List(Converter):
         if self.filter is not None:
             items = filter(self.filter, items)
         return items
+
 
 class SimpleFile(Converter):
 
