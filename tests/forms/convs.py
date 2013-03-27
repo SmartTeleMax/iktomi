@@ -42,7 +42,7 @@ class ConverterTests(unittest.TestCase):
     def test_filter(self):
         'Convertor with filters'
         conv = convs.Converter(lambda conv, x: x+'-1', lambda conv, x: x+'-2')
-        value = conv.convert('value')
+        value = conv.accept('value', silent=True)
         self.assertEqual(value, 'value-1-2')
 
 

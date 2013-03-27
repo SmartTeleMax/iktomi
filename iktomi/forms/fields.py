@@ -223,10 +223,7 @@ class FieldSet(AggregateField):
     def get_initial(self):
         result = dict((field.name, field.get_initial())
                       for field in self.fields)
-        try:
-            return self.to_python(result)
-        except convs.ValidationError:
-            return None
+        return self.conv.accept(result, silent=True)
 
     def set_raw_value(self, raw_data, value):
         # fills in raw_data multidict, resulting keys are field's absolute names

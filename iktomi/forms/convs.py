@@ -90,7 +90,7 @@ class Converter(object):
     def _is_empty(self, value):
         return value in ('', [], {}, None)
 
-    def convert(self, value, silent=True):
+    def accept(self, value, silent=False):
         try:
             value = self.to_python(value)
             if self.required and self._is_empty(value):
@@ -106,9 +106,6 @@ class Converter(object):
             #      is dynamic, so we set value to None for absent value.
             value = self._existing_value
         return value
-
-    def accept(self, value):
-        return self.convert(value, silent=False)
 
     def to_python(self, value):
         """ custom converters should override this """
@@ -310,7 +307,7 @@ class EnumChoice(Converter):
 
     def _safe_to_python(self, value):
         # XXX hack
-        value = self.conv.convert(value)
+        value = self.conv.accept(value, silent=True)
         if value not in dict(self.choices):
             return None
         return value
@@ -331,7 +328,7 @@ class EnumChoice(Converter):
             yield conv.from_python(python_value), label
 
     def get_label(self, value):
-        value = self.conv.convert(value)
+        value = self.conv.accept(value, silent=True)
         return dict(self.choices).get(value)
 
 
