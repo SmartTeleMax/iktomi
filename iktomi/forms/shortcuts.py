@@ -6,6 +6,9 @@ from ..utils import N_
 
 class PasswordConv(convs.Char):
 
+    error_mismatch = N_('password and confirm mismatch')
+    error_required = N_('password required')
+
     def from_python(self, value):
         return dict([(field.name, None) for field in self.field.fields])
 
@@ -16,9 +19,9 @@ class PasswordConv(convs.Char):
         etalon = value[list(value)[0]]
         for field in self.field.fields:
             self.assert_(value[field.name] == etalon,
-                         N_('password and confirm mismatch'))
-        self.assert_(etalon not in (None, '')  or self.null,
-                     N_('password required'))
+                         self.error_mismatch)
+        self.assert_(etalon not in (None, '')  or self.required,
+                     self.error_required)
         return etalon
 
 
