@@ -39,6 +39,12 @@ class ConverterTests(unittest.TestCase):
         'Convertor accepting obsolete parameters'
         self.assertRaises(DeprecationWarning, convs.Converter, null=True)
 
+    def test_filter(self):
+        'Convertor with filters'
+        conv = convs.Converter(lambda conv, x: x+'-1', lambda conv, x: x+'-2')
+        value = conv.convert('value')
+        self.assertEqual(value, 'value-1-2')
+
 
 class IntConverterTests(unittest.TestCase):
 

@@ -90,22 +90,25 @@ class Converter(object):
     def _is_empty(self, value):
         return value in ('', [], {}, None)
 
-    def accept(self, value, **kwargs):
-        field, form = self.field, self.field.form
+    def convert(self, value, silent=True):
         try:
-            value = self.to_python(value, **kwargs)
+            value = self.to_python(value)
             if self.required and self._is_empty(value):
-                form.errors[self.field.input_name] = self.error_required
-                return self._existing_value
+                raise ValidationError(self.error_required)
             for v in self.validators_and_filters:
                 value = v(self, value)
         except ValidationError, e:
-            form.errors[field.input_name] = e.message
+            if not silent:
+                field, form = self.field, self.field.form
+                form.errors[field.input_name] = e.message
             #NOTE: by default value for field is in python_data,
             #      but this is not true for FieldList where data
             #      is dynamic, so we set value to None for absent value.
             value = self._existing_value
         return value
+
+    def accept(self, value):
+        return self.convert(value, silent=False)
 
     def to_python(self, value):
         """ custom converters should override this """
@@ -131,7 +134,9 @@ class Converter(object):
 
     @property
     def _existing_value(self):
-        return self.field.parent.python_data.get(self.field.name)
+        if self.field is not None:
+            return self.field.parent.python_data.get(self.field.name)
+        return [] if self.multiple else None
 
 
 class validator(object):
@@ -304,21 +309,15 @@ class EnumChoice(Converter):
             return conv.from_python(value)
 
     def _safe_to_python(self, value):
-        conv = self.conv(field=self.field)
-        try:
-            value = conv.to_python(value)
-        except ValidationError:
-            return None
+        # XXX hack
+        value = self.conv.convert(value)
         if value not in dict(self.choices):
             return None
         return value
 
     def to_python(self, value):
         if value == '':
-            #XXX: check for multiple?
-            if self.multiple:
-                return []
-            return None
+            return [] if self.multiple else None
         if self.multiple:
             value = [item for item in map(self._safe_to_python, value or [])
                      if item is not None]
@@ -332,13 +331,8 @@ class EnumChoice(Converter):
             yield conv.from_python(python_value), label
 
     def get_label(self, value):
-        conv = self.conv(field=self.field)
-        try:
-            value = conv.to_python(value)
-        except ValidationError:
-            return None
-        else:
-            return dict(self.choices).get(value)
+        value = self.conv.convert(value)
+        return dict(self.choices).get(value)
 
 
 class BaseDatetime(Converter):
