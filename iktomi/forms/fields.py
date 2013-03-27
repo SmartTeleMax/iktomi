@@ -173,7 +173,7 @@ class Field(BaseField):
         value = self.raw_value
         if not self._check_value_type(value):
             value = [] if self.multiple else self._null_value
-        return self.to_python(value)
+        return self.conv.accept(value)
 
 
 class AggregateField(BaseField):
@@ -223,7 +223,10 @@ class FieldSet(AggregateField):
     def get_initial(self):
         result = dict((field.name, field.get_initial())
                       for field in self.fields)
-        return self.to_python(result)
+        try:
+            return self.to_python(result)
+        except convs.ValidationError:
+            return None
 
     def set_raw_value(self, raw_data, value):
         # fills in raw_data multidict, resulting keys are field's absolute names
@@ -241,7 +244,7 @@ class FieldSet(AggregateField):
                 # readonly field
                 field.set_raw_value(self.form.raw_data,
                                     field.from_python(result[field.name]))
-        return self.to_python(result)
+        return self.conv.accept(result)
 
     def render(self):
         return self.env.template.render(self.template, field=self)
@@ -314,7 +317,7 @@ class FieldList(AggregateField):
                     result[field.name] = old[field.name]
             else:
                 result[field.name] = field.accept()
-        return self.to_python(result)
+        return self.conv.accept(result)
 
     def set_raw_value(self, raw_data, value):
         indeces = []

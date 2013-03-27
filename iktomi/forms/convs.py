@@ -72,7 +72,6 @@ class Converter(object):
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
         self.validators_and_filters = args
-        self.to_python = self._check(self.to_python)
 
     # It is defined as read-only property to avoid setting it to True where
     # converter doesn't support it.
@@ -91,24 +90,22 @@ class Converter(object):
     def _is_empty(self, value):
         return value in ('', [], {}, None)
 
-    def _check(self, method):
-        def wrapper(value, **kwargs):
-            field, form = self.field, self.field.form
-            try:
-                value = method(value, **kwargs)
-                if self.required and self._is_empty(value):
-                    form.errors[self.field.input_name] = self.error_required
-                    return self._existing_value
-                for v in self.validators_and_filters:
-                    value = v(self, value)
-            except ValidationError, e:
-                form.errors[field.input_name] = e.message
-                #NOTE: by default value for field is in python_data,
-                #      but this is not true for FieldList where data
-                #      is dynamic, so we set value to None for absent value.
-                value = self._existing_value
-            return value
-        return wrapper
+    def accept(self, value, **kwargs):
+        field, form = self.field, self.field.form
+        try:
+            value = self.to_python(value, **kwargs)
+            if self.required and self._is_empty(value):
+                form.errors[self.field.input_name] = self.error_required
+                return self._existing_value
+            for v in self.validators_and_filters:
+                value = v(self, value)
+        except ValidationError, e:
+            form.errors[field.input_name] = e.message
+            #NOTE: by default value for field is in python_data,
+            #      but this is not true for FieldList where data
+            #      is dynamic, so we set value to None for absent value.
+            value = self._existing_value
+        return value
 
     def to_python(self, value):
         """ custom converters should override this """
@@ -336,7 +333,12 @@ class EnumChoice(Converter):
 
     def get_label(self, value):
         conv = self.conv(field=self.field)
-        return dict(self.choices).get(conv.to_python(value))
+        try:
+            value = conv.to_python(value)
+        except ValidationError:
+            return None
+        else:
+            return dict(self.choices).get(value)
 
 
 class BaseDatetime(Converter):
