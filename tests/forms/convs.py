@@ -17,14 +17,14 @@ class ConverterTests(unittest.TestCase):
     def test_accept(self):
         'Accept method of converter'
         conv = init_conv(convs.Converter)
-        value = conv.to_python('value')
+        value = conv.accept('value')
         self.assertEqual(value, 'value')
         self.assertEqual(conv.field.form.errors, {})
 
     def test_to_python(self):
         'Converter to_python method'
         conv = init_conv(convs.Converter)
-        value = conv.to_python('value')
+        value = conv.accept('value')
         self.assertEqual(value, 'value')
         self.assertEqual(conv.field.form.errors, {})
 
@@ -39,20 +39,26 @@ class ConverterTests(unittest.TestCase):
         'Convertor accepting obsolete parameters'
         self.assertRaises(DeprecationWarning, convs.Converter, null=True)
 
+    def test_filter(self):
+        'Convertor with filters'
+        conv = convs.Converter(lambda conv, x: x+'-1', lambda conv, x: x+'-2')
+        value = conv.accept('value', silent=True)
+        self.assertEqual(value, 'value-1-2')
+
 
 class IntConverterTests(unittest.TestCase):
 
     def test_accept_valid(self):
         'Accept method of Int converter'
         conv = init_conv(convs.Int)
-        value = conv.to_python('12')
+        value = conv.accept('12')
         self.assertEqual(value, 12)
         self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value(self):
         'Accept method of Int converter for None value'
         conv = init_conv(convs.Int(required=False))
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, None)
         self.assertEqual(conv.field.form.errors, {})
 
@@ -72,7 +78,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
             (1, 'result')
         ], conv=convs.Int()))
 
-        value = conv.to_python('1')
+        value = conv.accept('1')
         self.assertEqual(value, 1)
         self.assertEqual(conv.field.form.errors, {})
 
@@ -82,7 +88,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
             (1, 'result')
         ], conv=convs.Int(), required=False))
 
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, None)
         self.assertEqual(conv.field.form.errors, {})
 
@@ -92,9 +98,9 @@ class EnumChoiceConverterTests(unittest.TestCase):
             (1, 'result')
         ], conv=convs.Int(), required=False))
 
-        value = conv.to_python('unknown')
+        value = conv.accept('unknown')
         self.assertEqual(value, None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        self.assertEqual(conv.field.form.errors.keys(), [])
 
     def test_accept_missing_value(self):
         'Accept method of EnumChoice converter for None value'
@@ -102,7 +108,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
             (1, 'result')
         ], conv=convs.Int(), required=False))
 
-        value = conv.to_python('2')
+        value = conv.accept('2')
         self.assertEqual(value, None)
         self.assertEqual(conv.field.form.errors, {})
 
@@ -112,7 +118,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
             (1, 'result')
         ], conv=convs.Int(), required=True))
 
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, None)
         self.assertEqual(conv.field.form.errors.keys(),
                          [conv.field.name])
@@ -122,7 +128,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
         conv = init_conv(convs.EnumChoice(choices=[
             (1, 'result')
         ], conv=convs.Int(), required=True))
-        value = conv.to_python('invalid')
+        value = conv.accept('invalid')
         self.assertEqual(value, None)
         self.assertEqual(conv.field.form.errors.keys(),
                          [conv.field.name])
@@ -132,7 +138,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
         conv = init_conv(convs.EnumChoice(choices=[
             (1, 'result')
         ], conv=convs.Int(), required=True))
-        value = conv.to_python('2')
+        value = conv.accept('2')
         self.assertEqual(value, None)
         self.assertEqual(conv.field.form.errors.keys(),
                          [conv.field.name])
@@ -153,21 +159,21 @@ class CharConverterTests(unittest.TestCase):
     def test_accept_valid(self):
         'Accept method of Char converter'
         conv = init_conv(convs.Char)
-        value = conv.to_python('12')
+        value = conv.accept('12')
         self.assertEqual(value, u'12')
         self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value(self):
         'Accept method of Char converter for None value'
         conv = init_conv(convs.Char(required=False))
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, '')
         self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_null_value_regex(self):
         'Accept empty value by Char converter with non-empty regexp'
         conv = init_conv(convs.Char(regex='.+', required=False))
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, '') # XXX
         self.assertEqual(conv.field.form.errors, {})
 
@@ -175,9 +181,9 @@ class CharConverterTests(unittest.TestCase):
         conv = init_conv(convs.Char(regex='ZZZ', required=True))
         # XXX This should look like the following:
         #with self.assertRaises(convs.ValidationError) as cm:
-        #    conv.to_python('AAA')
+        #    conv.accept('AAA')
         #self.assertIn(conv.regex, cm.exception.message)
-        conv.to_python('AAA')
+        conv.accept('AAA')
         field_name = conv.field.name
         errors = conv.field.form.errors
         self.assertEqual(conv.field.form.errors.keys(), [field_name])
@@ -193,19 +199,19 @@ class CharConverterTests(unittest.TestCase):
     def test_strip(self):
         'convs.Char.strip tests'
         conv = init_conv(convs.Char(regex="\d+"))
-        value = conv.to_python(' 12')
+        value = conv.accept(' 12')
         self.assertEqual(value, u'12')
         self.assertEqual(conv.field.form.errors, {})
 
         conv = init_conv(convs.Char(strip=False))
-        value = conv.to_python(' 12')
+        value = conv.accept(' 12')
         self.assertEqual(value, u' 12')
         self.assertEqual(conv.field.form.errors, {})
 
     def test_strip_required(self):
         'convs.Char.strip tests for required'
         conv = init_conv(convs.Char(required=True, strip=True))
-        value = conv.to_python(' ')
+        value = conv.accept(' ')
         self.assertEqual(value, None) # XXX
         field_name = conv.field.name
         self.assertEqual(conv.field.form.errors.keys(), [field_name])
@@ -215,19 +221,19 @@ class BoolConverterTests(unittest.TestCase):
 
     def test_accept_true(self):
         conv = init_conv(convs.Bool)
-        value = conv.to_python('xx')
+        value = conv.accept('xx')
         self.assertEqual(value, True)
         self.assertEqual(conv.field.form.errors, {})
 
     def test_accept_false(self):
         conv = init_conv(convs.Bool)
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, False)
         self.assertEqual(conv.field.form.errors, {})
 
     def test_required(self):
         conv = init_conv(convs.Bool(required=True))
-        value = conv.to_python('')
+        value = conv.accept('')
         self.assertEqual(value, False) # XXX is this right?
         field_name = conv.field.name
         self.assertEqual(conv.field.form.errors, {})
@@ -252,7 +258,7 @@ class TestDate(unittest.TestCase):
         '''Date converter to_python method'''
         from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
-        self.assertEqual(conv.to_python('31.01.1999'), date(1999, 1, 31))
+        self.assertEqual(conv.accept('31.01.1999'), date(1999, 1, 31))
         self.assertEqual(conv.field.form.errors, {})
 
     def test_readable_format(self):
@@ -293,7 +299,7 @@ class TestTime(unittest.TestCase):
         '''Time converter to_python method'''
         from datetime import time
         conv = init_conv(convs.Time)
-        self.assertEqual(conv.to_python('12:30'), time(12, 30))
+        self.assertEqual(conv.accept('12:30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
 
 
