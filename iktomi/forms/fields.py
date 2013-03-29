@@ -91,9 +91,6 @@ class BaseField(object):
         # insure unique IDs.
         return '%s-%s' % (self.form.id, self.input_name)
 
-    def to_python(self, value):
-        return self.conv.to_python(value)
-
     def from_python(self, value):
         return self.conv.from_python(value)
 
