@@ -22,7 +22,10 @@ class WebHandler(object):
     '''Base class for all request handlers.'''
 
     def __or__(self, next_handler):
-        # XXX copy count depends on chain length geometrically!
+        # XXX in some cases copy count can be big
+        #     for example, chaining something after a huge cases(..) handler
+        #     causes a copy of each single nested handler.
+        #     Sure, is bad idea to chain anything after big cases(..) anyway.
         h = self.copy()
         if hasattr(self, '_next_handler'):
             h._next_handler = h._next_handler | next_handler
