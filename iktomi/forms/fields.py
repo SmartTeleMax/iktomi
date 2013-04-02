@@ -3,6 +3,7 @@
 import logging
 
 import cgi
+import re
 import widgets
 from . import convs
 from ..utils import cached_property
@@ -91,9 +92,6 @@ class BaseField(object):
         # insure unique IDs.
         return '%s-%s' % (self.form.id, self.input_name)
 
-    def to_python(self, value):
-        return self.conv.to_python(value)
-
     def from_python(self, value):
         return self.conv.from_python(value)
 
@@ -173,7 +171,7 @@ class Field(BaseField):
         value = self.raw_value
         if not self._check_value_type(value):
             value = [] if self.multiple else self._null_value
-        return self.to_python(value)
+        return self.conv.accept(value)
 
 
 class AggregateField(BaseField):
@@ -223,7 +221,7 @@ class FieldSet(AggregateField):
     def get_initial(self):
         result = dict((field.name, field.get_initial())
                       for field in self.fields)
-        return self.to_python(result)
+        return self.conv.accept(result, silent=True)
 
     def set_raw_value(self, raw_data, value):
         # fills in raw_data multidict, resulting keys are field's absolute names
@@ -241,7 +239,7 @@ class FieldSet(AggregateField):
                 # readonly field
                 field.set_raw_value(self.form.raw_data,
                                     field.from_python(result[field.name]))
-        return self.to_python(result)
+        return self.conv.accept(result)
 
     def render(self):
         return self.env.template.render(self.template, field=self)
@@ -262,6 +260,7 @@ class FieldList(AggregateField):
     template = 'widgets/fieldlist'
     render_type = 'default'
     conv = convs.List
+    _digit_re = re.compile('\d+$')
 
     def __init__(self, name, conv=None, field=Field(None),
                  parent=None, **kwargs):
@@ -285,11 +284,12 @@ class FieldList(AggregateField):
 
     def get_field(self, name):
         names = name.split('.', 1)
-        if self.field.name == names[0] or self.field.name is None:
-            if len(names) > 1:
-                return self.field.get_field(names[1])
-            return self.field
-        return None
+        if not self._digit_re.match(names[0]):
+            return None
+        field = self.field(name=names[0])
+        if len(names) > 1:
+            return field.get_field(names[1])
+        return field
 
     @property
     def indeces_input_name(self):
@@ -314,7 +314,7 @@ class FieldList(AggregateField):
                     result[field.name] = old[field.name]
             else:
                 result[field.name] = field.accept()
-        return self.to_python(result)
+        return self.conv.accept(result)
 
     def set_raw_value(self, raw_data, value):
         indeces = []

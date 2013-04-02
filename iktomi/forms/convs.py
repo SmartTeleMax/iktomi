@@ -72,7 +72,6 @@ class Converter(object):
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
         self.validators_and_filters = args
-        self.to_python = self._check(self.to_python)
 
     # It is defined as read-only property to avoid setting it to True where
     # converter doesn't support it.
@@ -91,24 +90,22 @@ class Converter(object):
     def _is_empty(self, value):
         return value in ('', [], {}, None)
 
-    def _check(self, method):
-        def wrapper(value, **kwargs):
-            field, form = self.field, self.field.form
-            try:
-                value = method(value, **kwargs)
-                if self.required and self._is_empty(value):
-                    form.errors[self.field.input_name] = self.error_required
-                    return self._existing_value
-                for v in self.validators_and_filters:
-                    value = v(self, value)
-            except ValidationError, e:
+    def accept(self, value, silent=False):
+        try:
+            value = self.to_python(value)
+            if self.required and self._is_empty(value):
+                raise ValidationError(self.error_required)
+            for v in self.validators_and_filters:
+                value = v(self, value)
+        except ValidationError, e:
+            if not silent:
+                field, form = self.field, self.field.form
                 form.errors[field.input_name] = e.message
-                #NOTE: by default value for field is in python_data,
-                #      but this is not true for FieldList where data
-                #      is dynamic, so we set value to None for absent value.
-                value = self._existing_value
-            return value
-        return wrapper
+            #NOTE: by default value for field is in python_data,
+            #      but this is not true for FieldList where data
+            #      is dynamic, so we set value to None for absent value.
+            value = self._existing_value
+        return value
 
     def to_python(self, value):
         """ custom converters should override this """
@@ -134,7 +131,9 @@ class Converter(object):
 
     @property
     def _existing_value(self):
-        return self.field.parent.python_data.get(self.field.name)
+        if self.field is not None:
+            return self.field.parent.python_data.get(self.field.name)
+        return [] if self.multiple else None
 
 
 class validator(object):
@@ -209,6 +208,7 @@ class Char(Converter):
     regex = None
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
+                                    # Default value is u"�"
     strip=True
 
     error_regex = N_('field should match %(regex)s')
@@ -223,6 +223,8 @@ class Char(Converter):
         '''
         # We have to clean before checking min/max length. It's done in
         # separate method to allow additional clean action in subclasses.
+        if self.nontext_replacement is not None:
+            value = replace_nontext(value, self.nontext_replacement)
         if self.strip:
             value = value.strip()
         return value
@@ -307,21 +309,15 @@ class EnumChoice(Converter):
             return conv.from_python(value)
 
     def _safe_to_python(self, value):
-        conv = self.conv(field=self.field)
-        try:
-            value = conv.to_python(value)
-        except ValidationError:
-            return None
+        # XXX hack
+        value = self.conv.accept(value, silent=True)
         if value not in dict(self.choices):
             return None
         return value
 
     def to_python(self, value):
         if value == '':
-            #XXX: check for multiple?
-            if self.multiple:
-                return []
-            return None
+            return [] if self.multiple else None
         if self.multiple:
             value = [item for item in map(self._safe_to_python, value or [])
                      if item is not None]
@@ -335,8 +331,8 @@ class EnumChoice(Converter):
             yield conv.from_python(python_value), label
 
     def get_label(self, value):
-        conv = self.conv(field=self.field)
-        return dict(self.choices).get(conv.to_python(value))
+        value = self.conv.accept(value, silent=True)
+        return dict(self.choices).get(value)
 
 
 class BaseDatetime(Converter):

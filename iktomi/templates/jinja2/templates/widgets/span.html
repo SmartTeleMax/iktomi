@@ -1,0 +1,10 @@
+<span id="{{ widget.id }}"
+      {%- if widget.classname %} class="{{ widget.classname }}"{% endif %}>
+  {%- if value is none -%}
+    &mdash;
+  {%- elif should_escape -%}
+    {{ value|forceescape }}
+  {%- else -%}
+    {{ value }}
+  {%- endif -%}
+</span>

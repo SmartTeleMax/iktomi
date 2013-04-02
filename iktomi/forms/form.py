@@ -16,11 +16,24 @@ class FormEnvironment(object):
         self.__dict__.update(kw)
 
 
+class FormValidationMetaClass(type):
+    '''
+    Metaclass to assert that some obsolete methods are not used.
+    can be removed from iktomi after all existing code is cleaned up.
+    '''
+
+    def __new__(mcs, name, bases, dict_):
+        if any([x.startswith('clean__') for x in dict_]):
+            raise TypeError('Form clean__ methods are obsolete')
+        return type.__new__(mcs, name, bases, dict_)
+
+
 class Form(object):
 
     template = 'forms/default'
     media = FormMedia()
     permissions = DEFAULT_PERMISSIONS
+    __metaclass__ = FormValidationMetaClass
 
     def __init__(self, env=None, initial=None, name=None, permissions=None):
         env = env or {}
@@ -98,20 +111,6 @@ class Form(object):
                 # readonly field
                 value = self.python_data[field.name]
                 field.set_raw_value(self.raw_data, field.from_python(value))
-
-        if not self.is_valid:
-            return False
-
-        for field in self.fields:
-            validate = getattr(self, 'clean__%s' % field.name, None)
-            if validate:
-                try:
-                    self.python_data[field.name] = \
-                        validate(self.python_data.get(field.name, None))
-                except convs.ValidationError, e:
-                    self.errors[field.input_name] = e.message
-                    del self.python_data[field.name]
-
         return self.is_valid
 
     def get_field(self, name):
