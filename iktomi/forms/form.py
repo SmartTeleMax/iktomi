@@ -22,10 +22,10 @@ class FormValidationMetaClass(type):
     can be removed from iktomi after all existing code is cleaned up.
     '''
 
-    def __new__(mcs, name, bases, dict):
-        if any([x.startswith('clean__') for x in dict]):
+    def __new__(mcs, name, bases, dict_):
+        if any([x.startswith('clean__') for x in dict_]):
             raise TypeError('Form clean__ methods are obsolete')
-        return type.__new__(mcs, name, bases, dict)
+        return type.__new__(mcs, name, bases, dict_)
 
 
 class Form(object):
