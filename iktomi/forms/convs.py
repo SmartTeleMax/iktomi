@@ -208,6 +208,7 @@ class Char(Converter):
     regex = None
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
+                                    # Default value is u"�"
     strip=True
 
     error_regex = N_('field should match %(regex)s')
@@ -222,6 +223,8 @@ class Char(Converter):
         '''
         # We have to clean before checking min/max length. It's done in
         # separate method to allow additional clean action in subclasses.
+        if self.nontext_replacement is not None:
+            value = replace_nontext(value, self.nontext_replacement)
         if self.strip:
             value = value.strip()
         return value

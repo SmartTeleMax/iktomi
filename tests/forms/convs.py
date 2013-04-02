@@ -216,6 +216,13 @@ class CharConverterTests(unittest.TestCase):
         field_name = conv.field.name
         self.assertEqual(conv.field.form.errors.keys(), [field_name])
 
+    def test_replace_nontext(self):
+        'convs.Char.strip tests for required'
+        conv = convs.Char(nontext_replacement="?")
+        # XXX not all nontext characters are tested
+        value = conv.to_python(u'\x00-\x09-\x19-\ud800-\ufffe')
+        self.assertEqual(value, '?-\x09-?-?-?')
+
 
 class BoolConverterTests(unittest.TestCase):
 
