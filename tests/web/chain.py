@@ -255,5 +255,15 @@ class Chain(unittest.TestCase):
         chain = web.cases(e, h) | h
         self.assertEqual(chain(VS(), VS()), 10)
 
+    def test_prefix_ns_shortcut(self, handler_cls=web.prefix):
+        view = lambda e, d: None
+        chain = handler_cls('prefix', name='namespace') | view
+
+        assert isinstance(chain.next_handler, web.namespace)
+        self.assertEqual(chain.next_handler.namespace, 'namespace')
+        self.assertEqual(chain.next_handler.next_handler, view)
+
+    def test_subdomain_ns_shortcut(self):
+        self.test_prefix_ns_shortcut(handler_cls=web.subdomain)
 
 

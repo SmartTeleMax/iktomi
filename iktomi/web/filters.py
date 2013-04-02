@@ -104,9 +104,12 @@ class static_files(WebHandler):
 
 class prefix(WebHandler):
 
-    def __init__(self, _prefix, convs=None):
+    def __init__(self, _prefix, convs=None, name=None):
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
+        if name is not None:
+            # A shortcut for prefix(..) | namespace(name)
+            self._next_handler = namespace(name)
 
     def prefix(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
@@ -132,8 +135,11 @@ class prefix(WebHandler):
 
 class subdomain(WebHandler):
 
-    def __init__(self, _subdomain):
+    def __init__(self, _subdomain, name=None):
         self.subdomain = unicode(_subdomain)
+        if name is not None:
+            # A shortcut for subdomain(..) | namespace(name)
+            self._next_handler = namespace(name)
 
     def subdomain(self, env, data):
         subdomain = env._route_state.subdomain
