@@ -148,7 +148,7 @@ class FormErrorsTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'list': [1, 3]})
 
     def test_form__clean(self):
-        'Fieldlist element deletion'
+        'Assert clean__ method existance causes errors'
         def get_form():
             class _Form(Form):
                 fields=[

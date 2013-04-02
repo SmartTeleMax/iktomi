@@ -3,6 +3,7 @@
 import logging
 
 import cgi
+import re
 import widgets
 from . import convs
 from ..utils import cached_property
@@ -259,6 +260,7 @@ class FieldList(AggregateField):
     template = 'widgets/fieldlist'
     render_type = 'default'
     conv = convs.List
+    _digit_re = re.compile('\d+$')
 
     def __init__(self, name, conv=None, field=Field(None),
                  parent=None, **kwargs):
@@ -282,11 +284,12 @@ class FieldList(AggregateField):
 
     def get_field(self, name):
         names = name.split('.', 1)
-        if self.field.name == names[0] or self.field.name is None:
-            if len(names) > 1:
-                return self.field.get_field(names[1])
-            return self.field
-        return None
+        if not self._digit_re.match(names[0]):
+            return None
+        field = self.field(name=names[0])
+        if len(names) > 1:
+            return field.get_field(names[1])
+        return field
 
     @property
     def indeces_input_name(self):
