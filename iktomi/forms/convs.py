@@ -23,8 +23,11 @@ class ValidationError(Exception):
         if self.message is not None:
             form.errors[field.input_name] = self.message
         for name, message in self.by_field.items():
-            if name.startswith(('.', '-')):
-                name = field.input_name + name
+            if name.startswith('.'):
+                nm, f = name.lstrip('.'), field
+                for i in xrange(len(name) - len(nm) - 1):
+                    f = f.parent
+                name = f.get_field(nm).input_name
             form.errors[name] = message
 
     def __repr__(self):
