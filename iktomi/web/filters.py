@@ -121,7 +121,7 @@ class prefix(WebHandler):
     __call__ = prefix
 
     def _locations(self):
-        locations = super(prefix, self)._locations()
+        locations = WebHandler._locations(self)
         for location, scope in locations.values():
             location.builders.insert(0, self.builder)
         return locations
@@ -151,7 +151,7 @@ class subdomain(WebHandler):
     __call__ = subdomain
 
     def _locations(self):
-        locations = super(subdomain, self)._locations()
+        locations = WebHandler._locations(self)
         for location, scope in locations.values():
             location.subdomains.append(self.subdomain)
         return locations
@@ -175,8 +175,8 @@ class namespace(WebHandler):
     __call__ = namespace
 
     def _locations(self):
+        locations = WebHandler._locations(self)
         namespaces = self.namespace.split('.')
-        locations = super(namespace, self)._locations()
         for ns in namespaces[::-1]:
             locations = {ns: (Location(), locations)}
         return locations
