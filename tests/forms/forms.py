@@ -147,6 +147,18 @@ class FormErrorsTests(unittest.TestCase):
                                                   **{'list-1': '1', 'list-3': '3'})))
         self.assertEqual(form.python_data, {'list': [1, 3]})
 
+    def test_form__clean(self):
+        'Fieldlist element deletion'
+        def get_form():
+            class _Form(Form):
+                fields=[
+                    Field('first', convs.Int()),
+                ]
+
+                def clean__first(self, value):
+                    pass
+        self.assertRaises(TypeError, get_form)
+
 
 class FormClassAcceptTests(unittest.TestCase):
     def test_accept(self):
