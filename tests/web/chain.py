@@ -6,6 +6,7 @@ import unittest
 from iktomi import web
 from iktomi.web.core import _FunctionWrapper3
 from iktomi.utils.storage import VersionedStorage
+from webob.exc import HTTPNotFound
 
 skip = getattr(unittest, 'skip', lambda x: None)
 VS = VersionedStorage
@@ -255,5 +256,15 @@ class Chain(unittest.TestCase):
         chain = web.cases(e, h) | h
         self.assertEqual(chain(VS(), VS()), 10)
 
+    def test_response_chaining(self):
+        nf = HTTPNotFound()
+        chain = web.request_filter(lambda e,d,n: n(e,d)) | nf
+        response = chain(VS(), VS())
+        self.assert_(response is nf)
 
-
+    def test_response_class_chaining(self):
+        nf = HTTPNotFound
+        chain = web.request_filter(lambda e,d,n: n(e,d)) | nf
+        response = chain(VS(), VS())
+        self.assert_(isinstance(response, nf))
+ 
