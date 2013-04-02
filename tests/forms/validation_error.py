@@ -33,10 +33,13 @@ class ValidationErrorTests(unittest.TestCase):
 
         ve = ValidationError(by_field={'.subfield': u'Ошибка-1',
                                        '-2.subfield': u'Ошибка-2',
-                                       'field': u'Ошибка-3'})
+                                       'field': u'Ошибка-3',
+                                       # XXX what does this mean?
+                                       '': u'Ошибка-4'}) 
 
         ve.fill_errors(field)
         self.assertEqual(form.errors, {'name.subfield': u'Ошибка-1',
                                        'name-2.subfield': u'Ошибка-2',
-                                       'field': u'Ошибка-3'})
+                                       'field': u'Ошибка-3',
+                                       '': u'Ошибка-4'})
 

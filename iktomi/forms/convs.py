@@ -23,7 +23,7 @@ class ValidationError(Exception):
         if self.message is not None:
             form.errors[field.input_name] = self.message
         for name, message in self.by_field.items():
-            if name[0] in '.-':
+            if name.startswith(('.', '-')):
                 name = field.input_name + name
             form.errors[name] = message
 
