@@ -45,6 +45,26 @@ class ConverterTests(unittest.TestCase):
         value = conv.accept('value', silent=True)
         self.assertEqual(value, 'value-1-2')
 
+    def test_multiple(self):
+        conv = convs.Int(multiple=True)
+        result = conv.accept(['1', '2', '3'], silent=True)
+        self.assertEqual(result, [1, 2, 3])
+
+        result = conv.accept([], silent=True)
+        self.assertEqual(result, [])
+
+        result = conv.accept(None, silent=True)
+        self.assertEqual(result, [])
+
+        # XXX is this right?
+        result = conv.accept(['', '1'], silent=True)
+        self.assertEqual(result, [1])
+
+    def test_multiple_validators(self):
+        conv = convs.Int(lambda conv, x: x+1, multiple=True)
+        result = conv.accept(['1', '2', '3'], silent=True)
+        self.assertEqual(result, [2, 3, 4])
+
 
 class IntConverterTests(unittest.TestCase):
 

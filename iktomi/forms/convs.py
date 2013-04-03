@@ -59,6 +59,7 @@ class Converter(object):
     # obsolete parameters from previous versions
     _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max'])
     required = False
+    multiple = False
 
     #: Values are not accepted by Required validator
     error_required = N_('required field')
@@ -73,16 +74,6 @@ class Converter(object):
         self.__dict__.update(kwargs)
         self.validators_and_filters = args
 
-    # It is defined as read-only property to avoid setting it to True where
-    # converter doesn't support it.
-    @property
-    def multiple(self):
-        '''
-        Signs if converter is multiple or not.
-        Multiple converters usually accept and return collections.
-        '''
-        return False
-
     @property
     def env(self):
         return self.field.env
@@ -92,11 +83,24 @@ class Converter(object):
 
     def accept(self, value, silent=False):
         try:
-            value = self.to_python(value)
+            if self.multiple:
+                result = []
+                for val in value or []:
+                    val = self.to_python(val)
+                    for v in self.validators_and_filters:
+                        val = v(self, val)
+
+                    if val is not None:
+                        # XXX is it right to ignore None?
+                        result.append(val)
+                value = result
+            else:
+                value = self.to_python(value)
+                for v in self.validators_and_filters:
+                    value = v(self, value)
+
             if self.required and self._is_empty(value):
                 raise ValidationError(self.error_required)
-            for v in self.validators_and_filters:
-                value = v(self, value)
         except ValidationError, e:
             if not silent:
                 field, form = self.field, self.field.form
@@ -298,35 +302,20 @@ class EnumChoice(Converter):
     conv = Char()
     # choices: [(python_value, label), ...]
     choices = ()
-    multiple = False
     error_required = N_('you must select a value')
 
     def from_python(self, value):
-        conv = self.conv(field=self.field)
-        if self.multiple:
-            return [conv.from_python(item) for item in value or []]
-        else:
-            return conv.from_python(value)
+        conv = self.conv#(field=self.field)
+        return conv.from_python(value)
 
-    def _safe_to_python(self, value):
-        # XXX hack
+    def to_python(self, value):
         value = self.conv.accept(value, silent=True)
         if value not in dict(self.choices):
             return None
         return value
 
-    def to_python(self, value):
-        if value == '':
-            return [] if self.multiple else None
-        if self.multiple:
-            value = [item for item in map(self._safe_to_python, value or [])
-                     if item is not None]
-        else:
-            value = self._safe_to_python(value)
-        return value
-
     def __iter__(self):
-        conv = self.conv(field=self.field)
+        conv = self.conv#(field=self.field)
         for python_value, label in self.choices:
             yield conv.from_python(python_value), label
 
