@@ -66,7 +66,7 @@ class Converter(object):
     def __init__(self, *args, **kwargs):
         if self._obsolete & set(kwargs):
             raise DeprecationWarning(
-                    'Obsolete parameters are used: %s',
+                    'Obsolete parameters are used: %s' %
                         list(self._obsolete & set(kwargs)))
         self.field = weakproxy(kwargs.get('field'))
         self._init_kwargs = kwargs
