@@ -56,17 +56,20 @@ class App(Cli):
         try:
             server_thread = DevServerThread(host, port, self.app)
             server_thread.start()
-            for filename in reloader_loop(extra_files=self.extra_files):
-                server_thread.running = False
-                server_thread.join()
-                logger.info('Changes in file "%s"', filename)
-                logger.info('Reloading...')
-                # Smart reload of current process.
-                # Main goal is to reload all modules
-                # NOTE: For exec syscall we need to flush and close all fds manually
-                flush_fds()
-                close_fds()
-                os.execvp(sys.executable, [sys.executable] + sys.argv)
+
+            filename = reloader_loop(extra_files=self.extra_files)
+            logger.info('Changes in file "%s"', filename)
+
+            server_thread.running = False
+            server_thread.join()
+            logger.info('Reloading...')
+
+            # Smart reload of current process.
+            # Main goal is to reload all modules
+            # NOTE: For exec syscall we need to flush and close all fds manually
+            flush_fds()
+            close_fds()
+            os.execvp(sys.executable, [sys.executable] + sys.argv)
         except KeyboardInterrupt:
             logger.info('Stoping dev-server...')
             server_thread.running = False
@@ -128,9 +131,7 @@ def reloader_loop(extra_files=None, interval=1):
             old_time = mtimes.get(filename)
             if old_time is None:
                 mtimes[filename] = mtime
-                continue
             elif mtime > old_time:
-                mtimes[filename] = mtime
-                yield filename
+                return filename
         time.sleep(interval)
 
