@@ -26,12 +26,13 @@ class PasswordConv(convs.Char):
 
 
 def PasswordSet(name='password',
-                 min_length=3, max_length=200, null=True,
+                 min_length=3, max_length=200, required=False,
                  password_label=None, confirm_label='confirmmm',
                  **kwargs):
         # class implementation has problem with Fieldset copying:
         # it requires to save all kwargs in object's __dict__
-        char = convs.Char(convs.limit(min_length, max_length), null=null)
+        char = convs.Char(convs.limit(min_length, max_length),
+                          required=required)
         items = (('pass', password_label), ('conf', confirm_label))
         
         kwargs['fields'] = [fields.Field(subfieldname,
@@ -39,7 +40,7 @@ def PasswordSet(name='password',
                                          label=label,
                                          widget=widgets.PasswordInput)
                             for subfieldname, label in items]
-        kwargs.setdefault('conv', PasswordConv(null=null))
+        kwargs.setdefault('conv', PasswordConv(required=required))
         kwargs.setdefault('template', 'fieldset-line')
         
         return fields.FieldSet(name, get_initial=lambda: '', **kwargs)
