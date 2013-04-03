@@ -202,16 +202,12 @@ def positive_num(conv, value):
     return value > 0
 
 
-class Char(Converter):
+class CharBased(Converter):
 
-    #: Regexp to match input string
-    regex = None
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
                                     # Default value is u"�"
-    strip=True
-
-    error_regex = N_('field should match %(regex)s')
+    strip = True
 
     def clean_value(self, value):
         '''
@@ -228,6 +224,14 @@ class Char(Converter):
         if self.strip:
             value = value.strip()
         return value
+
+
+class Char(CharBased):
+
+    #: Regexp to match input string
+    regex = None
+
+    error_regex = N_('field should match %(regex)s')
 
     def to_python(self, value):
         # converting
@@ -335,13 +339,14 @@ class EnumChoice(Converter):
         return dict(self.choices).get(value)
 
 
-class BaseDatetime(Converter):
+class BaseDatetime(CharBased):
 
     format = None
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
                     ('%m', 'MM'), ('%Y', 'YYYY'))
     error_wrong_format = N_('Wrong format (%(readable_format)s)')
+    nontext_replacement = ''
 
     def __init__(self, *args, **kwargs):
         if not 'readable_format' in kwargs or 'format' in kwargs:
@@ -359,6 +364,7 @@ class BaseDatetime(Converter):
         return strftime(value, self.format)
 
     def to_python(self, value):
+        value = self.clean_value(value)
         if not value:
             return None
         try:

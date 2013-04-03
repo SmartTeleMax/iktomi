@@ -292,6 +292,13 @@ class TestDate(unittest.TestCase):
         self.assertEqual(conv.from_python(date(1899, 1, 31)), '31.01.99')
         self.assertEqual(conv.from_python(date(5, 1, 31)), '31.01.05')
 
+    def test_accept_nontext(self):
+        '''Date converter to_python method accepting non-text characters'''
+        from datetime import date
+        conv = init_conv(convs.Date(format="%d.%m.%Y"))
+        self.assertEqual(conv.accept(u'\uFFFE31.01.1999\x00'), date(1999, 1, 31))
+        self.assertEqual(conv.field.form.errors, {})
+
 
 class TestTime(unittest.TestCase):
 
@@ -307,6 +314,13 @@ class TestTime(unittest.TestCase):
         from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.accept('12:30'), time(12, 30))
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_accept_nontext(self):
+        '''Time converter to_python method'''
+        from datetime import time
+        conv = init_conv(convs.Time)
+        self.assertEqual(conv.accept(u'\x0012:\uFFFE30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
 
 
