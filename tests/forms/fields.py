@@ -31,8 +31,8 @@ class FieldTests(unittest.TestCase):
         form = F()
         for nm, cls in [('fieldset', FieldSet),
                         ('fieldset.fieldlist', FieldList),
-                        ('fieldset.fieldlist-1', FieldSet),
-                        ('fieldset.fieldlist-1.subfield', Field),
+                        ('fieldset.fieldlist.1', FieldSet),
+                        ('fieldset.fieldlist.1.subfield', Field),
                         ]:
             self.assert_(isinstance(form.get_field(nm), cls),
                          '%s is not instance of %s' % (nm, cls))

@@ -89,7 +89,11 @@ class FormClassInitializationTests(unittest.TestCase):
                 FieldList('list', field=Field('number', convs.Int())),
             ]
         form = _Form(initial={'list': [1, 2]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.raw_data, MultiDict([('list-indeces', '1'), 
+                                                   ('list-indeces', '2'),
+                                                   ('list.1', '1'),
+                                                   ('list.2', '2')
+                                                  ]))
         self.assertEqual(form.python_data, {'list': [1, 2]})
 
     def test_fieldlist_with_initial_and_initial(self):
@@ -99,7 +103,11 @@ class FormClassInitializationTests(unittest.TestCase):
                 FieldList('list', field=Field('number', convs.Int(), initial=2)),
             ]
         form = _Form(initial={'list': [1, 2]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.raw_data, MultiDict([('list-indeces', '1'),
+                                                   ('list-indeces', '2'),
+                                                   ('list.1', '1'),
+                                                   ('list.2', '2')
+                                                  ]))
         self.assertEqual(form.python_data, {'list': [1, 2]})
 
 
@@ -141,10 +149,10 @@ class FormErrorsTests(unittest.TestCase):
             ]
         form = _Form(initial={'list': [1, 2, 3]})
         self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2'), ('list-indeces', '3')), 
-                                                  **{'list-1': '1', 'list-2': '2', 'list-3': '3'}))
+                                                  **{'list.1': '1', 'list.2': '2', 'list.3': '3'}))
         self.assertEqual(form.python_data, {'list': [1, 2, 3]})
         self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '3')), 
-                                                  **{'list-1': '1', 'list-3': '3'})))
+                                                  **{'list.1': '1', 'list.3': '3'})))
         self.assertEqual(form.python_data, {'list': [1, 3]})
 
     def test_form__clean(self):
@@ -273,9 +281,15 @@ class FormReadonlyFieldsTest(unittest.TestCase):
                 FieldList('list', field=Field('number', convs.Int(), permissions='r')),
             ]
         form = _Form(initial={'list':[1, 2]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '1', 'list-2': '2'}))
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'),
+                                                   ('list-indeces', '2')),
+                                                   **{'list.1': '1', 
+                                                      'list.2': '2'}))
         self.assertEqual(form.python_data, {'list': [1, 2]})
-        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1': '2', 'list-2': '3'})))
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'),
+                                            ('list-indeces', '2')),
+                                            **{'list.1': '2',
+                                               'list.2': '3'})))
         self.assertEqual(form.python_data, {'list': [1, 2]})
 
     def test_fieldlist_of_fieldsets(self):
@@ -288,9 +302,9 @@ class FormReadonlyFieldsTest(unittest.TestCase):
                 )),
             ]
         form = _Form(initial={'list':[{'number':1}, {'number':2}]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '1', 'list-2.number': '2'}))
+        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list.1.number': '1', 'list.2.number': '2'}))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
-        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list-1.number': '2', 'list-2.number': '3'})))
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list.1.number': '2', 'list.2.number': '3'})))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
 
     def test_fieldset_of_fieldsets(self):
@@ -398,9 +412,9 @@ class FormFieldListErrorsTests(unittest.TestCase):
         self.assertEqual(form.raw_data, MultiDict())
         self.assertEqual(form.python_data, {'list': []})
         self.assert_(not form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2'), ('list-indeces', '3')), 
-                                           **{'list-1': '1', 'list-2': '2', 'list-3': '3s'})))
+                                           **{'list.1': '1', 'list.2': '2', 'list.3': '3s'})))
         self.assertEqual(form.python_data, {'list': [1, 2, None]})
-        self.assertEqual(form.errors, {'list-3': convs.Int.error_notvalid})
+        self.assertEqual(form.errors, {'list.3': convs.Int.error_notvalid})
 
     def test_fieldlist_with_initial(self):
         '''Fieldlist errors (list of one initial value), when submiting
@@ -411,9 +425,9 @@ class FormFieldListErrorsTests(unittest.TestCase):
             ]
         form = _Form(initial={'list': [1]})
         self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'),), 
-                                           **{'list-1': '1'}))
+                                           **{'list.1': '1'}))
         self.assertEqual(form.python_data, {'list': [1]})
         self.assert_(not form.accept(MultiDict((('list-indeces', '2'), ('list-indeces', '1')), 
-                                           **{'list-1': '1s', 'list-2': '2'})))
+                                           **{'list.1': '1s', 'list.2': '2'})))
         self.assertEqual(form.python_data, {'list': [2, 1]})
-        self.assertEqual(form.errors, {'list-1': convs.Int.error_notvalid})
+        self.assertEqual(form.errors, {'list.1': convs.Int.error_notvalid})

@@ -277,7 +277,7 @@ class FieldList(AggregateField):
 
     @property
     def prefix(self):
-        return self.input_name+'-'
+        return self.input_name+'.'
 
     def get_initial(self):
         return []
