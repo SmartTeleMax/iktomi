@@ -259,7 +259,7 @@ class DisplayOnlyTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'readonly': 'init'})
 
 
-class TestDate(unittest.TestCase):
+class DateTests(unittest.TestCase):
 
     def test_accept_valid(self):
         '''Date converter to_python method'''
@@ -300,7 +300,7 @@ class TestDate(unittest.TestCase):
         self.assertEqual(conv.field.form.errors, {})
 
 
-class TestTime(unittest.TestCase):
+class TimeTests(unittest.TestCase):
 
     def test_from_python(self):
         '''Time converter from_python method'''
@@ -324,7 +324,7 @@ class TestTime(unittest.TestCase):
         self.assertEqual(conv.field.form.errors, {})
 
 
-class SplitDateTime(unittest.TestCase):
+class SplitDateTimeTests(unittest.TestCase):
 
     def get_form(self, **kwargs):
         class f(Form):
@@ -378,7 +378,7 @@ class SplitDateTime(unittest.TestCase):
         self.assertEqual(form.errors.keys(), ['dt'])
 
 
-class PasswordConv(unittest.TestCase):
+class PasswordConvTests(unittest.TestCase):
 
     def get_form(self, **kwargs):
         from iktomi.forms.shortcuts import PasswordConv
@@ -418,5 +418,35 @@ class PasswordConv(unittest.TestCase):
                                'pass.conf': ''}))
         self.assertEqual(form.errors.keys(), ['pass'])
 
+
+class HtmlTests(unittest.TestCase):
+
+    def test_accept(self):
+        conv = convs.Html()
+        value = conv.accept('<p>Hello!</p> <script>alert("Hello!")</script>')
+        self.assertEqual(value, '<p>Hello!</p> alert("Hello!")')
+
+    def test_tune_object(self):
+        conv = convs.Html(allowed_elements=['p', 'strong'])
+
+        self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
+                         set(['p', 'strong']))
+
+        conv = conv(add_allowed_elements=['p', 'em'])
+
+        self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
+                         set(['p', 'strong', 'em']))
+
+    def test_tune_class(self):
+        class MyHtml(convs.Html):
+            allowed_elements = ['p', 'strong']
+
+        class MyHtml2(MyHtml):
+            add_allowed_elements = ['p', 'em']
+
+        conv = MyHtml2(add_allowed_elements=['span'])
+
+        self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
+                         set(['p', 'strong', 'em', 'span']))
 
 # XXX tests for SplitDateTime

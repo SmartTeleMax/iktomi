@@ -179,7 +179,7 @@ class Sanitizer(object):
     string_callbacks = [strip_empty_tags]
     method = 'xhtml'
     strip_whitespace = True
-    tokensanitazer = TokenSanitazer
+    tokensanitizer = TokenSanitazer
 
     options = ('dom_callbacks', 'string_callbacks', 'method', 'strip_whitespace')
 
@@ -193,7 +193,7 @@ class Sanitizer(object):
         # Proxy function to pass arguments into Sanitizer constructor
         def func(*args, **kwargs):
             kwargs.update(self.kwargs)
-            return self.tokensanitazer(*args, **kwargs)
+            return self.tokensanitizer(*args, **kwargs)
         return func
 
     def get_dom(self, buf):

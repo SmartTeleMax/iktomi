@@ -9,7 +9,7 @@ from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
 from ..utils.dt import strftime
-from ..utils import N_, M_
+from ..utils import N_, M_, cached_property
 
 
 class ValidationError(Exception):
@@ -491,17 +491,23 @@ class Html(Char):
         super(Html, self).__init__(**kwargs)
 
     def clean_value(self, value):
-        from ..utils.html import ParseError, Sanitizer
+        # XXX move the import outside (in try..except)
+        from ..utils.html import ParseError
 
         value = super(Html, self).clean_value(value)
-        sanitizer = Sanitizer(**self._init_kwargs)
         try:
-            clean = sanitizer.sanitize(value)
+            clean = self.sanitizer.sanitize(value)
         except ParseError:
             raise ValidationError(u'not valid html')
         else:
             return self.Markup(clean)
 
+    @cached_property
+    def sanitizer(self):
+        from ..utils.html import Sanitizer
+        return Sanitizer(**self._init_kwargs)
+
+    # XXX are these properties used?
     @property
     def tags(self):
         return self.allowed_elements
