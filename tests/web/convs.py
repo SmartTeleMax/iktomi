@@ -61,3 +61,24 @@ class DateConverter(unittest.TestCase):
         self.assertEqual(Date().to_url(
                              date(year=2012, month=10, day=24)),
                          u'2012-10-24')
+
+class AnyConverter(unittest.TestCase):
+
+    def test_to_python(self):
+        self.assertEqual(Any('opt1', 'opt2').to_python('opt2'),
+                         'opt2')
+
+        self.assertRaises(ConvertError,
+                          Any('opt1', 'opt2').to_python,
+                          'nooption')
+
+    def test_to_url(self):
+        self.assertEqual(Any('opt1', 'opt2').to_url('opt1'),
+                         u'opt1')
+
+    #@unittest.skip
+    #def test_to_url_wrong(self):
+    #    # XXX is this right?
+    #    self.assertRaises(ConverterError,
+    #                      Any('option1', 'option2').to_url,
+    #                      'nooption')

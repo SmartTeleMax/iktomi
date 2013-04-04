@@ -11,6 +11,10 @@ from iktomi.web.reverse import Location, UrlBuildingError
 
 class LocationsTests(unittest.TestCase):
 
+    def test_repr(self):
+        # for coverage
+        "%r" % Location(UrlTemplate('/docs', match_whole_str=False))
+
     def test_match(self):
         'Locations of web.match'
         self.assert_(web.locations(web.match('/', 'name')).keys(), ['name'])
@@ -143,7 +147,9 @@ class ReverseTests(unittest.TestCase):
 
     def test_deafult_name_with_args(self):
         'Reverse default name with args'
-        r = web.Reverse.from_handler(web.match('/<arg>'))
+        app = web.match('/<arg>')
+
+        r = web.Reverse.from_handler(app)
         self.assertEqual(r(arg='1').as_url, '/1')
         self.assertRaises(UrlBuildingError, lambda: r.as_url)
 
@@ -190,6 +196,7 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.doc(id=1).as_url, '/docs/1')
         self.assertEqual(r.news(id=1).as_url, '/news/1')
 
+
     def test_unicode(self):
         'Reverse with unicode'
         # various combinations of url parts containing unicode
@@ -202,6 +209,7 @@ class ReverseTests(unittest.TestCase):
         r = web.Reverse.from_handler(chain)
 
         self.assertEqual(r.unicode1.as_url, 'http://xn--o1a/%D0%B7/')
+        self.assertEqual(str(r.unicode1), 'http://xn--o1a/%D0%B7/')
         self.assertEqual(r.unicode2(slug=u'ю').as_url, 'http://xn--o1a/%D0%B7/%D1%8E')
         self.assertEqual(r.unicode3(slug=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
         self.assertEqual(r.unicode4(slug1=u'д', slug2=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
@@ -225,14 +233,15 @@ class ReverseTests(unittest.TestCase):
 
         # Exceptional behavior
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
-        # XXX this one raises KeyError, not UrlBuildError
+        # XXX this one raises KeyError, not UrlBuildingError
         self.assertRaises(UrlBuildingError, lambda: r.news(foo='top').as_url)
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item.as_url)
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item(id=1).docs())
+        self.assertRaises(UrlBuildingError, lambda: r.news(section='top')())
         self.assertRaises(UrlBuildingError, lambda: r.news.item)
 
     def test_string_api(self):
-        'Reverse with nested prefexes'
+        'String API for reverse (build_url)'
         app = web.prefix('/news/<section>') | web.namespace('news') | web.cases(
                 web.match(),
                 web.prefix('/<int:id>') | web.namespace('item') | web.cases(
@@ -248,7 +257,9 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.build_url('news.item.docs', section='top', id=1), '/news/top/1/docs')
 
         # Exceptional behavior
-        self.assertRaises(UrlBuildingError, lambda: r.build_url('news'))
+        self.assertRaises(UrlBuildingError, r.build_url, 'news')
+        self.assertRaises(UrlBuildingError, r.build_url, 'news', 
+                          section='top', subsection="bottom")
 
     def test_external_urls(self):
         'External URL reverse'

@@ -13,6 +13,7 @@ class URLTests(unittest.TestCase):
         'Url without params'
         u = URL('/path/to/something')
         self.assertEqual(u, '/path/to/something')
+        self.assert_(u in repr(u))
 
     def test_rendering_with_params(self):
         'Url with params'
