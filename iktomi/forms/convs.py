@@ -14,12 +14,26 @@ from ..utils import N_, M_, cached_property
 
 class ValidationError(Exception):
 
-    @property
-    def message(self):
-        return self.args[0]
+    def __init__(self, message=None, by_field=None):
+        self.message = message
+        self.by_field = by_field or {}
+
+    def fill_errors(self, field):
+        form = field.form
+        if self.message is not None:
+            form.errors[field.input_name] = self.message
+        for name, message in self.by_field.items():
+            if name.startswith('.'):
+                nm, f = name.lstrip('.'), field
+                for i in xrange(len(name) - len(nm) - 1):
+                    f = f.parent
+                name = f.get_field(nm).input_name
+            form.errors[name] = message
 
     def __repr__(self):
-        return self.messages.encode('utf-8')
+        return "%s(%r, %r)" % (self.__class__,
+                               self.message,
+                               self.by_field)
 
 
 class Converter(object):
@@ -119,8 +133,7 @@ class Converter(object):
                 value = v(self, value)
         except ValidationError, e:
             if not silent:
-                field, form = self.field, self.field.form
-                form.errors[field.input_name] = e.message
+                e.fill_errors(self.field)
             #NOTE: by default value for field is in python_data,
             #      but this is not true for FieldList where data
             #      is dynamic, so we set value to None for absent value.
@@ -397,7 +410,7 @@ class BaseDatetime(CharBased):
         except ValueError:
             raise ValidationError(self.error_wrong_format)
         except TypeError, e:
-            raise ValidationError, unicode(e)
+            raise ValidationError(unicode(e))
 
 
 class Datetime(BaseDatetime):
