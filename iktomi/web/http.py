@@ -36,14 +36,6 @@ class RouteState(object):
         return path
 
     @property
-    def path_qs(self):
-        path = self.request.path_qs
-        if self._prefixes:
-            length = sum(map(len, self._prefixes))
-            path = path[length:]
-        return path
-
-    @property
     def subdomain(self):
         if self._subdomain:
             return self._domain[:-len(self._subdomain)-1]
