@@ -84,7 +84,8 @@ class Converter(object):
     '''
 
     # obsolete parameters from previous versions
-    _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max'])
+    _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max',
+                           'multiple'])
     required = False
     multiple = False
 
@@ -117,21 +118,9 @@ class Converter(object):
         If `silent=False`, writes errors to `form.errors`.
         '''
         try:
-            if self.multiple:
-                result = []
-                for val in value or []:
-                    val = self.to_python(val)
-                    for v in self.validators_and_filters:
-                        val = v(self, val)
-
-                    if val is not None:
-                        # XXX is it right to ignore None?
-                        result.append(val)
-                value = result
-            else:
-                value = self.to_python(value)
-                for v in self.validators_and_filters:
-                    value = v(self, value)
+            value = self.to_python(value)
+            for v in self.validators_and_filters:
+                value = v(self, value)
 
             if self.required and self._is_empty(value):
                 raise ValidationError(self.error_required)
@@ -533,6 +522,29 @@ class List(Converter):
         if self.filter is not None:
             items = filter(self.filter, items)
         return items
+
+
+class ListOf(Converter):
+
+    multiple = True
+
+    def __init__(self, conv=None, **kwargs):
+        if 'field' in kwargs:
+            conv=(conv or self.conv)(field=kwargs['field'])
+        kwargs['conv'] = conv
+        Converter.__init__(self, **kwargs)
+
+    def to_python(self, value):
+        result = []
+        for val in value or []:
+            val = self.conv.accept(val)
+            if val is not None:
+                # XXX is it right to ignore None?
+                result.append(val)
+        return result
+
+    def from_python(self, value):
+        return [self.conv.from_python(item) for item in value or []]
 
 
 class SimpleFile(Converter):
