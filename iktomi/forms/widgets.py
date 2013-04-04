@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from copy import deepcopy
-from ..utils import weakproxy, cached_property
+from ..utils import weakproxy
 from . import convs
 from .media import FormMedia, FormCSSRef, FormJSRef
 
@@ -123,52 +122,6 @@ class Select(Widget):
         return dict(data,
                     options=self.get_options(value),
                     required=('true' if self.field.conv.required else 'false'))
-
-
-class GroupedSelect(Select):
-
-    template = 'widgets/grouped_select'
-    classname = 'grouped_select select'
-    size = None
-
-    def get_options(self, value):
-        assert isinstance(self.field.conv, convs.EnumChoice)
-        options = []
-        if not self.multiple and (value is None or not self.field.conv.required):
-            options = [dict(value='', title=self.null_label,
-                            selected=value in (None, ''),
-                            is_group=False)]
-        values = value if self.multiple else [value]
-        values = map(unicode, values)
-
-        # TODO fix tree generation
-        _group_items = []
-        _group_name = None
-        for group, choice, label in self.field.conv:
-            choice = unicode(choice)
-            if (not group and _group_name) or (_group_name and _group_name != group):
-                options.append(dict(is_group=True,
-                                    title=_group_name,
-                                    options=_group_items[0:]))
-                _group_name = None
-            if group and group != _group_name:
-                _group_name = group
-                _group_items = []
-            if group:
-                _group_items.append(dict(value=choice,
-                                         title=label,
-                                         selected=(choice in values)))
-            else:
-                options.append(dict(value=choice,
-                                    title=label,
-                                    selected=(choice in values),
-                                    is_group=False))
-        if _group_name:
-            options.append(dict(is_group=True,
-                                title=_group_name,
-                                options=_group_items[0:]))
-        return options
-
 
 
 class CheckBoxSelect(Select):
