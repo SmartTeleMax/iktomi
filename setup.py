@@ -25,7 +25,7 @@ setup(
     maintainer_email='riffm2005@gmail.com',
     description='A set of iktomi of several geeks to show ourselves our coolness.',
     #long_description=open('README').read(),
-    url='http://github.com/riffm/iktomi-testing/',
+    url='http://github.com/SmartTeleMax/iktomi/',
     license='MIT',
     keywords='web forms',
 )

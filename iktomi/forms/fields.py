@@ -82,10 +82,6 @@ class BaseField(object):
         '''
         return self.parent.python_data[self.name]
 
-    @cached_property
-    def _relative_id(self): # XXX what is this?
-        return self.form.get_field_id(self)
-
     @property
     def id(self):
         # We use template names in list to replace, so we must use it here to
@@ -277,6 +273,7 @@ class FieldList(AggregateField):
 
     @property
     def prefix(self):
+        # NOTE: There was '-' instead of '.' and get_field('list-1') was broken
         return self.input_name+'.'
 
     def get_initial(self):

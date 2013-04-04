@@ -3,7 +3,7 @@ import unittest
 import os
 import re
 from iktomi.utils import html
-from copy import deepcopy
+
 
 class TestSanitizer(unittest.TestCase):
     '''Tests for sanitizer based on html5lib'''

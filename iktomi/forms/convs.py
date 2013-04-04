@@ -31,29 +31,42 @@ class Converter(object):
     Converting:
 
     :meth:`to_python` method takes value from form
-    and converts it to python type
+    and converts it to python type.
 
     :meth:`from_python` method takes value as python
     object and converts it to string or something
-    else widget can display
+    else widget can display.
 
-    Chaining:
+    Filters and validators:
 
-    Result of first converter is passed as input value
-    to second. for example::
+    Filters are functions performing additional validation and convertation 
+    after :meth:`to_python` method. The interface of filters is following::
+
+        def filter_value(conv, value):
+            if wrong(value):
+                raise ValidationError(..)
+            new_value = do_smth(value)
+            return new_value
 
         convs.Char(max_length=2)|convs.Int()
 
-    will be a convertor which first validates
-    if string's length is 2 or less and after
-    that converts it to integer
+    Validators are shortcuts to filters that do no convertations, but  only
+    do assertions. 
+
+        @validator(error_message)
+        def validate(conv, value):
+            return is_valid(value)
+
+    Both filters and validators can be passed to converter as positional 
+    arguments and will be applied after :meth:`to_python` method and 
+    `required` check in order they are mentioned.
 
     Error messages redefinition:
 
     Set error_<type> parameter to your own message template, for example::
 
-        convs.Char(min_length=5,
-                   error_min_length='At least %(min_length)s characters required')`
+        convs.Char(regex_readable="YY.MM.DD",
+                   error_regex='Should match %(regex_readable)s')`
     '''
 
     # obsolete parameters from previous versions
@@ -91,6 +104,13 @@ class Converter(object):
         return value in ('', [], {}, None)
 
     def accept(self, value, silent=False):
+        '''
+        Accepts a value from the form, calls :meth:`to_python` method,
+        checks `required` condition, applies filters and validators,
+        catches ValidationError.
+
+        If `silent=False`, writes errors to `form.errors`.
+        '''
         try:
             value = self.to_python(value)
             if self.required and self._is_empty(value):
@@ -151,7 +171,8 @@ class validator(object):
 
 def limit(min_length, max_length):
     'Sting length constraint'
-    message = N_('length should be between %(min)d and %(max)d symbols') % dict(min=min_length, max=max_length)
+    message = N_('length should be between %(min)d and %(max)d symbols') % \
+                    dict(min=min_length, max=max_length)
 
     @validator(message)
     def wrapper(conv, value):
@@ -168,7 +189,8 @@ def limit(min_length, max_length):
 
 def num_limit(min_value, max_value):
     'Numerical values limit'
-    message = N_('value should be between %(min)d and %(max)d') % dict(min=min_value, max=max_value)
+    message = N_('value should be between %(min)d and %(max)d') % \
+                    dict(min=min_value, max=max_value)
 
     @validator(message)
     def wrapper(conv, value):
@@ -185,7 +207,10 @@ def num_limit(min_value, max_value):
 
 def length(*args):
     'Exact string lengths'
-    @validator(u'Length of value is limited to ' + ','.join([str(a) for a in args]))
+    message = u'Length of value is limited to ' + \
+                    ','.join([str(a) for a in args])
+
+    @validator(message)
     def wrapper(conv, value):
         if not value:
             return True
