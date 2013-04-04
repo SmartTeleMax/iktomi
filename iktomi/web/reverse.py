@@ -44,7 +44,7 @@ class Location(object):
 
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, is_root=False, bound_request=None,
+                 need_arguments=False, bound_request=None,
                  finalize_params=None):
         # location is stuff containing builders for current reverse step
         # (builds url part for particular namespace or endpoint)
@@ -58,7 +58,6 @@ class Reverse(object):
         self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
-        self._is_root = is_root
         self._bound_request = bound_request
         self._finalize_params = finalize_params or {}
 
@@ -123,7 +122,6 @@ class Reverse(object):
                               path=self._path, host=self._host,
                               ready=self._ready,
                               need_arguments=self._need_arguments,
-                              is_root=self._is_root,
                               finalize_params=self._finalize_params,
                               bound_request=bound_request)
 
@@ -164,13 +162,6 @@ class Reverse(object):
 
         if self._ready:
             path, host = self._path, self._host
-        elif self._is_root:
-            location, scope = self._scope['']
-            if not location.need_arguments:
-                path = location.build_path()
-                host = location.build_subdomians()
-            else:
-                raise UrlBuildingError('Need arguments to be build')
         else:
             raise UrlBuildingError('Not an endpoint')
 
@@ -199,7 +190,7 @@ class Reverse(object):
     @classmethod
     def from_handler(cls, handler):
         from .core import locations
-        return cls(locations(handler), is_root=True)
+        return cls(locations(handler))
 
     def __str__(self):
         return str(self.as_url)
