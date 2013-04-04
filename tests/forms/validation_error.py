@@ -42,7 +42,7 @@ class ValidationErrorTests(unittest.TestCase):
                                        '': u'Ошибка-4'}) 
 
         ve.fill_errors(form.get_field('name'))
-        self.assertEqual(form.errors, {'name-2.subfield': u'Ошибка-2',
+        self.assertEqual(form.errors, {'name.2.subfield': u'Ошибка-2',
                                        'field': u'Ошибка-3',
                                        '': u'Ошибка-4'})
 
