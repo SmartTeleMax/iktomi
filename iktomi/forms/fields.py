@@ -89,7 +89,10 @@ class BaseField(object):
         return '%s-%s' % (self.form.id, self.input_name)
 
     def from_python(self, value):
-        return self.conv.from_python(value)
+        if self.multiple:
+            return [self.conv.from_python(item) for item in value or []]
+        else:
+            return self.conv.from_python(value)
 
     @cached_property
     def permissions(self):
@@ -166,6 +169,7 @@ class Field(BaseField):
     def accept(self):
         value = self.raw_value
         if not self._check_value_type(value):
+            # XXX should this be silent or TypeError?
             value = [] if self.multiple else self._null_value
         return self.conv.accept(value)
 

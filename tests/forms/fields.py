@@ -37,3 +37,24 @@ class FieldTests(unittest.TestCase):
             self.assert_(isinstance(form.get_field(nm), cls),
                          '%s is not instance of %s' % (nm, cls))
             self.assertEqual(form.get_field(nm).input_name, nm)
+
+    def test_accept_multiple(self):
+        class F(Form):
+            fields = [
+                Field('name', conv=convs.Int(multiple=True))
+            ]
+
+        form = F()
+        form.accept(MultiDict([('name', '1'), ('name', '2')]))
+        self.assertEqual(form.python_data['name'], [1, 2])
+
+    def test_from_python_multiple(self):
+        class F(Form):
+            fields = [
+                Field('name', conv=convs.Int(multiple=True),
+                      initial=[1,2])
+            ]
+
+        form = F()
+        self.assertEqual(form.raw_data,
+                         MultiDict([('name', '1'), ('name', '2')]))
