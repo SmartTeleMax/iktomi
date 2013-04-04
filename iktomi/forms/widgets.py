@@ -106,11 +106,14 @@ class Select(Widget):
             options = [{'value': '',
                         'title': self.null_label,
                         'selected': value in (None, '')}]
-        assert isinstance(self.field.conv, convs.EnumChoice)
+        # XXX ugly
+        choice_conv = (self.field.conv.conv if self.multiple else 
+                       self.field.conv)
+        assert isinstance(choice_conv, convs.EnumChoice)
 
         values = value if self.multiple else [value]
         values = map(unicode, values)
-        for choice, label in self.field.conv:
+        for choice, label in choice_conv:
             choice = unicode(choice)
             options.append(dict(value=choice,
                                 title=label,
