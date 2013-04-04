@@ -6,6 +6,23 @@ import unittest
 from iktomi import web
 from iktomi.web.http import Response
 
+class WebHandler(unittest.TestCase):
+
+    def test_interface(self):
+        self.assertRaises(NotImplementedError, web.WebHandler(), {}, {})
+
+    def test_repr(self):
+        # for coverage
+        '%r' % web.WebHandler()
+        '%r' % web.cases()
+        '%r' % web.request_filter(lambda e, d, n: None)
+        '%r' % web.match('/', 'index')
+        '%r' % web.method('GET')
+        '%r' % web.static_files('/prefix')
+        '%r' % web.prefix('/prefix')
+        '%r' % web.subdomain('name')
+        '%r' % web.namespace('name')
+
 
 class Prefix(unittest.TestCase):
 
@@ -69,12 +86,7 @@ class Prefix(unittest.TestCase):
         self.assertEqual(web.ask(app, '/docs/list/something'), None)
         self.assertEqual(web.ask(app, '/docs/list/other-thing'), None)
 
-    def test_namespace_with_dot(self):
-        app = web.cases(
-                web.namespace("english.docs.news") | web.match('/item', 'item'),
-                )
-        r = web.Reverse.from_handler(app)
-        self.assertEqual(r.english.docs.news.item.as_url, '/item')
+
 
     def test_unicode(self):
         '''Routing rules with unicode'''
@@ -254,6 +266,10 @@ class Match(unittest.TestCase):
 
 class Method(unittest.TestCase):
 
+    def test_head(self):
+        handler = web.method('GET')
+        self.assertEqual(handler._names, set(['GET', 'HEAD']))
+
     def test_simple_match(self):
         '''Method'''
         from webob.exc import HTTPMethodNotAllowed
@@ -270,3 +286,24 @@ class Method(unittest.TestCase):
         self.assertEqual(web.ask(app, '/strict', method='post').status_int, 200)
 
 
+class Namespace(unittest.TestCase):
+
+    def test_namespace_with_dot(self):
+        app = web.cases(
+                web.namespace("english.docs.news") | web.match('/item', 'item'),
+                )
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.english.docs.news.item.as_url, '/item')
+
+    def test_nested_namespaces(self):
+        def test_ns(env, data):
+            self.assertEqual(env.namespace, 'ns1.ns2')
+            return 1
+
+        app = web.prefix('/ns1', name="ns1") | \
+              web.prefix('/ns2', name="ns2") | \
+              web.match() | test_ns
+
+        self.assertEqual(web.ask(app, '/ns1/ns2'), 1)
+
+# XXX tests for stati_files needed!

@@ -101,6 +101,10 @@ class static_files(WebHandler):
         return None
     __call__ = static_files
 
+    def __repr__(self):
+        return '%s(\'%r\', \'%r\')' % (self.__class__.__name__, 
+                                       self.location, self.url)
+
 
 class prefix(WebHandler):
 
