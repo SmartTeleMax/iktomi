@@ -28,6 +28,15 @@ class URLTests(unittest.TestCase):
         u = u.qs_set(page=7, title='land')
         self.assertEqual(u, '/path/to/something?id=3&page=7&title=land')
 
+    def test_param_delete(self):
+        'Set new param in url'
+        u = URL('/path/to/something', query=[('id', 3), ('page', 5), ('page', 6)])
+        self.assertEqual(u, '/path/to/something?id=3&page=5&page=6')
+        u = u.qs_delete('page')
+        self.assertEqual(u, '/path/to/something?id=3')
+        u = u.qs_delete('offset')
+        self.assertEqual(u, '/path/to/something?id=3')
+
     def test_params_set_args(self):
         'Use multidict to set params in url'
         url = URL('/')

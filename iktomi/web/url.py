@@ -79,7 +79,10 @@ class URL(str):
 
     def qs_delete(self, key):
         query = self.query.copy()
-        del query[key]
+        try:
+            del query[key]
+        except KeyError:
+            pass
         return self._copy(query=query)
 
     def qs_get(self, key, default=None):
