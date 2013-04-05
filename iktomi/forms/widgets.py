@@ -146,7 +146,7 @@ class CharDisplay(Widget):
     classname = 'chardisplay'
     #: If is True, value is escaped while rendering. 
     #: Passed to template as :obj:`should_escape` variable.
-    escape = False
+    escape = True
     #: Function converting the value to string.
     getter = staticmethod(lambda v: v)
 

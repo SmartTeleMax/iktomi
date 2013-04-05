@@ -136,6 +136,114 @@ class TestTextarea(TestTextInput):
         self.assert_('&lt;/textarea&gt;' in unicode(render), render)
 
 
+class TestCheckBox(TestFormClass):
+
+    widget = widgets.CheckBox
+    tag = 'input'
+
+    def get_value(self, html):
+        return xpath.findvalue('.//*:%s/@checked'%self.tag, html)
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Bool(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, None)
+
+        render = form.get_field('name').widget.render('checked')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, 'checked')
+
+
+class TestHiddenInput(TestFormClass):
+
+    widget = widgets.HiddenInput
+    tag = 'input'
+
+    def get_value(self, html):
+        return xpath.findvalue('.//*:%s/@value'%self.tag, html)
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('hidden value')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, 'hidden value')
+
+
+
+class TestCharDisplay(TestFormClass):
+
+    widget = widgets.CharDisplay
+    tag = 'span'
+
+    def get_value(self, html):
+        return ''.join(xpath.findvalues('.//*:%s/text()'%self.tag, html))
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('<p>char display</p>')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, '<p>char display</p>')
+
+    def test_not_escape(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget(escape=False))
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('<i>char display</i>')
+        html = self.parse(render)
+        value = ''.join(xpath.findvalues('.//*:%s/*:i/text()'%self.tag, html))
+        self.assertEqual(value, 'char display')
+
+    def test_transform(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget(getter=lambda x: x.replace('value', 'display')))
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('char value')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, 'char display')
+
+
 class TestSelect(TestFormClass):
 
     choices = [
