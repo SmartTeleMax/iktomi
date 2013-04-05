@@ -520,7 +520,7 @@ class Html(Char):
 
 class List(Converter):
 
-    filter = None
+    _obsolete = Converter._obsolete | set(['filter'])
 
     def from_python(self, value):
         result = OrderedDict()
@@ -529,10 +529,7 @@ class List(Converter):
         return result
 
     def to_python(self, value):
-        items = value.values()
-        if self.filter is not None:
-            items = filter(self.filter, items)
-        return items
+        return value.values()
 
 
 class SimpleFile(Converter):
