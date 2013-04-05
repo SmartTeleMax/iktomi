@@ -114,9 +114,9 @@ class TestSelect(TestFormClass):
         class F(Form):
             fields = [
                 Field('name',
-                      conv=convs.EnumChoice(choices=self.choices,
-                                            required=True,
-                                            multiple=True),
+                      conv=convs.ListOf(
+                          convs.EnumChoice(choices=self.choices,
+                                           required=True)),
                       widget=widgets.Select())
             ]
 
