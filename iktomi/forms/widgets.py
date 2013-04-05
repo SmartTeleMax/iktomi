@@ -75,6 +75,11 @@ class TextInput(Widget):
     classname = 'textinput'
 
 
+class Textarea(Widget):
+
+    template = 'widgets/textarea'
+
+
 class HiddenInput(Widget):
 
     render_type = 'hidden'
@@ -138,23 +143,13 @@ class CheckBox(Widget):
     template = 'widgets/checkbox'
 
 
-class Textarea(Widget):
-
-    template = 'widgets/textarea'
-
-
-class ReadonlySelect(Select):
-
-    template = 'widgets/readonlyselect'
-
-
 class CharDisplay(Widget):
 
     template = 'widgets/span'
     classname = 'chardisplay'
     #: If is True, value is escaped while rendering. 
     #: Passed to template as :obj:`should_escape` variable.
-    escape = False
+    escape = True
     #: Function converting the value to string.
     getter = staticmethod(lambda v: v)
 
@@ -163,12 +158,6 @@ class CharDisplay(Widget):
         return dict(data,
                     value=self.getter(value),
                     should_escape=self.escape)
-
-
-class ImageView(Widget):
-
-    template = 'widgets/imageview'
-    classname = 'imageview'
 
 
 class FileInput(Widget):
@@ -199,6 +188,7 @@ class FileInput(Widget):
     #                delete=delete, temp_url=self.env.rctx.conf.temp_url,
     #                null=field.null)
 
+# XXX ??
 class ImageInput(FileInput):
     template = 'widgets/imageinput'
 

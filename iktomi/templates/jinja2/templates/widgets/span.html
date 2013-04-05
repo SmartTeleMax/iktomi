@@ -5,6 +5,6 @@
   {%- elif should_escape -%}
     {{ value|forceescape }}
   {%- else -%}
-    {{ value }}
+    {{ value|safe }}
   {%- endif -%}
 </span>

@@ -6,6 +6,7 @@ from iktomi.utils.storage import VersionedStorage
 from iktomi.templates import Template, BoundTemplate
 from iktomi.templates import jinja2 as jnj
 from iktomi.templates.jinja2 import TemplateEngine
+import jinja2
 import xpath
 
 from iktomi.forms import fields, convs, widgets, media, perms, \
@@ -48,12 +49,208 @@ class TestWidget(TestFormClass):
         for key, value in kwargs.items():
             self.assertEqual(value, getattr(widget, key))
 
+
+class TestTextInput(TestFormClass):
+
+    widget = widgets.TextInput
+    tag = 'input'
+
+    def get_value(self, html):
+        return xpath.findvalue('.//*:%s/@value'%self.tag, html)
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget(classname="cls"))
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('<p>Paragraph</p>')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, '<p>Paragraph</p>')
+        self.assertEqual(xpath.findvalue('.//*:%s/@readonly'%self.tag, html), None)
+        self.assertEqual(xpath.findvalue('.//*:%s/@class'%self.tag, html), 'cls')
+
+    def test_escape(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render(jinja2.Markup('<p>Paragraph</p>'))
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, '<p>Paragraph</p>')
+        self.assert_('&lt;p&gt;Paragraph&lt;/p&gt;' in unicode(render), render)
+
+
+    def test_render_readonly(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget(),
+                      permissions="r",
+                      )
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('<p>Paragraph</p>')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, '<p>Paragraph</p>')
+        self.assertEqual(xpath.findvalue('.//*:%s/@readonly'% self.tag, html), 'readonly')
+
+
+class TestTextarea(TestTextInput):
+
+    widget = widgets.Textarea
+    tag = 'textarea'
+
+    def get_value(self, html):
+        return ''.join(xpath.findvalues('.//*:%s/text()'%self.tag, html))
+
+    def test_escape(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render(jinja2.Markup('</textarea>'))
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, '</textarea>')
+        self.assert_('&lt;/textarea&gt;' in unicode(render), render)
+
+
+class TestCheckBox(TestFormClass):
+
+    widget = widgets.CheckBox
+    tag = 'input'
+
+    def get_value(self, html):
+        return xpath.findvalue('.//*:%s/@checked'%self.tag, html)
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Bool(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, None)
+
+        render = form.get_field('name').widget.render('checked')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, 'checked')
+
+
+class TestHiddenInput(TestFormClass):
+
+    widget = widgets.HiddenInput
+    tag = 'input'
+
+    def get_value(self, html):
+        return xpath.findvalue('.//*:%s/@value'%self.tag, html)
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('hidden value')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, 'hidden value')
+
+
+
+class TestCharDisplay(TestFormClass):
+
+    widget = widgets.CharDisplay
+    tag = 'span'
+
+    def get_value(self, html):
+        return ''.join(xpath.findvalues('.//*:%s/text()'%self.tag, html))
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('<p>char display</p>')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, '<p>char display</p>')
+
+    def test_not_escape(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget(escape=False))
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('<i>char display</i>')
+        html = self.parse(render)
+        value = ''.join(xpath.findvalues('.//*:%s/*:i/text()'%self.tag, html))
+        self.assertEqual(value, 'char display')
+
+    def test_transform(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.Char(),
+                      widget=self.widget(getter=lambda x: x.replace('value', 'display')))
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('char value')
+        html = self.parse(render)
+        value = self.get_value(html)
+        self.assertEqual(value, 'char display')
+
+
 class TestSelect(TestFormClass):
 
     choices = [
         ('1', 'first'),
         ('2', 'second'),
     ]
+    widget = widgets.Select
 
     def get_options(self, html):
         return [(x.getAttribute('value'),
@@ -61,28 +258,37 @@ class TestSelect(TestFormClass):
                  x.hasAttribute('selected'))
                  for x in xpath.find('.//*:option', html)]
 
+    def check_multiple(self, html):
+        self.assertEqual(xpath.findvalue('.//*:select/@multiple', html),
+                         'multiple')
+
+    def check_not_multiple(self, html):
+        self.assertEqual(xpath.findvalue('.//*:select/@multiple', html),
+                         None)
+
     def test_render_not_required(self):
         class F(Form):
             fields = [
                 Field('name',
                       conv=convs.EnumChoice(choices=self.choices,
                                             required=False),
-                      widget=widgets.Select())
+                      widget=self.widget())
             ]
 
         form = F(self.env)
 
         render = form.get_field('name').widget.render('1')
         html = self.parse(render)
+        self.check_not_multiple(html)
         options = self.get_options(html)
-        self.assertEqual(options, [('', widgets.Select.null_label, False),
+        self.assertEqual(options, [('', self.widget.null_label, False),
                                    ('1', 'first', True),
                                    ('2', 'second', False)])
 
         render = form.get_field('name').widget.render(None)
         html = self.parse(render)
         options = self.get_options(html)
-        self.assertEqual(options, [('', widgets.Select.null_label, True),
+        self.assertEqual(options, [('', self.widget.null_label, True),
                                    ('1', 'first', False),
                                    ('2', 'second', False)])
 
@@ -92,13 +298,14 @@ class TestSelect(TestFormClass):
                 Field('name',
                       conv=convs.EnumChoice(choices=self.choices,
                                             required=True),
-                      widget=widgets.Select())
+                      widget=self.widget())
             ]
 
         form = F(self.env)
 
         render = form.get_field('name').widget.render('1')
         html = self.parse(render)
+        self.check_not_multiple(html)
         options = self.get_options(html)
         self.assertEqual(options, [('1', 'first', True),
                                    ('2', 'second', False)])
@@ -106,7 +313,7 @@ class TestSelect(TestFormClass):
         render = form.get_field('name').widget.render(None)
         html = self.parse(render)
         options = self.get_options(html)
-        self.assertEqual(options, [('', widgets.Select.null_label, True),
+        self.assertEqual(options, [('', self.widget.null_label, True),
                                    ('1', 'first', False),
                                    ('2', 'second', False)])
 
@@ -117,15 +324,14 @@ class TestSelect(TestFormClass):
                       conv=convs.ListOf(
                           convs.EnumChoice(choices=self.choices,
                                            required=True)),
-                      widget=widgets.Select())
+                      widget=self.widget())
             ]
 
         form = F(self.env)
 
         render = form.get_field('name').widget.render(['1', '2'])
         html = self.parse(render)
-        self.assertEqual(xpath.findvalue('.//*:select/@multiple', html),
-                         'multiple')
+        self.check_multiple(html)
         options = self.get_options(html)
         self.assertEqual(options, [('1', 'first', True),
                                    ('2', 'second', True)])
@@ -137,6 +343,23 @@ class TestSelect(TestFormClass):
                                    ('2', 'second', False)])
 
 
+class TestCheckBoxSelect(TestSelect):
+
+    widget = widgets.CheckBoxSelect
+
+    def get_options(self, html):
+        return [(x.getAttribute('value'),
+                 xpath.findvalue('./*:label/text()', x.parentNode),
+                 x.hasAttribute('checked'))
+                for x in xpath.find('.//*:input', html)]
+
+    def check_multiple(self, html):
+        self.assertEqual(xpath.findvalue('.//*:input/@type', html),
+                         'checkbox')
+
+    def check_not_multiple(self, html):
+        self.assertEqual(xpath.findvalue('.//*:input/@type', html),
+                         'radio')
 
 
 if __name__ == '__main__':
