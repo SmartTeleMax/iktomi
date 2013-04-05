@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 import unittest
-from copy import copy
+from os import path
+from html5lib import HTMLParser, treebuilders
+from iktomi.utils.storage import VersionedStorage
+from iktomi.templates import Template, BoundTemplate
+from iktomi.templates import jinja2 as jnj
+from iktomi.templates.jinja2 import TemplateEngine
+import xpath
 
-from iktomi.forms import fields, convs, form, widgets, media, perms
+from iktomi.forms import fields, convs, widgets, media, perms, \
+                         Form, Field
 
 
 class TestFormClass(unittest.TestCase):
@@ -11,18 +18,20 @@ class TestFormClass(unittest.TestCase):
     
     @property
     def env(self):
-        from os import path
-        import jinja2
-        from iktomi.ext import jinja2 as jnj
-
         DIR = jnj.__file__
         DIR = path.dirname(path.abspath(DIR))
         TEMPLATES = [path.join(DIR, 'templates')]
-        
-        
-        template_loader = jinja2.Environment(
-                            loader=jinja2.FileSystemLoader(TEMPLATES))
-        return jnj.FormEnvironment(template_loader)
+
+        jinja_loader = TemplateEngine(TEMPLATES)
+        template_loader = Template(engines={'html': jinja_loader},
+                                            *TEMPLATES)
+        env = VersionedStorage()
+        env.template = BoundTemplate(env, template_loader)
+        return env
+
+    def parse(self, value):
+        p = HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
+        return p.parseFragment(value)
 
 
 class TestWidget(TestFormClass):
@@ -37,6 +46,46 @@ class TestWidget(TestFormClass):
         widget = widget()
         for key, value in kwargs.items():
             self.assertEqual(value, getattr(widget, key))
+
+class TestSelect(TestFormClass):
+
+    choices = [
+        ('1', 'first'),
+        ('2', 'second'),
+    ]
+
+    def get_options(self, html):
+        for c in html.childNodes:
+            print c.toprettyxml()
+        return [(x.getAttribute('value'),
+                 x.childNodes[0].data,
+                 x.hasAttribute('selected'))
+                 for x in xpath.find('.//*:option', html)]
+
+    def test_render_not_required(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.EnumChoice(choices=self.choices,
+                                            required=False),
+                      widget=widgets.Select())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('1')
+        html = self.parse(render)
+        options = self.get_options(html)
+        self.assertEqual(options, [('', widgets.Select.null_label, False),
+                                   ('1', 'first', True),
+                                   ('2', 'second', False)])
+
+        render = form.get_field('name').widget.render(None)
+        html = self.parse(render)
+        options = self.get_options(html)
+        self.assertEqual(options, [('', widgets.Select.null_label, False),
+                                   ('1', 'first', False),
+                                   ('2', 'second', False)])
 
 
 if __name__ == '__main__':
