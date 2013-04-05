@@ -30,6 +30,7 @@ class TestFormClass(unittest.TestCase):
         return env
 
     def parse(self, value):
+        print value
         p = HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
         return p.parseFragment(value)
 
@@ -55,8 +56,6 @@ class TestSelect(TestFormClass):
     ]
 
     def get_options(self, html):
-        for c in html.childNodes:
-            print c.toprettyxml()
         return [(x.getAttribute('value'),
                  x.childNodes[0].data,
                  x.hasAttribute('selected'))
@@ -83,9 +82,61 @@ class TestSelect(TestFormClass):
         render = form.get_field('name').widget.render(None)
         html = self.parse(render)
         options = self.get_options(html)
-        self.assertEqual(options, [('', widgets.Select.null_label, False),
+        self.assertEqual(options, [('', widgets.Select.null_label, True),
                                    ('1', 'first', False),
                                    ('2', 'second', False)])
+
+    def test_render_required(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.EnumChoice(choices=self.choices,
+                                            required=True),
+                      widget=widgets.Select())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render('1')
+        html = self.parse(render)
+        options = self.get_options(html)
+        self.assertEqual(options, [('1', 'first', True),
+                                   ('2', 'second', False)])
+
+        render = form.get_field('name').widget.render(None)
+        html = self.parse(render)
+        options = self.get_options(html)
+        self.assertEqual(options, [('', widgets.Select.null_label, True),
+                                   ('1', 'first', False),
+                                   ('2', 'second', False)])
+
+    def test_render_multiple(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.EnumChoice(choices=self.choices,
+                                            required=True,
+                                            multiple=True),
+                      widget=widgets.Select())
+            ]
+
+        form = F(self.env)
+
+        render = form.get_field('name').widget.render(['1', '2'])
+        html = self.parse(render)
+        self.assertEqual(xpath.findvalue('.//*:select/@multiple', html),
+                         'multiple')
+        options = self.get_options(html)
+        self.assertEqual(options, [('1', 'first', True),
+                                   ('2', 'second', True)])
+
+        render = form.get_field('name').widget.render([])
+        html = self.parse(render)
+        options = self.get_options(html)
+        self.assertEqual(options, [('1', 'first', False),
+                                   ('2', 'second', False)])
+
+
 
 
 if __name__ == '__main__':
