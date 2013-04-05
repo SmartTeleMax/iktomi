@@ -327,7 +327,7 @@ class DisplayOnly(Converter):
 
 
 class EnumChoice(Converter):
-    '''In addition to Converter interface it must provide methods __iter__ and
+    '''In addition to Converter interface it must provide methods options and
     get_label.'''
 
     conv = Char()
@@ -336,7 +336,7 @@ class EnumChoice(Converter):
     error_required = N_('you must select a value')
 
     def from_python(self, value):
-        conv = self.conv#(field=self.field)
+        conv = self.conv
         return conv.from_python(value)
 
     def to_python(self, value):
@@ -345,8 +345,8 @@ class EnumChoice(Converter):
             return None
         return value
 
-    def __iter__(self):
-        conv = self.conv#(field=self.field)
+    def options(self):
+        conv = self.conv
         for python_value, label in self.choices:
             yield conv.from_python(python_value), label
 
