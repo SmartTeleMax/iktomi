@@ -13,18 +13,21 @@ TEMPLATE_DIR = join(CURDIR, 'templates')
 
 
 class TemplateEngine(object):
-    def __init__(self, paths, cache=False):
+    def __init__(self, paths, cache=False, extensions=None):
         '''
         paths - list of paths
+        extensions - list of extensions
         '''
         self.env = self._make_env(paths)
+        self.extensions = extensions or []
 
 
     def _make_env(self, paths):
         return jinja2.Environment(
             loader=jinja2.FileSystemLoader(paths),
             autoescape=True,
-            )
+            extensions=self.extensions
+        )
 
     def render(self, template_name, **kw):
         'Interface method'
