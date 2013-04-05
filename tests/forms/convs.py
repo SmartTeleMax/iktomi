@@ -495,3 +495,63 @@ class HtmlTests(unittest.TestCase):
 
         self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
                          set(['p', 'strong', 'em', 'span']))
+
+
+class ValidatorTests(unittest.TestCase):
+
+    def test_limit(self):
+        conv = init_conv(convs.Char(convs.limit(2, 4)))
+
+        self.assertEqual(conv.accept('11'), '11')
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept('1111'), '1111')
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept(''), '')
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept('1'), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        conv.field.form.errors = {}
+
+        self.assertEqual(conv.accept('1'*5), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        conv.field.form.errors = {}
+
+    def test_num_limit(self):
+        conv = init_conv(convs.Int(convs.num_limit(2, 4)))
+
+        self.assertEqual(conv.accept('2'), 2)
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept('4'), 4)
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept(''), None)
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept('0'), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        conv.field.form.errors = {}
+
+        self.assertEqual(conv.accept('5'), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        conv.field.form.errors = {}
+
+    def test_positive_num(self):
+        conv = init_conv(convs.Int(convs.positive_num))
+
+        self.assertEqual(conv.accept('2'), 2)
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertEqual(conv.accept('-1'), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        conv.field.form.errors = {}
+
+        self.assertEqual(conv.accept('0'), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        conv.field.form.errors = {}
+        assert 0, 'Should 0 be accepted? From one hand it is not positive. '\
+                  'From other hand in most cases we need numbers >= 0'
+

@@ -211,7 +211,7 @@ def num_limit(min_value, max_value):
 
     @validator(message)
     def wrapper(conv, value):
-        if not value:
+        if value is None:
             # it meens that this value is not required
             return True
         if value < min_value:
@@ -239,7 +239,7 @@ def length(*args):
 
 @validator(u'Value must be positive')
 def positive_num(conv, value):
-    if not value:
+    if value is None:
         return True
     return value > 0
 
