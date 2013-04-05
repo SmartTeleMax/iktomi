@@ -281,12 +281,15 @@ class DisplayOnlyTests(unittest.TestCase):
 
 class DateTests(unittest.TestCase):
 
-    def test_accept_valid(self):
+    def test_to_python(self):
         '''Date converter to_python method'''
         from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.accept('31.01.1999'), date(1999, 1, 31))
         self.assertEqual(conv.field.form.errors, {})
+
+        self.assertRaises(convs.ValidationError, conv.to_python,
+                          '30.02.2009')
 
     def test_readable_format(self):
         '''Ensure that readable format string for DateTime conv is generated correctly'''
@@ -336,12 +339,36 @@ class TimeTests(unittest.TestCase):
         self.assertEqual(conv.accept('12:30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
 
+        self.assertRaises(convs.ValidationError, conv.to_python,
+                          '42:30')
+
     def test_accept_nontext(self):
         '''Time converter to_python method'''
         from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.accept(u'\x0012:\uFFFE30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
+
+
+class DatetimeTests(unittest.TestCase):
+
+    def test_from_python(self):
+        '''Time converter from_python method'''
+        from datetime import datetime
+        conv = init_conv(convs.Datetime)
+        self.assertEqual(conv.from_python(datetime(2012, 4, 5, 12, 30)),
+                         '05.04.2012, 12:30')
+
+    def test_to_python(self):
+        '''Time converter to_python method'''
+        from datetime import datetime
+        conv = init_conv(convs.Datetime)
+        self.assertEqual(conv.accept('05.04.2012, 12:30'),
+                         datetime(2012, 4, 5, 12, 30))
+        self.assertEqual(conv.field.form.errors, {})
+
+        self.assertRaises(convs.ValidationError, conv.to_python,
+                          '40.04.2012, 12:30')
 
 
 class SplitDateTimeTests(unittest.TestCase):
@@ -468,5 +495,3 @@ class HtmlTests(unittest.TestCase):
 
         self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
                          set(['p', 'strong', 'em', 'span']))
-
-# XXX tests for SplitDateTime

@@ -31,7 +31,7 @@ class TestFormClass(unittest.TestCase):
         return env
 
     def parse(self, value):
-        print value
+        #print value
         p = HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
         return p.parseFragment(value)
 

@@ -398,8 +398,6 @@ class BaseDatetime(CharBased):
             return self.convert_datetime(value)
         except ValueError:
             raise ValidationError(self.error_wrong_format)
-        except TypeError, e:
-            raise ValidationError(unicode(e))
 
 
 class Datetime(BaseDatetime):
