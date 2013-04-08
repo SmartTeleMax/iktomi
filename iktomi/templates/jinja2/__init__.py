@@ -18,8 +18,8 @@ class TemplateEngine(object):
         paths - list of paths
         extensions - list of extensions
         '''
-        self.env = self._make_env(paths)
         self.extensions = extensions or []
+        self.env = self._make_env(paths)
 
 
     def _make_env(self, paths):
