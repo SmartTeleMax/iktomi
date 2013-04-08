@@ -484,7 +484,7 @@ class HtmlTests(unittest.TestCase):
         self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
                          set(['p', 'strong', 'em']))
 
-    def test_tune_class(self):
+    def test_tune_classes(self):
         class MyHtml(convs.Html):
             allowed_elements = ['p', 'strong']
 
@@ -495,6 +495,35 @@ class HtmlTests(unittest.TestCase):
 
         self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
                          set(['p', 'strong', 'em', 'span']))
+
+        class MyHtml3(MyHtml2):
+            allowed_elements = ['a', 'b']
+
+        conv = MyHtml3(add_allowed_elements=['span'])
+        self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
+                         set(['a', 'b', 'span']))
+
+    def test_tune_class(self):
+        class MyHtml(convs.Html):
+            allowed_elements = ['p', 'strong']
+            add_allowed_elements = ['p', 'em']
+
+        conv = MyHtml(add_allowed_elements=['span'])
+        self.assertEqual(set(conv.sanitizer.kwargs['allowed_elements']),
+                         set(['p', 'strong', 'em', 'span']))
+
+    def test_tune_basic(self):
+        'tune property not set in convs.Html'
+
+        class MyHtml(convs.Html):
+            add_allowed_css_properties = ['prop1']
+
+        conv = MyHtml(add_allowed_css_properties=['prop2'])
+
+        self.assertEqual(set(conv.sanitizer.kwargs['allowed_css_properties']),
+                         set(['prop1', 'prop2']))
+
+
 
 
 class ValidatorTests(unittest.TestCase):

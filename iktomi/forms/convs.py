@@ -451,20 +451,40 @@ class Html(Char):
     #: Function returning object marked safe for template engine.
     #: For example: jinja Markup object
     Markup = lambda s, x: x
+    class Nothing: pass
 
-    def _load_arg(self, kwargs, opt):
-        if hasattr(self, opt):
-            kwargs.setdefault(opt, getattr(self, opt))
+    @classmethod
+    def _load_arg(cls, opt):
+        # XXX very complicated merges for rare cases
+        #     not sure if they are necessary
+        if opt in cls.__dict__:
+            result = getattr(cls, opt)
+        else:
+            for base in cls.__bases__:
+                if hasattr(base, '_load_arg'):
+                    result = base._load_arg(opt)
+                    if not result is cls.Nothing:
+                        break
+            else:
+                result = cls.Nothing
+
+        if 'add_' + opt in cls.__dict__:
+            add = getattr(cls, 'add_' + opt)
+            if result is cls.Nothing:
+                result = add
+            else:
+                result = set(result)
+                result.update(add)
+        return result
 
     def __init__(self, **kwargs):
         from ..utils.html import PROPERTIES, LIST_PROPERTIES
 
         for opt in PROPERTIES:
             if not opt in kwargs:
-                # passed throught kwargs set is stronger then stored in class
-                # add_%  
-                self._load_arg(kwargs, 'add_' + opt)
-            self._load_arg(kwargs, opt)
+               result = self._load_arg(opt)
+               if not result is self.Nothing:
+                   kwargs[opt] = result
 
         for opt in LIST_PROPERTIES:
             add_key = 'add_' + opt
