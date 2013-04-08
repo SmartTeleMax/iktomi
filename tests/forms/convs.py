@@ -529,7 +529,7 @@ class HtmlTests(unittest.TestCase):
 class ValidatorTests(unittest.TestCase):
 
     def test_limit(self):
-        conv = init_conv(convs.Char(convs.limit(2, 4)))
+        conv = init_conv(convs.Char(convs.length(2, 4)))
 
         self.assertEqual(conv.accept('11'), '11')
         self.assertEqual(conv.field.form.errors, {})
@@ -549,7 +549,7 @@ class ValidatorTests(unittest.TestCase):
         conv.field.form.errors = {}
 
     def test_num_limit(self):
-        conv = init_conv(convs.Int(convs.num_limit(2, 4)))
+        conv = init_conv(convs.Int(convs.between(2, 4)))
 
         self.assertEqual(conv.accept('2'), 2)
         self.assertEqual(conv.field.form.errors, {})

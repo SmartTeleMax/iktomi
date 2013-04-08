@@ -9,6 +9,7 @@ from ..utils import weakproxy, replace_nontext
 from datetime import datetime
 from ..utils.odict import OrderedDict
 from ..utils.dt import strftime
+from ..utils.deprecation import deprecated
 from ..utils import N_, M_, cached_property
 
 
@@ -93,6 +94,8 @@ class Converter(object):
 
     def __init__(self, *args, **kwargs):
         if self._obsolete & set(kwargs):
+            # XXX DeprecationWarning is not right here, because we
+            #     have no backward compatibility for these parameters
             raise DeprecationWarning(
                     'Obsolete parameters are used: %s' %
                         list(self._obsolete & set(kwargs)))
@@ -207,10 +210,10 @@ def length(min_length, max_length):
         return True
     return wrapper
 
-limit = length
+limit = deprecated(length)
 
 
-def num_limit(min_value, max_value):
+def between(min_value, max_value):
     'Numerical values limit'
     message = N_('value should be between %(min)d and %(max)d') % \
                     dict(min=min_value, max=max_value)
@@ -226,6 +229,8 @@ def num_limit(min_value, max_value):
             return False
         return True
     return wrapper
+
+num_limit = deprecated(between)
 
 
 class CharBased(Converter):
