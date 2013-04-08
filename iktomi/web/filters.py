@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 __all__ = ['match', 'method', 'static_files', 'prefix', 
-           'subdomain', 'namespace']
+           'subdomain', 'namespace', 'by_method']
 
 import logging
 import mimetypes
@@ -65,6 +65,21 @@ class method(WebHandler):
 
     def __repr__(self):
         return 'method(%s)' % ', '.join(repr(n) for n in self._names)
+
+
+class by_method(cases):
+
+    def __init__(self, handlers_dict, default_handler=None):
+        handlers = []
+        for methods, handler in handlers_dict.items():
+            if isinstance(methods, basestring):
+                methods = (methods,)
+            handlers.append(method(*methods, strict=False) | handler)
+        if default_handler is not None:
+            handlers.append(default_handler)
+        else:
+            handlers.append(HTTPMethodNotAllowed())
+        cases.__init__(self, *handlers)
 
 
 class static_files(WebHandler):

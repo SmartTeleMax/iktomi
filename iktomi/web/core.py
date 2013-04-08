@@ -23,6 +23,14 @@ def respond(response):
         return response
     return response_wrapper
 
+def prepare_handler(handler):
+    if isinstance(handler, Response):
+        return respond(handler)
+    elif isinstance(handler, type) and \
+         issubclass(handler, Response):
+        return respond(handler())
+    return handler
+
 
 class WebHandler(object):
     '''Base class for all request handlers.'''
@@ -33,12 +41,8 @@ class WebHandler(object):
         #     causes a copy of each single nested handler.
         #     Sure, is bad idea to chain anything after big cases(..) anyway.
         h = self.copy()
-        if isinstance(next_handler, Response):
-            next_handler = respond(next_handler)
-        elif isinstance(next_handler, type) and \
-             issubclass(next_handler, Response):
-            next_handler = respond(next_handler())
 
+        next_handler = prepare_handler(next_handler)
         if hasattr(self, '_next_handler'):
             h._next_handler = h._next_handler | next_handler
         else:
@@ -73,7 +77,7 @@ class WebHandler(object):
 class cases(WebHandler):
 
     def __init__(self, *handlers):
-        self.handlers = handlers
+        self.handlers = map(prepare_handler, handlers)
 
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'

@@ -276,14 +276,26 @@ class Method(unittest.TestCase):
 
         app = web.cases(
                 web.match('/', 'simple') | web.method('post'),
+                web.match('/second', 'second') | web.method('POST'),
                 web.match('/strict', 'strict') | web.method('post', strict=True)
             ) | (lambda e,d: Response())
 
         self.assertEqual(web.ask(app, '/'), None)
         self.assertEqual(web.ask(app, '/', method='post').status_int, 200)
+        self.assertEqual(web.ask(app, '/second', method='post').status_int, 200)
 
         self.assertRaises(HTTPMethodNotAllowed, lambda: web.ask(app, '/strict').status_int)
         self.assertEqual(web.ask(app, '/strict', method='post').status_int, 200)
+
+    def test_by_method(self):
+        app = web.match('/') | web.by_method({
+            'DELETE': lambda e,d: Response('delete'),
+            ('POST', 'PUT'): lambda e,d: Response('post'),
+        })
+
+        self.assertEqual(web.ask(app, '/', method="PUT").body, 'post')
+        self.assertEqual(web.ask(app, '/', method="DELETE").body, 'delete')
+        self.assertEqual(web.ask(app, '/').status_int, 405)
 
 
 class Namespace(unittest.TestCase):

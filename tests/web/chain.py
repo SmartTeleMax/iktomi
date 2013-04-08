@@ -284,3 +284,10 @@ class Chain(unittest.TestCase):
         response = chain(VS(), VS())
         self.assert_(isinstance(response, nf))
 
+    def test_response_cases(self):
+        nf = HTTPNotFound()
+        chain = web.cases(nf)
+        response = chain(VS(), VS())
+        self.assert_(response is nf)
+
+
