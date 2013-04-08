@@ -228,13 +228,6 @@ def num_limit(min_value, max_value):
     return wrapper
 
 
-@validator(u'value must be positive')
-def positive_num(conv, value):
-    if value is None:
-        return True
-    return value > 0
-
-
 class CharBased(Converter):
 
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to

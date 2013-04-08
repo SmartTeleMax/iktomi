@@ -539,19 +539,4 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
         conv.field.form.errors = {}
 
-    def test_positive_num(self):
-        conv = init_conv(convs.Int(convs.positive_num))
-
-        self.assertEqual(conv.accept('2'), 2)
-        self.assertEqual(conv.field.form.errors, {})
-
-        self.assertEqual(conv.accept('-1'), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
-        conv.field.form.errors = {}
-
-        self.assertEqual(conv.accept('0'), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
-        conv.field.form.errors = {}
-        assert 0, 'Should 0 be accepted? From one hand it is not positive. '\
-                  'From other hand in most cases we need numbers >= 0'
 
