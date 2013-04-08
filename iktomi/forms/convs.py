@@ -186,10 +186,14 @@ class validator(object):
 
 # Some useful validators
 
-def limit(min_length, max_length):
+def length(min_length, max_length):
     'Sting length constraint'
-    message = N_('length should be between %(min)d and %(max)d symbols') % \
-                    dict(min=min_length, max=max_length)
+    if min_length == max_length:
+        message = N_(u'length of value is limited to %(max)')
+    else:
+        message = N_('length should be between %(min)d and %(max)d symbols')
+
+    message = message % dict(min=min_length, max=max_length)
 
     @validator(message)
     def wrapper(conv, value):
@@ -202,6 +206,8 @@ def limit(min_length, max_length):
             return False
         return True
     return wrapper
+
+limit = length
 
 
 def num_limit(min_value, max_value):
@@ -222,22 +228,7 @@ def num_limit(min_value, max_value):
     return wrapper
 
 
-def length(*args):
-    'Exact string lengths'
-    message = u'Length of value is limited to ' + \
-                    ','.join([str(a) for a in args])
-
-    @validator(message)
-    def wrapper(conv, value):
-        if not value:
-            return True
-        if not len(str(value)) in args:
-            return False
-        return True
-    return wrapper
-
-
-@validator(u'Value must be positive')
+@validator(u'value must be positive')
 def positive_num(conv, value):
     if value is None:
         return True
