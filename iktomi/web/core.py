@@ -72,10 +72,8 @@ class WebHandler(object):
 
 class cases(WebHandler):
 
-    def __init__(self, *handlers, **kwargs):
-        self.handlers = []
-        for handler in handlers:
-            self.handlers.append(handler)
+    def __init__(self, *handlers):
+        self.handlers = handlers
 
     def __or__(self, next_handler):
         'cases needs to set next handler for each handler it keeps'

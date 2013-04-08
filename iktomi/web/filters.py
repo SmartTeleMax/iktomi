@@ -8,7 +8,7 @@ import mimetypes
 from os import path
 from urllib import unquote
 from webob.exc import HTTPMethodNotAllowed
-from .core import WebHandler
+from .core import WebHandler, cases
 from .http import Response
 from .url_templates import UrlTemplate
 from .reverse import Location
@@ -52,7 +52,8 @@ class method(WebHandler):
         self._names = set([name.upper() for name in names])
         if 'GET' in self._names:
             self._names.add('HEAD')
-        self.strict = kw.get('strict', False)
+        self.strict = kw.pop('strict', False)
+        assert not kw
 
     def method(self, env, data):
         if env.request.method in self._names:
