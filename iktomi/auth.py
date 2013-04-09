@@ -136,16 +136,6 @@ class CookieAuth(web.WebHandler):
         return web.match('/logout', 'logout') | web.method('post') | _logout
 
 
-@web.request_filter
-def auth_required(env, data, next_handler):
-    if getattr(env, 'user', None) is not None:
-        return next_handler(env, data)
-    response = web.Response(status=303)
-    response.headers['Location'] = str(
-                env.root.login.as_url.qs_set(next=env.request.path_info))
-    return response
-
-
 class SqlaModelAuth(CookieAuth):
 
     def __init__(self, model, storage=None, login_field='login',
@@ -168,3 +158,141 @@ class SqlaModelAuth(CookieAuth):
 
     def identify_user(self, env, user_identity):
         return env.db.query(self._model).get(user_identity)
+
+
+
+class DBAuth(object):
+
+    def __init__(self, model, login_form=LoginForm):
+        self.model = model
+        self.login_form = login_form
+
+    def get_user(self, env):
+        sid = env.request.cookies.get('sid')
+        if sid:
+            user = env.db.get(User, sid=sid)
+            if user is None:
+                self.set_user(env, None)
+            else:
+                env.user = user
+                logger.debug('Authenticated: %s' % user.id)
+        else:
+            env.user = None
+        return env.user
+
+    def set_user(self, env, user):
+        # IMPORTANT: Called responsible to commit after setting user!
+        env.user = user
+        if user is not None and not user.sid:
+            for attempt in range(3):
+                sid = os.urandom(10).encode('hex')
+                if env.db.get(User, sid=sid) is None:
+                    user.sid = sid
+                    break
+            else:
+                raise RuntimeError('Failed to generate unique session ID')
+
+    def set_cookies(self, env, response, remember=False):
+        if response is not None:
+            if env.user is None:
+                response.delete_cookie('sid')
+                response.delete_cookie('name')
+                response.delete_cookie('url')
+            else:
+                params = {'max_age': 30*24*3600} if remember else {}
+                name = urlquote(env.user.full_name)
+                url = env.url_for('users.profile')
+                response.set_cookie('sid', env.user.sid, **params)
+                response.set_cookie('name', name, **params)
+                response.set_cookie('url', url, **params)
+        return response
+
+    # ======================== LOGIN =====================
+
+    def login_handler(self, env, data, nxt):
+        data.form = form = self.login_form(env)
+        if env.request.method == 'POST':
+            data.failed = data.submit = True
+            #TODO: flood check
+            if form.accept(env.request.POST):
+                email = form.python_data['email']
+                user = env.db.get(User, email=email)
+                if user and user.check_password(form.python_data['password']):
+                    # sid is storing in db
+                    self.set_user(env, user)
+                    env.db.commit()
+                    data.failed = False
+        else:
+            data.submit = data.failed = False
+        remember = env.request.POST.get('remember')
+        return self.set_cookies(env, nxt(env, data), remember=remember)
+
+    def login_render_html(self, env, data):
+        if data.failed or not data.submit:
+            return env.render_to_response('users/login', {
+                'form': data.form,
+                'failed': data.failed,
+            })
+        return env.redirect_to('users.profile')
+
+    def login_render_ajax(self, env, data):
+        if data.failed:
+            # For ajax request this method call means we have
+            # errors in form
+            return env.json({
+                'status':'FAIL',
+                'errors':dict(map(lambda field: (field.name, u'Пользователь не существует'), 
+                                  data.form.fields)),
+            })
+        return env.json({
+            'status': 'OK',
+            'name': env.user.name,
+            'url': env.url_for('users.profile'),
+        })
+
+    # ========================== LOGOUT ==============================
+
+    def logout_handler(self, env, data, nxt):
+        self.set_user(env, None)
+        env.db.commit()
+        return self.set_cookies(env, nxt(env, data))
+
+    def logout_render_ajax(self, env, data):
+        return env.json({'status':'OK'})
+
+    def logout_render_html(self, env, data):
+        return env.redirect_to('users.login')
+
+    # ======================= HANDLERS ==============================
+    def required(self):
+        def _required(env, data, nxt):
+            if env.user is not None:
+                return nxt(env, data)
+            redirect = env.redirect_to('users.login', {'next': env.request.path_info})
+            # in case there are cookies stuck in the request
+            return self.set_cookies(env, redirect)
+        return web.request_filter(_required)
+
+    def login(self, success=None, show_form=None):
+        return web.match('/login', 'login') | \
+                web.request_filter(self.login_handler) | \
+                self.login_render_html
+
+    def login_ajax(self):
+        return web.match('/login/ajax', 'login_ajax') | \
+                web.request_filter(self.login_handler) | \
+                web.method('post') | \
+                self.login_render_ajax
+
+
+    def logout(self):
+        return web.match('/logout', 'logout') | \
+                web.method('post') | \
+                web.request_filter(self.logout_handler) | \
+                self.logout_render_html
+
+    def logout_ajax(self):
+        return web.match('/logout/ajax', 'logout_ajax') | \
+                web.method('post') | \
+                web.request_filter(self.logout_handler) | \
+                self.logout_render_ajax
