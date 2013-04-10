@@ -140,6 +140,14 @@ class Prefix(unittest.TestCase):
         # self.builder(**kwargs) - prefix is built from converted value and
         # contains no zeros
 
+    def test_match_empty_pattern(self):
+        '''Test if prefix() works proper with empty patterns'''
+
+        r = Response()
+        app = web.prefix('') | web.match('/', 'index') | (lambda e,d: r)
+
+        self.assertEqual(web.ask(app, '/'), r)
+
 
 class Subdomain(unittest.TestCase):
 
@@ -256,10 +264,7 @@ class Match(unittest.TestCase):
         '''Test if match() works proper with empty patterns'''
 
         r = Response()
-        def handler(env, data):
-            return r
-
-        app = web.prefix('/') | web.match('', 'index') | handler
+        app = web.prefix('/') | web.match('', 'index') | (lambda e,d: r)
 
         self.assertEqual(web.ask(app, '/'), r)
 
@@ -321,4 +326,4 @@ class Namespace(unittest.TestCase):
     def test_empty(self):
         self.assertRaises(TypeError, web.namespace, '')
 
-# XXX tests for stati_files needed!
+# XXX tests for static_files needed!
