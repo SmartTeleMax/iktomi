@@ -85,6 +85,7 @@ class TempUploadedFile(UploadedFile):
         self.mode = 'temp'
         self._input_stream = input_file
         if not lazy:
+            # XXX wht is the case of lazy save?
             self.do_save_temp()
 
     def do_save_temp(self):

@@ -57,8 +57,7 @@ class App(Cli):
             server_thread = DevServerThread(host, port, self.app)
             server_thread.start()
 
-            filename = reloader_loop(extra_files=self.extra_files)
-            logger.info('Changes in file "%s"', filename)
+            wait_for_code_change(extra_files=self.extra_files)
 
             server_thread.running = False
             server_thread.join()
@@ -119,7 +118,7 @@ def iter_module_files():
                 yield filename
 
 
-def reloader_loop(extra_files=None, interval=1):
+def wait_for_code_change(extra_files=None, interval=1):
     mtimes = {}
     while 1:
         for filename in chain(iter_module_files(), extra_files or ()):
@@ -132,6 +131,7 @@ def reloader_loop(extra_files=None, interval=1):
             if old_time is None:
                 mtimes[filename] = mtime
             elif mtime > old_time:
-                return filename
+                logger.info('Changes in file "%s"', filename)
+                return
         time.sleep(interval)
 
