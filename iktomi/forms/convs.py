@@ -192,7 +192,7 @@ class validator(object):
 def length(min_length, max_length):
     'Sting length constraint'
     if min_length == max_length:
-        message = N_(u'length of value is limited to %(max)')
+        message = N_(u'length of value is limited to %(max)d')
     else:
         message = N_('length should be between %(min)d and %(max)d symbols')
 
