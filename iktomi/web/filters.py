@@ -189,6 +189,8 @@ class subdomain(WebHandler):
 class namespace(WebHandler):
 
     def __init__(self, ns):
+        if not ns:
+            raise TypeError('Namespace must not be empty')
         # namespace is str
         self.namespace = ns
 

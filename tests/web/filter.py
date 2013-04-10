@@ -318,4 +318,7 @@ class Namespace(unittest.TestCase):
 
         self.assertEqual(web.ask(app, '/ns1/ns2'), 1)
 
+    def test_empty(self):
+        self.assertRaises(TypeError, web.namespace, '')
+
 # XXX tests for stati_files needed!
