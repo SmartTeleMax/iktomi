@@ -6,7 +6,8 @@ import logging
 from iktomi.utils.storage import VersionedStorage, StorageFrame
 from webob.exc import HTTPException, HTTPInternalServerError, \
                       HTTPNotFound
-from .http import Request, RouteState
+from webob import Request
+from .route_state import RouteState
 from .reverse import Reverse
 
 logger = logging.getLogger(__name__)

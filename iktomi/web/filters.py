@@ -9,7 +9,7 @@ from os import path
 from urllib import unquote
 from webob.exc import HTTPMethodNotAllowed
 from .core import WebHandler, cases
-from .http import Response
+from . import Response
 from .url_templates import UrlTemplate
 from .reverse import Location
 

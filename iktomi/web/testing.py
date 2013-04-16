@@ -2,7 +2,7 @@
 
 __all__ = ['ask']
 
-from .http import Request
+from webob import Request
 from .reverse import Reverse
 from .app import AppEnvironment, Application
 from ..utils.storage import VersionedStorage

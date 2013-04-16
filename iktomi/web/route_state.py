@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__all__ = ['Request', 'Response']
-
 import logging
-from webob import Request, Response
 
 logger = logging.getLogger(__name__)
 
