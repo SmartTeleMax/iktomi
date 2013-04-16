@@ -2,6 +2,7 @@
 from iktomi import web
 from iktomi.web.filters import *
 from iktomi.templates import jinja2, Template
+from environment import Environment
 
 import cfg
 import handlers as h
@@ -11,19 +12,7 @@ media = static_files(cfg.MEDIA, '/media/')
 template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR, engines={'html': jinja2.TemplateEngine})
 
 
-@web.request_filter
-def environment(env, data, next_handler):
-    env.cfg = cfg
-
-    env.url_for = url_for
-    env.url_for_static = static.construct_reverse()
-    env.template = template
-
-    return next_handler(env, data)
-
-
-
-app = environment | web.cases(
+app = web.cases(
     static, media,
     match('/', 'files') | web.cases(
         # Playing REST ;)
@@ -33,4 +22,5 @@ app = environment | web.cases(
     ),
 )
 
-url_for = web.Reverse(web.locations(app))
+wsgi_app = web.Application(app, env_class=Environment)
+

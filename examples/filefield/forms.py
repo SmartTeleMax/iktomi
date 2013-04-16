@@ -4,12 +4,12 @@ import os
 from iktomi.forms import *
 from iktomi.forms import widgets
 from iktomi.ext.filefields import FileFieldSet, FileFieldSetConv, \
-                                      UploadedFile
+                                      TempUploadedFile
 
 import cfg
 
 
-class MyUploadedFile(UploadedFile):
+class MyUploadedFile(TempUploadedFile):
 
     temp_path = os.path.join(cfg.MEDIA, 'temp')
     temp_url = '/media/temp/'
