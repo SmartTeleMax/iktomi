@@ -85,7 +85,8 @@ class Converter(object):
     '''
 
     # obsolete parameters from previous versions
-    _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max'])
+    _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max',
+                           'multiple'])
     required = False
     multiple = False
 
@@ -120,21 +121,9 @@ class Converter(object):
         If `silent=False`, writes errors to `form.errors`.
         '''
         try:
-            if self.multiple:
-                result = []
-                for val in value or []:
-                    val = self.to_python(val)
-                    for v in self.validators_and_filters:
-                        val = v(self, val)
-
-                    if val is not None:
-                        # XXX is it right to ignore None?
-                        result.append(val)
-                value = result
-            else:
-                value = self.to_python(value)
-                for v in self.validators_and_filters:
-                    value = v(self, value)
+            value = self.to_python(value)
+            for v in self.validators_and_filters:
+                value = v(self, value)
 
             if self.required and self._is_empty(value):
                 raise ValidationError(self.error_required)
@@ -327,7 +316,7 @@ class DisplayOnly(Converter):
 
 
 class EnumChoice(Converter):
-    '''In addition to Converter interface it must provide methods __iter__ and
+    '''In addition to Converter interface it must provide methods options and
     get_label.'''
 
     conv = Char()
@@ -336,7 +325,7 @@ class EnumChoice(Converter):
     error_required = N_('you must select a value')
 
     def from_python(self, value):
-        conv = self.conv#(field=self.field)
+        conv = self.conv
         return conv.from_python(value)
 
     def to_python(self, value):
@@ -345,8 +334,8 @@ class EnumChoice(Converter):
             return None
         return value
 
-    def __iter__(self):
-        conv = self.conv#(field=self.field)
+    def options(self):
+        conv = self.conv
         for python_value, label in self.choices:
             yield conv.from_python(python_value), label
 
@@ -537,6 +526,29 @@ class List(Converter):
 
     def to_python(self, value):
         return value.values()
+
+
+class ListOf(Converter):
+
+    multiple = True
+
+    def __init__(self, conv=None, **kwargs):
+        if 'field' in kwargs:
+            conv=(conv or self.conv)(field=kwargs['field'])
+        kwargs['conv'] = conv
+        Converter.__init__(self, **kwargs)
+
+    def to_python(self, value):
+        result = []
+        for val in value or []:
+            val = self.conv.accept(val)
+            if val is not None:
+                # XXX is it right to ignore None?
+                result.append(val)
+        return result
+
+    def from_python(self, value):
+        return [self.conv.from_python(item) for item in value or []]
 
 
 class SimpleFile(Converter):
