@@ -482,7 +482,7 @@ class Html(Char):
                 result.update(add)
         return result
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         from ..utils.html import PROPERTIES, LIST_PROPERTIES
 
         for opt in PROPERTIES:
@@ -497,7 +497,7 @@ class Html(Char):
                 kwargs[opt] = set(kwargs.get(opt, LIST_PROPERTIES[opt]))
                 kwargs[opt].update(kwargs.pop(add_key))
 
-        super(Html, self).__init__(**kwargs)
+        super(Html, self).__init__(*args, **kwargs)
 
     def clean_value(self, value):
         # XXX move the import outside (in try..except)

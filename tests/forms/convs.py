@@ -523,7 +523,11 @@ class HtmlTests(unittest.TestCase):
         self.assertEqual(set(conv.sanitizer.kwargs['allowed_css_properties']),
                          set(['prop1', 'prop2']))
 
+    def test_validators(self):
+        conv = init_conv(convs.Html(convs.length(100, 1000)))
 
+        self.assertEqual(conv.accept('<p>Hello!</p>'), None)
+        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
 
 
 class ValidatorTests(unittest.TestCase):
