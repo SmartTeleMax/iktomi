@@ -41,7 +41,7 @@ class FieldTests(unittest.TestCase):
     def test_accept_multiple(self):
         class F(Form):
             fields = [
-                Field('name', conv=convs.Int(multiple=True))
+                Field('name', conv=convs.ListOf(convs.Int))
             ]
 
         form = F()
@@ -51,7 +51,7 @@ class FieldTests(unittest.TestCase):
     def test_from_python_multiple(self):
         class F(Form):
             fields = [
-                Field('name', conv=convs.Int(multiple=True),
+                Field('name', conv=convs.ListOf(convs.Int),
                       initial=[1,2])
             ]
 

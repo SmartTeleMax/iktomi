@@ -89,10 +89,7 @@ class BaseField(object):
         return '%s-%s' % (self.form.id, self.input_name)
 
     def from_python(self, value):
-        if self.multiple:
-            return [self.conv.from_python(item) for item in value or []]
-        else:
-            return self.conv.from_python(value)
+        return self.conv.from_python(value)
 
     @cached_property
     def permissions(self):
