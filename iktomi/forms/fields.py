@@ -22,6 +22,9 @@ class BaseField(object):
     access control
     '''
 
+    # obsolete parameters from previous versions
+    _obsolete = frozenset(['default'])
+
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
     perm_getter = FieldPerm()
@@ -33,6 +36,10 @@ class BaseField(object):
     media = FormMedia()
 
     def __init__(self, name, conv=None, parent=None, **kwargs):
+        if self._obsolete & set(kwargs):
+            raise TypeError(
+                    'Obsolete parameters are used: %s' %
+                        list(self._obsolete & set(kwargs)))
         kwargs.update(dict(
             parent=parent,
             name=name,

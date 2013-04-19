@@ -58,3 +58,6 @@ class FieldTests(unittest.TestCase):
         form = F()
         self.assertEqual(form.raw_data,
                          MultiDict([('name', '1'), ('name', '2')]))
+
+    def test_obsolete(self):
+        self.assertRaises(TypeError, Field, 'name', default=1)

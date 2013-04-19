@@ -37,7 +37,7 @@ class ConverterTests(unittest.TestCase):
 
     def test_obsolete(self):
         'Convertor accepting obsolete parameters'
-        self.assertRaises(DeprecationWarning, convs.Converter, null=True)
+        self.assertRaises(TypeError, convs.Converter, null=True)
 
     def test_filter(self):
         'Convertor with filters'
