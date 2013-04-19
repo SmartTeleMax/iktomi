@@ -23,7 +23,7 @@ class BaseField(object):
     '''
 
     # obsolete parameters from previous versions
-    _obsolete = frozenset(['default'])
+    _obsolete = frozenset(['default', 'get_default'])
 
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
@@ -349,9 +349,6 @@ class FileField(Field):
     '''
 
     _null_value = None
-
-    def get_default(self):
-        return None # XXX
 
     def set_raw_value(self, raw_data, value):
         pass
