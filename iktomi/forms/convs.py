@@ -146,10 +146,11 @@ class Converter(object):
             value = ''
         return value
 
-    def __call__(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
-        return self.__class__(*self.validators_and_filters, **kwargs)
+        validators = tuple(self.validators_and_filters) + args
+        return self.__class__(*validators, **kwargs)
 
     def assert_(self, expression, msg):
         'Shortcut for assertions of certain type'

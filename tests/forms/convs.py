@@ -65,6 +65,15 @@ class ConverterTests(unittest.TestCase):
         result = conv.accept(['1', '2', '3'], silent=True)
         self.assertEqual(result, [2, 3, 4])
 
+    def test_validators_copy(self):
+        v1 = lambda c, v: v
+        v2 = lambda c, v: v
+
+        conv = convs.Converter(v1)
+        conv = conv(v2)
+
+        self.assertEqual(conv.validators_and_filters, (v1, v2))
+
 
 class IntConverterTests(unittest.TestCase):
 
