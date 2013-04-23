@@ -198,7 +198,7 @@ def length(min_length, max_length):
         return True
     return wrapper
 
-limit = deprecated(length)
+limit = deprecated('Use length instead.')(length)
 
 
 def between(min_value, max_value):
@@ -218,7 +218,7 @@ def between(min_value, max_value):
         return True
     return wrapper
 
-num_limit = deprecated(between)
+num_limit = deprecated('Use between instead.')(between)
 
 
 class CharBased(Converter):
