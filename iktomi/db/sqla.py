@@ -1,21 +1,21 @@
-# -*- codingL: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import logging
 from sqlalchemy import orm, types, create_engine
 from sqlalchemy.orm.query import Query
 from iktomi.utils import cached_property, import_string
+from iktomi.utils.deprecation import deprecated
 
 
 class DBSession(orm.session.Session):
 
+    @deprecated('Use Session.query(cls).filter_by(…).scalar() instead.')
     def get(self, query, **kwargs):
         if not isinstance(query, Query):
             query = self.query(query)
         if kwargs:
             query = query.filter_by(**kwargs)
         return query.first()
-
-    #TODO: implement `get_or_404`
 
 
 def session_maker(databases, query_cls=Query, models_location='models',
