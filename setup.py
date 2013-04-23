@@ -23,7 +23,7 @@ setup(
     author_email='denis.otkidach@gmail.com',
     maintainer='Tim Perevezentsev',
     maintainer_email='riffm2005@gmail.com',
-    description='A set of iktomi of several geeks to show ourselves our coolness.',
+    description='A web tool: routing, forms, other useful things.',
     #long_description=open('README').read(),
     url='http://github.com/SmartTeleMax/iktomi/',
     license='MIT',
