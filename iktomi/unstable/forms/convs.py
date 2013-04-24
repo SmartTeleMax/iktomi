@@ -1,4 +1,18 @@
+import re
 from iktomi.forms.convs import *
+from iktomi.utils import N_
+
+
+class Email(Char):
+
+    regex = re.compile(
+        # dot-atom
+        r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*"
+        # quoted-string 
+        r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|'
+            r'\\[\001-011\013\014\016-\177])*"'
+        r')@(?:[A-Z0-9-]+\.)+[A-Z]{2,6}$', re.IGNORECASE)
+    error_regex = N_('incorrect e-mail address')
 
 
 class ModelDictConv(Converter):
