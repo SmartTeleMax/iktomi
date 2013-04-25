@@ -5,11 +5,8 @@ from distutils.core import setup
 setup(
     name='iktomi.unstable',
     version='0.3',
-    packages=['iktomi.unstable'],
-    # XXX isn't it needed? Or is it only for py3k?
-    #namespace_packages=['iktomi'],
-    #package_data={
-    #},
+    packages=['iktomi', 'iktomi.unstable', 'iktomi.unstable.forms',
+              'iktomi.unstable.web'],
     requires=[
         'webob (>1.1b1)',
         'iktomi (>0.3)',
