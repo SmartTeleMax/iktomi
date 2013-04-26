@@ -40,7 +40,10 @@ class ConverterTests(unittest.TestCase):
                       'example.com',
                       'name@127.0.0.1',
                       'name@example.i',
-                      'name@example.123']:
+                      'name@example.123',
+                      '.name@example.com',
+                      'name.@example.com',
+                      'na..me@example.com']:
             conv = init_conv(convs.Email)
             value = conv.accept('name@com')
             self.assertEqual(value, None)
