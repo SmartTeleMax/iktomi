@@ -38,10 +38,4 @@ class ModelDictConv(Converter):
         obj = self.model()
         for field in self.field.fields:
             setattr(obj, field.name, value[field.name])
-        if obj.id is not None:
-            obj = self.env.db.merge(obj)
-            # We have to repeat initialization since merge assumes None as
-            # uninitialized.
-            for field in self.field.fields:
-                setattr(obj, field.name, value[field.name])
         return obj
