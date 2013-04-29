@@ -7,9 +7,11 @@ from iktomi.unstable.forms import convs
 
 
 def init_conv(conv, name='name'):
-    class f(Form):
+    class F(Form):
         fields = [Field(name, conv)]
-    return f().get_field(name).conv
+    return F().get_field(name).conv
+
+
 
 
 class ConverterTests(unittest.TestCase):
@@ -48,3 +50,28 @@ class ConverterTests(unittest.TestCase):
             value = conv.accept('name@com')
             self.assertEqual(value, None)
             self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+
+    def _init_modeldict_conv(self):
+        class M(object):
+            def __init__(self, **kwargs):
+                self.__dict__.update(kwargs)
+        class F(Form):
+            fields = [
+                FieldSet('fs',
+                         conv=convs.ModelDictConv(model=M),
+                         fields=[Field('a'), Field('b')]),
+            ]
+        return F().get_field('fs').conv
+
+    def test_modeldict_to_python(self):
+        conv = self._init_modeldict_conv()
+        obj = conv.to_python({'a': 1, 'b': '2', 'c': 3})
+        self.assertEqual(obj.a, 1)
+        self.assertEqual(obj.b, '2')
+        self.assertFalse(hasattr(obj, 'c'))
+
+    def test_modeldict_from_python(self):
+        conv = self._init_modeldict_conv()
+        obj = conv.model(a=1, b='2', c=3)
+        value = conv.from_python(obj)
+        self.assertEqual(value, {'a': 1, 'b': '2'})
