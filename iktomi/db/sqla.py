@@ -66,28 +66,49 @@ class IntegerList(types.TypeDecorator):
             return [int(item) for item in value.split(',') if item]
 
 
-def get_html_class(safe_marker, impl_=types.Text):
-
-    class HtmlText(types.TypeDecorator):
-        '''Represants safe to render in template html markup'''
-
-        impl = impl_
-
-        def process_result_value(self, value, dialect):
-            if value is not None:
-                return safe_marker(value)
-
-        def process_bind_param(self, value, dialect):
-            if value is not None:
-                return unicode(value)
-
-    return HtmlText
-
 try:
     from jinja2 import Markup
 except ImportError:
     pass
 else:
-    HtmlText = get_html_class(Markup)
-    HtmlString = get_html_class(Markup, impl_=types.String)
+    Markup = None
 
+
+class HtmlBase(types.TypeDecorator):
+    '''Base class for HTML markup types (safe to render in template)'''
+
+    markup_class = Markup
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return self.markup_class(value)
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return unicode(value)
+
+
+class Html(HtmlBase):
+    '''
+    Factory class for HTML type. Usage:
+        Column(Html(Text))
+        Column(Html(String(1000)))
+        Column(Html(BigText, markup_class=SomeWrapperClass))
+    '''
+
+    def __init__(self, _impl, markup_class=Markup):
+        if callable(_impl):
+            _impl = _impl()
+        self.impl = _impl
+        self.markup_class = markup_class
+        # Don't call base class' __init__ since we reimplemented it in a
+        # different way.
+
+
+# Compatibility classes. Deprecate them?
+
+class HtmlString(HtmlBase):
+    impl = types.String
+
+class HtmlText(HtmlBase):
+    impl = types.Text
