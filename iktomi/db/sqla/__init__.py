@@ -20,7 +20,7 @@ class DBSession(orm.session.Session):
 
 def session_maker(databases, query_cls=Query, models_location='models',
                   engine_params=None, session_params=None,
-                  session_class=DBSession):
+                  session_class=orm.session.Session):
     engine_params = engine_params or {}
     session_params = dict(session_params or {})
     session_params.setdefault('autoflush', False)
@@ -33,6 +33,8 @@ def session_maker(databases, query_cls=Query, models_location='models',
         md_ref = '.'.join(filter(None, [models_location, ref]))
         metadata = import_string(md_ref, 'metadata')
         engine = create_engine(uri, **engine_params)
+        # Dot before [name] is required to allow setting logging level etc. for
+        # all them at once.
         engine.logger = logging.getLogger('sqlalchemy.engine.[%s]' % ref)
         for table in metadata.sorted_tables:
             binds[table] = engine
