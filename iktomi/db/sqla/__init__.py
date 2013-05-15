@@ -21,6 +21,11 @@ class DBSession(orm.session.Session):
 def session_maker(databases, query_cls=Query, models_location='models',
                   engine_params=None, session_params=None,
                   session_class=orm.session.Session):
+    '''
+    Session maker with multiple databases support. For each database there
+    should be corresponding submodule of `models_location` package with
+    `metadata` object for that database.
+    '''
     engine_params = engine_params or {}
     session_params = dict(session_params or {})
     session_params.setdefault('autoflush', False)
