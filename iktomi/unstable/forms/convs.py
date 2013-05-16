@@ -39,3 +39,60 @@ class ModelDictConv(Converter):
         for field in self.field.fields:
             setattr(obj, field.name, value[field.name])
         return obj
+
+
+class OptionLabel(unicode):
+
+    published = False
+
+
+class ModelChoice(EnumChoice):
+
+    condition = None
+    conv = Int(required=False)
+    title_field = 'title'
+
+    def __init__(self, *args, **kwargs):
+        EnumChoice.__init__(self, *args, **kwargs)
+        self.conv = self.conv(field=self.field)
+
+    @property
+    def query(self):
+        query = self.env.db.query(self.model)
+        if isinstance(self.condition, dict):
+            query = query.filter_by(**self.condition)
+        elif self.condition is not None:
+            query = query.filter(self.condition)
+        return query
+
+    def from_python(self, value):
+        if value is not None:
+            return self.conv.from_python(value.id)
+        else:
+            return ''
+
+    def to_python(self, value):
+        try:
+            value = self.conv.to_python(value)
+        except ValidationError:
+            return None
+        else:
+            if value is not None:
+                return self.query.filter_by(id=value).first()
+
+    def get_object_label(self, obj):
+        label = OptionLabel(getattr(obj, self.title_field))
+        try:
+            label.published = obj.publish
+        except AttributeError:
+            pass
+        return label
+
+    def get_label(self, form_value):
+        obj = self._safe_to_python(form_value)
+        if obj is not None:
+            return self.get_object_label(obj)
+
+    def options(self):
+        for obj in self.query.all():
+            yield self.conv.from_python(obj.id), self.get_object_label(obj)
