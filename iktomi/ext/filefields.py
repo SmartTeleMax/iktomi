@@ -65,8 +65,8 @@ class TempUploadedFile(UploadedFile):
 
         self.form_field = form_field
         if form_field:
-            base_url = form_field.base_temp_path
-            base_path = form_field.base_temp_url
+            base_path = form_field.base_temp_path
+            base_url = form_field.base_temp_url
         base_path = base_path or tempfile.gettempdir()
         base_url = base_url or '/form-temp/'
 
