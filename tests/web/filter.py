@@ -4,7 +4,8 @@ __all__ = ['Prefix', 'Match', 'Subdomain']
 
 import unittest
 from iktomi import web
-from iktomi.web.http import Response
+from webob import Response
+
 
 class WebHandler(unittest.TestCase):
 
