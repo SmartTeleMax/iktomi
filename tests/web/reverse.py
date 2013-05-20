@@ -310,7 +310,7 @@ class ReverseTests(unittest.TestCase):
     def test_external_urls_no_subdomain(self):
         'External URL reverse with no subdomains provided in location'
         def config(env, data, nxt):
-            env.root = root.bind_to_request(env.request)
+            env.root = root.bind_to_env(env)
             return nxt(env, data)
 
         called_urls = []

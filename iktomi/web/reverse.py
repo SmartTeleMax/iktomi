@@ -20,13 +20,13 @@ class Location(object):
                 return True
         return False
 
-    def build_path(self, **kwargs):
+    def build_path(self, reverse, **kwargs):
         result = []
         for b in self.builders:
             result.append(b(**kwargs))
         return ''.join(result)
 
-    def build_subdomians(self):
+    def build_subdomians(self, reverse):
         return u'.'.join(self.subdomains)
 
     @property
@@ -44,7 +44,7 @@ class Location(object):
 
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, bound_request=None,
+                 need_arguments=False, bound_env=None,
                  finalize_params=None):
         # location is stuff containing builders for current reverse step
         # (builds url part for particular namespace or endpoint)
@@ -58,11 +58,11 @@ class Reverse(object):
         self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
-        self._bound_request = bound_request
+        self._bound_env = bound_env
         self._finalize_params = finalize_params or {}
 
     def _attach_subdomain(self, host, location):
-        subdomain = location.build_subdomians()
+        subdomain = location.build_subdomians(self)
         if not host:
             return subdomain
         if subdomain:
@@ -77,11 +77,11 @@ class Reverse(object):
             path, host = self._path, self._host
             if self._location:
                 host = self._attach_subdomain(host, self._location)
-                path += self._location.build_path(**kwargs)
+                path += self._location.build_path(self, **kwargs)
             if '' in self._scope:
                 finalize_params = kwargs
             return self.__class__(self._scope, self._location, path=path, host=host,
-                                  bound_request=self._bound_request, 
+                                  bound_env=self._bound_env, 
                                   ready=self._is_endpoint,
                                   finalize_params=finalize_params)
         raise UrlBuildingError('Not an endpoint')
@@ -95,10 +95,10 @@ class Reverse(object):
             host = self._host
             ready = not location.need_arguments
             if ready:
-                path += location.build_path()
+                path += location.build_path(self)
                 host = self._attach_subdomain(host, location)
             return self.__class__(scope, location, path, host, ready,
-                                  bound_request=self._bound_request,
+                                  bound_env=self._bound_env,
                                   need_arguments=location.need_arguments)
         raise UrlBuildingError('Namespace or endpoint "%s" does not exist'
                                % name)
@@ -112,18 +112,18 @@ class Reverse(object):
         path, host = self._path, self._host
         location = self._scope[''][0]
         host = self._attach_subdomain(host, location)
-        path += location.build_path(**self._finalize_params)
+        path += location.build_path(self, **self._finalize_params)
         return self.__class__({}, self._location, path=path, host=host,
-                              bound_request=self._bound_request, 
+                              bound_env=self._bound_env, 
                               ready=self._is_endpoint)
 
-    def bind_to_request(self, bound_request):
+    def bind_to_env(self, bound_env):
         return self.__class__(self._scope, self._location,
                               path=self._path, host=self._host,
                               ready=self._ready,
                               need_arguments=self._need_arguments,
                               finalize_params=self._finalize_params,
-                              bound_request=bound_request)
+                              bound_env=bound_env)
 
     @cached_property
     def url_arguments(self):
@@ -172,17 +172,18 @@ class Reverse(object):
             domain = host
             port = None
 
-        if self._bound_request:
+        if self._bound_env:
+            request = self._bound_env.request
             scheme_port = {'http': '80',
-                           'https': '443'}.get(self._bound_request.scheme, '80')
-            host_split = self._bound_request.host.split(':')
+                           'https': '443'}.get(request.scheme, '80')
+            host_split = request.host.split(':')
             bound_domain = host_split[0]
             bound_port = host_split[1] if len(host_split) > 1 else scheme_port
             port = port or bound_port
 
             return URL(path, host=domain or bound_domain,
                        port=port if port != scheme_port else None,
-                       schema=self._bound_request.scheme,
+                       schema=request.scheme,
                        show_host=host and (domain != bound_domain \
                                            or port != bound_port))
         return URL(path, host=domain, port=port, show_host=True)
