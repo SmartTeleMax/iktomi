@@ -17,7 +17,7 @@ class AppEnvironment(StorageFrame):
     def __init__(self, request, root, _parent_storage=None, **kwargs):
         StorageFrame.__init__(self, _parent_storage=_parent_storage, **kwargs)
         self.request = request
-        self.root = root.bind_to_env(self)
+        self.root = root.bind_to_env(self._root_storage)
         self._route_state = RouteState(request)
 
 
