@@ -79,7 +79,8 @@ class Flup(Cli):
             # "No such process" is OK, silently ignore it. The rest
             # should be logged at least.
             if exc.errno == errno.ECHILD:
-                sys.exit('Fcgi (PID=%d) disappeared' % pid)
+                logger.info('Fcgi (PID=%d) disappeared' % pid)
+                sys.exit(0)
             raise
 
     def command_stop(self):
