@@ -536,18 +536,9 @@ class ListOf(Converter):
 
     multiple = True
 
-    def __init__(self, *args, **kwargs):
-        if not 'conv' in kwargs:
-            if args and isinstance(args[0], Converter):
-                conv = args[0]
-                args = args[1:]
-            else:
-                raise TypeError('conv is required')
-        else:
-            conv = kwargs['conv']
-
+    def __init__(self, conv, *args, **kwargs):
         if 'field' in kwargs:
-            conv=(conv or self.conv)(field=kwargs['field'])
+            conv = conv(field=kwargs['field'])
         kwargs['conv'] = conv
         Converter.__init__(self, *args, **kwargs)
 
