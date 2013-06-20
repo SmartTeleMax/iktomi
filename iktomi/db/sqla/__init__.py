@@ -51,7 +51,7 @@ def session_maker(databases, query_cls=Query, models_location='models',
 class AutoTableNameMeta(declarative.DeclarativeMeta):
 
     def __init__(cls, name, bases, dict_):
-        super(AutoTableNameMeta).__init__(self, name, bases, dict_)
+        super(AutoTableNameMeta, cls).__init__(name, bases, dict_)
         if '_decl_class_registry' in cls.__dict__:
             # Do not extend base class
             return
@@ -70,7 +70,7 @@ def table_args_meta(table_args):
     class TableArgsMeta(declarative.DeclarativeMeta):
 
         def __init__(cls, name, bases, dict_):
-            super(TableArgsMeta).__init__(self, name, bases, dict_)
+            super(TableArgsMeta, cls).__init__(name, bases, dict_)
             if '_decl_class_registry' in cls.__dict__:
                 # Do not extend base class
                 return
