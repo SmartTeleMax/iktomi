@@ -80,7 +80,9 @@ class Sqla(Cli):
         for metadata, engines in self._get_binds().items():
             for engine in engines:
                 for table in metadata.sorted_tables:
-                    print('{0}: {1}\n{2}'.format(engine, table.name, self._schema(table)))
+                    # XXX Output of schema is commented since it doesn't work
+                    # for dialect-specific things.
+                    #print('{0}: {1}\n{2}'.format(engine, table.name, self._schema(table)))
                     metadata.create_all(engine, tables=[table])
 
     def command_drop_tables(self):
