@@ -59,6 +59,21 @@ class cached_property(object):
         return result
 
 
+class cached_class_property(object):
+    '''Turns decorated method into caching class property (method is called
+    once on first access to property of class or any of its instances).'''
+
+    def __init__(self, method, name=None):
+        self.method = method
+        self.name = name or method.__name__
+
+    def __get__(self, inst, cls):
+        print inst, cls
+        result = self.method(cls)
+        setattr(cls, self.name, result)
+        return result
+
+
 def import_string(module_name, item_name=None):
     if item_name is None:
         return __import__(module_name, None, None, ['*'])
