@@ -20,8 +20,10 @@ class PasswordConv(convs.Char):
         for field in self.field.fields:
             self.assert_(value[field.name] == etalon,
                          self.error_mismatch)
-        self.assert_(etalon not in (None, '')  or self.required,
-                     self.error_required)
+        if self.required:
+            self.assert_(etalon not in (None, ''), self.error_required)
+        elif etalon in (None, ''):
+            return None
         return etalon
 
 
@@ -34,7 +36,6 @@ def PasswordSet(name='password',
         char = convs.Char(convs.length(min_length, max_length),
                           required=required)
         items = (('pass', password_label), ('conf', confirm_label))
-        
         kwargs['fields'] = [fields.Field(subfieldname,
                                          conv=char,
                                          label=label,
