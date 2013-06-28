@@ -261,7 +261,7 @@ class FieldList(AggregateField):
     '''
 
     order = False
-    template = 'widgets/fieldlist'
+    template = 'fields/fieldlist'
     render_type = 'default'
     conv = convs.List
     _digit_re = re.compile('\d+$')
