@@ -30,8 +30,6 @@ class IntegerList(TypeDecorator):
 try:
     from jinja2 import Markup
 except ImportError:
-    pass
-else:
     Markup = None
 
 
