@@ -31,8 +31,13 @@ def table_args_meta(table_args):
                         ta = dict(table_args, **ta)
                         cls.__table_args__ = ta
                     else:
-                        ta = dict(table_args, **ta[-1])
-                        cls.__table_args__ = ta[:-1] + (ta,)
+                        assert isinstance(ta, tuple)
+                        if ta and isinstance(ta[-1], dict):
+                            tad = dict(table_args, **ta[-1])
+                            ta = ta[:-1] + dict(table_args, **ta[-1])
+                        else:
+                            tad = dict(table_args)
+                        cls.__table_args__ = ta + (tad,)
             super(TableArgsMeta, cls).__init__(name, bases, dict_)
 
     return TableArgsMeta
