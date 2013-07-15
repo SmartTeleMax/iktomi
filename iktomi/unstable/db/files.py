@@ -45,3 +45,24 @@ class MediaFileManager(object):
         persistent_file = PersistentFile(self.persistent_root, persistent_name)
         os.rename(transient_file.path, persistent_file.path)
         return persistent_file
+
+
+def filesessionmaker(sessionmaker, media_file_manager):
+    u'''Wrapper of session maker adding link to a MediaFileManager instance
+    to session.::
+        
+        media_file_manager = MediaFileManager(cfg.TRANSIENT_ROOT,
+                                              cfg.PERSISTENT_ROOT)
+        filesessionmaker(sessionmaker(…), media_file_manager)
+    '''
+    def session_maker(*args, **kwargs):
+        session = sessionmaker(*args, **kwargs)
+        # XXX in case we want to use session manager somehow bound 
+        #     to request environment. For example, to generate user-specific
+        #     URLs.
+        #session.media_file_manager = \
+        #        kwargs.get('media_file_manager', media_file_manager)
+        session.media_file_manager = media_file_manager
+        return session
+    return session_maker
+
