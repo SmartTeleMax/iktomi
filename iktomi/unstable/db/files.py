@@ -29,3 +29,19 @@ class TransientFile(BaseFile):
 
 class PersistentFile(BaseFile):
     pass
+
+
+class MediaFileManager(object):
+
+    def __init__(self, transient_root, persistent_root):
+        self.transient_root = transient_root
+        self.persistent_root = persistent_root
+
+    def new_transient(self, ext=''):
+        name = os.urandom(8).encode('hex') + ext
+        return TransientFile(self.transient_root, name)
+
+    def store(self, transient_file, persistent_name):
+        persistent_file = PersistentFile(self.persistent_root, persistent_name)
+        os.rename(transient_file.path, persistent_file.path)
+        return persistent_file
