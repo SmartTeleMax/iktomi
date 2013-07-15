@@ -27,5 +27,5 @@ class TransientFile(BaseFile):
     pass
 
 
-class PersistentFile(object):
+class PersistentFile(BaseFile):
     pass
