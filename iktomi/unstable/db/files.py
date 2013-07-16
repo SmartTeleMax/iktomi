@@ -40,13 +40,6 @@ class BaseFile(object):
             if exc.errno!=errno.ENOENT:
                 raise
 
-    def delete(self):
-        if os.path.isfile(self.full_path):
-            try:
-                os.unlink(self.full_path)
-            except OSError:
-                pass
-
     def __repr__(self):
         return '{}({})'.format(type(self).__name__, self.name)
 
@@ -59,18 +52,25 @@ class PersistentFile(BaseFile):
     pass
 
 
-class MediaFileManager(object):
+class FileManager(object):
 
     def __init__(self, transient_root, persistent_root):
         self.transient_root = transient_root
         self.persistent_root = persistent_root
 
-    def make_transient_from_fs(self, fs):
-        '''Create TransientFile from cgi.FieldStorage'''
-        return self.make_transient(fs.file, fs.filename)
+    def delete(self, file_obj):
+        # XXX Is this right place again?
+        #     BC "delete file if exist and ignore errors" would be used in many
+        #     places, I think...
+        if os.path.isfile(file_obj.path):
+            try:
+                os.unlink(file_obj.full_path)
+            except OSError:
+                pass
 
-    def make_transient(self, input_stream, original_name):
-        '''Create TransientFile with given input stream and file name'''
+    def create_transient(self, input_stream, original_name):
+        '''Create TransientFile and file on FS from given input stream and 
+        original file name.'''
         ext = os.path.splitext(original_name)[1]
         transient = self.new_transient(ext)
         if not os.path.isdir(self.transient_root):
@@ -82,21 +82,21 @@ class MediaFileManager(object):
         return transient
 
     def new_transient(self, ext=''):
-        '''Creates empty TransientFile with random name and given extension'''
+        '''Creates empty TransientFile with random name and given extension.
+        File on FS is not created'''
         name = os.urandom(8).encode('hex') + ext
         return TransientFile(self.transient_root, name)
 
-    def restore_transient(self, name):
+    def get_transient(self, name):
         '''Restores TransientFile object with given name.
         Should be used when form is submitted with file name and no file'''
         # security checks: basically no folders are allowed
-        if '/' in name or '\\' in name:
-            #logger.warning('Hacking attempt: submitted temp_name '\
-            #               'for FileField contains "/"')
-            raise # XXX
+        assert not ('/' in name or '\\' in name)
         transient = TransientFile(self.transient_root, name)
         if not os.path.isfile(transient.path):
-            raise # XXX
+            raise OSError('Transient file has been lost',
+                          errno=errno.ENOENT,
+                          filename=transient.path)
         return transient
 
     def store(self, transient_file, persistent_name):
@@ -106,22 +106,22 @@ class MediaFileManager(object):
         return persistent_file
 
 
-def filesessionmaker(sessionmaker, media_file_manager):
-    u'''Wrapper of session maker adding link to a MediaFileManager instance
+def filesessionmaker(sessionmaker, file_manager):
+    u'''Wrapper of session maker adding link to a FileManager instance
     to session.::
         
-        media_file_manager = MediaFileManager(cfg.TRANSIENT_ROOT,
+        file_manager = FileManager(cfg.TRANSIENT_ROOT,
                                               cfg.PERSISTENT_ROOT)
-        filesessionmaker(sessionmaker(…), media_file_manager)
+        filesessionmaker(sessionmaker(…), file_manager)
     '''
     def session_maker(*args, **kwargs):
         session = sessionmaker(*args, **kwargs)
         # XXX in case we want to use session manager somehow bound 
         #     to request environment. For example, to generate user-specific
         #     URLs.
-        #session.media_file_manager = \
-        #        kwargs.get('media_file_manager', media_file_manager)
-        session.media_file_manager = media_file_manager
+        #session.file_manager = \
+        #        kwargs.get('file_manager', file_manager)
+        session.file_manager = file_manager
         return session
     return session_maker
 

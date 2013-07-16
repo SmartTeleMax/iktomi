@@ -12,15 +12,16 @@ class FileFieldSetConv(convs.Converter):
     error_lost = 'Transient file has been lost'
 
     def from_python(self, value):
-        return {'temp_name': value.filename if value and value.mode == 'temp' else None,
+        return {'transient_name': value.filename if value and value.mode == 'transient' else None,
                 'original_name': value and value.original_name,
                 'file': value,
                 'mode': value.mode if value is not None else 'empty'}
 
-    def _to_python(self, file=None, mode=None, temp_name=None, original_name=None):
+    def _to_python(self, file=None, mode=None, transient_name=None, original_name=None):
 
         if not self._is_empty(file):
-            file = self.env.media_file_manager.make_transient_from_fs(file)
+            file = self.env.file_manager.create_transient(file.file,
+                                                          file.filename)
         else:
             file = None
 
@@ -33,22 +34,22 @@ class FileFieldSetConv(convs.Converter):
             if not file and self.required:
                 raise convs.ValidationError(self.error_required)
 
-        elif mode == 'temp':
+        elif mode == 'transient':
             if not original_name:
                 logger.warning('Missing original_name for FileField')
-            if not temp_name:
-                logger.warning('Missing temp_name for FileField in mode "temp"')
+            if not transient_name:
+                logger.warning('Missing transient_name for FileField in mode "transient"')
                 raise convs.ValidationError(self.hacking)
 
             try:
-                temp_file = self.env.media_file_manager.restore_transient(temp_name)
-            except Exception: # XXX what kind of exception?
+                transient_file = self.env.file_manager.get_transient(transient_name)
+            except OSError:
                 raise convs.ValidationError(self.error_lost)
 
             if file:
-                temp_file.delete()
+                self.env.file_manager.delete(transient_file)
             else:
-                file = temp_file
+                file = transient_file
 
         elif mode == 'existing':
             if not file:
@@ -66,6 +67,14 @@ class FileFieldSetConv(convs.Converter):
         return value
 
 
+def check_file_path(conv, value):
+    if value and '/' in value or '\\' in value:
+        logger.warning('Hacking attempt: submitted temp_name '\
+                       'for FileField contains "/"')
+        raise convs.ValidationError('Invalid filename')
+    return value
+
+
 class FileFieldSet(FieldSet):
     '''FieldSet aggregating fields required for file upload handling::
     '''
@@ -76,16 +85,16 @@ class FileFieldSet(FieldSet):
                   widget=widgets.FileInput()),
             Field('mode',
                   conv=convs.EnumChoice(choices=[('existing', ''),
-                                                 ('temp', ''),
+                                                 ('transient', ''),
                                                  ('empty', ''),
                                                  ('delete', ''),],
                                         required=True),
                   widget=widgets.HiddenInput),
-            Field('temp_name',
-                  conv=convs.Char(required=False),
+            Field('transient_name',
+                  conv=convs.Char(check_file_path, required=False),
                   widget=widgets.HiddenInput),
             Field('original_name',
-                  conv=convs.Char(required=False),
+                  conv=convs.Char(check_file_path, required=False),
                   widget=widgets.HiddenInput),
         ]
 
