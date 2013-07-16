@@ -11,10 +11,6 @@ class FileFieldSetConv(convs.Converter):
     error_inner = 'Error uploading file'
     error_lost = 'Transient file has been lost'
 
-    @property
-    def file_cls(self):
-        return self.field.file_cls
-
     def from_python(self, value):
         return {'temp_name': value.filename if value and value.mode == 'temp' else None,
                 'original_name': value and value.original_name,
@@ -47,7 +43,7 @@ class FileFieldSetConv(convs.Converter):
             try:
                 temp_file = self.env.media_file_manager.restore_transient(temp_name)
             except Exception: # XXX what kind of exception?
-                raise convs.ValidationError(self.error_lost) # XXX english
+                raise convs.ValidationError(self.error_lost)
 
             if file:
                 temp_file.delete()
@@ -98,8 +94,10 @@ class FileFieldSet(FieldSet):
     def __init__(self, name, conv=FileFieldSetConv, **kwargs):
         kwargs.setdefault('fields', self.fields)
         FieldSet.__init__(self, name, conv=conv, **kwargs)
-        #self.get_field('file').conv.required = self.conv.required
 
     def get_initial(self):
-        return None # XXX
+        # Redefine because FieldSet.get_initial returns dict by default,
+        # but python value of FileFieldSet is either None, either BaseFile
+        # instance.
+        return None
 
