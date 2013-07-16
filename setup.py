@@ -17,7 +17,8 @@ setup(
               'iktomi.ext',
               'iktomi.unstable',
                     'iktomi.unstable.forms', 'iktomi.unstable.web',
-                    'iktomi.unstable.db'],
+                    'iktomi.unstable.db',
+                        'iktomi.unstable.db.sqla'],
     package_dir={
         'iktomi.templates.jinja2': 'iktomi/templates/jinja2',
         'iktomi.templates.mint': 'iktomi/templates/mint',

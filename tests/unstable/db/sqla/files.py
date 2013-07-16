@@ -1,9 +1,10 @@
 import unittest, tempfile, shutil
-from sqlalchemy import Column, Integer, orm, create_engine
+from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
                                      FileManager, filesessionmaker
+from iktomi.unstable.db.sqla.files import FileProperty
 
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
@@ -12,6 +13,9 @@ Base = declarative_base(metaclass=AutoTableNameMeta)
 class ObjWithFile(Base):
 
     id = Column(Integer, primary_key=True)
+    file_name = Column(VARBINARY(250), nullable=False)
+    #file = FileProperty(file_name, name_template='obj/{id}')
+    file = FileProperty(file_name, name_template='obj')
 
 
 class SqlaFilesTests(unittest.TestCase):
@@ -32,5 +36,7 @@ class SqlaFilesTests(unittest.TestCase):
 
     def test_empty(self):
         obj = ObjWithFile()
+        obj.file = f = self.file_manager.new_transient()
+        # XXX
         self.db.add(obj)
         self.db.commit()
