@@ -41,7 +41,7 @@ class BaseFile(object):
                 raise
 
     def __repr__(self):
-        return '{}({})'.format(type(self).__name__, self.name)
+        return '{}({!r})'.format(type(self).__name__, self.name)
 
 
 class TransientFile(BaseFile):
