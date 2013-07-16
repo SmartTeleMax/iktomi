@@ -7,7 +7,7 @@ how to store transient and persistent files.
 import os
 import cgi
 import errno
-from ..utils import cached_property
+from ...utils import cached_property
 
 
 def _get_file_content(f):
