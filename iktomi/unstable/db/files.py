@@ -99,6 +99,11 @@ class FileManager(object):
                           filename=transient.path)
         return transient
 
+    def get_persistent(self, name):
+        assert name and not ('..' in name or name[0] in '~/')
+        persistent = PersistentFile(self.persistent_root, name)
+        return persistent
+
     def store(self, transient_file, persistent_name):
         '''Makes PersistentFile from TransientFile'''
         persistent_file = PersistentFile(self.persistent_root, persistent_name)
