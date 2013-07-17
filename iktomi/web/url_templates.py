@@ -114,7 +114,7 @@ class UrlTemplate(object):
                                  'by %r, value "%s"',
                                  url_arg_name,
                                  err.converter.__class__,
-                                 err.value.encode('utf-8'))
+                                 err.value)
                     return None, {}
             return m.group(), kwargs
         return None, {}
