@@ -1,12 +1,15 @@
-import os
+import os, errno, logging
 from sqlalchemy.orm.properties import ColumnProperty
 from sqlalchemy.types import VARBINARY, TypeDecorator
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.interfaces import MapperProperty
+from sqlalchemy.orm.attributes import get_history
 from sqlalchemy import event
 from sqlalchemy.util import set_creation_order
 from weakref import WeakKeyDictionary
 from ..files import TransientFile, PersistentFile
+
+logger = logging.getLogger(__name__)
 
 
 class FileEventHandlers(object):
@@ -14,7 +17,20 @@ class FileEventHandlers(object):
     def __init__(self, prop):
         self.prop = prop
 
-    def before_insert(self, mapper, connection, target):
+    def _get_history(self, target):
+        return get_history(target, self.prop.column.key)
+
+    @staticmethod
+    def _remove_file(path):
+        try:
+            os.path.remove(path)
+        except IOError, exc:
+            if exc.errno==errno.ENOENT:
+                logger.warning("Can't remove file %r: doesn't exist", path)
+            else:
+                raise
+
+    def _store_transient(self, target):
         session = object_session(target)
         transient = getattr(target, self.prop.key)
         if transient is None:
@@ -25,11 +41,33 @@ class FileEventHandlers(object):
         file_attr = getattr(type(target), self.prop.column.key)
         file_attr._states[target] = persistent
 
+    def before_insert(self, mapper, connection, target):
+        changes = self._get_history(target)
+        if not changes:
+            return
+        self._store_transient(target)
+
     def before_update(self, mapper, connection, target):
-        print 'before_update'
+        changes = self._get_history(target)
+        if not changes:
+            return
+        session = object_session(target)
+        old_name = changes.deleted[0]
+        if old_name is not None:
+            old = session.file_manager.get_persistent(old_name)
+            self._remove_file(old.path)
+        self._store_transient(target)
 
     def after_delete(self, mapper, connection, target):
-        print 'after_delete'
+        changes = self._get_history(target)
+        if changes:
+            old_name = changes.deleted[0]
+        else:
+            old_name = getattr(target, self.prop.column.key)
+        if old_name is not None:
+            session = object_session(target)
+            old = session.file_manager.get_persistent(old_name)
+            self._remove_file(old.path)
 
 
 class _AttrDict(object):
