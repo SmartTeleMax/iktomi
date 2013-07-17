@@ -27,7 +27,7 @@ class BaseFile(object):
 
     @property
     def path(self):
-        os.path.join(self.root, self.name)
+        return os.path.join(self.root, self.name)
 
     @cached_property
     def size(self):
