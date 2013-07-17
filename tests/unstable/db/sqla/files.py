@@ -34,15 +34,23 @@ class SqlaFilesTests(unittest.TestCase):
         shutil.rmtree(self.transient_root)
         shutil.rmtree(self.persistent_root)
 
+    def test_session(self):
+        self.assertTrue(hasattr(self.db, 'file_manager'))
+        self.assertIsInstance(self.db.file_manager, FileManager)
+
     def test_create(self):
         obj = ObjWithFile()
         obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.add(obj)
         self.db.commit()
         self.assertIsInstance(obj.file, PersistentFile)
-        # XXX
+        self.assertFalse(os.path.exists(f.path))
+        self.assertTrue(os.path.isfile(obj.file.path))
+        self.assertEqual(open(obj.file.path).read(), 'test')
 
     def test_update_none2file(self):
         pass # XXX
