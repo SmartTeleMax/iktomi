@@ -15,7 +15,15 @@ class FileEventHandlers(object):
         self.prop = prop
 
     def before_insert(self, mapper, connection, target):
-        print 'before_insert'
+        session = object_session(target)
+        transient = getattr(target, self.prop.key)
+        if transient is None:
+            return
+        assert isinstance(transient, TransientFile)
+        persistent_name = getattr(target, self.prop.column.key)
+        persistent = session.file_manager.store(transient, persistent_name)
+        file_attr = getattr(type(target), self.prop.column.key)
+        file_attr._states[target] = persistent
 
     def before_update(self, mapper, connection, target):
         print 'before_update'
