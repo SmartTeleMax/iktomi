@@ -2,15 +2,17 @@ import os
 from sqlalchemy.orm.properties import ColumnProperty
 from sqlalchemy.types import VARBINARY, TypeDecorator
 from sqlalchemy.orm.session import object_session
+from sqlalchemy.orm.interfaces import MapperProperty
 from sqlalchemy import event
+from sqlalchemy.util import set_creation_order
 from weakref import WeakKeyDictionary
 from ..files import TransientFile, PersistentFile
 
 
 class FileEventHandlers(object):
 
-    def __init__(self, key):
-        self.key = key
+    def __init__(self, prop):
+        self.prop = prop
 
     def before_insert(self, mapper, connection, target):
         print 'before_insert'
@@ -31,19 +33,30 @@ class _AttrDict(object):
         return getattr(self.__inst, key)
 
 
-class FileProperty(object):
+class FileProperty(MapperProperty):
 
     def __init__(self, column, name_template):
         self.column = column
         self.name_template = name_template
-        # State for each instance
-        self._states = WeakKeyDictionary()
+        set_creation_order(self)
 
-    def listen(self, mapper):
-        handlers = FileEventHandlers(self.key)
+    def instrument_class(self, mapper):
+        handlers = FileEventHandlers(self)
         event.listen(mapper, 'before_insert', handlers.before_insert)
         event.listen(mapper, 'before_update', handlers.before_update)
         event.listen(mapper, 'after_delete', handlers.after_delete)
+        setattr(mapper.class_, self.key, FileAttribute(self))
+
+    # XXX Implement merge?
+
+
+class FileAttribute(object):
+
+    def __init__(self, prop):
+        self.column = prop.column
+        self.name_template = prop.name_template
+        # State for each instance
+        self._states = WeakKeyDictionary()
 
     def __get__(self, inst, cls=None):
         if inst is None:

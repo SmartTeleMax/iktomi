@@ -34,9 +34,24 @@ class SqlaFilesTests(unittest.TestCase):
         shutil.rmtree(self.transient_root)
         shutil.rmtree(self.persistent_root)
 
-    def test_empty(self):
+    def test_create(self):
         obj = ObjWithFile()
         obj.file = f = self.file_manager.new_transient()
-        # XXX
+        self.assertIsInstance(obj.file, TransientFile)
+        self.assertIsNotNone(obj.file_name)
         self.db.add(obj)
         self.db.commit()
+        self.assertIsInstance(obj.file, PersistentFile)
+        # XXX
+
+    def test_update_none2file(self):
+        pass # XXX
+
+    def test_update_file2none(self):
+        pass # XXX
+
+    def test_update_file2file(self):
+        pass # XXX
+
+    def test_delete(self):
+        pass # XXX
