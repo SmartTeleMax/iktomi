@@ -23,10 +23,11 @@ class FileEventHandlers(object):
     @staticmethod
     def _remove_file(path):
         try:
-            os.path.remove(path)
-        except IOError, exc:
+            os.remove(path)
+        except OSError, exc:
             if exc.errno==errno.ENOENT:
                 logger.warning("Can't remove file %r: doesn't exist", path)
+                raise # XXX
             else:
                 raise
 
@@ -38,7 +39,7 @@ class FileEventHandlers(object):
         assert isinstance(transient, TransientFile)
         persistent_name = getattr(target, self.prop.column.key)
         persistent = session.file_manager.store(transient, persistent_name)
-        file_attr = getattr(type(target), self.prop.column.key)
+        file_attr = getattr(type(target), self.prop.key)
         file_attr._states[target] = persistent
 
     def before_insert(self, mapper, connection, target):
@@ -52,15 +53,16 @@ class FileEventHandlers(object):
         if not changes:
             return
         session = object_session(target)
-        old_name = changes.deleted[0]
-        if old_name is not None:
-            old = session.file_manager.get_persistent(old_name)
-            self._remove_file(old.path)
+        if changes.deleted:
+            old_name = changes.deleted[0]
+            if old_name is not None:
+                old = session.file_manager.get_persistent(old_name)
+                self._remove_file(old.path)
         self._store_transient(target)
 
     def after_delete(self, mapper, connection, target):
         changes = self._get_history(target)
-        if changes:
+        if changes and changes.deleted:
             old_name = changes.deleted[0]
         else:
             old_name = getattr(target, self.prop.column.key)
