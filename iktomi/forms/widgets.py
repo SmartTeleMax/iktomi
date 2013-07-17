@@ -162,34 +162,6 @@ class CharDisplay(Widget):
 
 
 class FileInput(Widget):
-    '''
-    '''
+
     template = 'widgets/file'
-
-    #def prepare_data(self, value):
-    #    data = Widget.prepare_data(self, value)
-
-    #    field = self.field
-    #    value = field.parent.python_data.get(field.name, None)
-    #    delete = field.form.raw_data.get(field.input_name + '__delete', False)
-    #    if value is None:
-    #        value = field.parent.initial.get(field.name, None)
-    #        if isinstance(value, field.stored_file_cls):
-    #            mode = 'existing'
-    #        else:
-    #            value = None
-    #            mode = 'empty'
-    #    elif isinstance(value, field.stored_file_cls):
-    #        mode = 'existing'
-    #    elif isinstance(value, field.temp_file_cls):
-    #        mode = 'temp'
-    #    else:
-    #        assert None
-    #    return dict(data, value=value, mode=mode, input_name=self.input_name,
-    #                delete=delete, temp_url=self.env.rctx.conf.temp_url,
-    #                null=field.null)
-
-# XXX ??
-class ImageInput(FileInput):
-    template = 'widgets/imageinput'
 
