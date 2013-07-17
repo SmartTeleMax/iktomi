@@ -68,7 +68,18 @@ class FileManager(object):
             except OSError:
                 pass
 
-    def create_transient(self, input_stream, original_name):
+    def _copy_file(self, inp, path, length=None):
+        # works for ajax file upload
+        # XXX implement/debug for FieldStorage and file
+        with open(path, 'wb') as fp:
+            pos, bufsize = 0, 100000
+            while pos < length:
+                bufsize = min(bufsize, length-pos)
+                data = inp.read(bufsize)
+                fp.write(data)
+                pos += bufsize
+
+    def create_transient(self, input_stream, original_name, length=None):
         '''Create TransientFile and file on FS from given input stream and 
         original file name.'''
         ext = os.path.splitext(original_name)[1]
@@ -76,9 +87,7 @@ class FileManager(object):
         if not os.path.isdir(self.transient_root):
             os.makedirs(self.base_path)
 
-        with open(transient.path, 'wb') as fp:
-            # XXX buffer?
-            fp.write(self._get_file_content(input_stream))
+        self._copy_file(input_stream, transient.path, length=length)
         return transient
 
     def new_transient(self, ext=''):
@@ -129,4 +138,7 @@ def filesessionmaker(sessionmaker, file_manager):
         session.file_manager = file_manager
         return session
     return session_maker
+
+
+
 
