@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-from iktomi.forms import convs, widgets
-from ..forms.fields import Field, FieldSet, FileField
+from iktomi.forms import convs, widgets, Field, FieldSet, FileField
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +11,19 @@ class FileFieldSetConv(convs.Converter):
     error_lost = 'Transient file has been lost'
 
     def from_python(self, value):
-        return {'transient_name': value.filename if value and value.mode == 'transient' else None,
-                'original_name': value and value.original_name,
+        return {'transient_name': value.name if value and value.mode == 'transient' else None,
+                #'original_name': value and value.original_name,
+                'original_name': value.name if value and value.mode == 'transient' else None, # XXX
                 'file': value,
                 'mode': value.mode if value is not None else 'empty'}
 
-    def _to_python(self, file=None, mode=None, transient_name=None, original_name=None):
+    def _to_python(self, file=None, mode=None,
+                   transient_name=None, original_name=None):
+
+        file_manager = self.env.file_manager
 
         if not self._is_empty(file):
-            file = self.env.file_manager.create_transient(file.file,
-                                                          file.filename)
+            file = file_manager.create_transient(file.file, file.filename)
         else:
             file = None
 
@@ -30,7 +32,7 @@ class FileFieldSetConv(convs.Converter):
                 raise convs.ValidationError(self.error_required)
             return None
 
-        if mode == 'empty':
+        elif mode == 'empty':
             if not file and self.required:
                 raise convs.ValidationError(self.error_required)
 
@@ -38,25 +40,24 @@ class FileFieldSetConv(convs.Converter):
             if not original_name:
                 logger.warning('Missing original_name for FileField')
             if not transient_name:
-                logger.warning('Missing transient_name for FileField in mode "transient"')
+                logger.warning('Missing transient_name for FileField '
+                               'in mode "transient"')
                 raise convs.ValidationError(self.hacking)
 
             try:
-                transient_file = self.env.file_manager.get_transient(transient_name)
+                transient_file = file_manager.get_transient(transient_name)
             except OSError:
                 raise convs.ValidationError(self.error_lost)
 
             if file:
-                self.env.file_manager.delete(transient_file)
+                file_manager.delete(transient_file)
             else:
                 file = transient_file
 
         elif mode == 'existing':
             if not file:
                 return self._existing_value
-        else:
-            logger.warning('Unknown mode submitted for FileField: %r', mode)
-            return self._existing_value
+
         return file
 
     def to_python(self, value):
