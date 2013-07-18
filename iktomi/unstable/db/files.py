@@ -131,6 +131,9 @@ class FileManager(object):
         '''Makes PersistentFile from TransientFile'''
         persistent_file = PersistentFile(self.persistent_root,
                                          persistent_name, self)
+        dirname = os.path.dirname(persistent_file.path)
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
         os.rename(transient_file.path, persistent_file.path)
         return persistent_file
 

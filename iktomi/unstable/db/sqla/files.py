@@ -81,6 +81,9 @@ class _AttrDict(object):
         self.__inst = inst
 
     def __getitem__(self, key):
+        if key == 'random':
+            # XXX invent better way to include random strings
+            return os.urandom(8).encode('hex')
         return getattr(self.__inst, key)
 
 

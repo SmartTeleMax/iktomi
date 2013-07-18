@@ -15,7 +15,7 @@ class ObjWithFile(Base):
     id = Column(Integer, primary_key=True)
     file_name = Column(VARBINARY(250))
     #file = FileProperty(file_name, name_template='obj/{id}')
-    file = FileProperty(file_name, name_template='obj')
+    file = FileProperty(file_name, name_template='obj/{0[random]}')
 
 
 class SqlaFilesTests(unittest.TestCase):
@@ -79,8 +79,13 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.add(obj)
         self.db.commit()
         pf = obj.file
+
+        # XXX SQLA bug? Does not work without new object querying
+        obj = self.db.query(ObjWithFile).first()
+
         obj.file = None
         self.assertIsNone(obj.file_name)
+        self.assertTrue(os.path.exists(pf.path))
         self.db.commit()
         self.assertFalse(os.path.exists(pf.path))
 
@@ -92,12 +97,17 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.add(obj)
         self.db.commit()
         pf1 = obj.file
+
+        # XXX SQLA bug? Does not work without new object querying
+        obj = self.db.query(ObjWithFile).first()
+
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test2')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.commit()
+
         self.assertIsInstance(obj.file, PersistentFile)
         self.assertFalse(os.path.exists(f.path))
         self.assertFalse(os.path.exists(pf1.path))
