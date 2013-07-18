@@ -3,8 +3,8 @@ from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
-                                     FileManager, filesessionmaker
-from iktomi.unstable.db.sqla.files import FileProperty
+                                     FileManager
+from iktomi.unstable.db.sqla.files import FileProperty, filesessionmaker
 
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
@@ -23,9 +23,13 @@ class SqlaFilesTests(unittest.TestCase):
     def setUp(self):
         self.transient_root = tempfile.mkdtemp()
         self.persistent_root = tempfile.mkdtemp()
+        self.transient_url = '/transient/'
+        self.persistent_url = '/media/'
         self.file_manager = FileManager(self.transient_root,
-                                        self.persistent_root)
-        Session = filesessionmaker(orm.sessionmaker, self.file_manager)()
+                                        self.persistent_root,
+                                        self.transient_url,
+                                        self.persistent_url)
+        Session = filesessionmaker(orm.sessionmaker(), self.file_manager)
         engine = create_engine('sqlite://')
         Base.metadata.create_all(engine)
         self.db = Session(bind=engine)
