@@ -9,6 +9,7 @@ class FileFieldSetConv(convs.Converter):
 
     error_inner = 'Error uploading file'
     error_lost = 'Transient file has been lost'
+    error_hacking = 'Transient file name is not provided or is incorrect'
 
     def from_python(self, value):
         return {'transient_name': value.name if value and value.mode == 'transient' else None,
@@ -27,12 +28,7 @@ class FileFieldSetConv(convs.Converter):
         else:
             file = None
 
-        if mode == 'delete':
-            if self.required:
-                raise convs.ValidationError(self.error_required)
-            return None
-
-        elif mode == 'empty':
+        if mode == 'empty':
             if not file and self.required:
                 raise convs.ValidationError(self.error_required)
 
@@ -42,7 +38,7 @@ class FileFieldSetConv(convs.Converter):
             if not transient_name:
                 logger.warning('Missing transient_name for FileField '
                                'in mode "transient"')
-                raise convs.ValidationError(self.hacking)
+                raise convs.ValidationError(self.error_hacking)
 
             try:
                 transient_file = file_manager.get_transient(transient_name)
@@ -87,8 +83,7 @@ class FileFieldSet(FieldSet):
             Field('mode',
                   conv=convs.EnumChoice(choices=[('existing', ''),
                                                  ('transient', ''),
-                                                 ('empty', ''),
-                                                 ('delete', ''),],
+                                                 ('empty', '')],
                                         required=True),
                   widget=widgets.HiddenInput),
             Field('transient_name',

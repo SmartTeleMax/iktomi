@@ -5,16 +5,9 @@ how to store transient and persistent files.
 '''
 
 import os
-import cgi
 import errno
+from shutil import copyfileobj
 from ...utils import cached_property
-
-
-def _get_file_content(f):
-    # XXX FieldStorage has no read()?
-    if isinstance(f, cgi.FieldStorage):
-        return f.value
-    return f.read()
 
 
 class BaseFile(object):
@@ -86,12 +79,17 @@ class FileManager(object):
         # works for ajax file upload
         # XXX implement/debug for FieldStorage and file
         with open(path, 'wb') as fp:
-            pos, bufsize = 0, 100000
-            while pos < length:
-                bufsize = min(bufsize, length-pos)
-                data = inp.read(bufsize)
-                fp.write(data)
-                pos += bufsize
+            if length is None:
+                copyfileobj(inp, fp)
+            else:
+                # copyfileobj does not work on request.input_stream
+                # XXX check
+                pos, bufsize = 0, 16*1024
+                while pos < length:
+                    bufsize = min(bufsize, length-pos)
+                    data = inp.read(bufsize)
+                    fp.write(data)
+                    pos += bufsize
 
     def create_transient(self, input_stream, original_name, length=None):
         '''Create TransientFile and file on FS from given input stream and 
@@ -117,9 +115,8 @@ class FileManager(object):
         assert not ('/' in name or '\\' in name)
         transient = TransientFile(self.transient_root, name, self)
         if not os.path.isfile(transient.path):
-            raise OSError('Transient file has been lost',
-                          errno=errno.ENOENT,
-                          filename=transient.path)
+            raise OSError(errno.ENOENT, 'Transient file has been lost',
+                          transient.path)
         return transient
 
     def get_persistent(self, name):
