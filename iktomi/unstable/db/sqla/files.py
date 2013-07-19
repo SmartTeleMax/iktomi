@@ -36,14 +36,11 @@ class FileEventHandlers(object):
         transient = getattr(target, self.prop.key)
         if transient is None:
             return
-        # XXX if PersistentFile was set to column, this code is also called
-        # XXX provide tests for that case
-        #assert isinstance(transient, TransientFile)
-        if isinstance(transient, TransientFile):
-            persistent_name = getattr(target, self.prop.column.key)
-            persistent = session.file_manager.store(transient, persistent_name)
-            file_attr = getattr(type(target), self.prop.key)
-            file_attr._states[target] = persistent
+        assert isinstance(transient, TransientFile)
+        persistent_name = getattr(target, self.prop.column.key)
+        persistent = session.file_manager.store(transient, persistent_name)
+        file_attr = getattr(type(target), self.prop.key)
+        file_attr._states[target] = persistent
 
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
@@ -53,7 +50,7 @@ class FileEventHandlers(object):
 
     def before_update(self, mapper, connection, target):
         changes = self._get_history(target)
-        if not changes:
+        if not (changes.deleted or changes.added):
             return
         session = object_session(target)
         if changes.deleted:

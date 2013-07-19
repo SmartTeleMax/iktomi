@@ -81,6 +81,7 @@ class SqlaFilesTests(unittest.TestCase):
         pf = obj.file
 
         # XXX SQLA bug? Does not work without new object querying
+        # http://www.sqlalchemy.org/trac/ticket/2787
         obj = self.db.query(ObjWithFile).first()
 
         obj.file = None
@@ -113,6 +114,25 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertFalse(os.path.exists(pf1.path))
         self.assertTrue(os.path.isfile(obj.file.path))
         self.assertEqual(open(obj.file.path).read(), 'test2')
+
+    def test_update_file2self(self):
+        obj = ObjWithFile()
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test1')
+        self.db.add(obj)
+        self.db.commit()
+        pf1 = obj.file
+
+        # XXX SQLA bug? Does not work without new object querying
+        obj = self.db.query(ObjWithFile).first()
+
+        obj.file = self.file_manager.get_persistent(obj.file.name)
+        self.db.commit()
+
+        self.assertIsInstance(obj.file, PersistentFile)
+        self.assertTrue(os.path.exists(obj.file.path))
+        self.assertEqual(pf1.path, obj.file.path)
 
     def test_delete(self):
         obj = ObjWithFile()
