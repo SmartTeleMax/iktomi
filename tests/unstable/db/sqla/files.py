@@ -80,10 +80,6 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.commit()
         pf = obj.file
 
-        # XXX SQLA bug? Does not work without new object querying
-        # http://www.sqlalchemy.org/trac/ticket/2787
-        obj = self.db.query(ObjWithFile).first()
-
         obj.file = None
         self.assertIsNone(obj.file_name)
         self.assertTrue(os.path.exists(pf.path))
@@ -98,9 +94,6 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.add(obj)
         self.db.commit()
         pf1 = obj.file
-
-        # XXX SQLA bug? Does not work without new object querying
-        obj = self.db.query(ObjWithFile).first()
 
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:

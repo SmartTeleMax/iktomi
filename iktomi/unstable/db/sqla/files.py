@@ -136,6 +136,13 @@ class FileAttribute(object):
     def __set__(self, inst, value):
         if inst in self._states and self._states[inst]==value:
             return
+
+        # sqlalchemy bug workaround
+        # To get correct history we should assert that old value has been 
+        # loaded from database. getattr loads lazy attribute.
+        # See http://www.sqlalchemy.org/trac/ticket/2787
+        getattr(inst, self.column.key)
+
         self._states[inst] = value
         if value is None:
             setattr(inst, self.column.key, None)
