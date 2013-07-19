@@ -1,6 +1,5 @@
 import os, errno, logging
-from sqlalchemy.orm.properties import ColumnProperty
-from sqlalchemy.types import VARBINARY, TypeDecorator
+import Image
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.interfaces import MapperProperty
 from sqlalchemy.orm.attributes import get_history
@@ -8,6 +7,7 @@ from sqlalchemy import event
 from sqlalchemy.util import set_creation_order
 from weakref import WeakKeyDictionary
 from ..files import TransientFile, PersistentFile
+from iktomi.unstable.utils.image_resizers import ResizeFit
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +32,18 @@ class FileEventHandlers(object):
                 raise
 
     def _store_transient(self, target):
-        session = object_session(target)
         transient = getattr(target, self.prop.key)
         if transient is None:
             return
         assert isinstance(transient, TransientFile)
-        persistent_name = getattr(target, self.prop.column.key)
-        persistent = session.file_manager.store(transient, persistent_name)
+        persistent = self._2persistent(target, transient)
         file_attr = getattr(type(target), self.prop.key)
         file_attr._states[target] = persistent
+
+    def _2persistent(self, target, transient):
+        session = object_session(target)
+        persistent_name = getattr(target, self.prop.column.key)
+        return session.file_manager.store(transient, persistent_name)
 
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
@@ -52,10 +55,10 @@ class FileEventHandlers(object):
         changes = self._get_history(target)
         if not (changes.deleted or changes.added):
             return
-        session = object_session(target)
         if changes.deleted:
             old_name = changes.deleted[0]
             if old_name is not None:
+                session = object_session(target)
                 old = session.file_manager.get_persistent(old_name)
                 self._remove_file(old.path)
         self._store_transient(target)
@@ -72,6 +75,46 @@ class FileEventHandlers(object):
             self._remove_file(old.path)
 
 
+class ImageEventHandlers(FileEventHandlers):
+
+    def _2persistent(self, target, transient):
+        # XXX move this method to file_manager
+
+        # XXX Do this check or not?
+        image = Image.open(transient.path)
+        assert image.format in Image.SAVE and image.format != 'bmp',\
+                'Unsupported image format'
+
+        if self.prop.image_sizes:
+            session = object_session(target)
+            persistent_name = getattr(target, self.prop.column.key)
+            persistent = session.file_manager.get_persistent(persistent_name)
+            image = self.resize(image, self.image_sizes)
+            if self.prop.filter:
+                if image.mode not in ['RGB', 'RGBA']:
+                    image = image.convert('RGB')
+                image = image.filter(self.filter)
+
+            image.save(persistent.path, quality=self.prop.quality)
+            return persistent
+        else:
+            # Attention! This method can accept PersistentFile.
+            # In this case one shold NEVER been deleted or rewritten.
+            assert isinstance(transient, TransientFile)
+            return FileEventHandlers._2persistent(self, target, transient)
+
+    def before_update(self, mapper, connection, target):
+        # XXX Looks hacky
+        FileEventHandlers.before_update(self, mapper, connection, target)
+        if self.prop.fill_from:
+            value = getattr(target, self.prop.key)
+            if value is None:
+                base = getattr(target, self.prop.fill_from)
+                persistent = self._2persistent(self, target, base)
+                file_attr = getattr(type(target), self.prop.key)
+                file_attr._states[target] = persistent
+
+
 class _AttrDict(object):
 
     def __init__(self, inst):
@@ -82,23 +125,6 @@ class _AttrDict(object):
             # XXX invent better way to include random strings
             return os.urandom(8).encode('hex')
         return getattr(self.__inst, key)
-
-
-class FileProperty(MapperProperty):
-
-    def __init__(self, column, name_template):
-        self.column = column
-        self.name_template = name_template
-        set_creation_order(self)
-
-    def instrument_class(self, mapper):
-        handlers = FileEventHandlers(self)
-        event.listen(mapper, 'before_insert', handlers.before_insert)
-        event.listen(mapper, 'before_update', handlers.before_update)
-        event.listen(mapper, 'after_delete', handlers.after_delete)
-        setattr(mapper.class_, self.key, FileAttribute(self))
-
-    # XXX Implement merge?
 
 
 class FileAttribute(object):
@@ -155,6 +181,49 @@ class FileAttribute(object):
         else:
             raise ValueError('File property value must be TransientFile, '\
                              'PersistentFile or None')
+
+
+class FileProperty(MapperProperty):
+
+    attribute_cls = FileAttribute
+    event_cls = FileEventHandlers
+
+    def __init__(self, column, name_template, **options):
+        self.column = column
+        self.name_template = name_template
+        self._set_options(options)
+        set_creation_order(self)
+
+    def _set_options(self, options):
+        assert not options, 'FileProperty accepts no options'
+
+    def instrument_class(self, mapper):
+        handlers = self.event_cls(self)
+        event.listen(mapper, 'before_insert', handlers.before_insert)
+        event.listen(mapper, 'before_update', handlers.before_update)
+        event.listen(mapper, 'after_delete', handlers.after_delete)
+        setattr(mapper.class_, self.key, self.attribute_cls(self))
+
+    # XXX Implement merge?
+
+
+class ImageProperty(FileProperty):
+
+    event_cls = ImageEventHandlers
+
+    def _set_options(self, options):
+        # XXX rename image_sizes?
+        options = dict(options)
+        self.image_sizes = options.pop('image_sizes', None)
+        self.resize = options.pop('resize', None) or ResizeFit()
+        # XXX implement
+        self.fill_from = options.pop('fill_from', None)
+        self.filter = options.pop('fillter', None)
+        self.quality = options.pop('quality', 85)
+
+        assert self.fill_from is None or self.image_sizes is None
+        assert not options, "Got unexpeted parameters: %s" % (
+                options.keys())
 
 
 def filesessionmaker(sessionmaker, file_manager):
