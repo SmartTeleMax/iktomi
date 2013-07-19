@@ -19,11 +19,12 @@ def _get_file_content(f):
 
 class BaseFile(object):
 
-    def __init__(self, root, name):
+    def __init__(self, root, name, manager=None):
         '''@root depends on environment of application and @name uniquely
         identifies the file.'''
         self.root = root
         self.name = name
+        self.manager = manager
 
     @property
     def path(self):
@@ -45,18 +46,31 @@ class BaseFile(object):
 
 
 class TransientFile(BaseFile):
-    pass
+
+    mode = 'transient'
+
+    @property
+    def url(self):
+        return self.manager.get_transient_url(self)
 
 
 class PersistentFile(BaseFile):
-    pass
+
+    mode = 'existing' # XXX rename existing to persistent everywhere
+
+    @property
+    def url(self):
+        return self.manager.get_persistent_url(self)
 
 
 class FileManager(object):
 
-    def __init__(self, transient_root, persistent_root):
+    def __init__(self, transient_root, persistent_root,
+                 transient_url, persistent_url):
         self.transient_root = transient_root
         self.persistent_root = persistent_root
+        self.transient_url = transient_url
+        self.persistent_url = persistent_url
 
     def delete(self, file_obj):
         # XXX Is this right place again?
@@ -94,14 +108,14 @@ class FileManager(object):
         '''Creates empty TransientFile with random name and given extension.
         File on FS is not created'''
         name = os.urandom(8).encode('hex') + ext
-        return TransientFile(self.transient_root, name)
+        return TransientFile(self.transient_root, name, self)
 
     def get_transient(self, name):
         '''Restores TransientFile object with given name.
         Should be used when form is submitted with file name and no file'''
         # security checks: basically no folders are allowed
         assert not ('/' in name or '\\' in name)
-        transient = TransientFile(self.transient_root, name)
+        transient = TransientFile(self.transient_root, name, self)
         if not os.path.isfile(transient.path):
             raise OSError('Transient file has been lost',
                           errno=errno.ENOENT,
@@ -110,34 +124,24 @@ class FileManager(object):
 
     def get_persistent(self, name):
         assert name and not ('..' in name or name[0] in '~/')
-        persistent = PersistentFile(self.persistent_root, name)
+        persistent = PersistentFile(self.persistent_root, name, self)
         return persistent
 
     def store(self, transient_file, persistent_name):
         '''Makes PersistentFile from TransientFile'''
-        persistent_file = PersistentFile(self.persistent_root, persistent_name)
+        persistent_file = PersistentFile(self.persistent_root,
+                                         persistent_name, self)
+        dirname = os.path.dirname(persistent_file.path)
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
         os.rename(transient_file.path, persistent_file.path)
         return persistent_file
 
+    def get_persistent_url(self, file, env=None):
+        return self.persistent_url + file.name
 
-def filesessionmaker(sessionmaker, file_manager):
-    u'''Wrapper of session maker adding link to a FileManager instance
-    to session.::
-        
-        file_manager = FileManager(cfg.TRANSIENT_ROOT,
-                                              cfg.PERSISTENT_ROOT)
-        filesessionmaker(sessionmaker(…), file_manager)
-    '''
-    def session_maker(*args, **kwargs):
-        session = sessionmaker(*args, **kwargs)
-        # XXX in case we want to use session manager somehow bound 
-        #     to request environment. For example, to generate user-specific
-        #     URLs.
-        #session.file_manager = \
-        #        kwargs.get('file_manager', file_manager)
-        session.file_manager = file_manager
-        return session
-    return session_maker
+    def get_transient_url(self, file, env=None):
+        return self.transient_url + file.name
 
 
 

@@ -36,11 +36,14 @@ class FileEventHandlers(object):
         transient = getattr(target, self.prop.key)
         if transient is None:
             return
-        assert isinstance(transient, TransientFile)
-        persistent_name = getattr(target, self.prop.column.key)
-        persistent = session.file_manager.store(transient, persistent_name)
-        file_attr = getattr(type(target), self.prop.key)
-        file_attr._states[target] = persistent
+        # XXX if PersistentFile was set to column, this code is also called
+        # XXX provide tests for that case
+        #assert isinstance(transient, TransientFile)
+        if isinstance(transient, TransientFile):
+            persistent_name = getattr(target, self.prop.column.key)
+            persistent = session.file_manager.store(transient, persistent_name)
+            file_attr = getattr(type(target), self.prop.key)
+            file_attr._states[target] = persistent
 
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
@@ -78,6 +81,9 @@ class _AttrDict(object):
         self.__inst = inst
 
     def __getitem__(self, key):
+        if key == 'random':
+            # XXX invent better way to include random strings
+            return os.urandom(8).encode('hex')
         return getattr(self.__inst, key)
 
 
@@ -110,7 +116,9 @@ class FileAttribute(object):
         if inst is None:
             return self
         if inst not in self._states:
-            value = getattr(inst, self.column.key)
+            # XXX column name may differ from attribute name
+            # empty string should be considered as None
+            value = getattr(inst, self.column.key) or None
             if value is not None:
                 session = object_session(inst)
                 if session is None:
@@ -143,3 +151,23 @@ class FileAttribute(object):
         else:
             raise ValueError('File property value must be TransientFile, '\
                              'PersistentFile or None')
+
+
+def filesessionmaker(sessionmaker, file_manager):
+    u'''Wrapper of session maker adding link to a FileManager instance
+    to session.::
+
+        file_manager = FileManager(cfg.TRANSIENT_ROOT,
+                                   cfg.PERSISTENT_ROOT)
+        filesessionmaker(sessionmaker(...), file_manager)
+    '''
+    def session_maker(*args, **kwargs):
+        session = sessionmaker(*args, **kwargs)
+        # XXX in case we want to use session manager somehow bound 
+        #     to request environment. For example, to generate user-specific
+        #     URLs.
+        #session.file_manager = \
+        #        kwargs.get('file_manager', file_manager)
+        session.file_manager = file_manager
+        return session
+    return session_maker
