@@ -27,7 +27,7 @@ class FileEventHandlers(object):
         except OSError, exc:
             if exc.errno==errno.ENOENT:
                 logger.warning("Can't remove file %r: doesn't exist", path)
-                raise # XXX
+                #raise # XXX
             else:
                 raise
 
@@ -89,7 +89,7 @@ class ImageEventHandlers(FileEventHandlers):
             session = object_session(target)
             persistent_name = getattr(target, self.prop.column.key)
             persistent = session.file_manager.get_persistent(persistent_name)
-            image = self.resize(image, self.image_sizes)
+            image = self.prop.resize(image, self.prop.image_sizes)
             if self.prop.filter:
                 if image.mode not in ['RGB', 'RGBA']:
                     image = image.convert('RGB')
@@ -101,7 +101,7 @@ class ImageEventHandlers(FileEventHandlers):
             # Attention! This method can accept PersistentFile.
             # In this case one shold NEVER been deleted or rewritten.
             assert isinstance(transient, TransientFile)
-            return FileEventHandlers._2persistent(self, target, transient)
+            return FileEventHandlers._2persistent(target, transient)
 
     def before_update(self, mapper, connection, target):
         # XXX Looks hacky
@@ -110,21 +110,16 @@ class ImageEventHandlers(FileEventHandlers):
             value = getattr(target, self.prop.key)
             if value is None:
                 base = getattr(target, self.prop.fill_from)
-                persistent = self._2persistent(self, target, base)
+
+                ext = os.path.splitext(base.name)[1]
+                session = object_session(target)
+                name = session.file_manager.new_file_name(
+                        self.prop.name_template, target, ext)
+                setattr(target, self.prop.column.key, name)
+
+                persistent = self._2persistent(target, base)
                 file_attr = getattr(type(target), self.prop.key)
                 file_attr._states[target] = persistent
-
-
-class _AttrDict(object):
-
-    def __init__(self, inst):
-        self.__inst = inst
-
-    def __getitem__(self, key):
-        if key == 'random':
-            # XXX invent better way to include random strings
-            return os.urandom(8).encode('hex')
-        return getattr(self.__inst, key)
 
 
 class FileAttribute(object):
@@ -153,12 +148,6 @@ class FileAttribute(object):
             self._states[inst] = value
         return self._states[inst]
 
-    def new_file_name(self, inst, ext):
-        # XXX Must differ from old value[s]. How to add support for random,
-        # sequence?
-        name = self.name_template.format(_AttrDict(inst))
-        return name + ext
-
     def __set__(self, inst, value):
         if inst in self._states and self._states[inst]==value:
             return
@@ -174,7 +163,8 @@ class FileAttribute(object):
             setattr(inst, self.column.key, None)
         elif isinstance(value, TransientFile):
             ext = os.path.splitext(value.name)[1]
-            name = self.new_file_name(inst, ext)
+            session = object_session(inst)
+            name = session.file_manager.new_file_name(self, inst, ext)
             setattr(inst, self.column.key, name)
         elif isinstance(value, PersistentFile):
             setattr(inst, self.column.key, value.name)
@@ -221,7 +211,7 @@ class ImageProperty(FileProperty):
         self.filter = options.pop('fillter', None)
         self.quality = options.pop('quality', 85)
 
-        assert self.fill_from is None or self.image_sizes is None
+        assert self.fill_from is None or self.image_sizes is not None
         assert not options, "Got unexpeted parameters: %s" % (
                 options.keys())
 

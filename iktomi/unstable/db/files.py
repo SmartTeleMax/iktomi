@@ -56,6 +56,18 @@ class PersistentFile(BaseFile):
         return self.manager.get_persistent_url(self)
 
 
+class _AttrDict(object):
+
+    def __init__(self, inst):
+        self.__inst = inst
+
+    def __getitem__(self, key):
+        if key == 'random':
+            # XXX invent better way to include random strings
+            return os.urandom(8).encode('hex')
+        return getattr(self.__inst, key)
+
+
 class FileManager(object):
 
     def __init__(self, transient_root, persistent_root,
@@ -120,7 +132,7 @@ class FileManager(object):
         return transient
 
     def get_persistent(self, name):
-        assert name and not ('..' in name or name[0] in '~/')
+        assert name and not ('..' in name or name[0] in '~/'), name
         persistent = PersistentFile(self.persistent_root, name, self)
         return persistent
 
@@ -140,6 +152,9 @@ class FileManager(object):
     def get_transient_url(self, file, env=None):
         return self.transient_url + file.name
 
-
-
+    def new_file_name(self, name_template, inst, ext):
+        # XXX Must differ from old value[s]. How to add support for random,
+        # sequence?
+        name = name_template.format(_AttrDict(inst))
+        return name + ext
 
