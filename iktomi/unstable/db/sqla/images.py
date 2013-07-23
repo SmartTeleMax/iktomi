@@ -28,7 +28,10 @@ class ImageEventHandlers(FileEventHandlers):
                     image = image.convert('RGB')
                 image = image.filter(self.filter)
 
-            image.save(persistent.path, quality=self.prop.quality)
+            ext = os.path.splitext(persistent_name)[1]
+            transient = session.file_manager.new_transient(ext)
+            image.save(transient.path, quality=self.prop.quality)
+            session.file_manager.store(transient, persistent_name)
             return persistent
         else:
             # Attention! This method can accept PersistentFile.
@@ -37,12 +40,21 @@ class ImageEventHandlers(FileEventHandlers):
             return FileEventHandlers._2persistent(target, transient)
 
     def before_update(self, mapper, connection, target):
-        # XXX Looks hacky
         FileEventHandlers.before_update(self, mapper, connection, target)
+        self._fill_img(mapper, connection, target)
+
+    def before_insert(self, mapper, connection, target):
+        FileEventHandlers.before_insert(self, mapper, connection, target)
+        self._fill_img(mapper, connection, target)
+
+    def _fill_img(self, mapper, connection, target):
         if self.prop.fill_from:
+            # XXX Looks hacky
             value = getattr(target, self.prop.key)
             if value is None:
                 base = getattr(target, self.prop.fill_from)
+                if base is None:
+                    return
 
                 ext = os.path.splitext(base.name)[1]
                 session = object_session(target)
