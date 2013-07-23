@@ -138,3 +138,4 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.delete(obj)
         self.db.commit()
         self.assertFalse(os.path.exists(pf.path))
+

@@ -17,6 +17,7 @@ setup(
               'iktomi.ext',
               'iktomi.unstable',
                     'iktomi.unstable.forms', 'iktomi.unstable.web',
+                    'iktomi.unstable.utils',
                     'iktomi.unstable.db',
                         'iktomi.unstable.db.sqla'],
     package_dir={

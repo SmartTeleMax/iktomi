@@ -65,7 +65,7 @@ class FileFieldSetConv(convs.Converter):
 
 
 def check_file_path(conv, value):
-    if value and '/' in value or '\\' in value:
+    if value and ('/' in value or '\\' in value or value[0] in '.~'):
         logger.warning('Hacking attempt: submitted temp_name '\
                        'for FileField contains "/"')
         raise convs.ValidationError('Invalid filename')
