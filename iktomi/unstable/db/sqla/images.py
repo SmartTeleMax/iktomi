@@ -36,8 +36,8 @@ class ImageEventHandlers(FileEventHandlers):
         else:
             # Attention! This method can accept PersistentFile.
             # In this case one shold NEVER been deleted or rewritten.
-            assert isinstance(transient, TransientFile)
-            return FileEventHandlers._2persistent(target, transient)
+            assert isinstance(transient, TransientFile), repr(transient)
+            return FileEventHandlers._2persistent(self, target, transient)
 
     def before_update(self, mapper, connection, target):
         FileEventHandlers.before_update(self, mapper, connection, target)

@@ -34,7 +34,7 @@ class FileEventHandlers(object):
         transient = getattr(target, self.prop.key)
         if transient is None:
             return
-        assert isinstance(transient, TransientFile)
+        assert isinstance(transient, TransientFile), repr(transient)
         persistent = self._2persistent(target, transient)
         file_attr = getattr(type(target), self.prop.key)
         file_attr._states[target] = persistent

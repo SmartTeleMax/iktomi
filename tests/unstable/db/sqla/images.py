@@ -27,6 +27,11 @@ class ObjWithImage(Base):
                           image_sizes=(100, 100),
                           fill_from='image')
 
+    icon_name = Column(VARBINARY(250))
+    icon = ImageProperty(icon_name,
+                         name_template='icon/{0[random]}')
+
+
 
 def _create_image(path, width=400, height=400):
     image = Image.new('RGB', (width, height), (124,
@@ -82,6 +87,20 @@ class SqlaImagesTests(unittest.TestCase):
         thumb = Image.open(obj.thumb.path)
         self.assertEqual(thumb.size, (100, 100))
 
+    def test_no_size(self):
+        obj = ObjWithImage()
+        obj.icon = f = self.file_manager.new_transient('.gif')
+        _create_image(f.path, 200, 300)
+        self.db.add(obj)
+        self.db.commit()
+
+        self.assertIsNone(obj.image)
+        self.assertIsNone(obj.thumb)
+        self.assertIsInstance(obj.icon, PersistentFile)
+
+        img = Image.open(obj.icon.path)
+        self.assertEqual(img.size, (200, 300))
+
     def test_no_img(self):
         obj = ObjWithImage()
         self.db.add(obj)
@@ -89,6 +108,7 @@ class SqlaImagesTests(unittest.TestCase):
 
         self.assertEqual(obj.image, None)
         self.assertEqual(obj.thumb, None)
+        self.assertEqual(obj.icon, None)
 
     def test_update(self):
         obj = ObjWithImage()
