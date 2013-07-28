@@ -109,7 +109,7 @@ class FileManager(object):
         ext = os.path.splitext(original_name)[1]
         transient = self.new_transient(ext)
         if not os.path.isdir(self.transient_root):
-            os.makedirs(self.base_path)
+            os.makedirs(self.transient_root)
 
         self._copy_file(input_stream, transient.path, length=length)
         return transient
