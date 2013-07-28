@@ -117,15 +117,26 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.commit()
         pf1 = obj.file
 
-        # XXX SQLA bug? Does not work without new object querying
-        obj = self.db.query(ObjWithFile).first()
-
         obj.file = self.file_manager.get_persistent(obj.file.name)
         self.db.commit()
 
         self.assertIsInstance(obj.file, PersistentFile)
         self.assertTrue(os.path.exists(obj.file.path))
         self.assertEqual(pf1.path, obj.file.path)
+
+    def test_update_none2persistent(self):
+        f = self.file_manager.get_persistent('persistent.txt')
+        with open(f.path, 'wb') as fp:
+            fp.write('test1')
+
+        obj = ObjWithFile()
+        obj.file = f
+        self.db.add(obj)
+        self.db.commit()
+
+        self.assertIsInstance(obj.file, PersistentFile)
+        self.assertTrue(os.path.exists(obj.file.path))
+        self.assertEqual(obj.file.name, 'persistent.txt')
 
     def test_delete(self):
         obj = ObjWithFile()

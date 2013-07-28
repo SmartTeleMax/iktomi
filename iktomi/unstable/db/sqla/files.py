@@ -32,7 +32,7 @@ class FileEventHandlers(object):
 
     def _store_transient(self, target):
         transient = getattr(target, self.prop.key)
-        if transient is None:
+        if transient is None or isinstance(transient, PersistentFile):
             return
         assert isinstance(transient, TransientFile), repr(transient)
         persistent = self._2persistent(target, transient)
