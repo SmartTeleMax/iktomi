@@ -1,4 +1,7 @@
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 
 
 def ResizeFit(expand=False, filter=Image.ANTIALIAS):

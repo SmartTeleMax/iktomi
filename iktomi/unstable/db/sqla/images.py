@@ -1,5 +1,8 @@
 import os, logging
-import Image
+try:
+    import Image
+except ImportError:
+    from PIL import Image
 from sqlalchemy.orm.session import object_session
 from iktomi.unstable.utils.image_resizers import ResizeFit
 from ..files import TransientFile

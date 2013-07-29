@@ -1,5 +1,4 @@
 import os, errno, logging
-import Image
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.interfaces import MapperProperty
 from sqlalchemy.orm.attributes import get_history
