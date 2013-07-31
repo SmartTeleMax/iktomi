@@ -83,8 +83,7 @@ class BoundTemplate(object):
                                     **self._vars(__data, **kw))
 
     def render_to_response(self, template_name, __data, content_type="text/html"):
-        resp = self.template.render(template_name,
-                                    **self._vars(__data))
+        resp = self.render(template_name, __data)
         return Response(resp,
                         content_type=content_type)
 
@@ -95,6 +94,4 @@ def render_to(self, template_name):
         data.env = env
         return Response(env.template.render(template_name, **data))
     return render_to
-
-
 
