@@ -68,7 +68,26 @@ class _AttrDict(object):
         return getattr(self.__inst, key)
 
 
-class FileManager(object):
+class BaseFileManager(object):
+
+    def __init__(self, persistent_root, persistent_url):
+        self.persistent_root = persistent_root
+        self.persistent_url = persistent_url
+
+    def get_persistent(self, name):
+        assert name and not ('..' in name or name[0] in '~/'), name
+        persistent = PersistentFile(self.persistent_root, name, self)
+        return persistent
+
+    def get_persistent_url(self, file, env=None):
+        return self.persistent_url + file.name
+
+
+class ReadonlyFileManager(BaseFileManager):
+    pass
+
+
+class FileManager(BaseFileManager):
 
     def __init__(self, transient_root, persistent_root,
                  transient_url, persistent_url):
@@ -131,11 +150,6 @@ class FileManager(object):
                           transient.path)
         return transient
 
-    def get_persistent(self, name):
-        assert name and not ('..' in name or name[0] in '~/'), name
-        persistent = PersistentFile(self.persistent_root, name, self)
-        return persistent
-
     def store(self, transient_file, persistent_name):
         '''Makes PersistentFile from TransientFile'''
         persistent_file = PersistentFile(self.persistent_root,
@@ -145,9 +159,6 @@ class FileManager(object):
             os.makedirs(dirname)
         os.rename(transient_file.path, persistent_file.path)
         return persistent_file
-
-    def get_persistent_url(self, file, env=None):
-        return self.persistent_url + file.name
 
     def get_transient_url(self, file, env=None):
         return self.transient_url + file.name
