@@ -1,6 +1,10 @@
 import unittest, tempfile, shutil
-import Image
-from PIL import ImageDraw
+try:
+    import Image
+    import ImageDraw
+except ImportError:
+    from PIL import Image
+    from PIL import ImageDraw
 from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
