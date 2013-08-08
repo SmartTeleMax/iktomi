@@ -3,7 +3,7 @@
 __all__ = ['Application', 'AppEnvironment']
 
 import logging
-from iktomi.utils.storage import VersionedStorage, StorageFrame
+from iktomi.utils.storage import VersionedStorage, StorageFrame, storage_property
 from webob.exc import HTTPException, HTTPInternalServerError, \
                       HTTPNotFound
 from webob import Request
@@ -20,6 +20,12 @@ class AppEnvironment(StorageFrame):
         self.request = request
         self.root = root.bind_to_env(self._root_storage)
         self._route_state = RouteState(request)
+
+    @storage_property
+    def current_location(self):
+        ns = getattr(self, 'namespace', '')
+        url_name = getattr(self, 'current_url_name', '')
+        return '.'.join(filter(None, (ns, url_name)))
 
 
 class Application(object):
