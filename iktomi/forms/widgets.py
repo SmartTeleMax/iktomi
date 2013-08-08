@@ -99,7 +99,7 @@ class Select(Widget):
     :obj:`required` variable.
     '''
     template = 'widgets/select'
-    classname = 'select'
+    classname = None
     #: HTML select element's select attribute value.
     size = None
     #: Label assigned to None value if field is not required
@@ -135,6 +135,7 @@ class Select(Widget):
 
 class CheckBoxSelect(Select):
 
+    classname = 'select-checkbox'
     template = 'widgets/select-checkbox'
 
 
