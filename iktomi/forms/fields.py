@@ -31,7 +31,7 @@ class BaseField(object):
 
     # defaults
     conv = convs.Char
-    widget = widgets.TextInput()
+    widget = widgets.TextInput
     label = None
     media = FormMedia()
 
