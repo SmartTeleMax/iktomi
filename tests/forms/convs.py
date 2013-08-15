@@ -68,11 +68,17 @@ class ConverterTests(unittest.TestCase):
     def test_validators_copy(self):
         v1 = lambda c, v: v
         v2 = lambda c, v: v
+        v3 = lambda c, v: v
 
         conv = convs.Converter(v1)
         conv = conv(v2)
 
         self.assertEqual(conv.validators_and_filters, (v1, v2))
+
+        conv = convs.ListOf(convs.Int(v2), v1)
+        conv = conv(v3)
+        self.assertEqual(conv.validators_and_filters, (v1, v3))
+        self.assertEqual(conv.conv.validators_and_filters, (v2,))
 
 
 class IntConverterTests(unittest.TestCase):
