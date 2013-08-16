@@ -109,7 +109,7 @@ class FileAttribute(object):
         # To get correct history we should assert that old value has been 
         # loaded from database. getattr loads lazy attribute.
         # See http://www.sqlalchemy.org/trac/ticket/2787
-        getattr(inst, self.column.key)
+        old_name = getattr(inst, self.column.key)
 
         self._states[inst] = value
         if value is None:
@@ -119,7 +119,7 @@ class FileAttribute(object):
             # XXX getting manager from a file object 
             #     looks like a hack
             name = value.manager.new_file_name(
-                    self.name_template, inst, ext)
+                    self.name_template, inst, ext, old_name)
             setattr(inst, self.column.key, name)
         elif isinstance(value, PersistentFile):
             setattr(inst, self.column.key, value.name)

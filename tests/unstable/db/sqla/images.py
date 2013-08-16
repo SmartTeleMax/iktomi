@@ -22,18 +22,18 @@ class ObjWithImage(Base):
     id = Column(Integer, primary_key=True)
     image_name = Column(VARBINARY(250))
     image = ImageProperty(image_name,
-                          name_template='image/{0[random]}',
+                          name_template='image/{random}',
                           image_sizes=(200, 200))
 
     thumb_name = Column(VARBINARY(250))
     thumb = ImageProperty(thumb_name,
-                          name_template='thumb/{0[random]}',
+                          name_template='thumb/{random}',
                           image_sizes=(100, 100),
                           fill_from='image')
 
     icon_name = Column(VARBINARY(250))
     icon = ImageProperty(icon_name,
-                         name_template='icon/{0[random]}')
+                         name_template='icon/{random}')
 
 
 
@@ -148,10 +148,10 @@ class SqlaImagesTests(unittest.TestCase):
                 id = Column(Integer, primary_key=True)
                 image_name = Column(VARBINARY(250))
                 image = ImageProperty(image_name,
-                                      name_template='image/{0[random]}')
+                                      name_template='image/{random}')
 
                 thumb_name = Column(VARBINARY(250))
                 thumb = ImageProperty(thumb_name,
-                                      name_template='thumb/{0[random]}',
+                                      name_template='thumb/{random}',
                                       fill_from='image')
 

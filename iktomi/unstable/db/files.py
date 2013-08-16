@@ -5,6 +5,7 @@ how to store transient and persistent files.
 '''
 
 import os
+import base64
 import errno
 from shutil import copyfileobj
 from ...utils import cached_property
@@ -62,10 +63,10 @@ class _AttrDict(object):
         self.__inst = inst
 
     def __getitem__(self, key):
-        if key == 'random':
-            # XXX invent better way to include random strings
-            return os.urandom(8).encode('hex')
         return getattr(self.__inst, key)
+
+def random_name():
+    return base64.urlsafe_b64encode(os.urandom(8)).rstrip('=')
 
 
 class BaseFileManager(object):
@@ -154,6 +155,13 @@ class FileManager(BaseFileManager):
         '''Makes PersistentFile from TransientFile'''
         persistent_file = PersistentFile(self.persistent_root,
                                          persistent_name, self)
+        #for i in xrange(5):
+        #    persistent_file = PersistentFile(self.persistent_root,
+        #                                     persistent_name, self)
+        #    if not os.path.exists(persistent_file.path):
+        #        break
+        #else:
+        #    raise Exception('Unable to find free file name')
         dirname = os.path.dirname(persistent_file.path)
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
@@ -163,9 +171,15 @@ class FileManager(BaseFileManager):
     def get_transient_url(self, file, env=None):
         return self.transient_url + file.name
 
-    def new_file_name(self, name_template, inst, ext):
-        # XXX Must differ from old value[s]. How to add support for random,
-        # sequence?
-        name = name_template.format(_AttrDict(inst))
-        return name + ext
+    def new_file_name(self, name_template, inst, ext, old_name):
+        assert '{random}' in name_template, \
+               'Non-random name templates are not supported yet'
+        for i in xrange(5):
+            name = name_template.format(item=inst, random=random_name())
+            name = name + ext
+            # XXX Must differ from old value[s].
+            if name != old_name or not '{random}' in name_template:
+                return name
+        raise Exception('Unable to find new file name')
+
 

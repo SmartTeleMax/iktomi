@@ -14,8 +14,9 @@ class ObjWithFile(Base):
 
     id = Column(Integer, primary_key=True)
     file_name = Column(VARBINARY(250))
-    #file = FileProperty(file_name, name_template='obj/{id}')
-    file = FileProperty(file_name, name_template='obj/{0[random]}')
+    file = FileProperty(file_name, name_template='obj/{random}')
+    file_by_id_name = Column(VARBINARY(250))
+    file_by_id = FileProperty(file_by_id_name, name_template='obj/{item.id}')
 
 
 class SqlaFilesTests(unittest.TestCase):
@@ -123,6 +124,57 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertIsInstance(obj.file, PersistentFile)
         self.assertTrue(os.path.exists(obj.file.path))
         self.assertEqual(pf1.path, obj.file.path)
+
+    def test_update_file2file_not_random(self):
+        obj = ObjWithFile()
+
+        obj.file_by_id = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test1')
+        self.db.add(obj)
+        self.db.commit()
+        self.assertEqual(obj.file_by_id_name, 
+                         ObjWithFile.file_by_id.name_template.format(item=obj))
+        pf1 = obj.file_by_id
+
+        obj.file_by_id = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test2')
+        self.assertIsInstance(obj.file_by_id, TransientFile)
+        self.assertIsNotNone(obj.file_by_id_name)
+        self.db.commit()
+
+        self.assertIsInstance(obj.file_by_id, PersistentFile)
+        self.assertFalse(os.path.exists(f.path))
+        self.assertFalse(os.path.exists(pf1.path))
+        self.assertTrue(os.path.isfile(obj.file_by_id.path))
+        self.assertEqual(open(obj.file_by_id.path).read(), 'test2')
+
+    def test_update_random_collision(self):
+        obj = ObjWithFile()
+        self.db.add(obj)
+        self.db.commit()
+
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test')
+
+        persistent = self.file_manager.get_persistent(obj.file_name)
+        dirname = os.path.dirname(persistent.path)
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
+        with open(persistent.path, 'wb') as fp:
+            fp.write('taken')
+
+        self.assertIsInstance(obj.file, TransientFile)
+        self.assertIsNotNone(obj.file_name)
+        self.db.commit()
+        self.assertIsInstance(obj.file, PersistentFile)
+        self.assertFalse(os.path.exists(f.path))
+        self.assertTrue(os.path.isfile(obj.file.path))
+        self.assertEqual(open(obj.file.path).read(), 'test')
+        self.assertNotEqual(persistent.path, obj.file.path)
+        self.assertEqual(open(persistent.path).read(), 'taken')
 
     def test_update_none2persistent(self):
         f = self.file_manager.get_persistent('persistent.txt')
