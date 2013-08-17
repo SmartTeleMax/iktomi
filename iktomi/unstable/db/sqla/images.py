@@ -62,7 +62,7 @@ class ImageEventHandlers(FileEventHandlers):
                 ext = os.path.splitext(base.name)[1]
                 session = object_session(target)
                 name = session.file_manager.new_file_name(
-                        self.prop.name_template, target, ext)
+                        self.prop.name_template, target, ext, '')
                 setattr(target, self.prop.column.key, name)
 
                 persistent = self._2persistent(target, base)
