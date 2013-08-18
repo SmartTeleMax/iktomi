@@ -122,6 +122,12 @@ class BaseField(object):
         # XXX deprecated, get rid of this
         return self.widget.render
 
+    def load_initial(self, initial, raw_data):
+        value = initial.get(self.name, self.get_initial())
+        self.set_raw_value(raw_data,
+                           self.from_python(value))
+        return {self.name: value}
+
 
 class Field(BaseField):
     '''
@@ -172,7 +178,7 @@ class Field(BaseField):
         if not self._check_value_type(value):
             # XXX should this be silent or TypeError?
             value = [] if self.multiple else self._null_value
-        return self.conv.accept(value)
+        return {self.name: self.conv.accept(value)}
 
 
 class AggregateField(BaseField):
@@ -212,6 +218,10 @@ class FieldSet(AggregateField):
     def get_field(self, name):
         names = name.split('.', 1)
         for field in self.fields:
+            if isinstance(field, FieldBlock):
+                result = field.get_field(name)
+                if result is not None:
+                    return result
             if field.name == names[0]:
                 if len(names) > 1:
                     return field.get_field(names[1])
@@ -234,12 +244,35 @@ class FieldSet(AggregateField):
         result = dict(self.python_data)
         for field in self.fields:
             if field.writable:
-                result[field.name] = field.accept()
+                result.update(field.accept())
             else:
                 # readonly field
                 field.set_raw_value(self.form.raw_data,
                                     field.from_python(result[field.name]))
-        return self.conv.accept(result)
+        return {self.name: self.conv.accept(result)}
+
+
+class FieldBlock(FieldSet):
+
+    prefix = ''
+
+    def __init__(self, title, fields=[], **kwargs):
+        kwargs.update(dict(
+            title=title,
+            fields=fields,
+        ))
+        kwargs.setdefault('name', None)
+        FieldSet.__init__(self, **kwargs)
+
+    def accept(self):
+        result = FieldSet.accept(self)
+        return result[self.name]
+
+    def load_initial(self, initial, raw_data):
+        result = {}
+        for field in self.fields:
+            result.update(field.load_initial(initial, raw_data))
+        return result
 
 
 class FieldList(AggregateField):
@@ -304,8 +337,8 @@ class FieldList(AggregateField):
                 if index in old:
                     result[field.name] = old[field.name]
             else:
-                result[field.name] = field.accept()
-        return self.conv.accept(result)
+                result.update(field.accept())
+        return {self.name: self.conv.accept(result)}
 
     def set_raw_value(self, raw_data, value):
         indeces = []

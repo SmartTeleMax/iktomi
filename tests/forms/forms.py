@@ -234,6 +234,7 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assertEqual(form.get_field('set.number').raw_value, '')
         self.assertEqual(form.errors, {})
 
+
 class FormReadonlyFieldsTest(unittest.TestCase):
 
     def test_readonly(self):
