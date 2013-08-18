@@ -194,6 +194,11 @@ class FieldSetWidget(AggregateWidget):
         return media
 
 
+class FieldBlockWidget(FieldSetWidget):
+
+    render_type = 'full-width'
+
+
 class FileInput(Widget):
 
     template = 'widgets/file'

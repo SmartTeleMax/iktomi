@@ -254,6 +254,7 @@ class FieldSet(AggregateField):
 
 class FieldBlock(FieldSet):
 
+    widget = widgets.FieldBlockWidget
     prefix = ''
 
     def __init__(self, title, fields=[], **kwargs):
@@ -261,7 +262,7 @@ class FieldBlock(FieldSet):
             title=title,
             fields=fields,
         ))
-        kwargs.setdefault('name', None)
+        kwargs.setdefault('name', '') # XXX generate unique name
         FieldSet.__init__(self, **kwargs)
 
     def accept(self):
