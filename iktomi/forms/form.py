@@ -9,6 +9,7 @@ from ..utils import weakproxy, cached_property
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
 from .media import FormMedia
+from .fields import FieldBlock
 
 
 class FormEnvironment(object):
@@ -106,7 +107,7 @@ class Form(object):
         self.errors = {}
         for field in self.fields:
             if field.writable:
-                self.python_data[field.name] = field.accept()
+                self.python_data.update(field.accept())
             else:
                 # readonly field
                 value = self.python_data[field.name]
@@ -119,6 +120,10 @@ class Form(object):
         '''
         names = name.split('.', 1)
         for field in self.fields:
+            if isinstance(field, FieldBlock):
+                result = field.get_field(name)
+                if result is not None:
+                    return result
             if field.name == names[0]:
                 if len(names) > 1:
                     return field.get_field(names[1])

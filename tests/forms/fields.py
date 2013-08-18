@@ -25,7 +25,10 @@ class FieldTests(unittest.TestCase):
                             Field('subfield')
                         ])
                     )
-                ])
+                ]),
+                FieldBlock('field block', [
+                    Field('blocksubfield')
+                ], name='block')
             ]
 
         form = F()
@@ -33,10 +36,18 @@ class FieldTests(unittest.TestCase):
                         ('fieldset.fieldlist', FieldList),
                         ('fieldset.fieldlist.1', FieldSet),
                         ('fieldset.fieldlist.1.subfield', Field),
+                        ('block', FieldBlock),
+                        ('blocksubfield', Field),
                         ]:
             self.assert_(isinstance(form.get_field(nm), cls),
                          '%s is not instance of %s' % (nm, cls))
             self.assertEqual(form.get_field(nm).input_name, nm)
+
+        nm, cls = ('block.blocksubfield', Field)
+        self.assert_(isinstance(form.get_field(nm), cls),
+                     '%s is not instance of %s' % (nm, cls))
+        self.assertEqual(form.get_field(nm).input_name,
+                         'blocksubfield')
 
     def test_accept_multiple(self):
         class F(Form):
