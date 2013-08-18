@@ -72,3 +72,32 @@ class FieldTests(unittest.TestCase):
 
     def test_obsolete(self):
         self.assertRaises(TypeError, Field, 'name', default=1)
+
+
+class FieldBlockTests(unittest.TestCase):
+
+    def test_initial(self):
+        class _Form(Form):
+            fields=[
+                FieldBlock('field block', [
+                    Field('number', convs.Int())
+                ]),
+            ]
+        form = _Form(initial={'number': 3})
+        self.assertEqual(form.raw_data, MultiDict([('number', '3')]))
+        self.assertEqual(form.python_data, {'number': 3})
+
+    def test_accept(self):
+        class _Form(Form):
+            fields=[
+                FieldBlock('field block', [
+                    Field('number', convs.Int())
+                ]),
+            ]
+        form = _Form()
+        self.assertEqual(form.raw_data, MultiDict([('number', '')]))
+        self.assertEqual(form.python_data, {'number': None})
+        self.assert_(form.accept({'number': '4'}))
+        self.assertEqual(form.python_data, {'number': 4})
+        self.assertEqual(form.get_field('number').raw_value, '4')
+        self.assertEqual(form.errors, {})

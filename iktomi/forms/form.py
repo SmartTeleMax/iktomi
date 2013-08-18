@@ -58,10 +58,7 @@ class Form(object):
         for field in self.fields:
             # NOTE: we do not put `get_initial()` call result in `self.initial`
             #       because it may differ for each call
-            value = initial.get(field.name, field.get_initial())
-            self.python_data[field.name] = value
-            field.set_raw_value(self.raw_data,
-                                field.from_python(value))
+            self.python_data.update(field.load_initial(initial, self.raw_data))
         self.errors = {}
 
     @cached_property

@@ -125,6 +125,12 @@ class BaseField(object):
         media += self.widget.get_media()
         return media
 
+    def load_initial(self, initial, raw_data):
+        value = initial.get(self.name, self.get_initial())
+        self.set_raw_value(raw_data,
+                           self.from_python(value))
+        return {self.name: value}
+
 
 class Field(BaseField):
     '''
@@ -274,6 +280,12 @@ class FieldBlock(FieldSet):
     def accept(self):
         result = FieldSet.accept(self)
         return result[self.name]
+
+    def load_initial(self, initial, raw_data):
+        result = {}
+        for field in self.fields:
+            result.update(field.load_initial(initial, raw_data))
+        return result
 
 
 class FieldList(AggregateField):
