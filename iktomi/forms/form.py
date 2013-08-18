@@ -98,7 +98,7 @@ class Form(object):
         '''
         media = FormMedia(self.media, env=self.env)
         for field in self.fields:
-            media += field.get_media()
+            media += field.widget.get_media()
         return media
 
     def accept(self, data):

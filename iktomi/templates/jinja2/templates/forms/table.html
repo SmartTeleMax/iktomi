@@ -1,4 +1,5 @@
 {% for field in form.fields %}
+{% if field.readable %}
   {% if field.error %}
   <tr class="error-row">
     <td colspan="2">
@@ -7,22 +8,22 @@
   </tr>
   {% endif %}
   <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}{% if field.classname %} {{ field.classname }}{% endif %}">
-  {% if field.render_type == 'checkbox' %}
+  {% if field.widget.render_type == 'checkbox' %}
     <th></th>
     <td>
-      {{ field.render()|safe }}
+      {{ field.widget.render()|safe }}
       {% if field.label %}
       <label for="{{ field.id }}">{{ field.label }}</label>
       {% endif %}
     </td>
-  {% elif field.render_type == 'hidden' %}
-    <td style="display: none" colspan="2">{{ field.render()|safe }}</td>
-  {% elif field.render_type == 'full-width' %}
+  {% elif field.widget.render_type == 'hidden' %}
+    <td style="display: none" colspan="2">{{ field.widget.render()|safe }}</td>
+  {% elif field.widget.render_type == 'full-width' %}
     <td colspan="2">
       {% if field.label %}
       <p class="th"><label for="{{ field.id }}">{{ field.label }}</label></p>
       {% endif %}
-      {{ field.render()|safe }}
+      {{ field.widget.render()|safe }}
     </td>
   {% else %}
     <th>
@@ -31,9 +32,10 @@
       {% endif %}
     </th>
     <td>
-      {{ field.render()|safe }}
+      {{ field.widget.render()|safe }}
     </td>
   {% endif %}
 
   </tr>
+{% endif %}
 {% endfor %}

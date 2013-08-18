@@ -9,7 +9,6 @@ from . import convs
 from ..utils import cached_property
 from ..utils.odict import OrderedDict
 from .perms import FieldPerm
-from .media import FormMedia
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,8 @@ class BaseField(object):
     '''
 
     # obsolete parameters from previous versions
-    _obsolete = frozenset(['default', 'get_default'])
+    _obsolete = frozenset(['default', 'get_default', 'template', 'media',
+                           'render_type', 'render'])
 
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
@@ -33,7 +33,6 @@ class BaseField(object):
     conv = convs.Char
     widget = widgets.TextInput
     label = None
-    media = FormMedia()
 
     def __init__(self, name, conv=None, parent=None, **kwargs):
         if self._obsolete & set(kwargs):
@@ -115,15 +114,13 @@ class BaseField(object):
 
     @property
     def render_type(self):
+        # XXX deprecated, get rid of this
         return self.widget.render_type
 
+    @property
     def render(self):
-        return self.widget.render(self.raw_value)
-
-    def get_media(self):
-        media = FormMedia(self.media)
-        media += self.widget.get_media()
-        return media
+        # XXX deprecated, get rid of this
+        return self.widget.render
 
 
 class Field(BaseField):
@@ -194,9 +191,8 @@ class FieldSet(AggregateField):
     '''
     Container field aggregating a couple of other different fields
     '''
-    template = 'widgets/fieldset'
-    render_type = 'default'
     conv = convs.Converter
+    widget = widgets.FieldSetWidget
 
     def __init__(self, name, conv=None, fields=[], **kwargs):
         if kwargs.get('parent'):
@@ -245,15 +241,6 @@ class FieldSet(AggregateField):
                                     field.from_python(result[field.name]))
         return self.conv.accept(result)
 
-    def render(self):
-        return self.env.template.render(self.template, field=self)
-
-    def get_media(self):
-        media = BaseField.get_media(self)
-        for field in self.fields:
-            media += field.get_media()
-        return media
-
 
 class FieldList(AggregateField):
     '''
@@ -261,9 +248,8 @@ class FieldList(AggregateField):
     '''
 
     order = False
-    template = 'fields/fieldlist'
-    render_type = 'default'
     conv = convs.List
+    widget = widgets.FieldListWidget
     _digit_re = re.compile('\d+$')
 
     def __init__(self, name, conv=None, field=Field(None),
@@ -339,16 +325,7 @@ class FieldList(AggregateField):
         # XXX looks like a HACK
         field.set_raw_value(self.form.raw_data,
                             field.from_python(field.get_initial()))
-        return field.render()
-
-
-    def render(self):
-        return self.env.template.render(self.template, field=self)
-
-    def get_media(self):
-        media = BaseField.get_media(self)
-        media += self.field.get_media()
-        return media
+        return field.widget.render()
 
 
 class FileField(Field):

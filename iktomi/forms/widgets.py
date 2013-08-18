@@ -45,20 +45,24 @@ class Widget(object):
     def get_media(self):
         return FormMedia(self.media)
 
-    def prepare_data(self, value):
+    def prepare_data(self):
         '''
         Method returning data passed to template.
         Subclasses can override it.
         '''
+        value = self.get_raw_value()
         return dict(widget=self,
                     value=value,
                     readonly=not self.field.writable)
 
-    def render(self, value):
+    def get_raw_value(self):
+        return self.field.raw_value
+
+    def render(self):
         '''
         Renders widget to template
         '''
-        data = self.prepare_data(value)
+        data = self.prepare_data()
         if self.field.readable:
             return self.env.template.render(self.template, **data)
         return ''
@@ -107,7 +111,7 @@ class Select(Widget):
 
     def get_options(self, value):
         options = []
-        if not self.multiple and (value is None or not self.field.conv.required):
+        if not self.multiple and (value == '' or not self.field.conv.required):
             options = [{'value': '',
                         'title': self.null_label,
                         'selected': value in (None, '')}]
@@ -126,10 +130,10 @@ class Select(Widget):
                                 selected=(choice in values)))
         return options
 
-    def prepare_data(self, value):
-        data = Widget.prepare_data(self, value)
+    def prepare_data(self):
+        data = Widget.prepare_data(self)
         return dict(data,
-                    options=self.get_options(value),
+                    options=self.get_options(data['value']),
                     required=('true' if self.field.conv.required else 'false'))
 
 
@@ -155,11 +159,38 @@ class CharDisplay(Widget):
     #: Function converting the value to string.
     getter = staticmethod(lambda v: v)
 
-    def prepare_data(self, value):
-        data = Widget.prepare_data(self, value)
+    def prepare_data(self):
+        data = Widget.prepare_data(self)
         return dict(data,
-                    value=self.getter(value),
+                    value=self.getter(data['value']),
                     should_escape=self.escape)
+
+
+class AggregateWidget(Widget):
+
+    def get_raw_value(self):
+        return None
+
+
+class FieldListWidget(AggregateWidget):
+
+    template = 'widgets/fieldlist'
+
+    def get_media(self):
+        media = Widget.get_media(self)
+        media += self.field.field.widget.get_media()
+        return media
+
+
+class FieldSetWidget(AggregateWidget):
+
+    template = 'widgets/fieldset'
+
+    def get_media(self):
+        media = Widget.get_media(self)
+        for field in self.field.fields:
+            media += field.widget.get_media()
+        return media
 
 
 class FileInput(Widget):

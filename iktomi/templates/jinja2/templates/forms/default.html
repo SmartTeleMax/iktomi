@@ -1,20 +1,22 @@
 {% for field in form.fields %}
-<p class="form-row" {% if field.render_type=="hidden" %}style="display: none"{% endif %}>
+{% if field.readable %}
+<p class="form-row" {% if field.widget.render_type=="hidden" %}style="display: none"{% endif %}>
   {% if field.error %}
   <span class="error">{{ field.error }}</span>
   {% endif %}
-  {% if field.render_type == 'checkbox' %}
-    {{ field.render()|safe }}
+  {% if field.widget.render_type == 'checkbox' %}
+    {{ field.widget.render()|safe }}
     {% if field.label %}
     <label for="{{ field.id }}">{{ field.label }}</label>
     {% endif %}
-  {% elif field.render_type == 'hidden' %}
-    {{ field.render()|safe }}
+  {% elif field.widget.render_type == 'hidden' %}
+    {{ field.widget.render()|safe }}
   {% else %}
     {% if field.label %}
     <label for="{{ field.id }}">{{ field.label }}</label>
     {% endif %}
-    {{ field.render()|safe }}
+    {{ field.widget.render()|safe }}
   {% endif %}
 </p>
+{% endif %}
 {% endfor %}
