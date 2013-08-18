@@ -2,6 +2,7 @@
 import unittest
 from os import path
 from html5lib import HTMLParser, treebuilders
+from webob.multidict import MultiDict
 from iktomi.utils.storage import VersionedStorage
 from iktomi.templates import Template, BoundTemplate
 from iktomi.templates import jinja2 as jnj
@@ -68,7 +69,8 @@ class TestTextInput(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('<p>Paragraph</p>')
+        form.raw_data = MultiDict({'name': '<p>Paragraph</p>'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '<p>Paragraph</p>')
@@ -85,7 +87,8 @@ class TestTextInput(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render(jinja2.Markup('<p>Paragraph</p>'))
+        form.raw_data = MultiDict({'name': jinja2.Markup('<p>Paragraph</p>')})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '<p>Paragraph</p>')
@@ -104,7 +107,8 @@ class TestTextInput(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('<p>Paragraph</p>')
+        form.raw_data = MultiDict({'name': '<p>Paragraph</p>'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '<p>Paragraph</p>')
@@ -129,7 +133,8 @@ class TestTextarea(TestTextInput):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render(jinja2.Markup('</textarea>'))
+        form.raw_data = MultiDict({'name': jinja2.Markup('</textarea>')})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '</textarea>')
@@ -153,13 +158,14 @@ class TestCheckBox(TestFormClass):
             ]
 
         form = F(self.env)
-
-        render = form.get_field('name').widget.render('')
+        form.raw_data = MultiDict({'name': ''})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, None)
 
-        render = form.get_field('name').widget.render('checked')
+        form.raw_data = MultiDict({'name': 'checked'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, 'checked')
@@ -183,7 +189,8 @@ class TestHiddenInput(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('hidden value')
+        form.raw_data = MultiDict({'name': 'hidden value'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, 'hidden value')
@@ -208,7 +215,8 @@ class TestCharDisplay(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('<p>char display</p>')
+        form.raw_data = MultiDict({'name': '<p>char display</p>'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '<p>char display</p>')
@@ -223,7 +231,8 @@ class TestCharDisplay(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('<i>char display</i>')
+        form.raw_data = MultiDict({'name': '<i>char display</i>'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = ''.join(xpath.findvalues('.//*:%s/*:i/text()'%self.tag, html))
         self.assertEqual(value, 'char display')
@@ -238,7 +247,8 @@ class TestCharDisplay(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('char value')
+        form.raw_data = MultiDict({'name': 'char value'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, 'char display')
@@ -277,7 +287,8 @@ class TestSelect(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('1')
+        form.raw_data = MultiDict({'name': '1'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         self.check_not_multiple(html)
         options = self.get_options(html)
@@ -285,7 +296,8 @@ class TestSelect(TestFormClass):
                                    ('1', 'first', True),
                                    ('2', 'second', False)])
 
-        render = form.get_field('name').widget.render(None)
+        form.raw_data = MultiDict({'name': ''})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         options = self.get_options(html)
         self.assertEqual(options, [('', self.widget.null_label, True),
@@ -303,14 +315,16 @@ class TestSelect(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render('1')
+        form.raw_data = MultiDict({'name': '1'})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         self.check_not_multiple(html)
         options = self.get_options(html)
         self.assertEqual(options, [('1', 'first', True),
                                    ('2', 'second', False)])
 
-        render = form.get_field('name').widget.render(None)
+        form.raw_data = MultiDict({'name': ''})
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         options = self.get_options(html)
         self.assertEqual(options, [('', self.widget.null_label, True),
@@ -329,14 +343,16 @@ class TestSelect(TestFormClass):
 
         form = F(self.env)
 
-        render = form.get_field('name').widget.render(['1', '2'])
+        form.raw_data = MultiDict([('name', '1'), ('name', '2')])
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         self.check_multiple(html)
         options = self.get_options(html)
         self.assertEqual(options, [('1', 'first', True),
                                    ('2', 'second', True)])
 
-        render = form.get_field('name').widget.render([])
+        form.raw_data = MultiDict()
+        render = form.get_field('name').widget.render()
         html = self.parse(render)
         options = self.get_options(html)
         self.assertEqual(options, [('1', 'first', False),

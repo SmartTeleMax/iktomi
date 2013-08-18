@@ -1,7 +1,6 @@
 <table class="fieldlist" id="{{ field.input_name }}">
     <tbody>
     {% for index in field.form.raw_data.getall(field.indeces_input_name) %}
-    
         <tr class="fieldlist-item">
             <td class="fieldlist-cell">
                 <input type="hidden" name="{{ field.indeces_input_name }}" value="{{ index }}" />
@@ -11,21 +10,13 @@
                   <span class="error">{{ f.error }}</span>
                 </div>
                 {% endif %}
-                {{ f.render() }}
+                {{ f.widget.render() }}
             </td>
             {% if field.order %}
             <td class="fieldlist-order fieldlist-btns">&nbsp;</td>
             {% endif %}
             <td class="fieldlist-delete fieldlist-btns">&nbsp;</td>
         </tr>
-	{% if not loop.last %}
-	<tr class="fieldlist-spacer"><td colspan="{% if field.order %}3{% else %}2{% endif %}"></td></tr>
-	{% endif %}
     {% endfor %}
     </tbody>
 </table>
-<script type="text/javascript">
-    window.addEvent('domready', function(){
-        new FieldList('{{ field.input_name }}', '{{ encoded_template }}', {% if field.order %}true{% else %}false{% endif %}{% if field.conv.max_length %}, {{ field.max_length }}{% endif %});
-    });
-</script>
