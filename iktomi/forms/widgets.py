@@ -52,6 +52,7 @@ class Widget(object):
         '''
         value = self.get_raw_value()
         return dict(widget=self,
+                    field=self.field,
                     value=value,
                     readonly=not self.field.writable)
 

@@ -42,7 +42,7 @@ def PasswordSet(name='password',
                                          widget=widgets.PasswordInput)
                             for subfieldname, label in items]
         kwargs.setdefault('conv', PasswordConv(required=required))
-        kwargs.setdefault('template', 'fieldset-line')
-        
+        kwargs.setdefault('widget', widgets.FieldSetWidget(
+            template='widgets/fieldset-line'))
         return fields.FieldSet(name, get_initial=lambda: '', **kwargs)
 
