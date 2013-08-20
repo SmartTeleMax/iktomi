@@ -84,17 +84,27 @@ class App(Cli):
 class DevServerThread(threading.Thread):
 
     def __init__(self, host, port, app):
-        from wsgiref.simple_server import make_server, WSGIServer
+        from wsgiref.simple_server import make_server, WSGIServer, \
+                WSGIRequestHandler
         self.host = host
         self.port = port
+
         class DevServer(WSGIServer):
             timeout = 0.2
+
+
+        class RequestHandler(WSGIRequestHandler):
+            def address_string(slf):
+                # getfqdn sometimes is very slow
+                return '%s:%s' % (host, port)
+
         try:
             self.port = int(port)
         except ValueError:
             raise ValueError('Please provide valid port value insted of "%s"' % port)
         self.running = True
-        self.server = make_server(self.host, self.port, app, server_class=DevServer)
+        self.server = make_server(self.host, self.port, app, server_class=DevServer,
+                                  handler_class=RequestHandler)
         super(DevServerThread, self).__init__()
 
     def run(self):
