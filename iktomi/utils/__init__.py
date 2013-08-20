@@ -68,7 +68,6 @@ class cached_class_property(object):
         self.name = name or method.__name__
 
     def __get__(self, inst, cls):
-        print inst, cls
         result = self.method(cls)
         setattr(cls, self.name, result)
         return result
