@@ -109,7 +109,6 @@ class MultiDict(dict):
     def update(self, items):
         raise NotImplementedError
 
-
     def items(self):
         """
         Method returns list of tuples (``key``, ``value``).

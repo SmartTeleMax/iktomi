@@ -50,7 +50,7 @@ class LangModelProxy(object):
     def __init__(self, models, lang):
         self.models = models
         self.lang = lang.lower()
-        self.lang_upper = lang[0].upper() + lang[1:].lower()
+        self.lang_upper = lang.title()
 
     def _get_model_name(self, name):
         return name + self.lang_upper
