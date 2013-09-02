@@ -69,6 +69,18 @@ class Reverse(object):
             return subdomain + '.' + host
         return host
 
+    def prepare_finalization(self, **kwargs):
+        if '' not in self._scope:
+            raise UrlBuildingError('Endpoint do not accept arguments')
+        if self._is_endpoint or self._need_arguments:
+            return self.__class__(self._scope, self._location,
+                                  path=self._path, host=self._host,
+                                  bound_env=self._bound_env, 
+                                  ready=self._is_endpoint,
+                                  finalize_params=kwargs)
+        raise UrlBuildingError('Not an endpoint')
+
+
     def __call__(self, **kwargs):
         if self._ready:
             raise UrlBuildingError('Endpoint do not accept arguments')
@@ -94,8 +106,6 @@ class Reverse(object):
             path = self._path
             host = self._host
             ready = not location.need_arguments
-            if '' in scope:
-                ready = ready and not scope[''][0].need_arguments
             if ready:
                 path += location.build_path(self)
                 host = self._attach_subdomain(host, location)
@@ -149,6 +159,10 @@ class Reverse(object):
             used_args |= subreverse.url_arguments
             subreverse = subreverse(**kwargs)
 
+        scope = subreverse._scope
+        if '' in scope and scope[''][0].need_arguments:
+            used_args |= subreverse.url_arguments
+            subreverse = subreverse.prepare_finalization(**kwargs)
 
         if set(kwargs).difference(used_args):
             raise UrlBuildingError('Not all arguments are used during URL building: %s' %

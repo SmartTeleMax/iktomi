@@ -262,8 +262,12 @@ class ReverseTests(unittest.TestCase):
                           section='top', subsection="bottom")
 
     def test_string_api2(self):
-        app = web.prefix('/news', name='news') | web.prefix('/<section>') | web.match()
+        app = web.prefix('/news', name='news') | web.prefix('/<section>') | web.cases(
+                web.match(),
+                web.match('/<int:id>', 'item'),
+                )
         r = web.Reverse.from_handler(app)
+        self.assertEqual(r.build_url('news.item', section='top', id=1), '/news/top/1')
         self.assertEqual(r.build_url('news', section='top'), '/news/top')
 
     def test_external_urls(self):
