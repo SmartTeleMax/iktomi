@@ -261,6 +261,11 @@ class ReverseTests(unittest.TestCase):
         self.assertRaises(UrlBuildingError, r.build_url, 'news', 
                           section='top', subsection="bottom")
 
+    def test_string_api2(self):
+        app = web.prefix('/news', name='news') | web.prefix('/<section>') | web.match()
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.build_url('news', section='top'), '/news/top')
+
     def test_external_urls(self):
         'External URL reverse'
 

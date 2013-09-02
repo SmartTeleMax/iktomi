@@ -94,6 +94,8 @@ class Reverse(object):
             path = self._path
             host = self._host
             ready = not location.need_arguments
+            if '' in scope:
+                ready = ready and not scope[''][0].need_arguments
             if ready:
                 path += location.build_path(self)
                 host = self._attach_subdomain(host, location)
@@ -146,6 +148,7 @@ class Reverse(object):
         if not subreverse._ready and subreverse._is_endpoint:
             used_args |= subreverse.url_arguments
             subreverse = subreverse(**kwargs)
+
 
         if set(kwargs).difference(used_args):
             raise UrlBuildingError('Not all arguments are used during URL building: %s' %
