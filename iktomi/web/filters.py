@@ -204,9 +204,44 @@ class namespace(WebHandler):
 
     def _locations(self):
         locations = WebHandler._locations(self)
+        all_locations = [x[0] for x in locations.values()]
+
+        # extract all common builders and subdomains from nested locations
+        # and put them into namespace's location.
+        # This allows to write prefixes after subdomains:
+        # prefix() | namespace() | prefix() | match()
+        builders = []
+        while all_locations and all_locations[0].builders:
+            builder = all_locations[0].builders[0]
+            if any(x.builders and x.builders[0] is builder
+                   for x in all_locations[1:]):
+                builders.append(builder)
+                for loc in all_locations:
+                    loc.builders.pop(0)
+            else:
+                break
+
+        # XXX do we need to do the same with subdomains?
+        #     It makes everything more clear, but does not make an effect,
+        #     because we have no pattern matching here
+        subdomains = []
+        while all_locations and all_locations[0].subdomains:
+            subdomain = all_locations[0].subdomains[-1]
+            if any(x.subdomains and x.subdomains[-1] is subdomain
+                   for x in all_locations[1:]):
+                subdomains.insert(0, subdomain)
+                for loc in all_locations:
+                    loc.subdomains.pop()
+            else:
+                break
+
         namespaces = self.namespace.split('.')
         for ns in namespaces[::-1]:
             locations = {ns: (Location(), locations)}
+
+        for loc in locations.values():
+            loc[0].builders = builders
+            loc[0].subdomains = subdomains
         return locations
 
 

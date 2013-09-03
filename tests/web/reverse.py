@@ -261,7 +261,7 @@ class ReverseTests(unittest.TestCase):
         self.assertRaises(UrlBuildingError, r.build_url, 'news', 
                           section='top', subsection="bottom")
 
-    def test_string_api2(self):
+    def test_prefix_after_namespace(self):
         app = web.prefix('/news', name='news') | web.prefix('/<section>') | web.cases(
                 web.match(),
                 web.match('/<int:id>', 'item'),
@@ -269,6 +269,19 @@ class ReverseTests(unittest.TestCase):
         r = web.Reverse.from_handler(app)
         self.assertEqual(r.build_url('news.item', section='top', id=1), '/news/top/1')
         self.assertEqual(r.build_url('news', section='top'), '/news/top')
+        self.assertEqual(r.news(section='top').item(id=1).as_url, '/news/top/1')
+        self.assertEqual(r.news(section='top').as_url, '/news/top')
+
+    def test_subdomain_after_namespace(self):
+        app = web.subdomain('news', name='news') | web.subdomain('eng') | web.cases(
+                web.match('/'),
+                web.match('/<int:id>', 'item'),
+                )
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.build_url('news.item', id=1), 'http://eng.news/1')
+        self.assertEqual(r.build_url('news'), 'http://eng.news/')
+        self.assertEqual(r.news.item(id=1).as_url, 'http://eng.news/1')
+        self.assertEqual(r.news.as_url, 'http://eng.news/')
 
     def test_external_urls(self):
         'External URL reverse'
