@@ -1,7 +1,20 @@
+# -*- coding: utf-8 -*-
+
 from sqlalchemy.ext import declarative
 
 
 class AutoTableNameMeta(declarative.DeclarativeMeta):
+    '''Declarative metaclass automatically giving the same name to table as
+    mapped class. Example:
+        Base = declarative_base(name='Base', metaclass=AutoTableNameMeta)
+        class MyClass(Base):
+            …
+    is equivalent to
+        Base = declarative_base(name='Base')
+        class MyClass(Base):
+            __tablename__ = 'MyClass'
+            …
+    '''
 
     def __init__(cls, name, bases, dict_):
         # Do not extend base class
