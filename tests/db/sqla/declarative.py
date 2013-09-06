@@ -1,10 +1,11 @@
 import unittest
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, \
+                       PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta, TableArgsMeta
 
 
-class AutoTableNameText(unittest.TestCase):
+class AutoTableNameTest(unittest.TestCase):
 
     def setUp(self):
         self.Base = declarative_base(name='Base', metaclass=AutoTableNameMeta)
@@ -58,3 +59,59 @@ class AutoTableNameText(unittest.TestCase):
         self.assertIs(C.__table__, A.__table__)
         self.assertIs(D.__table__, A.__table__)
 
+
+class TableArgsTest(unittest.TestCase):
+
+    def test_basic(self):
+        args = {'dialect1_a': 1, 'dialect2_b': 2}
+        Base = declarative_base(name='Base', metaclass=TableArgsMeta(args))
+        class A(Base):
+            __tablename__ = 'A'
+            id = Column(Integer, primary_key=True)
+        self.assertEqual(A.__table_args__, args)
+
+    def test_update(self):
+        args = {'dialect1_a': 11, 'dialect2_b': 12}
+        Base = declarative_base(name='Base', metaclass=TableArgsMeta(args))
+        class A(Base):
+            __tablename__ = 'A'
+            __table_args__ = {
+                'dialect2_b': 22,
+                'dialect3_c': 23,
+            }
+            id = Column(Integer, primary_key=True)
+        self.assertEqual(A.__table_args__, {'dialect1_a': 11,
+                                            'dialect2_b': 22,
+                                            'dialect3_c': 23})
+
+    def test_positional(self):
+        args = {'dialect1_a': 11, 'dialect2_b': 12}
+        Base = declarative_base(name='Base', metaclass=TableArgsMeta(args))
+        class A(Base):
+            __tablename__ = 'A'
+            id = Column(Integer)
+            data = Column(Integer)
+            __table_args__ = (
+                PrimaryKeyConstraint(id),
+                UniqueConstraint(data),
+            )
+        self.assertEqual(len(A.__table_args__), 3)
+        self.assertIsInstance(A.__table_args__[0], PrimaryKeyConstraint)
+        self.assertIsInstance(A.__table_args__[1], UniqueConstraint)
+        self.assertEqual(A.__table_args__[2], args)
+        class B(Base):
+            __tablename__ = 'B'
+            id = Column(Integer, primary_key=True)
+            data = Column(Integer)
+            __table_args__ = (
+                PrimaryKeyConstraint(id),
+                UniqueConstraint(id),
+                {'dialect2_b': 22,
+                 'dialect3_c': 23},
+            )
+        self.assertEqual(len(B.__table_args__), 3)
+        self.assertIsInstance(B.__table_args__[0], PrimaryKeyConstraint)
+        self.assertIsInstance(B.__table_args__[1], UniqueConstraint)
+        self.assertEqual(B.__table_args__[2], {'dialect1_a': 11,
+                                               'dialect2_b': 22,
+                                               'dialect3_c': 23})
