@@ -3,7 +3,7 @@
 import logging
 from sqlalchemy import orm, create_engine
 from sqlalchemy.orm.query import Query
-from iktomi.utils import cached_property, import_string
+from iktomi.utils import import_string
 from iktomi.utils.deprecation import deprecated
 
 
