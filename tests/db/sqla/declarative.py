@@ -51,6 +51,10 @@ class AutoTableNameText(unittest.TestCase):
             __tablename__ = None
         class C(A):
             __tablename__ = 'A'
+        class D(A):
+            __table__ = A.__table__
         self.assertEqual(A.__table__.name, 'A')
         self.assertIs(B.__table__, A.__table__)
         self.assertIs(C.__table__, A.__table__)
+        self.assertIs(D.__table__, A.__table__)
+
