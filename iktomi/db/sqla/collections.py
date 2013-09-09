@@ -1,4 +1,9 @@
+import warnings
 from sqlalchemy.orm.collections import InstrumentedList
+
+warnings.warn('OrderedList is deprecated. Use '\
+                'sqlalchemy.ext.orderinglist.ordering_list() instead',
+              category=DeprecationWarning)
 
 
 class OrderedList(InstrumentedList):

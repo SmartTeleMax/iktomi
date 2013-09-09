@@ -3,7 +3,7 @@
 import logging
 from sqlalchemy import orm, create_engine
 from sqlalchemy.orm.query import Query
-from iktomi.utils import cached_property, import_string
+from iktomi.utils import import_string
 from iktomi.utils.deprecation import deprecated
 
 
@@ -26,7 +26,7 @@ def multidb_binds(databases, package=None, engine_params=None):
     name for all models modules.'''
     engine_params = engine_params or {}
     if not (package is None or isinstance(package, basestring)):
-        package = getattr(package, '__package__', package.__name__)
+        package = getattr(package, '__package__', None) or package.__name__
     binds = {}
     for ref, uri in databases.items():
         md_ref = '.'.join(filter(None, [package, ref]))
