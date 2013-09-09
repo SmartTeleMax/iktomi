@@ -7,7 +7,7 @@ import re
 import widgets
 from . import convs
 from ..utils import cached_property
-from ..utils.odict import OrderedDict
+from collections import OrderedDict
 from .perms import FieldPerm
 
 logger = logging.getLogger(__name__)

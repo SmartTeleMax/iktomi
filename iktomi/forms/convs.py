@@ -7,7 +7,7 @@ convert and validate form field's data.
 import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
-from ..utils.odict import OrderedDict
+from collections import OrderedDict
 from ..utils.dt import strftime
 from ..utils.deprecation import deprecated
 from ..utils import N_, M_, cached_property
