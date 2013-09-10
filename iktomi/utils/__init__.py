@@ -118,5 +118,3 @@ def smart_gettext(translation, msg, count=None):
     if isinstance(msg, M_) and count is not None:
         return translation.ungettext(msg, msg.plural, count)
     return translation.ugettext(msg)
-
-
