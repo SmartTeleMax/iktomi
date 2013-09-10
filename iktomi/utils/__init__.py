@@ -5,21 +5,17 @@ import weakref, re, sys
 
 
 def quoteattr(value):
-    """
-    works like quoteattr from saxutils
-    """
+    '''Works like quoteattr from saxutils (returns escaped string in quotes),
+    but is safe for HTML'''
     if value == '':
         return '""'
-    return '%s' % saxutils.escape(unicode(value), {'"': '&quot;'})
+    return '"%s"' % saxutils.escape(unicode(value), {'"': '&quot;'})
 
 def quoteattrs(data):
-    """
-    takes dict of attrs and return correct
-    xhtml representation
-    """
+    '''Takes dict of attributes and returns their HTML representation'''
     items = []
     for key, value in data.items():
-        items.append('%s="%s"' % (key, quoteattr(value)))
+        items.append('%s=%s' % (key, quoteattr(value)))
     return ' '.join(items)
 
 def quote_js(text):
