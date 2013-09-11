@@ -415,7 +415,10 @@ class Time(BaseDatetime):
 class SplitDateTime(Converter):
 
     def from_python(self, value):
-        return {'date':value, 'time':value}
+        if value is None:
+            return {'date': None, 'time': None}
+        else:
+            return {'date': value.date(), 'time': value.time()}
 
     def to_python(self, value):
         if value['date'] is None or value['time'] is None:
