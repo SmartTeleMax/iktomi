@@ -18,7 +18,8 @@ from sqlalchemy.orm import object_session
 from sqlalchemy.orm.util import identity_key
 from sqlalchemy.orm.attributes import manager_of_class
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
-from sqlalchemy import Boolean
+from sqlalchemy.orm.collections import collection_adapter
+from sqlalchemy.orm.attributes import instance_state, instance_dict
 
 
 def reflect(source, model):
@@ -28,6 +29,7 @@ def reflect(source, model):
     ident = identity_key(instance=source)[1]
     assert ident is not None
     return db.query(model).get(ident)
+
 
 def replicate_attributes(source, target):
     '''Replicates common SQLAlchemy attributes from the `source` object to the
@@ -67,6 +69,7 @@ def replicate_attributes(source, target):
                 reflection = reflect_filter(value, target_attr_model)
                 setattr(target, attr.key, reflection)
 
+
 def replicate(source, model):
     '''Replicates the `source` object to `model` class and returns its
     reflection.'''
@@ -74,6 +77,7 @@ def replicate(source, model):
     replicate_attributes(source, target)
     db = object_session(source)
     return db.merge(target)
+
 
 def replicate_filter(sources, model):
     '''Replicates the list of objects to other class and returns their
@@ -85,6 +89,7 @@ def replicate_filter(sources, model):
         replicate_attributes(source, target)
         targets.append(target)
     return targets
+
 
 def reflect_filter(sources, model):
     '''Returns the list of reflections of objects in the `source` list to other
