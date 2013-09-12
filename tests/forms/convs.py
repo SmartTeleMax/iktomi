@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from datetime import datetime, date, time
 
 from iktomi.forms import *
 from webob.multidict import MultiDict
@@ -298,7 +299,6 @@ class DateTests(unittest.TestCase):
 
     def test_to_python(self):
         '''Date converter to_python method'''
-        from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.accept('31.01.1999'), date(1999, 1, 31))
         self.assertEqual(conv.field.form.errors, {})
@@ -313,14 +313,12 @@ class DateTests(unittest.TestCase):
 
     def test_from_python(self):
         '''Date converter from_python method'''
-        from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.from_python(date(1999, 1, 31)), '31.01.1999')
 
     def test_from_python_pre_1900(self):
         # XXX move this tests to tests.utils.dt
         '''Test if from_python works fine with dates under 1900'''
-        from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.from_python(date(1899, 1, 31)), '31.01.1899')
         self.assertEqual(conv.from_python(date(401, 1, 31)), '31.01.401')
@@ -332,7 +330,6 @@ class DateTests(unittest.TestCase):
 
     def test_accept_nontext(self):
         '''Date converter to_python method accepting non-text characters'''
-        from datetime import date
         conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.accept(u'\uFFFE31.01.1999\x00'), date(1999, 1, 31))
         self.assertEqual(conv.field.form.errors, {})
@@ -342,14 +339,12 @@ class TimeTests(unittest.TestCase):
 
     def test_from_python(self):
         '''Time converter from_python method'''
-        from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.from_python(time(12, 30)), '12:30')
         self.assertEqual(conv.field.form.errors, {})
 
     def test_to_python(self):
         '''Time converter to_python method'''
-        from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.accept('12:30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
@@ -359,7 +354,6 @@ class TimeTests(unittest.TestCase):
 
     def test_accept_nontext(self):
         '''Time converter to_python method'''
-        from datetime import time
         conv = init_conv(convs.Time)
         self.assertEqual(conv.accept(u'\x0012:\uFFFE30'), time(12, 30))
         self.assertEqual(conv.field.form.errors, {})
@@ -369,14 +363,12 @@ class DatetimeTests(unittest.TestCase):
 
     def test_from_python(self):
         '''Time converter from_python method'''
-        from datetime import datetime
         conv = init_conv(convs.Datetime)
         self.assertEqual(conv.from_python(datetime(2012, 4, 5, 12, 30)),
                          '05.04.2012, 12:30')
 
     def test_to_python(self):
         '''Time converter to_python method'''
-        from datetime import datetime
         conv = init_conv(convs.Datetime)
         self.assertEqual(conv.accept('05.04.2012, 12:30'),
                          datetime(2012, 4, 5, 12, 30))
@@ -402,7 +394,6 @@ class SplitDateTimeTests(unittest.TestCase):
 
 
     def test_to_python(self):
-        from datetime import datetime
         form = self.get_form()()
         form.accept(MultiDict({'dt.date': '24.03.2013',
                                'dt.time': '13:32'}))
@@ -438,6 +429,11 @@ class SplitDateTimeTests(unittest.TestCase):
         form.accept(MultiDict({'dt.date': '24.03.2013',
                                'dt.time': ''}))
         self.assertEqual(form.errors.keys(), ['dt'])
+
+    def test_back(self):
+        conv = init_conv(convs.SplitDateTime)
+        now = datetime.now()
+        self.assertEqual(conv.to_python(conv.from_python(now)), now)
 
 
 class PasswordConvTests(unittest.TestCase):
