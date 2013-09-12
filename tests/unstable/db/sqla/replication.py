@@ -1,6 +1,6 @@
 import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from testalchemy import DBHistory
 from iktomi.db.sqla.declarative import AutoTableNameMeta
@@ -126,3 +126,29 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertEqual(a2.same, 's12')
         self.assertEqual(a2.different2, 'd2')
+
+    def test_replicate_new_m2o_missing_parent(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P1.id))
+            parent = relationship(P1)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P2.id))
+            parent = relationship(P2)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            c1 = C1(id=1, parent=P1())
+            self.db.add(c1)
+        # Test
+        with DBHistory(self.db) as hist, self.db.begin():
+            c2 = replication.replicate(c1, C2)
+        hist.assert_created_one(C2)
+        self.assertEqual(len(hist.created), 1)
+        self.assertIsNone(c2.parent)
