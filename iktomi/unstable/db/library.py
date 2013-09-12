@@ -1,4 +1,5 @@
 import sys
+from iktomi.utils import cached_property
 
 def return_locals(func):
     '''
@@ -27,7 +28,7 @@ class ModelLibrary(object):
 
     def __init__(self):
         self.models = []
-        self.lang_models = []
+        self.i18n_models = []
 
     def get_constructor(self, func):
         return return_locals(func)
@@ -39,7 +40,7 @@ class ModelLibrary(object):
             name = func.func_name
             constructor = self.get_constructor(func)
             if lang:
-                self.lang_models.append((name, constructor, base_names))
+                self.i18n_models.append((name, constructor, base_names))
             else:
                 self.models.append((name, constructor, base_names))
             return constructor
@@ -52,16 +53,15 @@ class ModelLibrary(object):
         cls.__module__ = models.__name__
         return cls
 
-    def create_all(self, models, langs=()):
+    def create_all(self, models, all_lang_models=()):
         for name, constructor, base_names in self.models:
             if hasattr(models, name):
                 pass
             cls = self.create_model(models, name, constructor, base_names)
             setattr(models, name, cls)
 
-        for lang in langs:
-            lang_models = LangModelProxy(models, lang)
-            for name, constructor, base_names in self.lang_models:
+        for lang_models in all_lang_models:
+            for name, constructor, base_names in self.i18n_models:
                 lang_name = lang_models._get_model_name(name)
                 if hasattr(models, lang_name):
                     pass
@@ -72,10 +72,15 @@ class ModelLibrary(object):
 
 class LangModelProxy(object):
 
-    def __init__(self, models, lang):
+    def __init__(self, models, langs, lang):
         self.models = models
+        self.langs = langs
         self.lang = lang.lower()
         self.lang_upper = lang.title()
+
+    @cached_property
+    def main_lang(self):
+        return self.langs[0]
 
     def _get_model_name(self, name):
         return name + self.lang_upper
