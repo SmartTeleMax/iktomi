@@ -18,7 +18,59 @@ class ReplicationTests(unittest.TestCase):
     def create_all(self):
         self.Base.metadata.create_all()
 
-    def test_basic(self):
+    def assertNothingChanged(self, hist):
+        map(self.assertFalse, [hist.created, hist.deleted, hist.updated])
+
+    def test_reflect_new(self):
+        '''Test `reflect()` when reflection doesn't exist'''
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1()
+            self.db.add(a1)
+        # Test
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.reflect(a1, A2)
+        self.assertNothingChanged(hist)
+        self.assertIsNone(a2)
+
+    def test_reflect_existing(self):
+        '''Test `reflect()` when reflection already exists, insure attributes
+        are not copied'''
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            same = Column(String)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            same = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=1, same='s1')
+            a2 = A2(id=1, same='s2')
+            self.db.add_all([a1, a2])
+        # Test when reflection is already loaded
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.reflect(a1, A2)
+        self.assertNothingChanged(hist)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.same, 's2')
+        # Once more but when reflection is not loaded
+        self.db.expunge(a2)
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.reflect(a1, A2)
+        self.assertNothingChanged(hist)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.same, 's2')
+
+    def test_replicate_basic_new(self):
+        # Schema
         class A1(self.Base):
             id = Column(Integer, primary_key=True)
             same = Column(String)
@@ -28,43 +80,49 @@ class ReplicationTests(unittest.TestCase):
             same = Column(String)
             different2 = Column(String)
         self.create_all()
-        # Prepare
+        # Data
         with self.db.begin():
-            a1 = A1(same='s11', different1='d11')
+            a1 = A1(id=1, same='s1', different1='d1')
             self.db.add(a1)
-        # Replect when replection doesn't exist
-        with DBHistory(self.db) as hist, self.db.begin():
-            a2 = replication.reflect(a1, A2)
-        for changes in [hist.created, hist.deleted, hist.updated]:
-            self.assertFalse(changes)
-        self.assertIsNone(a2)
-        # Rerplicate when reflection doesn't exist
+        # Test
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.replicate(a1, A2)
         hist.assert_created_one(A2)
         self.assertIsNotNone(a2)
         self.assertEqual(a2.id, a1.id)
-        self.assertEqual(a2.same, 's11')
+        self.assertEqual(a2.same, 's1')
         self.assertIsNone(a2.different2)
-        self.db.expunge(a2)
-        # Reflect when reflection exists, insure attributes are not copied
+
+    def test_replicate_basic_existing(self):
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            same = Column(String)
+            different1 = Column(String)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            same = Column(String)
+            different2 = Column(String)
+        self.create_all()
+        # Data
         with self.db.begin():
-            a1.same = 's12'
+            a1 = A1(id=1, same='s11', different1='d1')
+            a2 = A2(id=1, same='s2', different2='d2')
+            self.db.add_all([a1, a2])
+        # Test when reflection is already loaded
         with DBHistory(self.db) as hist, self.db.begin():
-            a2 = replication.reflect(a1, A2)
-        for changes in [hist.created, hist.deleted, hist.updated]:
-            self.assertFalse(hist.updated)
+            a2 = replication.replicate(a1, A2)
+        hist.assert_updated_one(A2)
         self.assertIsNotNone(a2)
         self.assertEqual(a2.same, 's11')
-        # Rerplicate when reflection exists, insure common attributes are
-        # copied and own attributes are kept unchanged
-        with self.db.begin():
-            a2.same = 's21'
-            a2.different2 = 'd21'
+        self.assertEqual(a2.different2, 'd2')
+        # Once more but when reflection is not loaded
         self.db.expunge(a2)
+        with self.db.begin():
+            a1.same = 's12'
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.replicate(a1, A2)
         hist.assert_updated_one(A2)
         self.assertIsNotNone(a2)
         self.assertEqual(a2.same, 's12')
-        self.assertEqual(a2.different2, 'd21')
+        self.assertEqual(a2.different2, 'd2')
