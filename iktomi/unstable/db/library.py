@@ -46,34 +46,34 @@ class ModelLibrary(object):
             return constructor
         return decor
 
-    def create_model(self, models, name, constructor, base_names):
-        bases = tuple(getattr(models, x) for x in base_names)
-        values = constructor(models)
+    def create_model(self, module, name, constructor, base_names):
+        bases = tuple(getattr(module, x) for x in base_names)
+        values = constructor(module)
         cls = type(name, bases, values)
-        cls.__module__ = models.__name__
+        cls.__module__ = module.__name__
         return cls
 
-    def create_all(self, models, all_lang_models=()):
+    def create_all(self, module, all_lang_models=()):
         for name, constructor, base_names in self.models:
-            if hasattr(models, name):
+            if hasattr(module, name):
                 pass
-            cls = self.create_model(models, name, constructor, base_names)
-            setattr(models, name, cls)
+            cls = self.create_model(module, name, constructor, base_names)
+            setattr(module, name, cls)
 
         for lang_models in all_lang_models:
             for name, constructor, base_names in self.i18n_models:
                 lang_name = lang_models._get_model_name(name)
-                if hasattr(models, lang_name):
+                if hasattr(module, lang_name):
                     pass
                 cls = self.create_model(lang_models, lang_name,
                                         constructor, base_names)
-                setattr(models, lang_name, cls)
+                setattr(module, lang_name, cls)
 
 
 class LangModelProxy(object):
 
-    def __init__(self, models, langs, lang):
-        self.models = models
+    def __init__(self, module, langs, lang):
+        self.module = module
         self.langs = langs
         self.lang = lang.lower()
         self.lang_upper = lang.title()
@@ -87,6 +87,6 @@ class LangModelProxy(object):
 
     def __getattr__(self, name):
         lang_name = self._get_model_name(name)
-        if hasattr(self.models, lang_name):
-            return getattr(self.models, lang_name)
-        return getattr(self.models, name)
+        if hasattr(self.module, lang_name):
+            return getattr(self.module, lang_name)
+        return getattr(self.module, name)
