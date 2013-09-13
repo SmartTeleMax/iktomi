@@ -24,7 +24,7 @@ def return_locals(func):
     return wrap
 
 
-class ModelLibrary(object):
+class ModelFactories(object):
 
     def __init__(self):
         self.models = []
