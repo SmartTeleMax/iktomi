@@ -21,40 +21,28 @@ class ReplicationTests(unittest.TestCase):
     def assertNothingChanged(self, hist):
         map(self.assertFalse, [hist.created, hist.deleted, hist.updated])
 
-    def test_reflect_new(self):
-        '''Test `reflect()` when reflection doesn't exist'''
+    def test_reflect(self):
         # Schema
         class A1(self.Base):
             id = Column(Integer, primary_key=True)
+            same = Column(String)
         class A2(self.Base):
             id = Column(Integer, primary_key=True)
+            same = Column(String)
         self.create_all()
-        # Data
+        # Data for source
         with self.db.begin():
-            a1 = A1()
+            a1 = A1(id=1, same='s1')
             self.db.add(a1)
-        # Test
+        # Test when reflection doesn't exist
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.reflect(a1, A2)
         self.assertNothingChanged(hist)
         self.assertIsNone(a2)
-
-    def test_reflect_existing(self):
-        '''Test `reflect()` when reflection already exists, insure attributes
-        are not copied'''
-        # Schema
-        class A1(self.Base):
-            id = Column(Integer, primary_key=True)
-            same = Column(String)
-        class A2(self.Base):
-            id = Column(Integer, primary_key=True)
-            same = Column(String)
-        self.create_all()
-        # Data
+        # Data for target (reflection exists)
         with self.db.begin():
-            a1 = A1(id=1, same='s1')
             a2 = A2(id=1, same='s2')
-            self.db.add_all([a1, a2])
+            self.db.add(a2)
         # Test when reflection is already loaded
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.reflect(a1, A2)
@@ -69,7 +57,7 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertEqual(a2.same, 's2')
 
-    def test_replicate_basic_new(self):
+    def test_replicate_basic(self):
         # Schema
         class A1(self.Base):
             id = Column(Integer, primary_key=True)
@@ -84,7 +72,7 @@ class ReplicationTests(unittest.TestCase):
         with self.db.begin():
             a1 = A1(id=1, same='s1', different1='d1')
             self.db.add(a1)
-        # Test
+        # Test when reflection doesn't exist
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.replicate(a1, A2)
         hist.assert_created_one(A2)
@@ -92,40 +80,26 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(a2.id, a1.id)
         self.assertEqual(a2.same, 's1')
         self.assertIsNone(a2.different2)
-
-    def test_replicate_basic_existing(self):
-        # Schema
-        class A1(self.Base):
-            id = Column(Integer, primary_key=True)
-            same = Column(String)
-            different1 = Column(String)
-        class A2(self.Base):
-            id = Column(Integer, primary_key=True)
-            same = Column(String)
-            different2 = Column(String)
-        self.create_all()
-        # Data
+        # Update data
         with self.db.begin():
-            a1 = A1(id=1, same='s11', different1='d1')
-            a2 = A2(id=1, same='s2', different2='d2')
-            self.db.add_all([a1, a2])
+            a1.same = 's2'
         # Test when reflection is already loaded
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.replicate(a1, A2)
         hist.assert_updated_one(A2)
         self.assertIsNotNone(a2)
-        self.assertEqual(a2.same, 's11')
-        self.assertEqual(a2.different2, 'd2')
+        self.assertEqual(a2.same, 's2')
+        self.assertIsNone(a2.different2)
         # Once more but when reflection is not loaded
         self.db.expunge(a2)
         with self.db.begin():
-            a1.same = 's12'
+            a1.same = 's3'
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.replicate(a1, A2)
         hist.assert_updated_one(A2)
         self.assertIsNotNone(a2)
-        self.assertEqual(a2.same, 's12')
-        self.assertEqual(a2.different2, 'd2')
+        self.assertEqual(a2.same, 's3')
+        self.assertIsNone(a2.different2)
 
     def test_replicate_renamed(self):
         '''Test replication when name of attribute is not equal to the name of
@@ -151,7 +125,7 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(a2.id, a1.id)
         self.assertEqual(a2.name, 'n')
 
-    def test_replicate_new_m2o_missing_parent(self):
+    def test_replicate_m2o(self):
         # Schema
         class P1(self.Base):
             id = Column(Integer, primary_key=True)
@@ -166,9 +140,10 @@ class ReplicationTests(unittest.TestCase):
             parent_id = Column(ForeignKey(P2.id))
             parent = relationship(P2)
         self.create_all()
-        # Data
+        # Data: reflections for both child and parent don't exist
         with self.db.begin():
-            c1 = C1(id=1, parent=P1())
+            p11 = P1(id=1)
+            c1 = C1(id=1, parent=p11)
             self.db.add(c1)
         # Test
         with DBHistory(self.db) as hist, self.db.begin():
@@ -176,47 +151,29 @@ class ReplicationTests(unittest.TestCase):
         hist.assert_created_one(C2)
         self.assertEqual(len(hist.created), 1)
         self.assertIsNone(c2.parent)
-
-    def test_replicate_new_m2o_existing_parent(self):
-        # Schema
-        class P1(self.Base):
-            id = Column(Integer, primary_key=True)
-        class C1(self.Base):
-            id = Column(Integer, primary_key=True)
-            parent_id = Column(ForeignKey(P1.id))
-            parent = relationship(P1)
-        class P2(self.Base):
-            id = Column(Integer, primary_key=True)
-        class C2(self.Base):
-            id = Column(Integer, primary_key=True)
-            parent_id = Column(ForeignKey(P2.id))
-            parent = relationship(P2)
-        self.create_all()
-        # Data
+        # Reflection for child already exists and loaded
+        self.assertEqual(c1.parent, p11)
+        with DBHistory(self.db) as hist, self.db.begin():
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNone(c2.parent)
+        # Reflection for child already exists but not loaded
+        self.db.expunge(c2)
+        with DBHistory(self.db) as hist, self.db.begin():
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNone(c2.parent)
+        # Reflection parent does exist, but not for child
         with self.db.begin():
-            p1 = P1(id=1)
-            c1 = C1(id=1, parent=p1)
-            p2 = P2(id=1)
-            self.db.add_all([c1, p2])
-        # Test when reflection of parent is already loaded
+            self.db.delete(c2)
+            p21 = P2(id=1)
+            self.db.add(p21)
         with DBHistory(self.db) as hist, self.db.begin():
             c2 = replication.replicate(c1, C2)
         hist.assert_created_one(C2)
-        self.assertEqual(len(hist.created), 1)
-        self.assertIs(c2.parent, p2)
-        # Test setting to None
+        self.assertEqual(c2.parent, p21)
+        # Reflection for child doesn't exist, but not for parent
         with self.db.begin():
-            c1.parent = None
+            c1.parent = p12 = P1(id=2)
         with DBHistory(self.db) as hist, self.db.begin():
             c2 = replication.replicate(c1, C2)
         hist.assert_updated_one(C2)
         self.assertIsNone(c2.parent)
-        # Once more but when reflection of parent is not loaded
-        self.db.expunge(p2)
-        with self.db.begin():
-            c1.parent = p1
-        with DBHistory(self.db) as hist, self.db.begin():
-            c2 = replication.replicate(c1, C2)
-        hist.assert_updated_one(C2)
-        self.assertIsNotNone(c2.parent)
-        self.assertIs(c2.parent.id, 1)
