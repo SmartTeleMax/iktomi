@@ -178,6 +178,46 @@ class ReplicationTests(unittest.TestCase):
         hist.assert_updated_one(C2)
         self.assertIsNone(c2.parent)
 
+    def test_replicate_relationship_over_column(self):
+        # Schema
+        # Names of FK column and relationship in CB* are swapped compared to
+        # CA* so that in one of them relationship comes before column in
+        # dict.keys(): SQLAlchemy uses dict to store attributes so the order is
+        # not fixed, but we can try both orders.
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class CA1(self.Base):
+            id = Column(Integer, primary_key=True)
+            a = Column(ForeignKey(P1.id))
+            b = relationship(P1)
+        class CB1(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = Column(ForeignKey(P1.id))
+            a = relationship(P1)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class CA2(self.Base):
+            id = Column(Integer, primary_key=True)
+            a = Column(ForeignKey(P2.id))
+            b = relationship(P2)
+        class CB2(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = Column(ForeignKey(P2.id))
+            a = relationship(P2)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=1)
+            ca1 = CA1(id=1, b=p1)
+            cb1 = CB1(id=1, a=p1)
+            self.db.add_all([ca1, cb1])
+        # Test: one them will fail if this case is not handled specially.
+        with self.db.begin():
+            ca2 = replication.replicate(ca1, CA2)
+            cb2 = replication.replicate(cb1, CB2)
+        self.assertIsNone(ca2.a)
+        self.assertIsNone(cb2.b)
+
     def test_replicate_o2m(self):
         # Schema
         class P1(self.Base):
