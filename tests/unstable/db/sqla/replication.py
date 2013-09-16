@@ -177,3 +177,31 @@ class ReplicationTests(unittest.TestCase):
             c2 = replication.replicate(c1, C2)
         hist.assert_updated_one(C2)
         self.assertIsNone(c2.parent)
+
+    def test_replicate_o2m(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C1')
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P1.id))
+            parent = relationship(P1)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C2')
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P2.id))
+            parent = relationship(P2)
+        self.create_all()
+        # Data: reflections for both child and parent don't exist
+        with self.db.begin():
+            p1 = P1(id=1, children=[C1(id=1)])
+            c2 = C2(id=1)
+            self.db.add_all([p1, c2])
+        # Reflection for one parent exists
+        p2 = replication.replicate(p1, P2)
+        # XXX Is this always correct? Should it be always replicated from other
+        # side only?
+        self.assertEqual(p2.children, [])
