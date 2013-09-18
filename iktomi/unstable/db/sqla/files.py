@@ -144,9 +144,9 @@ class FileProperty(MapperProperty):
 
     def instrument_class(self, mapper):
         handlers = self.event_cls(self)
-        event.listen(mapper, 'before_insert', handlers.before_insert)
-        event.listen(mapper, 'before_update', handlers.before_update)
-        event.listen(mapper, 'after_delete', handlers.after_delete)
+        event.listen(mapper, 'before_insert', handlers.before_insert, propagate=True)
+        event.listen(mapper, 'before_update', handlers.before_update, propagate=True)
+        event.listen(mapper, 'after_delete', handlers.after_delete, propagate=True)
         setattr(mapper.class_, self.key, self.attribute_cls(self))
 
     # XXX Implement merge?
