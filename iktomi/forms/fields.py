@@ -275,6 +275,10 @@ class FieldBlock(FieldSet):
             result.update(field.load_initial(initial, raw_data))
         return result
 
+    @property
+    def python_data(self):
+        return self.parent.python_data
+
 
 class FieldList(AggregateField):
     '''

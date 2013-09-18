@@ -86,6 +86,7 @@ class FieldBlockTests(unittest.TestCase):
         form = _Form(initial={'number': 3})
         self.assertEqual(form.raw_data, MultiDict([('number', '3')]))
         self.assertEqual(form.python_data, {'number': 3})
+        self.assertEqual(form.get_field('number').clean_value, 3)
 
     def test_accept(self):
         class _Form(Form):
