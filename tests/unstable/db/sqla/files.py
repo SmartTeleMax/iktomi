@@ -19,7 +19,14 @@ class ObjWithFile(Base):
     file_by_id = FileProperty(file_by_id_name, name_template='obj/{item.id}')
 
 
+class Subclass(ObjWithFile):
+
+    __tablename__ = None
+
+
 class SqlaFilesTests(unittest.TestCase):
+
+    Model = ObjWithFile
 
     def setUp(self):
         self.transient_root = tempfile.mkdtemp()
@@ -44,7 +51,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertIsInstance(self.db.file_manager, FileManager)
 
     def test_create(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test')
@@ -58,7 +65,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(open(obj.file.path).read(), 'test')
 
     def test_update_none2file(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         self.db.add(obj)
         self.db.commit()
         obj.file = f = self.file_manager.new_transient()
@@ -73,7 +80,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(open(obj.file.path).read(), 'test')
 
     def test_update_file2none(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test')
@@ -88,7 +95,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertFalse(os.path.exists(pf.path))
 
     def test_update_file2file(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test1')
@@ -110,7 +117,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(open(obj.file.path).read(), 'test2')
 
     def test_update_file2self(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test1')
@@ -127,7 +134,7 @@ class SqlaFilesTests(unittest.TestCase):
 
     @unittest.skip('Not implemented')
     def test_update_file2file_not_random(self):
-        obj = ObjWithFile()
+        obj = self.Model()
 
         obj.file_by_id = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
@@ -135,7 +142,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.add(obj)
         self.db.commit()
         self.assertEqual(obj.file_by_id_name, 
-                         ObjWithFile.file_by_id.name_template.format(item=obj))
+                         self.Model.file_by_id.name_template.format(item=obj))
         pf1 = obj.file_by_id
 
         obj.file_by_id = f = self.file_manager.new_transient()
@@ -153,7 +160,7 @@ class SqlaFilesTests(unittest.TestCase):
 
     @unittest.skip('Not implemented')
     def test_update_random_collision(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         self.db.add(obj)
         self.db.commit()
 
@@ -183,7 +190,7 @@ class SqlaFilesTests(unittest.TestCase):
         with open(f.path, 'wb') as fp:
             fp.write('test1')
 
-        obj = ObjWithFile()
+        obj = self.Model()
         obj.file = f
         self.db.add(obj)
         self.db.commit()
@@ -193,7 +200,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(obj.file.name, 'persistent.txt')
 
     def test_delete(self):
-        obj = ObjWithFile()
+        obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test')
@@ -203,4 +210,9 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.delete(obj)
         self.db.commit()
         self.assertFalse(os.path.exists(pf.path))
+
+
+class SqlaFilesTestsSubclass(SqlaFilesTests):
+
+    Model = Subclass
 
