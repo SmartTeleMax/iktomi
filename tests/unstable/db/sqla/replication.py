@@ -241,7 +241,43 @@ class ReplicationTests(unittest.TestCase):
             c2 = C2(id=1)
             self.db.add_all([p1, c2])
         # Reflection for one parent exists
-        p2 = replication.replicate(p1, P2)
-        # XXX Is this always correct? Should it be always replicated from other
-        # side only?
+        with self.db.begin():
+            p2 = replication.replicate(p1, P2)
         self.assertEqual(p2.children, [])
+
+    def test_replicate_o2o(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            child = relationship('C1', uselist=False)
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P1.id), unique=True)
+            parent = relationship(P1)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            child = relationship('C2', uselist=False)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P2.id), unique=True)
+            parent = relationship(P2)
+        self.create_all()
+        # Data: reflections for both child and parent don't exist
+        with self.db.begin():
+            c1 = C1(id=1)
+            p1 = P1(id=1, child=c1)
+            c2 = C2(id=1)
+            self.db.add_all([p1, c2])
+        # Reflection for one parent exists, property is not reflected for this
+        # direction
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(P2)
+        assert len(hist.created)==1
+        self.assertIsNone(p2.child)
+        # Replication from other side, property is reflected
+        with DBHistory(self.db) as hist, self.db.begin():
+            c2r = replication.replicate(c1, C2)
+        hist.assert_updated_one(C2)
+        self.assertIs(c2r, c2)
+        self.assertIs(c2.parent, p2)
