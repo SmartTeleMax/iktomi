@@ -124,7 +124,9 @@ def replicate_attributes(source, target):
     target_manager = manager_of_class(type(target))
     column_attrs = set()
     relationship_attrs = set()
-    relationship_columns = set()
+    # XXX Temporary disabled till we find proper algorithm to determine
+    # relationship columns that should be excluded.
+    #relationship_columns = set()
     for attr in manager_of_class(type(source)).attributes:
         if attr.key not in target_manager:
             # It's not common attribute
@@ -136,15 +138,19 @@ def replicate_attributes(source, target):
         elif isinstance(attr.property, RelationshipProperty):
             assert isinstance(target_attr.property, RelationshipProperty)
             relationship_attrs.add(attr)
-            for local, remote in attr.property.local_remote_pairs:
-                relationship_columns.add(local)
+            # XXX Temporary disabled till we find proper algorithm to determine
+            # relationship columns that should be excluded.
+            #for local, remote in attr.property.local_remote_pairs:
+            #    relationship_columns.add(local)
     for attr in column_attrs:
         if _column_property_in_registry(attr.property, _excluded):
             continue
-        elif (not _column_property_in_registry(attr.property, _included) and
-                 all(column in relationship_columns
-                     for column in attr.property.columns)):
-            continue
+        # XXX Temporary disabled till we find proper algorithm to determine
+        # relationship columns that should be excluded.
+        #elif (not _column_property_in_registry(attr.property, _included) and
+        #         all(column in relationship_columns
+        #             for column in attr.property.columns)):
+        #    continue
         setattr(target, attr.key, getattr(source, attr.key))
     for attr in relationship_attrs:
         target_attr_model = target_manager[attr.key].property.argument
