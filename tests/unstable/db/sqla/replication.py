@@ -190,6 +190,11 @@ class ReplicationTests(unittest.TestCase):
         hist.assert_updated_one(C2)
         self.assertEqual(c2.id, c1.id)
         self.assertIsNone(c2.parent)
+        # Replicate when relation is None
+        with self.db.begin():
+            c1.parent = None
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNone(c2.parent)
 
     @unittest.skip
     # XXX Temporary disabled till we find proper algorithm to determine
