@@ -107,6 +107,7 @@ class Paginator(object):
     limit = 0
     count = 0
     page_param = 'page'
+    show_host = False
     items = ()
     impl = staticmethod(full_page_range) # Callable returning the list of pages
                                          # to show in paginator.
@@ -149,7 +150,7 @@ class Paginator(object):
     def url(self):
         '''Current or base URL. Can be redefined via keyword argument on
         initialization.'''
-        return URL(self.request.path)
+        return URL.from_url(self.request.url, show_host=self.show_host)
 
     def page_url(self, page):
         '''Returns URL for page.'''

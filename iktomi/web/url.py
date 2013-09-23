@@ -3,6 +3,7 @@
 __all__ = ['URL']
 
 import urllib
+from urlparse import urlparse, parse_qs
 from webob.multidict import MultiDict
 from .url_templates import urlquote
 
@@ -39,6 +40,19 @@ class URL(str):
         self.schema = schema
         self.show_host = show_host
         return self
+
+    @classmethod
+    def from_url(cls, url, show_host=True):
+        # url must be idna-encoded and url-quotted
+        url = urlparse(url)
+        query = sum([[(k.decode('utf-8'), v.decode('utf-8'))
+                      for v in values]
+                     for k, values in parse_qs(url.query).items()], [])
+        host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
+        port = url.netloc.split(':')[1] if ':' in url.netloc else ''
+        return cls(urllib.unquote(url.path).decode('utf-8'),
+                   query, host.decode('idna'),
+                   port, url.scheme, show_host)
 
     def _copy(self, **kwargs):
         path = kwargs.pop('path', self.path)

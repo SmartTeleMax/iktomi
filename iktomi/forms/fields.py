@@ -199,8 +199,10 @@ class FieldSet(AggregateField):
     '''
     conv = convs.Converter
     widget = widgets.FieldSetWidget
+    fields = []
 
-    def __init__(self, name, conv=None, fields=[], **kwargs):
+    def __init__(self, name, conv=None, fields=None, **kwargs):
+        fields = fields if fields is not None else self.fields
         if kwargs.get('parent'):
             conv = (conv or self.conv)(field=self)
             fields = [field(parent=self) for field in fields]
