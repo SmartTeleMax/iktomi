@@ -2,6 +2,8 @@ import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy.ext.associationproxy import association_proxy
 from testalchemy import DBHistory
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.unstable.db.sqla import replication
@@ -361,3 +363,71 @@ class ReplicationTests(unittest.TestCase):
         #import pdb; pdb.set_trace()
         self.assertEqual(a2.b, [])
         self.assertEqual(b2.a, [])
+
+    def test_replicate_m2m_ordered(self):
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            _ab = relationship('AB1', order_by='AB1.position',
+                               cascade='all,delete-orphan',
+                               collection_class=ordering_list('position'))
+            b = association_proxy('_ab', 'b', creator=lambda b: AB1(b=b))
+        class B1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class AB1(self.Base):
+            a_id = Column(ForeignKey(A1.id), nullable=False, primary_key=True)
+            b_id = Column(ForeignKey(B1.id), nullable=False, primary_key=True)
+            b = relationship(B1)
+            position = Column(Integer, nullable=False)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            _ab = relationship('AB2', order_by='AB2.position',
+                               cascade='all,delete-orphan',
+                               collection_class=ordering_list('position'))
+            b = association_proxy('_ab', 'b', creator=lambda b: AB2(b=b))
+        class B2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class AB2(self.Base):
+            a_id = Column(ForeignKey(A2.id), nullable=False, primary_key=True)
+            b_id = Column(ForeignKey(B2.id), nullable=False, primary_key=True)
+            b = relationship(B2)
+            position = Column(Integer, nullable=False)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            b11 = B1(id=2)
+            b12 = B1(id=4)
+            a1 = A1(id=2, b=[b11, b12])
+            b21 = B2(id=2)
+            self.db.add_all([a1, b21])
+        # Test with 2 children: one with existing reflection and one without it
+        with self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        # XXX Fails: second item in list is None. How to fix it?
+        #self.assertEqual(len(a2.b), 1)
+        self.assertEqual(a2.b[0].id, 2)
+        # Insert into front
+        with self.db.begin():
+            b13 = B1(id=6)
+            b23 = B2(id=6)
+            self.db.add_all([b13, b23])
+        with self.db.begin():
+            a1.b = [b13, b11]
+            a2 = replication.replicate(a1, A2)
+        self.assertEqual(len(a2.b), 2)
+        self.assertEqual(a2.b[0].id, 6)
+        self.assertEqual(a2.b[1].id, 2)
+        # Change order
+        with self.db.begin():
+            a1.b = [b11, b13]
+            a2 = replication.replicate(a1, A2)
+        self.assertEqual(len(a2.b), 2)
+        self.assertEqual(a2.b[0].id, 2)
+        self.assertEqual(a2.b[1].id, 6)
+        # Remove
+        with self.db.begin():
+            a1.b = []
+            a2 = replication.replicate(a1, A2)
+        self.assertEqual(len(a2.b), 0)
