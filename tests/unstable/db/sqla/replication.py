@@ -198,9 +198,6 @@ class ReplicationTests(unittest.TestCase):
             c2 = replication.replicate(c1, C2)
         self.assertIsNone(c2.parent)
 
-    @unittest.skip
-    # XXX Temporary disabled till we find proper algorithm to determine
-    # relationship columns that should be excluded.
     def test_replicate_relationship_over_column(self):
         # Schema
         # Names of FK column and relationship in CB* are swapped compared to
@@ -406,7 +403,7 @@ class ReplicationTests(unittest.TestCase):
         with self.db.begin():
             a2 = replication.replicate(a1, A2)
         # XXX Fails: second item in list is None. How to fix it?
-        #self.assertEqual(len(a2.b), 1)
+        self.assertEqual(len(a2.b), 1)
         self.assertEqual(a2.b[0].id, 2)
         # Insert into front
         with self.db.begin():
