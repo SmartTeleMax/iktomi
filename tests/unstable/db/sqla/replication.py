@@ -402,7 +402,6 @@ class ReplicationTests(unittest.TestCase):
         # Test with 2 children: one with existing reflection and one without it
         with self.db.begin():
             a2 = replication.replicate(a1, A2)
-        # XXX Fails: second item in list is None. How to fix it?
         self.assertEqual(len(a2.b), 1)
         self.assertEqual(a2.b[0].id, 2)
         # Insert into front
