@@ -56,6 +56,12 @@ def reflect(source, model):
     return db.query(model).get(ident)
 
 
+class _PrimaryKeyIsNull(BaseException):
+    '''Used when setting relationship property to None if this causes setting
+    not nullable primary key column to NULL. Such objects should be skipped
+    from replicate_filter.'''
+
+
 def replicate_relation(source, target, attr, target_attr):
     if attr.property.cascade.delete_orphan:
         process_scalar = replicate
@@ -79,6 +85,11 @@ def replicate_relation(source, target, attr, target_attr):
     else:
         reflection = process_scalar(value, target_attr_model)
         setattr(target, attr.key, reflection)
+        if (reflection is None and
+                attr.property.direction is MANYTOONE and
+                any(col.primary_key and not col.nullable
+                    for col in attr.property.local_columns)):
+            raise _PrimaryKeyIsNull()
 
 
 def is_relation_replicatable(attr):
@@ -166,8 +177,12 @@ def replicate_filter(sources, model):
     for source in sources:
         assert filter(None, identity_key(instance=source))
         target = model()
-        replicate_attributes(source, target)
-        targets.append(target)
+        try:
+            replicate_attributes(source, target)
+        except _PrimaryKeyIsNull:
+            pass
+        else:
+            targets.append(target)
     return targets
 
 
