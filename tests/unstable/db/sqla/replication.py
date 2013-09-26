@@ -361,6 +361,108 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(a2.b, [])
         self.assertEqual(b2.a, [])
 
+    def test_replicate_o2m_private(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C1', cascade='all,delete-orphan')
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P1.id), nullable=False)
+            parent = relationship(P1)
+            data = Column(String)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C2', cascade='all,delete-orphan')
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P2.id), nullable=False)
+            parent = relationship(P2)
+            data = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, children=[C1(id=2, data='a1')])
+            self.db.add(p1)
+        # New
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(P2)
+        hist.assert_created_one(C2)
+        self.assertEqual(len(p2.children), 1)
+        self.assertEqual(p2.children[0].id, 2)
+        self.assertEqual(p2.children[0].data, 'a1')
+        # Append new child and update existing
+        with self.db.begin():
+            p1.children[0].data = 'a2'
+            p1.children.append(C1(id=4, data='b1'))
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(C2)
+        hist.assert_updated_one(C2)
+        self.assertEqual(len(p2.children), 2)
+        self.assertEqual(set([(c.id, c.data) for c in p2.children]),
+                         set([(2, 'a2'), (4, 'b1')]))
+        # Update one and remove other child
+        with self.db.begin():
+            p1.children = [C1(id=4, data='b2')]
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(self.db.query(C2).count(), 1)
+        self.assertEqual(len(p2.children), 1)
+        self.assertEqual(p2.children[0].id, 4)
+        self.assertEqual(p2.children[0].data, 'b2')
+
+    def test_replicate_o2o_private(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            child = relationship('C1', uselist=False,
+                                 cascade='all,delete-orphan')
+        class C1(self.Base):
+            id = Column(ForeignKey(P1.id), primary_key=True)
+            parent = relationship(P1)
+            data = Column(String)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            child = relationship('C2', uselist=False,
+                                 cascade='all,delete-orphan')
+        class C2(self.Base):
+            id = Column(ForeignKey(P2.id), primary_key=True)
+            parent = relationship(P2)
+            data = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, child=C1(data='a1'))
+            self.db.add(p1)
+        # New
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(P2)
+        hist.assert_created_one(C2)
+        self.assertIsNotNone(p2.child)
+        # Update child
+        with self.db.begin():
+            p1.child.data = 'a2'
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNotNone(p2.child)
+        self.assertEqual(p2.child.id, 2)
+        self.assertEqual(p2.child.data, 'a2')
+        # Change child
+        with self.db.begin():
+            p1.child = C1(data='a3')
+            self.db.flush() # XXX Right now fails without this
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNotNone(p2.child)
+        self.assertEqual(p2.child.id, 2)
+        self.assertEqual(p2.child.data, 'a3')
+        # Remove child (set to None)
+        with self.db.begin():
+            p1.child = None
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNone(p2.child)
+
     def test_replicate_m2m_ordered(self):
         # Schema
         class A1(self.Base):
