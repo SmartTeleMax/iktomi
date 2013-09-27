@@ -358,7 +358,6 @@ class ReplicationTests(unittest.TestCase):
             a1.b = []
             a2 = replication.replicate(a1, A2)
         self.assertEqual(a2.id, a1.id)
-        #import pdb; pdb.set_trace()
         self.assertEqual(a2.b, [])
         self.assertEqual(b2.a, [])
 
@@ -622,3 +621,57 @@ class ReplicationTests(unittest.TestCase):
             p1.children = set()
             p2 = replication.replicate(p1, P2)
         self.assertEqual(p2.children, set())
+
+    def test_replicate_m2m_backref(self):
+        # Schema
+        class AB1(self.Base):
+            a_id = Column(ForeignKey('A1.id'), primary_key=True)
+            b_id = Column(ForeignKey('B1.id'), primary_key=True)
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            b = relationship('B1', secondary=AB1.__table__, backref='a')
+        class B1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class AB2(self.Base):
+            a_id = Column(ForeignKey('A2.id'), primary_key=True)
+            b_id = Column(ForeignKey('B2.id'), primary_key=True)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            b = relationship('B2', secondary=AB2.__table__, backref='a')
+        class B2(self.Base):
+            id = Column(Integer, primary_key=True)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2, data='a1')
+            b1 = B1(id=2, a=[a1])
+            self.db.add_all([a1, b1])
+        # Reflections of both objects don't exist
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(A2)
+        self.assertEqual(a2.id, a1.id)
+        self.assertEqual(a2.b, [])
+        # Only reflection of replicated object exists
+        with DBHistory(self.db) as hist, self.db.begin():
+            b2 = replication.replicate(b1, B2)
+        hist.assert_created_one(B2)
+        self.assertEqual(b2.id, b1.id)
+        self.assertEqual(b2.a, [a2])
+        self.assertEqual(a2.b, [b2])
+        # Verify that related objects are not updated
+        with self.db.begin():
+            a1.data = 'a2'
+            b2 = replication.replicate(b1, B2)
+        self.assertEqual(b2.id, b1.id)
+        self.assertEqual(b2.a, [a2])
+        self.assertEqual(a2.data, 'a1')
+        # Removal
+        with self.db.begin():
+            a1.b = []
+            a2 = replication.replicate(a1, A2)
+        self.assertEqual(a2.id, a1.id)
+        self.assertEqual(a2.b, [])
+        self.assertEqual(b2.a, [])
