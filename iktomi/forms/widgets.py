@@ -6,6 +6,9 @@ from .media import FormMedia, FormCSSRef, FormJSRef
 
 class Widget(object):
 
+    # obsolete parameters from previous versions
+    _obsolete = frozenset(['multiple'])
+
     #: Template to render widget
     template = None
     #: List of :class:`FormMediaAtom<iktomi.forms.media.FormMediaAtom>`
@@ -22,6 +25,10 @@ class Widget(object):
     render_type = 'default'
 
     def __init__(self, field=None, **kwargs):
+        if self._obsolete & set(kwargs):
+            raise TypeError(
+                    'Obsolete parameters are used: %s' %
+                        list(self._obsolete & set(kwargs)))
         self.field = weakproxy(field)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
