@@ -45,11 +45,13 @@ def exclude(prop):
             _excluded.add(local)
 
 
-def reflect(source, model):
+def reflect(source, model, cache=None):
     '''Finds an object of class `model` with the same identifier as the
     `source` object'''
     if source is None:
         return None
+    if cache and source in cache:
+        return cache[source]
     db = object_session(source)
     ident = identity_key(instance=source)[1]
     assert ident is not None
@@ -62,9 +64,9 @@ class _PrimaryKeyIsNull(BaseException):
     from replicate_filter.'''
 
 
-def replicate_relation(source, target, attr, target_attr):
+def replicate_relation(source, target, attr, target_attr, cache=None):
     if attr.property.cascade.delete_orphan:
-        process_scalar = replicate
+        process_scalar = replicate_no_merge
         process_list = replicate_filter
     else:
         process_scalar = reflect
@@ -76,14 +78,14 @@ def replicate_relation(source, target, attr, target_attr):
         if adapter:
             # Convert any collection to flat iterable
             value = adapter.adapt_like_to_iterable(value)
-        reflection = process_list(value, target_attr_model)
+        reflection = process_list(value, target_attr_model, cache=cache)
         impl = instance_state(target).get_impl(attr.key)
         # Set any collection value from flat list
         impl._set_iterable(instance_state(target),
                            instance_dict(target),
                            reflection)
     else:
-        reflection = process_scalar(value, target_attr_model)
+        reflection = process_scalar(value, target_attr_model, cache=cache)
         setattr(target, attr.key, reflection)
         if (reflection is None and
                 attr.property.direction is MANYTOONE and
@@ -127,7 +129,7 @@ def _column_property_in_registry(prop, registry):
         return False
 
 
-def replicate_attributes(source, target):
+def replicate_attributes(source, target, cache=None):
     '''Replicates common SQLAlchemy attributes from the `source` object to the
     `target` object.'''
     target_manager = manager_of_class(type(target))
@@ -157,40 +159,59 @@ def replicate_attributes(source, target):
         setattr(target, attr.key, getattr(source, attr.key))
     for attr in relationship_attrs:
         target_attr_model = target_manager[attr.key].property.argument
-        if is_relation_replicatable(attr):
-            replicate_relation(source, target, attr, target_manager[attr.key])
+        if not is_relation_replicatable(attr):
+            continue
+        replicate_relation(source, target, attr, target_manager[attr.key],
+                           cache=cache)
 
 
-def replicate(source, model):
+def replicate_no_merge(source, model, cache=None):
     '''Replicates the `source` object to `model` class and returns its
     reflection.'''
-    target = model()
-    replicate_attributes(source, target)
-    db = object_session(source)
-    return db.merge(target)
+    # `cache` is used to break circular dependency: we need to replicate
+    # attributes before merging target into the session, but replication of
+    # some attributes may require target to be in session to avoid infinite
+    # loop.
+    if source is None:
+        return None
+    if cache is None:
+        cache = {}
+    elif source in cache:
+        return cache
+    cache[source] = target = model()
+    try:
+        replicate_attributes(source, target, cache=cache)
+    except _PrimaryKeyIsNull:
+        return None
+    else:
+        return target
 
 
-def replicate_filter(sources, model):
+def replicate(source, model, cache=None):
+    '''Replicates the `source` object to `model` class and returns its
+    reflection.'''
+    target = replicate_no_merge(source, model, cache=cache)
+    if target is not None:
+        db = object_session(source)
+        target = db.merge(target)
+    return target
+
+
+def replicate_filter(sources, model, cache=None):
     '''Replicates the list of objects to other class and returns their
     reflections'''
-    targets = []
-    for source in sources:
-        assert filter(None, identity_key(instance=source))
-        target = model()
-        try:
-            replicate_attributes(source, target)
-        except _PrimaryKeyIsNull:
-            pass
-        else:
-            targets.append(target)
-    return targets
+    targets = [replicate_no_merge(source, model, cache=cache)
+               for source in sources]
+    # Some objects may not be available in target DB (not published), so we
+    # have to exclude None from the list.
+    return [target for target in targets if target is not None]
 
 
-def reflect_filter(sources, model):
+def reflect_filter(sources, model, cache=None):
     '''Returns the list of reflections of objects in the `source` list to other
     class. Objects that are not found in target table are silently discarded.
     '''
-    targets = [reflect(source, model) for source in sources]
+    targets = [reflect(source, model, cache=cache) for source in sources]
     # Some objects may not be available in target DB (not published), so we
     # have to exclude None from the list.
     return [target for target in targets if target is not None]

@@ -1,6 +1,7 @@
 import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -357,9 +358,110 @@ class ReplicationTests(unittest.TestCase):
             a1.b = []
             a2 = replication.replicate(a1, A2)
         self.assertEqual(a2.id, a1.id)
-        #import pdb; pdb.set_trace()
         self.assertEqual(a2.b, [])
         self.assertEqual(b2.a, [])
+
+    def test_replicate_o2m_private(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C1', cascade='all,delete-orphan')
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P1.id), nullable=False)
+            parent = relationship(P1)
+            data = Column(String)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C2', cascade='all,delete-orphan')
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P2.id), nullable=False)
+            parent = relationship(P2)
+            data = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, children=[C1(id=2, data='a1')])
+            self.db.add(p1)
+        # New
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(P2)
+        hist.assert_created_one(C2)
+        self.assertEqual(len(p2.children), 1)
+        self.assertEqual(p2.children[0].id, 2)
+        self.assertEqual(p2.children[0].data, 'a1')
+        # Append new child and update existing
+        with self.db.begin():
+            p1.children[0].data = 'a2'
+            p1.children.append(C1(id=4, data='b1'))
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(C2)
+        hist.assert_updated_one(C2)
+        self.assertEqual(len(p2.children), 2)
+        self.assertEqual(set([(c.id, c.data) for c in p2.children]),
+                         set([(2, 'a2'), (4, 'b1')]))
+        # Update one and remove other child
+        with self.db.begin():
+            p1.children = [C1(id=4, data='b2')]
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(self.db.query(C2).count(), 1)
+        self.assertEqual(len(p2.children), 1)
+        self.assertEqual(p2.children[0].id, 4)
+        self.assertEqual(p2.children[0].data, 'b2')
+
+    def test_replicate_o2o_private(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            child = relationship('C1', uselist=False,
+                                 cascade='all,delete-orphan')
+        class C1(self.Base):
+            id = Column(ForeignKey(P1.id), primary_key=True)
+            parent = relationship(P1)
+            data = Column(String)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            child = relationship('C2', uselist=False,
+                                 cascade='all,delete-orphan')
+        class C2(self.Base):
+            id = Column(ForeignKey(P2.id), primary_key=True)
+            parent = relationship(P2)
+            data = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, child=C1(data='a1'))
+            self.db.add(p1)
+        # New
+        with DBHistory(self.db) as hist, self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        hist.assert_created_one(P2)
+        hist.assert_created_one(C2)
+        self.assertIsNotNone(p2.child)
+        # Update child
+        with self.db.begin():
+            p1.child.data = 'a2'
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNotNone(p2.child)
+        self.assertEqual(p2.child.id, 2)
+        self.assertEqual(p2.child.data, 'a2')
+        # Change child
+        with self.db.begin():
+            p1.child = C1(data='a3')
+            self.db.flush() # XXX Right now fails without this
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNotNone(p2.child)
+        self.assertEqual(p2.child.id, 2)
+        self.assertEqual(p2.child.data, 'a3')
+        # Remove child (set to None)
+        with self.db.begin():
+            p1.child = None
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNone(p2.child)
 
     def test_replicate_m2m_ordered(self):
         # Schema
@@ -427,3 +529,149 @@ class ReplicationTests(unittest.TestCase):
             a1.b = []
             a2 = replication.replicate(a1, A2)
         self.assertEqual(len(a2.b), 0)
+
+    def test_replication_o2m_dict(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            _children = relationship(
+                        'C1', cascade='all,delete-orphan',
+                        collection_class=attribute_mapped_collection('key'))
+            children = association_proxy(
+                        '_children', 'value',
+                        creator=lambda k, v: C1(key=k, value=v))
+        class C1(self.Base):
+            parent_id = Column(ForeignKey(P1.id), nullable=False,
+                               primary_key=True)
+            parent = relationship(P1)
+            key = Column(String(10), nullable=False, primary_key=True)
+            value = Column(String)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            _children = relationship(
+                        'C2', cascade='all,delete-orphan',
+                        collection_class=attribute_mapped_collection('key'))
+            children = association_proxy(
+                        '_children', 'value',
+                        creator=lambda k, v: C1(key=k, value=v))
+        class C2(self.Base):
+            parent_id = Column(ForeignKey(P2.id), nullable=False,
+                               primary_key=True)
+            parent = relationship(P2)
+            key = Column(String(10), nullable=False, primary_key=True)
+            value = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(children={'k1': 'v11', 'k2': 'v2'})
+            self.db.add(p1)
+        # New
+        with self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(p2.children, {'k1': 'v11', 'k2': 'v2'})
+        # Update
+        with self.db.begin():
+            p1.children['k1'] = 'v12'
+            del p1.children['k2']
+            p1.children['k3'] = 'v3'
+            self.db.flush() # XXX Fails without this
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(p2.children, {'k1': 'v12', 'k3': 'v3'})
+
+    def test_replication_m2m_set(self):
+        # Schema
+        class PC1(self.Base):
+            p_id = Column(ForeignKey('P1.id'), primary_key=True)
+            c_id = Column(ForeignKey('C1.id'), primary_key=True)
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C1', secondary=PC1.__table__,
+                                    collection_class=set)
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class PC2(self.Base):
+            p_id = Column(ForeignKey('P2.id'), primary_key=True)
+            c_id = Column(ForeignKey('C2.id'), primary_key=True)
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            children = relationship('C2', secondary=PC2.__table__,
+                                    collection_class=set)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            c11 = C1(id=2)
+            p1 = P1(children=set([c11, C1(id=4)]))
+            c21 = C2(id=2)
+            self.db.add_all([p1, c21])
+        # New: one has reflection and other doesn't
+        with self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(p2.children, set([c21]))
+        # Update
+        with self.db.begin():
+            p1.children = set([c11, C1(id=6)])
+            c23 = C2(id=6)
+            self.db.add(c23)
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(p2.children, set([c21, c23]))
+        # Empty
+        with self.db.begin():
+            p1.children = set()
+            p2 = replication.replicate(p1, P2)
+        self.assertEqual(p2.children, set())
+
+    def test_replicate_m2m_backref(self):
+        # Schema
+        class AB1(self.Base):
+            a_id = Column(ForeignKey('A1.id'), primary_key=True)
+            b_id = Column(ForeignKey('B1.id'), primary_key=True)
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            b = relationship('B1', secondary=AB1.__table__, backref='a')
+        class B1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class AB2(self.Base):
+            a_id = Column(ForeignKey('A2.id'), primary_key=True)
+            b_id = Column(ForeignKey('B2.id'), primary_key=True)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            b = relationship('B2', secondary=AB2.__table__, backref='a')
+        class B2(self.Base):
+            id = Column(Integer, primary_key=True)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2, data='a1')
+            b1 = B1(id=2, a=[a1])
+            self.db.add_all([a1, b1])
+        # Reflections of both objects don't exist
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(A2)
+        self.assertEqual(a2.id, a1.id)
+        self.assertEqual(a2.b, [])
+        # Only reflection of replicated object exists
+        with DBHistory(self.db) as hist, self.db.begin():
+            b2 = replication.replicate(b1, B2)
+        hist.assert_created_one(B2)
+        self.assertEqual(b2.id, b1.id)
+        self.assertEqual(b2.a, [a2])
+        self.assertEqual(a2.b, [b2])
+        # Verify that related objects are not updated
+        with self.db.begin():
+            a1.data = 'a2'
+            b2 = replication.replicate(b1, B2)
+        self.assertEqual(b2.id, b1.id)
+        self.assertEqual(b2.a, [a2])
+        self.assertEqual(a2.data, 'a1')
+        # Removal
+        with self.db.begin():
+            a1.b = []
+            a2 = replication.replicate(a1, A2)
+        self.assertEqual(a2.id, a1.id)
+        self.assertEqual(a2.b, [])
+        self.assertEqual(b2.a, [])
