@@ -15,9 +15,10 @@ replicate::
 '''
 
 from weakref import WeakSet
+from sqlalchemy.schema import Column
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm.util import identity_key
-from sqlalchemy.orm.attributes import manager_of_class
+from sqlalchemy.orm.attributes import manager_of_class, QueryableAttribute
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 from sqlalchemy.orm.collections import collection_adapter
 from sqlalchemy.orm.attributes import instance_state, instance_dict
@@ -31,13 +32,17 @@ _excluded = WeakSet()
 def include(prop):
     '''Replicate property that is normally not replicated. Right now it's
     meaningful for one-to-many relations only.'''
+    if isinstance(prop, QueryableAttribute):
+        prop = prop.property
     assert isinstance(prop, RelationshipProperty)
     _included.add(prop)
 
 def exclude(prop):
     '''Don't replicate property that is normally replicated: ordering column,
     many-to-one relation that is marked for replication from other side.'''
-    assert isinstance(prop, [Column, ColumnProperty, RelationshipProperty])
+    if isinstance(prop, QueryableAttribute):
+        prop = prop.property
+    assert isinstance(prop, (Column, ColumnProperty, RelationshipProperty))
     _excluded.add(prop)
     if isinstance(prop, RelationshipProperty):
         # Also exclude columns that participate in this relationship
@@ -178,7 +183,12 @@ def replicate_no_merge(source, model, cache=None):
         cache = {}
     elif source in cache:
         return cache
-    cache[source] = target = model()
+    db = object_session(source)
+    cls, ident = identity_key(instance=source)
+    target = db.query(model).get(ident)
+    if target is None:
+        target = model()
+    cache[source] = target
     try:
         replicate_attributes(source, target, cache=cache)
     except _PrimaryKeyIsNull:
