@@ -736,3 +736,58 @@ class ReplicationTests(unittest.TestCase):
             n22 = replication.replicate(n12, N2)
         self.assertEqual(n21.children, [n22])
         self.assertEqual(n22.parent, n21)
+
+    def test_include_exclude_relationship(self):
+        # Schema
+        class N1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(id))
+            parent = relationship('N1', remote_side=id, backref='children')
+        replication.exclude(N1.parent)
+        replication.include(N1.children)
+        class N2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(id))
+            parent = relationship('N2', remote_side=id, backref='children')
+        self.create_all()
+        # Data
+        with self.db.begin():
+            n12 = N1(id=4)
+            n11 = N1(id=2, children=[n12, N1(id=6)])
+            n22 = N2(id=4)
+            self.db.add_all([n11, n22])
+        # Test new (reflection of one child exists)
+        with self.db.begin():
+            n21 = replication.replicate(n11, N2)
+        self.assertIsNotNone(n21)
+        self.assertEqual(n21.children, [n22])
+        self.assertIsNotNone(n22.parent)
+        # Check that parent is not replicated
+        with self.db.begin():
+            n22.parent = None
+        with self.db.begin():
+            n22 = replication.replicate(n12, N2)
+        self.assertIsNotNone(n12.parent)
+        self.assertIsNone(n22.parent)
+        self.assertEqual(n21.children, [])
+
+    def test_exclude_column(self):
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            replication.exclude(data)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2, data='a')
+            self.db.add(a1)
+        # Test
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.id, a1.id)
+        self.assertIsNone(a2.data)
