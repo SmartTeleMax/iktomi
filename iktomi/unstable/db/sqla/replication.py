@@ -178,7 +178,12 @@ def replicate_no_merge(source, model, cache=None):
         cache = {}
     elif source in cache:
         return cache
-    cache[source] = target = model()
+    db = object_session(source)
+    cls, pk = identity_key(instance=source)
+    target = db.query(model).get(pk)
+    if target is None:
+        target = model()
+    cache[source] = target
     try:
         replicate_attributes(source, target, cache=cache)
     except _PrimaryKeyIsNull:
