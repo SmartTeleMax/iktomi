@@ -2,7 +2,7 @@ import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
 from testalchemy import DBHistory
@@ -675,3 +675,29 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(a2.id, a1.id)
         self.assertEqual(a2.b, [])
         self.assertEqual(b2.a, [])
+
+    def test_replicate_declared_attr(self):
+        # Schema
+        class Common(object):
+            @declared_attr
+            def id(cls):
+                return Column(Integer, primary_key=True)
+            @declared_attr
+            def same(cls):
+                return Column(String)
+        class A1(self.Base, Common):
+            pass
+        class A2(self.Base, Common):
+            pass
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2, same='s')
+            self.db.add(a1)
+        # Test when reflection doesn't exist
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.id, a1.id)
+        self.assertEqual(a2.same, 's')
