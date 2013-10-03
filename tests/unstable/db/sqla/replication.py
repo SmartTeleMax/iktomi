@@ -701,3 +701,38 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertEqual(a2.id, a1.id)
         self.assertEqual(a2.same, 's')
+
+    def test_replicate_self_reference(self):
+        # Schema
+        class N1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(id))
+            parent = relationship('N1', remote_side=id, backref='children')
+        class N2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(id))
+            parent = relationship('N2', remote_side=id, backref='children')
+        self.create_all()
+        # Data
+        with self.db.begin():
+            n12 = N1(id=4)
+            n11 = N1(id=2, children=[n12])
+            n22 = N2(id=4)
+            self.db.add_all([n11, n22])
+        # Test new
+        with self.db.begin():
+            n22 = replication.replicate(n12, N2)
+        self.assertIsNotNone(n22)
+        self.assertEqual(n22.children, [])
+        self.assertIsNone(n22.parent)
+        # Now we have child, but it shouldn't be replicated via children attr
+        with self.db.begin():
+            n21 = replication.replicate(n11, N2)
+        self.assertIsNotNone(n21)
+        self.assertEqual(n22.children, [])
+        self.assertIsNone(n22.parent)
+        # Now with existing reflection for parent
+        with self.db.begin():
+            n22 = replication.replicate(n12, N2)
+        self.assertEqual(n21.children, [n22])
+        self.assertEqual(n22.parent, n21)
