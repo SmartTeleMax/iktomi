@@ -1,42 +1,44 @@
 <table class="fieldset">
-{% for subfield in field.fields %}
-{% if subfield.readable %}
-{% if subfield.error %}
+{%- for subfield in field.fields %}
+{%- if subfield.readable %}
+  {%- if subfield.error -%}
   <tr class="error-row">
     <td colspan="2">
       <span class="error">{{ subfield.error }}</span>
     </td>
   </tr>
-  {% endif %}
-  <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}{% if subfield.widget.classname is defined %} {{ subfield.widget.classname }}{% endif %}">
-  {% if subfield.widget.render_type == 'checkbox' %}
+  {%- endif -%}
+  <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}
+    {%- if subfield.widget.classname is defined and subfield.widget.classname -%}
+      {# XXX #} {{ subfield.widget.classname }}{% endif %}">
+  {%- if subfield.widget.render_type == 'checkbox' -%}
     <th></th>
     <td>
-      {{ subfield.widget.render()|safe }}
-      {% if subfield.label %}
+      {{- subfield.widget.render()|safe }}
+      {%- if subfield.label -%}
       <label for="{{ subfield.id }}">{{ subfield.label }}</label>
-      {% endif %}
+      {%- endif -%}
     </td>
-  {% elif subfield.widget.render_type == 'hidden' %}
+  {%- elif subfield.widget.render_type == 'hidden' -%}
     <td style="display: none" colspan="2">{{ subfield.widget.render()|safe }}</td>
-  {% elif subfield.widget.render_type == 'full-width' %}
+  {%- elif subfield.widget.render_type == 'full-width' -%}
     <td colspan="2">
-      {% if subfield.label %}
+      {%- if subfield.label -%}
       <p class="th"><label for="{{ subfield.id }}">{{ subfield.label }}</label></p>
-      {% endif %}
-      {{ subfield.widget.render()|safe }}
+      {%- endif %}
+      {{- subfield.widget.render()|safe -}}
     </td>
-  {% else %}
+  {%- else -%}
     <th>
-      {% if subfield.label %}
+      {%- if subfield.label -%}
       <label for="{{ subfield.id }}">{{ subfield.label }}</label>
-      {% endif %}
+      {%- endif -%}
     </th>
     <td>
-      {{ subfield.widget.render()|safe }}
+      {{- subfield.widget.render()|safe -}}
     </td>
-  {% endif %}
+  {%- endif -%}
   </tr>
-{% endif %}
-{% endfor %}
+{%- endif -%}
+{% endfor -%}
 </table>
