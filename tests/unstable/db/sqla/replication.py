@@ -1,5 +1,6 @@
 import unittest
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
+from sqlalchemy import Column, Integer, String, ForeignKey, \
+                       ForeignKeyConstraint, create_engine
 from sqlalchemy.orm import sessionmaker, relationship, composite
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -821,3 +822,47 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertEqual(a1.point.x, 1)
         self.assertEqual(a1.point.y, 2)
+
+    def test_replication_composite_pk_relationship(self):
+        # Schema
+        class Category1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class Node1(self.Base):
+            id = Column(Integer, primary_key=True)
+            category_id = Column(ForeignKey(Category1.id), nullable=False)
+            category = relationship(Category1)
+            parent_id = Column(Integer)
+            parent = relationship('Node1', remote_side=id)
+            __table_args__ = (
+                ForeignKeyConstraint([parent_id, category_id],
+                                     [id, category_id],
+                                     name='fk_parent_id1'),
+            )
+        class Category2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class Node2(self.Base):
+            id = Column(Integer, primary_key=True)
+            category_id = Column(ForeignKey(Category2.id), nullable=False)
+            category = relationship(Category2)
+            parent_id = Column(Integer)
+            parent = relationship('Node2', remote_side=id)
+            __table_args__ = (
+                ForeignKeyConstraint([parent_id, category_id],
+                                     [id, category_id],
+                                     name='fk_parent_id2'),
+            )
+        self.create_all()
+        # Data
+        with self.db.begin():
+            category1 = Category1(id=2)
+            node11 = Node1(id=2, category=category1)
+            node12 = Node1(id=4, category=category1, parent=node11)
+            category2 = Category2(id=2)
+            node21 = Node2(id=2, category=category2)
+            self.db.add_all([node12, node21])
+        self.assertEqual(node12.parent, node11)
+        # Test
+        with self.db.begin():
+            node22 = replication.replicate(node12, Node2)
+        self.assertIsNotNone(node22)
+        self.assertEqual(node22.parent, node21)
