@@ -892,3 +892,41 @@ class ReplicationTests(unittest.TestCase):
             c1.parent = None
             c2 = replication.replicate(c1, C2)
         self.assertIsNone(c2.parent)
+
+    def test_replicate_circular(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+        class C1(self.Base):
+            id = Column(ForeignKey(P1.id), primary_key=True,
+                        autoincrement=False)
+            more = Column(String)
+            parent = relationship(P1, cascade='all,delete-orphan',
+                                  single_parent=True)
+            replication.include(parent)
+        P1.child = relationship(C1, uselist=False, cascade='all,delete-orphan')
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+        class C2(self.Base):
+            id = Column(ForeignKey(P2.id), primary_key=True,
+                        autoincrement=False)
+            more = Column(String)
+            parent = relationship(P2, cascade='all,delete-orphan',
+                                  single_parent=True)
+        P2.child = relationship(C2, uselist=False, cascade='all,delete-orphan')
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, data='a', child=C1(more='b'))
+            self.db.add(p1)
+        # Test
+        with self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNotNone(p2)
+        self.assertEqual(p2.id, 2)
+        self.assertIsNotNone(p2.child)
+        self.assertEqual(p2.child.id, 2)
+        self.assertEqual(p2.data, 'a')
+        self.assertEqual(p2.child.more, 'b')
