@@ -1,6 +1,6 @@
 import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, composite
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -791,3 +791,33 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertEqual(a2.id, a1.id)
         self.assertIsNone(a2.data)
+
+    def test_replication_composite(self):
+        # Schema
+        class Point(object):
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+            def __composite_values__(self):
+                return self.x, self.y
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            point = composite(Point,
+                              Column('point_x', Integer, nullable=False),
+                              Column('point_y', Integer, nullable=False))
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            point = composite(Point,
+                              Column('point_x', Integer, nullable=False),
+                              Column('point_y', Integer, nullable=False))
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(point=Point(1, 2))
+            self.db.add(a1)
+        # Test
+        with self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a1.point.x, 1)
+        self.assertEqual(a1.point.y, 2)
