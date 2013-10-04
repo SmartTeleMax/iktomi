@@ -835,8 +835,7 @@ class ReplicationTests(unittest.TestCase):
             parent = relationship('Node1', remote_side=id)
             __table_args__ = (
                 ForeignKeyConstraint([parent_id, category_id],
-                                     [id, category_id],
-                                     name='fk_parent_id1'),
+                                     [id, category_id]),
             )
         class Category2(self.Base):
             id = Column(Integer, primary_key=True)
@@ -848,8 +847,7 @@ class ReplicationTests(unittest.TestCase):
             parent = relationship('Node2', remote_side=id)
             __table_args__ = (
                 ForeignKeyConstraint([parent_id, category_id],
-                                     [id, category_id],
-                                     name='fk_parent_id2'),
+                                     [id, category_id]),
             )
         self.create_all()
         # Data
@@ -866,3 +864,31 @@ class ReplicationTests(unittest.TestCase):
             node22 = replication.replicate(node12, Node2)
         self.assertIsNotNone(node22)
         self.assertEqual(node22.parent, node21)
+
+    def test_replication_shared_parent(self):
+        # Schema
+        class P(self.Base):
+            id = Column(Integer, primary_key=True)
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P.id))
+            parent = relationship(P)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P.id))
+            parent = relationship(P)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p = P(id=2)
+            c1 = C1(id=2, parent=p)
+            self.db.add(c1)
+        # Test
+        with self.db.begin():
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNotNone(c2)
+        self.assertIs(c2.parent, p)
+        with self.db.begin():
+            c1.parent = None
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNone(c2.parent)
