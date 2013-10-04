@@ -35,12 +35,13 @@ class ModelFactories(object):
 
     def register(self, *base_names, **kwargs):
         lang = kwargs.pop('lang', False)
+        langs = kwargs.pop('langs', None)
         assert not kwargs
         def decor(func):
             name = func.func_name
             constructor = self.get_constructor(func)
             if lang:
-                self.i18n_models.append((name, constructor, base_names))
+                self.i18n_models.append((name, constructor, base_names, langs))
             else:
                 self.models.append((name, constructor, base_names))
             return constructor
@@ -53,19 +54,23 @@ class ModelFactories(object):
         cls.__module__ = module.__name__
         return cls
 
-    def create_all(self, module, all_lang_models=()):
+    def create_all(self, module, all_lang_modules=()):
         for name, constructor, base_names in self.models:
             if hasattr(module, name):
                 pass
             cls = self.create_model(module, name, constructor, base_names)
             setattr(module, name, cls)
 
-        for lang_models in all_lang_models:
-            for name, constructor, base_names in self.i18n_models:
-                lang_name = lang_models._get_model_name(name)
+        for name, constructor, base_names, langs in self.i18n_models:
+            if langs is None:
+                lang_modules = all_lang_modules
+            else:
+                lang_modules = [getattr(module, l) for l in langs]
+            for lang_module in lang_modules:
+                lang_name = lang_module._get_model_name(name)
                 if hasattr(module, lang_name):
                     pass
-                cls = self.create_model(lang_models, lang_name,
+                cls = self.create_model(lang_module, lang_name,
                                         constructor, base_names)
                 setattr(module, lang_name, cls)
 
