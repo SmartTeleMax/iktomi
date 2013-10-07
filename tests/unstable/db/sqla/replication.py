@@ -930,3 +930,39 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(p2.child.id, 2)
         self.assertEqual(p2.data, 'a')
         self.assertEqual(p2.child.more, 'b')
+
+    def test_replication_viewonly(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            state = Column(Integer, nullable=False, default=0)
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P1.id))
+            parent = relationship(P1, viewonly=True,
+                                  primaryjoin=((parent_id==P1.id) &
+                                               (P1.state>0)))
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            state = Column(Integer, nullable=False, default=0)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P2.id))
+            parent = relationship(P2, viewonly=True,
+                                  primaryjoin=((parent_id==P2.id) &
+                                               (P2.state>0)))
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, state=0)
+            p2 = P2(id=2, state=0)
+            c1 = C1(id=2, parent_id=2)
+            self.db.add_all([c1, p1, p2])
+        self.assertEqual(c1.parent_id, 2)
+        self.assertIsNone(c1.parent)
+        # Test
+        with self.db.begin():
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNotNone(c2)
+        self.assertIsNone(c2.parent_id)
+        self.assertIsNone(c2.parent)
