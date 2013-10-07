@@ -933,36 +933,39 @@ class ReplicationTests(unittest.TestCase):
 
     def test_replication_viewonly(self):
         # Schema
-        class P1(self.Base):
+        class AB1(self.Base):
+            a_id = Column(ForeignKey('A1.id'), primary_key=True)
+            b_id = Column(ForeignKey('B1.id'), primary_key=True)
+        class B1(self.Base):
             id = Column(Integer, primary_key=True)
-            state = Column(Integer, nullable=False, default=0)
-        class C1(self.Base):
+            value = Column(Integer, nullable=False)
+        class A1(self.Base):
             id = Column(Integer, primary_key=True)
-            parent_id = Column(ForeignKey(P1.id))
-            parent = relationship(P1, viewonly=True,
-                                  primaryjoin=((parent_id==P1.id) &
-                                               (P1.state>0)))
-        class P2(self.Base):
+            b = relationship(B1, secondary=AB1.__table__,
+                             secondaryjoin=((AB1.b_id==B1.id) & (B1.value>0)),
+                             viewonly=True)
+        class AB2(self.Base):
+            a_id = Column(ForeignKey('A2.id'), primary_key=True)
+            b_id = Column(ForeignKey('B2.id'), primary_key=True)
+        class B2(self.Base):
             id = Column(Integer, primary_key=True)
-            state = Column(Integer, nullable=False, default=0)
-        class C2(self.Base):
+            value = Column(Integer, nullable=False)
+        class A2(self.Base):
             id = Column(Integer, primary_key=True)
-            parent_id = Column(ForeignKey(P2.id))
-            parent = relationship(P2, viewonly=True,
-                                  primaryjoin=((parent_id==P2.id) &
-                                               (P2.state>0)))
+            b = relationship(B2, secondary=AB2.__table__,
+                             secondaryjoin=((AB2.b_id==B2.id) & (B2.value>0)),
+                             viewonly=True)
         self.create_all()
         # Data
         with self.db.begin():
-            p1 = P1(id=2, state=0)
-            p2 = P2(id=2, state=0)
-            c1 = C1(id=2, parent_id=2)
-            self.db.add_all([c1, p1, p2])
-        self.assertEqual(c1.parent_id, 2)
-        self.assertIsNone(c1.parent)
+            a1 = A1(id=2)
+            b1 = B1(id=2, value=1)
+            ab1 = AB1(a_id=2, b_id=2)
+            self.db.add_all([a1, b1, ab1])
+            b2 = B2(id=2, value=1)
+        self.assertEqual(a1.b, [b1])
         # Test
         with self.db.begin():
-            c2 = replication.replicate(c1, C2)
-        self.assertIsNotNone(c2)
-        self.assertIsNone(c2.parent_id)
-        self.assertIsNone(c2.parent)
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.b, [])
