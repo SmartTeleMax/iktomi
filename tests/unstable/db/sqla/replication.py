@@ -969,3 +969,42 @@ class ReplicationTests(unittest.TestCase):
             a2 = replication.replicate(a1, A2)
         self.assertIsNotNone(a2)
         self.assertEqual(a2.b, [])
+
+    def test_replication_dynamic(self):
+        # Schema
+        class AB1(self.Base):
+            a_id = Column(ForeignKey('A1.id'), primary_key=True)
+            b_id = Column(ForeignKey('B1.id'), primary_key=True)
+        class B1(self.Base):
+            id = Column(Integer, primary_key=True)
+            a = relationship('A1', secondary=AB1.__table__)
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = relationship(B1, secondary=AB1.__table__, lazy='dynamic')
+        class AB2(self.Base):
+            a_id = Column(ForeignKey('A2.id'), primary_key=True)
+            b_id = Column(ForeignKey('B2.id'), primary_key=True)
+        class B2(self.Base):
+            id = Column(Integer, primary_key=True)
+            a = relationship('A2', secondary=AB2.__table__)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = relationship(B2, secondary=AB2.__table__, lazy='dynamic')
+        self.create_all()
+        # Data
+        with self.db.begin():
+            b1 = B1(id=2)
+            a1 = A1(id=2, b=[b1])
+            b2 = B2(id=2)
+            self.db.add_all([a1, b2])
+        # Test from dynamic side
+        with self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.b.all(), [])
+        # Test from oposite side
+        with self.db.begin():
+            b2 = replication.replicate(b1, B2)
+        self.assertIsNotNone(b2)
+        self.assertEqual(b2.a, [a2])
+        self.assertEqual(a2.b.all(), [b2])
