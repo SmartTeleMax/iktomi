@@ -10,7 +10,8 @@
   {%- endif -%}
   <tr class="form-row{% if loop.last %} last{% endif %}{% if loop.first %} first{% endif %}
     {%- if subfield.widget.classname is defined and subfield.widget.classname -%}
-      {# XXX #} {{ subfield.widget.classname }}{% endif %}">
+      {# XXX #} {{ subfield.widget.classname }}{% endif %}"
+    {%- if subfield.widget.render_type == 'hidden' %} style="display:none"{% endif %}>
   {%- if subfield.widget.render_type == 'checkbox' -%}
     <th></th>
     <td>
@@ -20,7 +21,7 @@
       {%- endif -%}
     </td>
   {%- elif subfield.widget.render_type == 'hidden' -%}
-    <td style="display: none" colspan="2">{{ subfield.widget.render()|safe }}</td>
+    <td colspan="2">{{ subfield.widget.render()|safe }}</td>
   {%- elif subfield.widget.render_type == 'full-width' -%}
     <td colspan="2">
       {%- if subfield.label -%}
