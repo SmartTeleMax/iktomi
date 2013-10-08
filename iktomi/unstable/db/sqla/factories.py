@@ -52,6 +52,7 @@ class ModelFactories(object):
         values = constructor(module)
         cls = type(name, bases, values)
         cls.__module__ = module.__name__
+        cls.models = module
         return cls
 
     def create_all(self, module, all_lang_modules=()):
