@@ -1,6 +1,7 @@
 import unittest
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy import Column, Integer, String, ForeignKey, \
+                       ForeignKeyConstraint, create_engine
+from sqlalchemy.orm import sessionmaker, relationship, composite
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -791,3 +792,219 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(a2)
         self.assertEqual(a2.id, a1.id)
         self.assertIsNone(a2.data)
+
+    def test_replication_composite(self):
+        # Schema
+        class Point(object):
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+            def __composite_values__(self):
+                return self.x, self.y
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            point = composite(Point,
+                              Column('point_x', Integer, nullable=False),
+                              Column('point_y', Integer, nullable=False))
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            point = composite(Point,
+                              Column('point_x', Integer, nullable=False),
+                              Column('point_y', Integer, nullable=False))
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(point=Point(1, 2))
+            self.db.add(a1)
+        # Test
+        with self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a1.point.x, 1)
+        self.assertEqual(a1.point.y, 2)
+
+    def test_replication_composite_pk_relationship(self):
+        # Schema
+        class Category1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class Node1(self.Base):
+            id = Column(Integer, primary_key=True)
+            category_id = Column(ForeignKey(Category1.id), nullable=False)
+            category = relationship(Category1)
+            parent_id = Column(Integer)
+            parent = relationship('Node1', remote_side=id)
+            __table_args__ = (
+                ForeignKeyConstraint([parent_id, category_id],
+                                     [id, category_id]),
+            )
+        class Category2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class Node2(self.Base):
+            id = Column(Integer, primary_key=True)
+            category_id = Column(ForeignKey(Category2.id), nullable=False)
+            category = relationship(Category2)
+            parent_id = Column(Integer)
+            parent = relationship('Node2', remote_side=id)
+            __table_args__ = (
+                ForeignKeyConstraint([parent_id, category_id],
+                                     [id, category_id]),
+            )
+        self.create_all()
+        # Data
+        with self.db.begin():
+            category1 = Category1(id=2)
+            node11 = Node1(id=2, category=category1)
+            node12 = Node1(id=4, category=category1, parent=node11)
+            category2 = Category2(id=2)
+            node21 = Node2(id=2, category=category2)
+            self.db.add_all([node12, node21])
+        self.assertEqual(node12.parent, node11)
+        # Test
+        with self.db.begin():
+            node22 = replication.replicate(node12, Node2)
+        self.assertIsNotNone(node22)
+        self.assertEqual(node22.parent, node21)
+
+    def test_replication_shared_parent(self):
+        # Schema
+        class P(self.Base):
+            id = Column(Integer, primary_key=True)
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P.id))
+            parent = relationship(P)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(ForeignKey(P.id))
+            parent = relationship(P)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p = P(id=2)
+            c1 = C1(id=2, parent=p)
+            self.db.add(c1)
+        # Test
+        with self.db.begin():
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNotNone(c2)
+        self.assertIs(c2.parent, p)
+        with self.db.begin():
+            c1.parent = None
+            c2 = replication.replicate(c1, C2)
+        self.assertIsNone(c2.parent)
+
+    def test_replicate_circular(self):
+        # Schema
+        class P1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+        class C1(self.Base):
+            id = Column(ForeignKey(P1.id), primary_key=True,
+                        autoincrement=False)
+            more = Column(String)
+            parent = relationship(P1, cascade='all,delete-orphan',
+                                  single_parent=True)
+            replication.include(parent)
+        P1.child = relationship(C1, uselist=False, cascade='all,delete-orphan')
+        class P2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+        class C2(self.Base):
+            id = Column(ForeignKey(P2.id), primary_key=True,
+                        autoincrement=False)
+            more = Column(String)
+            parent = relationship(P2, cascade='all,delete-orphan',
+                                  single_parent=True)
+        P2.child = relationship(C2, uselist=False, cascade='all,delete-orphan')
+        self.create_all()
+        # Data
+        with self.db.begin():
+            p1 = P1(id=2, data='a', child=C1(more='b'))
+            self.db.add(p1)
+        # Test
+        with self.db.begin():
+            p2 = replication.replicate(p1, P2)
+        self.assertIsNotNone(p2)
+        self.assertEqual(p2.id, 2)
+        self.assertIsNotNone(p2.child)
+        self.assertEqual(p2.child.id, 2)
+        self.assertEqual(p2.data, 'a')
+        self.assertEqual(p2.child.more, 'b')
+
+    def test_replication_viewonly(self):
+        # Schema
+        class AB1(self.Base):
+            a_id = Column(ForeignKey('A1.id'), primary_key=True)
+            b_id = Column(ForeignKey('B1.id'), primary_key=True)
+        class B1(self.Base):
+            id = Column(Integer, primary_key=True)
+            value = Column(Integer, nullable=False)
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = relationship(B1, secondary=AB1.__table__,
+                             secondaryjoin=((AB1.b_id==B1.id) & (B1.value>0)),
+                             viewonly=True)
+        class AB2(self.Base):
+            a_id = Column(ForeignKey('A2.id'), primary_key=True)
+            b_id = Column(ForeignKey('B2.id'), primary_key=True)
+        class B2(self.Base):
+            id = Column(Integer, primary_key=True)
+            value = Column(Integer, nullable=False)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = relationship(B2, secondary=AB2.__table__,
+                             secondaryjoin=((AB2.b_id==B2.id) & (B2.value>0)),
+                             viewonly=True)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2)
+            b1 = B1(id=2, value=1)
+            ab1 = AB1(a_id=2, b_id=2)
+            self.db.add_all([a1, b1, ab1])
+            b2 = B2(id=2, value=1)
+        self.assertEqual(a1.b, [b1])
+        # Test
+        with self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.b, [])
+
+    def test_replication_dynamic(self):
+        # Schema
+        class AB1(self.Base):
+            a_id = Column(ForeignKey('A1.id'), primary_key=True)
+            b_id = Column(ForeignKey('B1.id'), primary_key=True)
+        class B1(self.Base):
+            id = Column(Integer, primary_key=True)
+            a = relationship('A1', secondary=AB1.__table__)
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = relationship(B1, secondary=AB1.__table__, lazy='dynamic')
+        class AB2(self.Base):
+            a_id = Column(ForeignKey('A2.id'), primary_key=True)
+            b_id = Column(ForeignKey('B2.id'), primary_key=True)
+        class B2(self.Base):
+            id = Column(Integer, primary_key=True)
+            a = relationship('A2', secondary=AB2.__table__)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            b = relationship(B2, secondary=AB2.__table__, lazy='dynamic')
+        self.create_all()
+        # Data
+        with self.db.begin():
+            b1 = B1(id=2)
+            a1 = A1(id=2, b=[b1])
+            b2 = B2(id=2)
+            self.db.add_all([a1, b2])
+        # Test from dynamic side
+        with self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.b.all(), [])
+        # Test from oposite side
+        with self.db.begin():
+            b2 = replication.replicate(b1, B2)
+        self.assertIsNotNone(b2)
+        self.assertEqual(b2.a, [a2])
+        self.assertEqual(a2.b.all(), [b2])

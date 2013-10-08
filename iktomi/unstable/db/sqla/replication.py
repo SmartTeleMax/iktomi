@@ -182,7 +182,7 @@ def replicate_no_merge(source, model, cache=None):
     if cache is None:
         cache = {}
     elif source in cache:
-        return cache
+        return cache[source]
     db = object_session(source)
     cls, ident = identity_key(instance=source)
     target = db.query(model).get(ident)
