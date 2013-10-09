@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import sys, functools
+import sys, functools, inspect
 
 
 def return_locals(func):
@@ -22,5 +22,12 @@ def return_locals(func):
         finally:
             sys.setprofile(oldprofile)
         assert len(frames) == 1
-        return frames.pop(0).f_locals
+        argspec = inspect.getargspec(func)
+        argnames = list(argspec.args)
+        if argspec.varargs is not None:
+            argnames.append(argspec.varargs)
+        if argspec.keywords is not None:
+            argnames.append(argspec.keywords)
+        return {name: value for name, value in frames.pop(0).f_locals.items()
+                if name not in argnames}
     return wrap
