@@ -1008,3 +1008,39 @@ class ReplicationTests(unittest.TestCase):
         self.assertIsNotNone(b2)
         self.assertEqual(b2.a, [a2])
         self.assertEqual(a2.b.all(), [b2])
+
+    def test_replication_single_table_slices(self):
+        # Schema
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class C1LangA(C1):
+            __tablename__ = None
+            data = Column('data_a', String)
+        class C1LangB(C1):
+            __tablename__ = None
+            data = Column('data_b', String)
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class C2LangA(C2):
+            __tablename__ = None
+            data = Column('data_a', String)
+        class C2LangB(C2):
+            __tablename__ = None
+            data = Column('data_b', String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            c1_a = C1LangA(id=2, data='a')
+            self.db.add(c1_a)
+        with self.db.begin():
+            c1_b = self.db.query(C1LangB).get(2)
+            self.assertIsNone(c1_b.data)
+            c1_b.data = 'b'
+        # Test
+        with self.db.begin():
+            c2_a = replication.replicate(c1_a, C2LangA)
+        self.assertIsNotNone(c2_a)
+        self.assertEqual(c2_a.id, 2)
+        self.assertEqual(c2_a.data, 'a')
+        c2_b = self.db.query(C2LangB).get(2)
+        self.assertIsNone(c2_b.data)
