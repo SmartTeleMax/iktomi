@@ -43,9 +43,10 @@ def declared_mixin(*bases):
                 return attrs[cls][name]
             get_attr.__name__ = name
             return declared_attr(get_attr)
-        descriptors = {name: create_descriptor(name)
-                       for name in func.func_code.co_varnames}
-        return type(func.__name__, bases, descriptors)
+        dict_ = {name: create_descriptor(name)
+                 for name in func.func_code.co_varnames}
+        dict_['__doc__'] = func.__doc__
+        return type(func.__name__, bases, dict_)
 
     if len(bases)==1 and not isinstance(bases[0], type):
         # Short form (without bases) is used

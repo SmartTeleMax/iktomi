@@ -15,9 +15,12 @@ class Tests(unittest.TestCase):
         called = [0]
         @declared_mixin
         def MixIn():
+            '''Docstring'''
             called[0] += 1
             id = Column(Integer, primary_key=True)
             data = Column(Integer)
+        self.assertIsInstance(MixIn, type)
+        self.assertEqual(MixIn.__doc__, 'Docstring')
         class A(self.Base, MixIn): pass
         self.assertEqual(called[0], 1)
         class B(self.Base, MixIn): pass
