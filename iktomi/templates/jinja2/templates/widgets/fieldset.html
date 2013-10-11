@@ -1,3 +1,15 @@
+{% macro hint(field) %}
+  {%- if field.hint %}
+    <span class="hint">{{ field.hint }}</span>
+  {%- endif -%}
+{% endmacro -%}
+
+{% macro label(field) %}
+  {%- if field.label %}
+    <label for="{{ field.id }}">{{ field.label }}</label>
+  {%- endif -%}
+{% endmacro -%}
+
 <table class="fieldset">
 {%- for subfield in field.fields %}
 {%- if subfield.readable %}
@@ -16,27 +28,24 @@
     <th></th>
     <td>
       {{- subfield.widget.render()|safe }}
-      {%- if subfield.label -%}
-      <label for="{{ subfield.id }}">{{ subfield.label }}</label>
-      {%- endif -%}
+      {{- label(subfield) -}}
+      {{- hint(subfield) -}}
     </td>
   {%- elif subfield.widget.render_type == 'hidden' -%}
     <td colspan="2">{{ subfield.widget.render()|safe }}</td>
   {%- elif subfield.widget.render_type == 'full-width' -%}
-    <td colspan="2">
-      {%- if subfield.label -%}
-      <p class="th"><label for="{{ subfield.id }}">{{ subfield.label }}</label></p>
-      {%- endif %}
+    <td class="full-width" colspan="2">
+      {{- label(subfield) -}}
       {{- subfield.widget.render()|safe -}}
+      {{- hint(subfield) -}}
     </td>
   {%- else -%}
     <th>
-      {%- if subfield.label -%}
-      <label for="{{ subfield.id }}">{{ subfield.label }}</label>
-      {%- endif -%}
+      {{- label(subfield) -}}
     </th>
     <td>
       {{- subfield.widget.render()|safe -}}
+      {{- hint(subfield) -}}
     </td>
   {%- endif -%}
   </tr>

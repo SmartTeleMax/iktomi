@@ -17,6 +17,10 @@
     {% endif %}
     {{ field.widget.render()|safe }}
   {% endif %}
+
+  {%- if field.hint %}
+    <span class="hint">{{ field.hint }}</span>
+  {%- endif -%}
 </p>
 {% endif %}
 {% endfor %}

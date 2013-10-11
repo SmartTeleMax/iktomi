@@ -33,6 +33,7 @@ class BaseField(object):
     conv = convs.Char
     widget = widgets.TextInput
     label = None
+    hint = None
 
     def __init__(self, name, conv=None, parent=None, **kwargs):
         if self._obsolete & set(kwargs):

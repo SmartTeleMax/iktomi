@@ -1,3 +1,15 @@
+{% macro hint(field) %}
+  {%- if field.hint %}
+    <span class="hint">{{ field.hint }}</span>
+  {%- endif -%}
+{% endmacro -%}
+
+{% macro label(field) %}
+  {%- if field.label %}
+    <label for="{{ field.id }}">{{ field.label }}</label>
+  {%- endif -%}
+{% endmacro -%}
+
 {% for field in form.fields %}
 {% if field.readable %}
   {% if field.error %}
@@ -13,30 +25,26 @@
     <th></th>
     <td>
       {{ field.widget.render()|safe }}
-      {% if field.label %}
-      <label for="{{ field.id }}">{{ field.label }}</label>
-      {% endif %}
+      {{ label(field) }}
+      {{ hint(field) }}
     </td>
   {% elif field.widget.render_type == 'hidden' %}
     <td colspan="2">{{ field.widget.render()|safe }}</td>
   {% elif field.widget.render_type == 'full-width' %}
-    <td colspan="2">
-      {% if field.label %}
-      <p class="th"><label for="{{ field.id }}">{{ field.label }}</label></p>
-      {% endif %}
+    <td class="full-width" colspan="2">
+      {{ label(field) }}
       {{ field.widget.render()|safe }}
+      {{ hint(field) }}
     </td>
   {% else %}
     <th>
-      {% if field.label %}
-      <label for="{{ field.id }}">{{ field.label }}</label>
-      {% endif %}
+      {{ label(field) }}
     </th>
     <td>
       {{ field.widget.render()|safe }}
+      {{ hint(field) }}
     </td>
   {% endif %}
-
   </tr>
 {% endif %}
 {% endfor %}
