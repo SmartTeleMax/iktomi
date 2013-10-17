@@ -156,10 +156,13 @@ class SqlaModelAuth(CookieAuth):
         CookieAuth.__init__(self, self.get_user_identity, self.identify_user,
                             storage=storage, **kwargs)
 
-    def get_user_identity(self, env, login, password):
+    def get_query(self, env, login):
         model = self._model
         login_field = getattr(model, self._login_field)
-        user = env.db.query(model).filter(login_field==login).first()
+        return env.db.query(model).filter(login_field==login)
+
+    def get_user_identity(self, env, login, password):
+        user = self.get_query(env, login).first()
         if user is not None:
             stored_password = getattr(user, self._password_field)
             if check_password(password, stored_password):
