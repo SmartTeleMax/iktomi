@@ -41,7 +41,8 @@ class FileEventHandlers(object):
     def _2persistent(self, target, transient):
         session = object_session(target)
         persistent_name = getattr(target, self.prop.column.key)
-        return session.file_manager.store(transient, persistent_name)
+        file_manager = session.find_file_manager(target)
+        return session.find_file_manager(target).store(transient, persistent_name)
 
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
@@ -57,7 +58,7 @@ class FileEventHandlers(object):
             old_name = self._get_file_name_to_delete(target, changes)
             if old_name is not None:
                 session = object_session(target)
-                old = session.file_manager.get_persistent(old_name)
+                old = session.find_file_manager(target).get_persistent(old_name)
                 self._remove_file(old.path)
         self._store_transient(target)
 
@@ -71,7 +72,7 @@ class FileEventHandlers(object):
         old_name = old_name or getattr(target, self.prop.column.key)
         if old_name is not None:
             session = object_session(target)
-            old = session.file_manager.get_persistent(old_name)
+            old = session.find_file_manager(target).get_persistent(old_name)
             self._remove_file(old.path)
 
 
@@ -97,7 +98,7 @@ class FileAttribute(object):
                 if not hasattr(session, 'file_manager'):
                     raise RuntimeError(
                             "Session doesn't support file management")
-                value = session.file_manager.get_persistent(value)
+                value = session.find_file_manager(inst).get_persistent(value)
             self._states[inst] = value
         return self._states[inst]
 
@@ -161,6 +162,20 @@ def filesessionmaker(sessionmaker, file_manager):
                                    cfg.PERSISTENT_ROOT)
         filesessionmaker(sessionmaker(...), file_manager)
     '''
+
+    def register_file_manager(self, metadata, file_manager):
+        if not hasattr(self, '_file_managers'):
+            self._file_managers = WeakKeyDictionary()
+        self._file_managers[metadata] = file_manager
+
+    def find_file_manager(self, target):
+        if hasattr(self, '_file_managers'):
+            metadata = target.metadata
+            if metadata in self._file_managers:
+                return self._file_managers[metadata]
+        return self.file_manager
+
+
     def session_maker(*args, **kwargs):
         session = sessionmaker(*args, **kwargs)
         # XXX in case we want to use session manager somehow bound 
@@ -169,5 +184,13 @@ def filesessionmaker(sessionmaker, file_manager):
         #session.file_manager = \
         #        kwargs.get('file_manager', file_manager)
         session.file_manager = file_manager
+
+        from types import MethodType
+
+        session.register_file_manager = MethodType(register_file_manager,
+                                                   session, session.__class__)
+        session.find_file_manager = MethodType(find_file_manager,
+                                               session, session.__class__)
+
         return session
     return session_maker
