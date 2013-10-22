@@ -24,7 +24,7 @@ class ImageEventHandlers(FileEventHandlers):
         if self.prop.image_sizes:
             session = object_session(target)
             persistent_name = getattr(target, self.prop.column.key)
-            persistent = session.file_manager.get_persistent(persistent_name)
+            persistent = session.find_file_manager(target).get_persistent(persistent_name)
             image = self.prop.resize(image, self.prop.image_sizes)
             if self.prop.filter:
                 if image.mode not in ['RGB', 'RGBA']:
@@ -32,9 +32,9 @@ class ImageEventHandlers(FileEventHandlers):
                 image = image.filter(self.filter)
 
             ext = os.path.splitext(persistent_name)[1]
-            transient = session.file_manager.new_transient(ext)
+            transient = session.find_file_manager(target).new_transient(ext)
             image.save(transient.path, quality=self.prop.quality)
-            session.file_manager.store(transient, persistent_name)
+            session.find_file_manager(target).store(transient, persistent_name)
             return persistent
         else:
             # Attention! This method can accept PersistentFile.
@@ -61,7 +61,7 @@ class ImageEventHandlers(FileEventHandlers):
 
                 ext = os.path.splitext(base.name)[1]
                 session = object_session(target)
-                name = session.file_manager.new_file_name(
+                name = session.find_file_manager(target).new_file_name(
                         self.prop.name_template, target, ext, '')
                 setattr(target, self.prop.column.key, name)
 

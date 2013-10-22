@@ -1,5 +1,6 @@
 import unittest, os, tempfile, shutil
 from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
+from sqlalchemy.schema import MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
@@ -9,9 +10,21 @@ from iktomi.unstable.db.sqla.files import FileProperty, filesessionmaker
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
 
+custom_metadata = MetaData()
+CustomBase = declarative_base(metaclass=AutoTableNameMeta,
+                               metadata=custom_metadata)
+
 
 class ObjWithFile(Base):
 
+    id = Column(Integer, primary_key=True)
+    file_name = Column(VARBINARY(250))
+    file = FileProperty(file_name, name_template='obj/{random}')
+    file_by_id_name = Column(VARBINARY(250))
+    file_by_id = FileProperty(file_by_id_name, name_template='obj/{item.id}')
+
+
+class CustomObjWithFile(CustomBase):
     id = Column(Integer, primary_key=True)
     file_name = Column(VARBINARY(250))
     file = FileProperty(file_name, name_template='obj/{random}')
@@ -27,20 +40,33 @@ class Subclass(ObjWithFile):
 class SqlaFilesTests(unittest.TestCase):
 
     Model = ObjWithFile
+    CustomModel = CustomObjWithFile
 
     def setUp(self):
         self.transient_root = tempfile.mkdtemp()
         self.persistent_root = tempfile.mkdtemp()
         self.transient_url = '/transient/'
         self.persistent_url = '/media/'
+        self.custom_transient_root = tempfile.mkdtemp()
+        self.custom_persistent_root = tempfile.mkdtemp()
+        self.custom_transient_url = '/custom/transient/'
+        self.custom_persistent_url = '/custom/media/'
+
         self.file_manager = FileManager(self.transient_root,
                                         self.persistent_root,
                                         self.transient_url,
                                         self.persistent_url)
+        self.custom_file_manager = FileManager(self.custom_transient_root,
+                                               self.custom_persistent_root,
+                                               self.custom_transient_url,
+                                               self.custom_persistent_url)
+
         Session = filesessionmaker(orm.sessionmaker(), self.file_manager)
         engine = create_engine('sqlite://')
         Base.metadata.create_all(engine)
+        CustomBase.metadata.create_all(engine)
         self.db = Session(bind=engine)
+        self.db.register_file_manager(custom_metadata, self.custom_file_manager)
 
     def tearDown(self):
         shutil.rmtree(self.transient_root)
@@ -52,6 +78,10 @@ class SqlaFilesTests(unittest.TestCase):
 
     def test_create(self):
         obj = self.Model()
+
+        self.assertEqual(self.db.find_file_manager(obj),
+                              self.file_manager)
+
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test')
@@ -63,6 +93,26 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertFalse(os.path.exists(f.path))
         self.assertTrue(os.path.isfile(obj.file.path))
         self.assertEqual(open(obj.file.path).read(), 'test')
+
+    def test_create_custom(self):
+        obj = self.CustomModel()
+
+        self.assertEqual(self.db.find_file_manager(obj),
+                              self.custom_file_manager)
+
+        obj.file = f =self.db.find_file_manager(obj).new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test')
+        self.assertIsInstance(obj.file, TransientFile)
+        self.assertIsNotNone(obj.file_name)
+        self.db.add(obj)
+        self.db.commit()
+        self.assertIsInstance(obj.file, PersistentFile)
+        self.assertFalse(os.path.exists(f.path))
+        self.assertTrue(os.path.isfile(obj.file.path))
+        self.assertEqual(open(obj.file.path).read(), 'test')
+        self.assertTrue(f.path.startswith(self.custom_transient_root))
+
 
     def test_update_none2file(self):
         obj = self.Model()
