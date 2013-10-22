@@ -14,7 +14,6 @@ setup(
               'iktomi.db',
                     'iktomi.db.sqla',
               'iktomi.cli',
-              'iktomi.ext',
               'iktomi.unstable',
                     'iktomi.unstable.forms', 'iktomi.unstable.web',
                     'iktomi.unstable.utils',
