@@ -91,9 +91,11 @@ class BaseField(object):
 
     @property
     def id(self):
-        # We use template names in list to replace, so we must use it here to
-        # insure unique IDs.
-        return '%s-%s' % (self.form.id, self.input_name)
+        if self.form.id:
+            # We use template names in list to replace, so we must use it here to
+            # insure unique IDs.
+            return '%s-%s' % (self.form.id, self.input_name)
+        return self.input_name
 
     def from_python(self, value):
         return self.conv.from_python(value)

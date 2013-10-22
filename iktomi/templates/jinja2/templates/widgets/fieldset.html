@@ -1,5 +1,5 @@
 {% macro hint(field) %}
-  {%- if field.hint %}
+  {%- if field.hint and not field.widget.renders_hint %}
     <span class="hint">{{ field.hint }}</span>
   {%- endif -%}
 {% endmacro -%}

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-
-from time import time
-import struct, os, itertools
-
 from webob.multidict import MultiDict
-from ..utils import weakproxy, cached_property
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
@@ -34,6 +29,7 @@ class Form(object):
     template = 'forms/default'
     media = FormMedia()
     permissions = DEFAULT_PERMISSIONS
+    id = ''
     __metaclass__ = FormValidationMetaClass
 
     def __init__(self, env=None, initial=None, name=None, permissions=None):
@@ -61,12 +57,6 @@ class Form(object):
             self.python_data.update(field.load_initial(initial, self.raw_data))
         self.errors = {}
 
-    @cached_property
-    def id(self):
-        '''Random ID for given form input'''
-        # Time part is repeated in about 3 days period
-        time_part = struct.pack('!d', time())[3:]
-        return ('form'+time_part+os.urandom(1)).encode('hex')
 
     @property
     def form(self):
