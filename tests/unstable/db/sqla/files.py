@@ -10,9 +10,7 @@ from iktomi.unstable.db.sqla.files import FileProperty, filesessionmaker
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
 
-custom_metadata = MetaData()
-CustomBase = declarative_base(metaclass=AutoTableNameMeta,
-                               metadata=custom_metadata)
+CustomBase = declarative_base(metaclass=AutoTableNameMeta)
 
 
 class ObjWithFile(Base):
@@ -25,11 +23,14 @@ class ObjWithFile(Base):
 
 
 class CustomObjWithFile(CustomBase):
+
     id = Column(Integer, primary_key=True)
-    file_name = Column(VARBINARY(250))
-    file = FileProperty(file_name, name_template='obj/{random}')
-    file_by_id_name = Column(VARBINARY(250))
-    file_by_id = FileProperty(file_by_id_name, name_template='obj/{item.id}')
+    metadata_file_name = Column(VARBINARY(250))
+    metadata_file = FileProperty(metadata_file_name, name_template='obj/{random}')
+    model_file_name = Column(VARBINARY(250))
+    model_file = FileProperty(model_file_name, name_template='obj/{random}')
+    field_file_name = Column(VARBINARY(250))
+    field_file = FileProperty(field_file_name, name_template='obj/{random}')
 
 
 class Subclass(ObjWithFile):
@@ -43,44 +44,93 @@ class SqlaFilesTests(unittest.TestCase):
     CustomModel = CustomObjWithFile
 
     def setUp(self):
+
         self.transient_root = tempfile.mkdtemp()
         self.persistent_root = tempfile.mkdtemp()
         self.transient_url = '/transient/'
         self.persistent_url = '/media/'
-        self.custom_transient_root = tempfile.mkdtemp()
-        self.custom_persistent_root = tempfile.mkdtemp()
-        self.custom_transient_url = '/custom/transient/'
-        self.custom_persistent_url = '/custom/media/'
 
         self.file_manager = FileManager(self.transient_root,
                                         self.persistent_root,
                                         self.transient_url,
                                         self.persistent_url)
-        self.custom_file_manager = FileManager(self.custom_transient_root,
-                                               self.custom_persistent_root,
-                                               self.custom_transient_url,
-                                               self.custom_persistent_url)
 
-        Session = filesessionmaker(orm.sessionmaker(), self.file_manager)
+        self.metadata_transient_root = tempfile.mkdtemp()
+        self.metadata_persistent_root = tempfile.mkdtemp()
+        self.metadata_transient_url = '/metadata/transient/'
+        self.metadata_persistent_url = '/metadata/media/'
+
+        self.metadata_file_manager = FileManager(self.metadata_transient_root,
+                                                 self.metadata_persistent_root,
+                                                 self.metadata_transient_url,
+                                                 self.metadata_persistent_url)
+
+        self.model_transient_root = tempfile.mkdtemp()
+        self.model_persistent_root = tempfile.mkdtemp()
+        self.model_transient_url = '/model/transient/'
+        self.model_persistent_url = '/model/media/'
+
+        self.model_file_manager = FileManager(self.model_transient_root,
+                                              self.model_persistent_root,
+                                              self.model_transient_url,
+                                              self.model_persistent_url)
+
+        self.field_transient_root = tempfile.mkdtemp()
+        self.field_persistent_root = tempfile.mkdtemp()
+        self.field_transient_url = '/field/transient/'
+        self.field_persistent_url = '/field/media/'
+
+        self.field_file_manager = FileManager(self.field_transient_root,
+                                              self.field_persistent_root,
+                                              self.field_transient_url,
+                                              self.field_persistent_url)
+
+        Session = filesessionmaker(orm.sessionmaker(), self.file_manager,
+            file_managers={
+                CustomObjWithFile.metadata:   self.metadata_file_manager,
+                CustomObjWithFile:            self.model_file_manager,
+                CustomObjWithFile.field_file: self.field_file_manager
+            })
+
         engine = create_engine('sqlite://')
         Base.metadata.create_all(engine)
         CustomBase.metadata.create_all(engine)
         self.db = Session(bind=engine)
-        self.db.register_file_manager(custom_metadata, self.custom_file_manager)
 
     def tearDown(self):
         shutil.rmtree(self.transient_root)
         shutil.rmtree(self.persistent_root)
+        shutil.rmtree(self.metadata_transient_root)
+        shutil.rmtree(self.metadata_persistent_root)
+        shutil.rmtree(self.model_transient_root)
+        shutil.rmtree(self.model_persistent_root)
+        shutil.rmtree(self.field_transient_root)
+        shutil.rmtree(self.field_persistent_root)
 
     def test_session(self):
         self.assertTrue(hasattr(self.db, 'file_manager'))
         self.assertIsInstance(self.db.file_manager, FileManager)
 
+    def test_find_file_manager(self):
+        obj = self.Model()
+        custom_obj = self.CustomModel()
+
+        self.assertTrue(hasattr(self.db, 'find_file_manager'))
+
+        self.assertEqual(self.db.find_file_manager(self.Model.file),
+                         self.file_manager)
+
+        self.assertEqual(self.db.find_file_manager(self.CustomModel.metadata_file),
+                         self.model_file_manager)
+
+        self.assertEqual(self.db.find_file_manager(self.CustomModel.model_file),
+                         self.model_file_manager)
+
+        self.assertEqual(self.db.find_file_manager(self.CustomModel.field_file),
+                         self.field_file_manager)
+
     def test_create(self):
         obj = self.Model()
-
-        self.assertEqual(self.db.find_file_manager(obj),
-                              self.file_manager)
 
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
@@ -95,24 +145,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(open(obj.file.path).read(), 'test')
 
     def test_create_custom(self):
-        obj = self.CustomModel()
-
-        self.assertEqual(self.db.find_file_manager(obj),
-                              self.custom_file_manager)
-
-        obj.file = f =self.db.find_file_manager(obj).new_transient()
-        with open(f.path, 'wb') as fp:
-            fp.write('test')
-        self.assertIsInstance(obj.file, TransientFile)
-        self.assertIsNotNone(obj.file_name)
-        self.db.add(obj)
-        self.db.commit()
-        self.assertIsInstance(obj.file, PersistentFile)
-        self.assertFalse(os.path.exists(f.path))
-        self.assertTrue(os.path.isfile(obj.file.path))
-        self.assertEqual(open(obj.file.path).read(), 'test')
-        self.assertTrue(f.path.startswith(self.custom_transient_root))
-
+        custom_obj = self.CustomModel()
 
     def test_update_none2file(self):
         obj = self.Model()
