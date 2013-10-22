@@ -23,6 +23,9 @@ class Widget(object):
     #: 'full-width': for table-like templates, otherwise should be rendered as default
     #: 'hidden': label is not rendered
     render_type = 'default'
+    #: True if widget renders hint itself.
+    #: Otherwise parent field should render the hint
+    renders_hint = False
 
     def __init__(self, field=None, **kwargs):
         if self._obsolete & set(kwargs):
