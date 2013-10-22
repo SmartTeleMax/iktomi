@@ -145,7 +145,33 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(open(obj.file.path).read(), 'test')
 
     def test_create_custom(self):
-        custom_obj = self.CustomModel()
+        obj = self.CustomModel()
+
+        def populate(field_name):
+            attr = getattr(obj.__class__, field_name)
+            f = self.db.find_file_manager(attr).new_transient()
+            with open(f.path, 'wb') as fp:
+                fp.write('test')
+            setattr(obj, field_name, f)
+
+        populate('metadata_file')
+        populate('model_file')
+        populate('field_file')
+
+        self.assertTrue(obj.field_file.path.startswith(
+            self.field_transient_root))
+
+        self.assertTrue(obj.model_file.path.startswith(
+            self.model_transient_root))
+
+        self.db.add(obj)
+        self.db.commit()
+
+        self.assertTrue(obj.field_file.path.startswith(
+            self.field_persistent_root))
+
+        self.assertTrue(obj.model_file.path.startswith(
+            self.model_persistent_root))
 
     def test_update_none2file(self):
         obj = self.Model()
