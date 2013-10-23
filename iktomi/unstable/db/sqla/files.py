@@ -41,8 +41,11 @@ class FileEventHandlers(object):
     def _2persistent(self, target, transient):
         session = object_session(target)
         persistent_name = getattr(target, self.prop.column.key)
-        file_manager = session.find_file_manager(target)
-        return session.find_file_manager(target).store(transient, persistent_name)
+
+        file_attr = getattr(target.__class__, self.prop.key)
+        file_manager = session.find_file_manager(file_attr)
+
+        return file_manager.store(transient, persistent_name)
 
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
@@ -58,7 +61,11 @@ class FileEventHandlers(object):
             old_name = self._get_file_name_to_delete(target, changes)
             if old_name is not None:
                 session = object_session(target)
-                old = session.find_file_manager(target).get_persistent(old_name)
+
+                file_attr = getattr(target.__class__, self.prop.key)
+                file_manager = session.find_file_manager(file_attr)
+
+                old = file_manager.get_persistent(old_name)
                 self._remove_file(old.path)
         self._store_transient(target)
 
@@ -72,15 +79,20 @@ class FileEventHandlers(object):
         old_name = old_name or getattr(target, self.prop.column.key)
         if old_name is not None:
             session = object_session(target)
-            old = session.find_file_manager(target).get_persistent(old_name)
+
+            file_attr = getattr(target.__class__, self.prop.key)
+            file_manager = session.find_file_manager(file_attr)
+
+            old = file_manager.get_persistent(old_name)
             self._remove_file(old.path)
 
 
 class FileAttribute(object):
 
-    def __init__(self, prop):
+    def __init__(self, prop, class_=None):
         self.column = prop.column
         self.name_template = prop.name_template
+        self.class_ = class_
         # State for each instance
         self._states = WeakKeyDictionary()
 
@@ -98,7 +110,7 @@ class FileAttribute(object):
                 if not hasattr(session, 'file_manager'):
                     raise RuntimeError(
                             "Session doesn't support file management")
-                value = session.find_file_manager(inst).get_persistent(value)
+                value = session.find_file_manager(self).get_persistent(value)
             self._states[inst] = value
         return self._states[inst]
 
@@ -148,13 +160,13 @@ class FileProperty(MapperProperty):
         event.listen(mapper, 'before_insert', handlers.before_insert, propagate=True)
         event.listen(mapper, 'before_update', handlers.before_update, propagate=True)
         event.listen(mapper, 'after_delete', handlers.after_delete, propagate=True)
-        setattr(mapper.class_, self.key, self.attribute_cls(self))
+        setattr(mapper.class_, self.key, self.attribute_cls(self, mapper.class_))
 
     # XXX Implement merge?
 
 
 
-def filesessionmaker(sessionmaker, file_manager):
+def filesessionmaker(sessionmaker, file_manager, file_managers=None):
     u'''Wrapper of session maker adding link to a FileManager instance
     to session.::
 
@@ -163,18 +175,22 @@ def filesessionmaker(sessionmaker, file_manager):
         filesessionmaker(sessionmaker(...), file_manager)
     '''
 
-    def register_file_manager(self, metadata, file_manager):
-        if not hasattr(self, '_file_managers'):
-            self._file_managers = WeakKeyDictionary()
-        self._file_managers[metadata] = file_manager
+    registry = WeakKeyDictionary()
+
+    if file_managers:
+        for k, v in file_managers.iteritems():
+            registry[k] = v
 
     def find_file_manager(self, target):
-        if hasattr(self, '_file_managers'):
-            metadata = target.metadata
-            if metadata in self._file_managers:
-                return self._file_managers[metadata]
-        return self.file_manager
-
+        assert isinstance(target, FileAttribute)
+        if target in registry:
+            return registry[target]
+        if hasattr(target, 'class_'):
+            if target.class_ in registry:
+                return registry[target.class_]
+            if target.class_.metadata in registry:
+                return registry[target.class_.metadata]
+        return file_manager
 
     def session_maker(*args, **kwargs):
         session = sessionmaker(*args, **kwargs)
@@ -187,8 +203,6 @@ def filesessionmaker(sessionmaker, file_manager):
 
         from types import MethodType
 
-        session.register_file_manager = MethodType(register_file_manager,
-                                                   session, session.__class__)
         session.find_file_manager = MethodType(find_file_manager,
                                                session, session.__class__)
 
