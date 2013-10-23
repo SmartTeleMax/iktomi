@@ -27,7 +27,7 @@ class BaseFile(object):
     @cached_property
     def size(self):
         try:
-            return os.path.getsize(self.full_path)
+            return os.path.getsize(self.path)
         # Return None for non-existing file.
         # There can be OSError or IOError (depending on Python version?), both
         # are derived from EnvironmentError having errno property.
@@ -103,7 +103,7 @@ class FileManager(BaseFileManager):
         #     places, I think...
         if os.path.isfile(file_obj.path):
             try:
-                os.unlink(file_obj.full_path)
+                os.unlink(file_obj.path)
             except OSError:
                 pass
 
