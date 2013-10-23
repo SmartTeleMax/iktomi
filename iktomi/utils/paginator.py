@@ -245,6 +245,9 @@ class ModelPaginator(Paginator):
     def items(self):
         return self.slice(self._query)
 
+    def __getitem__(self, key):
+        return self.items[key]
+
     def __iter__(self):
         return iter(self.items)
 
