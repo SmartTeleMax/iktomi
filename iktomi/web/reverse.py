@@ -38,7 +38,7 @@ class Location(object):
                self.builders == other.builders and self.subdomains == other.subdomains
 
     def __repr__(self):
-        return '%s(*%r, %r)' % (self.__class__.__name__, self.builders, self.subdomains)
+        return '%s(*%r, subdomains=%r)' % (self.__class__.__name__, self.builders, self.subdomains)
 
 
 
