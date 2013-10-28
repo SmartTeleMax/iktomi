@@ -176,16 +176,23 @@ class Reverse(object):
             request = self._bound_env.request
             scheme_port = {'http': '80',
                            'https': '443'}.get(request.scheme, '80')
-            host_split = request.host.split(':')
-            bound_domain = host_split[0]
-            bound_port = host_split[1] if len(host_split) > 1 else scheme_port
-            port = port or bound_port
 
-            return URL(path, host=domain or bound_domain,
+            # Domain to compare with the result of build.
+            # If both values are equal, domain part can be hidden from result.
+            # Take it from route_state, not from env.request, because
+            # route_state contains domain values with aliased replaced by their
+            # primary value
+            primary_domain = self._bound_env._route_state.primary_domain
+            host_split = request.host.split(':')
+            request_domain = host_split[0]
+            request_port = host_split[1] if len(host_split) > 1 else scheme_port
+            port = port or request_port
+
+            return URL(path, host=domain or request_domain,
                        port=port if port != scheme_port else None,
                        schema=request.scheme,
-                       show_host=host and (domain != bound_domain \
-                                           or port != bound_port))
+                       show_host=host and (domain != primary_domain \
+                                           or port != request_port))
         return URL(path, host=domain, port=port, show_host=True)
 
     @classmethod

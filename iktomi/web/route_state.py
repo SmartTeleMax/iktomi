@@ -8,8 +8,12 @@ logger = logging.getLogger(__name__)
 class RouteState(object):
     def __init__(self, request):
         self._prefixes = []
-        self._subdomain = ''
+        # matched subdomain with aliases replaced by their main value
+        self.primary_subdomains = []
+        self.primary_domain = ''
+        # remaining subdomain part for match
         self._domain = request.host.split(':', 1)[0].decode('idna')
+        self.subdomain = self._domain
         self.request = request
 
     def add_prefix(self, prefix):
@@ -18,11 +22,11 @@ class RouteState(object):
     def pop_prefix(self):
         self._prefixes.pop()
 
-    def add_subdomain(self, subdomain):
-        if self._subdomain and subdomain:
-            self._subdomain = subdomain + '.' + self._subdomain
-        elif subdomain:
-            self._subdomain = subdomain
+    def add_subdomain(self, subdomain, alias_matched):
+        if subdomain:
+            self.primary_subdomains.insert(0, subdomain)
+            self.primary_domain = '.'.join(self.primary_subdomains)
+        self.subdomain = self.subdomain[:-len(alias_matched or '')].rstrip('.')
 
     @property
     def path(self):
@@ -31,11 +35,4 @@ class RouteState(object):
             length = sum(map(len, self._prefixes))
             path = path[length:]
         return path
-
-    @property
-    def subdomain(self):
-        if self._subdomain:
-            return self._domain[:-len(self._subdomain)-1]
-        return self._domain
-
 

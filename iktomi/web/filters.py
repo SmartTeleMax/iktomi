@@ -155,35 +155,71 @@ class prefix(WebHandler):
 
 class subdomain(WebHandler):
 
-    def __init__(self, _subdomain, name=None):
-        self.subdomain = unicode(_subdomain)
+    def __init__(self, *subdomains, **kwargs):
+        '''
+            subdomain.__init__(*subdomains, name=None, primary=...)
+
+            subdomains: a list of following values in order they are
+                        attempted to match:
+                * string - domain part (without dots after and before)
+                * empty string - no pattern is matched and there must not 
+                                 remain any unmatched domain part,
+                                 subdomain matching is finished
+                * None - no pattern is matched and but there can remain 
+                         an unmatched domain part, subdomain matching can
+                         continue in next handlers
+            name: shortcut for namespace handler chained next to subdomain
+            primary: one of subdomains, used to reverse an url with this 
+                     subdomain from other domains. 
+                     All other subdomains are aliases to primary subdomain.
+                     By default, the first subdomain.
+        '''
+        # XXX is this convert to unicode actually needed?
+        self.subdomains = [unicode(x) if x is not None else None
+                           for x in subdomains]
+
+        self.primary = kwargs.pop('primary', self.subdomains[0])
+        assert self.primary in self.subdomains
+
+        name = kwargs.pop('name', None)
         if name is not None:
             # A shortcut for subdomain(..) | namespace(name)
             self._next_handler = namespace(name)
 
+        if kwargs:
+            raise TypeError("subdomain.__init__ got an unexpected keyword "
+                            "arguments {}".format(",".join(kwargs)))
+
     def subdomain(self, env, data):
         subdomain = env._route_state.subdomain
         #XXX: here we can get 'idna' encoded sequence, that is the bug
-        if self.subdomain:
-            slen = len(self.subdomain)
-            delimiter = subdomain[-slen-1:-slen]
-            matches = subdomain.endswith(self.subdomain) and delimiter in ('', '.')
-        else:
-            matches = not subdomain
-        if matches:
-            env._route_state.add_subdomain(self.subdomain)
-            return self.next_handler(env, data)
+        for subd in self.subdomains:
+            if subd:
+                slen = len(subd)
+                delimiter = subdomain[-slen-1:-slen]
+                matches = subdomain.endswith(subd) and delimiter in ('', '.')
+            elif subd is None:
+                # continue matching 
+                matches = True
+            elif subd == '':
+                # no subdomains are allowed
+                matches = not subdomain
+
+            if matches:
+                env._route_state.add_subdomain(self.primary, subd)
+                return self.next_handler(env, data)
         return None
     __call__ = subdomain
 
     def _locations(self):
         locations = WebHandler._locations(self)
-        for location, scope in locations.values():
-            location.subdomains.append(self.subdomain)
+        if self.primary:
+            for location, scope in locations.values():
+                location.subdomains.append(self.primary)
         return locations
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.subdomain)
+        return '%s(%r)' % (self.__class__.__name__, self.subdomains)
 
 
 class namespace(WebHandler):
@@ -208,7 +244,7 @@ class namespace(WebHandler):
 
         # extract all common builders and subdomains from nested locations
         # and put them into namespace's location.
-        # This allows to write prefixes after subdomains:
+        # This allows to write prefixes and subdomains after namespaces:
         # prefix() | namespace() | prefix() | match()
         builders = []
         while all_locations and all_locations[0].builders:
