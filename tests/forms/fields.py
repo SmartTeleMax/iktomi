@@ -102,3 +102,26 @@ class FieldBlockTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'number': 4})
         self.assertEqual(form.get_field('number').raw_value, '4')
         self.assertEqual(form.errors, {})
+
+    def test_nested(self):
+        class _Form(Form):
+            fields=[
+                FieldBlock('field block', [
+                    Field('number', convs.Int()),
+                    FieldBlock('field block', [
+                        Field('title', convs.Char()),
+                    ]),
+                ]),
+            ]
+        form = _Form()
+        self.assertEqual(form.raw_data, MultiDict([('number', ''),
+                                                   ('title', '')]))
+        self.assertEqual(form.python_data, {'number': None,
+                                            'title': None})
+        self.assert_(form.accept({'number': '4', 'title': 'Hello'}),
+                     form.errors)
+        self.assertEqual(form.python_data, {'number': 4,
+                                            'title': 'Hello'})
+        self.assertEqual(form.get_field('number').raw_value, '4')
+        self.assertEqual(form.get_field('title').raw_value, 'Hello')
+        self.assertEqual(form.errors, {})
