@@ -16,7 +16,7 @@ class FileEventHandlers(object):
         self.prop = prop
 
     def _get_history(self, target):
-        return get_history(target, self.prop.column.key)
+        return get_history(target, self.prop.attribute_name)
 
     @staticmethod
     def _remove_file(path):
@@ -40,7 +40,7 @@ class FileEventHandlers(object):
 
     def _2persistent(self, target, transient):
         session = object_session(target)
-        persistent_name = getattr(target, self.prop.column.key)
+        persistent_name = getattr(target, self.prop.attribute_name)
 
         file_attr = getattr(target.__class__, self.prop.key)
         file_manager = session.find_file_manager(file_attr)
@@ -76,7 +76,7 @@ class FileEventHandlers(object):
     def after_delete(self, mapper, connection, target):
         changes = self._get_history(target)
         old_name = self._get_file_name_to_delete(target, changes)
-        old_name = old_name or getattr(target, self.prop.column.key)
+        old_name = old_name or getattr(target, self.prop.attribute_name)
         if old_name is not None:
             session = object_session(target)
 
@@ -91,6 +91,7 @@ class FileAttribute(object):
 
     def __init__(self, prop, class_=None):
         self.column = prop.column
+        self.attribute_name = prop.attribute_name
         self.name_template = prop.name_template
         self.class_ = class_
         # State for each instance
@@ -102,7 +103,7 @@ class FileAttribute(object):
         if inst not in self._states:
             # XXX column name may differ from attribute name
             # empty string should be considered as None
-            value = getattr(inst, self.column.key) or None
+            value = getattr(inst, self.attribute_name) or None
             if value is not None:
                 session = object_session(inst)
                 if session is None:
@@ -122,20 +123,20 @@ class FileAttribute(object):
         # To get correct history we should assert that old value has been 
         # loaded from database. getattr loads lazy attribute.
         # See http://www.sqlalchemy.org/trac/ticket/2787
-        old_name = getattr(inst, self.column.key)
+        old_name = getattr(inst, self.attribute_name)
 
         self._states[inst] = value
         if value is None:
-            setattr(inst, self.column.key, None)
+            setattr(inst, self.attribute_name, None)
         elif isinstance(value, TransientFile):
             ext = os.path.splitext(value.name)[1]
             # XXX getting manager from a file object 
             #     looks like a hack
             name = value.manager.new_file_name(
                     self.name_template, inst, ext, old_name)
-            setattr(inst, self.column.key, name)
+            setattr(inst, self.attribute_name, name)
         elif isinstance(value, PersistentFile):
-            setattr(inst, self.column.key, value.name)
+            setattr(inst, self.attribute_name, value.name)
         else:
             raise ValueError('File property value must be TransientFile, '\
                              'PersistentFile or None')
@@ -146,11 +147,16 @@ class FileProperty(MapperProperty):
     attribute_cls = FileAttribute
     event_cls = FileEventHandlers
 
-    def __init__(self, column, name_template, **options):
+    def __init__(self, column, name_template, attribute_name=None, **options):
         self.column = column
+        self._attribute_name = attribute_name
         self.name_template = name_template
         self._set_options(options)
         set_creation_order(self)
+
+    @property
+    def attribute_name(self):
+        return self._attribute_name or self.column.key
 
     def _set_options(self, options):
         assert not options, 'FileProperty accepts no options'

@@ -23,7 +23,7 @@ class ImageEventHandlers(FileEventHandlers):
 
         if self.prop.image_sizes:
             session = object_session(target)
-            persistent_name = getattr(target, self.prop.column.key)
+            persistent_name = getattr(target, self.prop.attribute_name)
             image_attr = getattr(target.__class__, self.prop.key)
             persistent = session.find_file_manager(image_attr).get_persistent(persistent_name)
             image = self.prop.resize(image, self.prop.image_sizes)
@@ -65,7 +65,7 @@ class ImageEventHandlers(FileEventHandlers):
                 image_attr = getattr(target.__class__, self.prop.key)
                 name = session.find_file_manager(image_attr).new_file_name(
                         self.prop.name_template, target, ext, '')
-                setattr(target, self.prop.column.key, name)
+                setattr(target, self.prop.attribute_name, name)
 
                 persistent = self._2persistent(target, base)
                 file_attr = getattr(type(target), self.prop.key)
