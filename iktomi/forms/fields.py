@@ -281,8 +281,23 @@ class FieldBlock(FieldSet):
         return result
 
     @property
+    def field_names(self):
+        result = []
+        for field in self.fields:
+            if isinstance(field, FieldBlock):
+                result += field.field_names
+            else:
+                result.append(field.name)
+        return result
+
+    @property
     def python_data(self):
-        return self.parent.python_data
+        # we need only subfield values in python data
+        result = {}
+        for field_name in self.field_names:
+            if field_name in self.parent.python_data:
+                result[field_name] = self.parent.python_data[field_name]
+        return result
 
 
 class FieldList(AggregateField):
