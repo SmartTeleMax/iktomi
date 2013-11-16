@@ -35,6 +35,14 @@ class BaseFile(object):
             if exc.errno!=errno.ENOENT:
                 raise
 
+    @property
+    def file_name(self):
+        return os.path.split(self.name)[1]
+
+    @property
+    def ext(self):
+        return os.path.splitext(self.name)[1]
+
     def __repr__(self):
         return '{}({!r})'.format(type(self).__name__, self.name)
 
