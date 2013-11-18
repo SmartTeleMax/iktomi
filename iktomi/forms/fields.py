@@ -23,7 +23,7 @@ class BaseField(object):
 
     # obsolete parameters from previous versions
     _obsolete = frozenset(['default', 'get_default', 'template', 'media',
-                           'render_type', 'render'])
+                           'render_type', 'render', 'required'])
 
     #: :class:`FieldPerm` instance determining field's access permissions.
     #: Can be set by field inheritance or throught constructor.
