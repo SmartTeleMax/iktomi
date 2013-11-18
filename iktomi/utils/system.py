@@ -19,7 +19,7 @@ def doublefork(pidfile, logfile, cwd, umask):
     controlling terminal when opening files.'''
     try:
         if os.fork() > 0:
-            sys.exit(0)
+            os._exit(os.EX_OK)
     except OSError, e:
         sys.exit('fork #1 failed: (%d) %s\n' % (e.errno, e.strerror))
     os.setsid()
@@ -27,7 +27,7 @@ def doublefork(pidfile, logfile, cwd, umask):
     os.umask(umask)
     try:
         if os.fork() > 0:
-            sys.exit(0)
+            os._exit(os.EX_OK)
     except OSError, e:
         sys.exit('fork #2 failed: (%d) %s\n' % (e.errno, e.strerror))
     si = open('/dev/null', 'r')
