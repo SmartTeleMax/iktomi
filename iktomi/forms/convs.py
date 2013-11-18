@@ -12,6 +12,8 @@ from ..utils.dt import strftime
 from ..utils.deprecation import deprecated
 from ..utils import N_, M_, cached_property
 
+_all2 = locals().keys()
+
 
 class ValidationError(Exception):
 
@@ -580,4 +582,10 @@ class SimpleFile(Converter):
 
     def from_python(self, value):
         return None
+
+# Expose all variables defined after imports
+__all__ = [x for x
+           in set(locals().keys()) - set(_all2)
+           if not x.startswith('_')]
+del _all2
 

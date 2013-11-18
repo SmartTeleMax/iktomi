@@ -1,6 +1,11 @@
-import re
+# -*- coding: utf-8 -*-
 from iktomi.forms.convs import *
+from iktomi.forms.convs import __all__ as _all1
+
+import re
 from iktomi.utils import N_
+
+_all2 = locals().keys()
 
 
 class Email(Char):
@@ -96,3 +101,11 @@ class ModelChoice(EnumChoice):
     def options(self):
         for obj in self.query.all():
             yield self.conv.from_python(obj.id), self.get_object_label(obj)
+
+
+# Expose all variables defined after imports and all variables imported from
+# parent module
+__all__ = [x for x
+           in set(locals().keys()) - (set(_all2) - set(_all1))
+           if not x.startswith('_')]
+del _all1, _all2
