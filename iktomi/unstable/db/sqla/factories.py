@@ -1,3 +1,4 @@
+from itertools import chain
 from iktomi.utils import cached_property
 from iktomi.unstable.utils.functools import return_locals
 
@@ -28,7 +29,7 @@ class ModelFactories(object):
     def create_model(self, module, name, constructor, base_names):
         bases = tuple(getattr(module, x) if isinstance(x, basestring) else x
                       for x in base_names)
-        values = constructor(module)
+        values = constructor(ModelsProxy(module, self))
         values['models'] = module
         cls = type(name, bases, values)
         cls.__module__ = module.__name__
@@ -79,3 +80,48 @@ class LangModelProxy(object):
         if hasattr(self.module, lang_name):
             return getattr(self.module, lang_name)
         return getattr(self.module, name)
+
+
+class ModelsProxy(object):
+
+    def __init__(self, models, factories):
+        self.models = models
+        self.i18n_model_names = [m[0] for m in factories.i18n_models]
+        self.model_names = [m[0] for m in factories.models]
+
+    def __getattr__(self, name):
+        try:
+            return getattr(self.models, name)
+        except AttributeError:
+            if hasattr(self.models, 'lang'):
+                if name in self.i18n_model_names:
+                    lang_name = self.models._get_model_name(name)
+                    return PseudoModel(lang_name)
+            if name in self.model_names:
+                return PseudoModel(name)
+        raise AttributeError
+
+
+class PseudoModel(str):
+
+    def __new__(cls, name, parent=None):
+        qname = '.'.join([parent, name]) if parent else name
+        return str.__new__(cls, qname)
+
+    def __getattr__(self, name):
+        return PseudoModel(name, self)
+
+    def __eq__(self, other):
+        return self._binary_op('==', other)
+
+    def __ne__(self, other):
+        return self._binary_op('!=', other)
+
+    def __and__(self, other):
+        return self._binary_op('&', other)
+
+    def __or__(self, other):
+        return self._binary_op('|', other)
+
+    def _binary_op(self, op, other):
+        return ' '.join([self, op, str(other)])
