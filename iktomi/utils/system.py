@@ -18,7 +18,7 @@ def doublefork(pidfile, logfile, cwd, umask):
     After second fork we are not session leader any more and cant get
     controlling terminal when opening files.'''
     try:
-        if os.fork() > 0:
+        if os.fork():
             os._exit(os.EX_OK)
     except OSError, e:
         sys.exit('fork #1 failed: (%d) %s\n' % (e.errno, e.strerror))
@@ -26,17 +26,19 @@ def doublefork(pidfile, logfile, cwd, umask):
     os.chdir(cwd)
     os.umask(umask)
     try:
-        if os.fork() > 0:
+        if os.fork():
             os._exit(os.EX_OK)
     except OSError, e:
         sys.exit('fork #2 failed: (%d) %s\n' % (e.errno, e.strerror))
-    si = open('/dev/null', 'r')
+    si = open('/dev/null')
     so = open(logfile, 'a+', 0)
-    sys.stdout.flush()
-    sys.stderr.flush()
-    os.dup2(si.fileno(), sys.stdin.fileno())
-    os.dup2(so.fileno(), sys.stdout.fileno())
-    os.dup2(so.fileno(), sys.stderr.fileno())
+    sys.stdin.close()
+    os.dup2(si.fileno(), 0)
+    sys.stdout.close()
+    os.dup2(so.fileno(), 1)
+    sys.stderr.close()
+    os.dup2(so.fileno(), 2)
+    sys.stdin = si
     sys.stdout = sys.stderr = so
     with open(pidfile, 'w') as f:
         f.write(str(os.getpid()))
