@@ -9,7 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 from .base import Cli
-from iktomi.utils.system import safe_makedirs, doublefork
+from iktomi.utils.system import safe_makedirs, is_running, terminate, \
+                                doublefork
 
 
 def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
@@ -22,7 +23,7 @@ def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
         if os.path.isfile(pidfile):
             with open(pidfile, 'r') as f:
                 pid = int(f.read())
-            if self._is_running(pid):
+            if is_running(pid):
                 sys.exit('Already running (PID: %r)' % pid)
             else:
                 logger.info('PID file was pointing to nonexistent process %r',
@@ -58,25 +59,6 @@ class Flup(Cli):
                      logfile=self.logfile, daemonize=daemonize,
                      cwd=self.cwd, umask=self.umask, **self.fastcgi_params)
 
-    def _is_running(self, pid):
-        try:
-            os.kill(pid, 0)
-        except OSError, exc:
-            if exc.errno == errno.ESRCH:
-                return False
-            raise
-        return True
-
-    def _terminate(self, pid, sig, timeout):
-        os.kill(pid, sig)
-        start = time.time()
-        while True:
-            if not self._is_running(pid):
-                return True
-            if time.time()-start>=timeout:
-                return False
-            time.sleep(0.1)
-
     def command_stop(self):
         if self.pidfile:
             if not os.path.exists(self.pidfile):
@@ -85,7 +67,7 @@ class Flup(Cli):
                 pid = int(pidfile.read())
             for sig in [signal.SIGINT, signal.SIGTERM, signal.SIGKILL]:
                 try:
-                    if self._terminate(pid, sig, 3):
+                    if terminate(pid, sig, 3):
                         os.remove(self.pidfile)
                         sys.exit()
                 except OSError, exc:

@@ -1,7 +1,32 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
+import os, sys, time, errno
+
+
+def is_running(pid):
+    '''Returns True if process with PID `pid` is running. Current user must
+    have permission to access process information.'''
+    try:
+        os.kill(pid, 0)
+    except OSError, exc:
+        if exc.errno == errno.ESRCH:
+            return False
+        raise
+    return True
+
+
+def terminate(pid, sig, timeout):
+    '''Terminates process with PID `pid` and returns True if process finished
+    during `timeout`. Current user must have permission to access process
+    information.'''
+    os.kill(pid, sig)
+    start = time.time()
+    while True:
+        if not is_running(pid):
+            return True
+        if time.time()-start>=timeout:
+            return False
+        time.sleep(0.1)
 
 
 def safe_makedirs(*files):
