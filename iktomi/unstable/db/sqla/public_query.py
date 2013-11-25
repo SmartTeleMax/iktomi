@@ -17,6 +17,8 @@ class PublicQuery(Query):
     http://www.sqlalchemy.org/trac/wiki/UsageRecipes/PreFilteredQuery
     '''
 
+    property_name = 'public'
+
     def get(self, ident):
         if self._criterion:
             mapper = self._only_full_mapper_zero("get")
@@ -24,8 +26,9 @@ class PublicQuery(Query):
             # might misinterpret a bug (AttributeError raised by some code in
             # property implementation) as missing attribute and cause all
             # private data going to public.
-            if 'public' in dir(mapper.class_):
-                crit = mapper.class_.public
+            prop = self.property_name
+            if prop in dir(mapper.class_):
+                crit = getattr(mapper.class_, prop)
                 if crit is not None:
                     if not isinstance(crit, ClauseElement):
                         # This simplest safe way to make bare boolean column
@@ -39,7 +42,7 @@ class PublicQuery(Query):
                         return Query.get(self.populate_existing(), ident)
             assert False # XXX temporal to verify it's used
         obj = Query.get(self, ident)
-        if obj is not None and ('public' not in dir(obj) or obj.public):
+        if obj is not None and (prop not in dir(obj) or getattr(obj, prop)):
             return obj
 
     def __iter__(self):
@@ -77,8 +80,9 @@ class PublicQuery(Query):
             #pass
             raise # XXX temporal, to verify it's used
         else:
-            if 'public' in dir(cls):
-                crit = cls.public
+            prop = self.property_name
+            if prop in dir(cls):
+                crit = getattr(cls, prop)
                 if crit is not None:
                     if not isinstance(crit, ClauseElement):
                         # This simplest safe way to make bare boolean column
