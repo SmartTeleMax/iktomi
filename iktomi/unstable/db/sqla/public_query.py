@@ -20,13 +20,13 @@ class PublicQuery(Query):
     property_name = 'public'
 
     def get(self, ident):
+        prop = self.property_name
         if self._criterion:
             mapper = self._only_full_mapper_zero("get")
             # Don't use getattr/hasattr to check public existence, since this
             # might misinterpret a bug (AttributeError raised by some code in
             # property implementation) as missing attribute and cause all
             # private data going to public.
-            prop = self.property_name
             if prop in dir(mapper.class_):
                 crit = getattr(mapper.class_, prop)
                 if crit is not None:
