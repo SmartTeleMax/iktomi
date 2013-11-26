@@ -259,6 +259,7 @@ class FieldSet(AggregateField):
 
 class FieldBlock(FieldSet):
 
+    conv = convs.FieldBlockConv
     widget = widgets.FieldBlockWidget
     prefix = ''
 

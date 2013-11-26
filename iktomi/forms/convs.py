@@ -571,6 +571,15 @@ class ListOf(Converter):
         return [self.conv.from_python(item) for item in value or []]
 
 
+class FieldBlockConv(Converter):
+
+    @property
+    def _existing_value(self):
+        if self.field is not None:
+            return self.field.python_data
+        return {} # XXX
+
+
 class SimpleFile(Converter):
 
     def _is_empty(self, file):

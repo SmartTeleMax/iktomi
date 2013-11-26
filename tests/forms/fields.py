@@ -103,6 +103,22 @@ class FieldBlockTests(unittest.TestCase):
         self.assertEqual(form.get_field('number').raw_value, '4')
         self.assertEqual(form.errors, {})
 
+    def test_validation_error(self):
+        def validator(conv, value):
+            raise convs.ValidationError(by_field={'number': 'error'})
+        class _Form(Form):
+            fields=[
+                FieldBlock('field block', [
+                    Field('number', convs.Int())
+                ],
+                conv=FieldBlock.conv(validator)),
+            ]
+        form = _Form()
+        self.assert_(not form.accept({'number': '4'}))
+        self.assertEqual(form.python_data, {'number': None})
+        self.assertEqual(form.get_field('number').raw_value, '4')
+        self.assertEqual(form.errors, {'number': 'error'})
+
     def test_nested(self):
         class _Form(Form):
             fields=[
