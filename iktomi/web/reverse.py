@@ -44,7 +44,7 @@ class Location(object):
 
 class Reverse(object):
     def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, bound_env=None,
+                 need_arguments=False, bound_env=None, parent=None,
                  finalize_params=None):
         # location is stuff containing builders for current reverse step
         # (builds url part for particular namespace or endpoint)
@@ -59,6 +59,7 @@ class Reverse(object):
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
         self._bound_env = bound_env
+        self._parent = parent
         self._finalize_params = finalize_params or {}
 
     def _attach_subdomain(self, host, location):
@@ -83,6 +84,7 @@ class Reverse(object):
             return self.__class__(self._scope, self._location, path=path, host=host,
                                   bound_env=self._bound_env, 
                                   ready=self._is_endpoint,
+                                  parent=self._parent,
                                   finalize_params=finalize_params)
         raise UrlBuildingError('Not an endpoint')
 
@@ -99,6 +101,7 @@ class Reverse(object):
                 host = self._attach_subdomain(host, location)
             return self.__class__(scope, location, path, host, ready,
                                   bound_env=self._bound_env,
+                                  parent=self,
                                   need_arguments=location.need_arguments)
         raise UrlBuildingError('Namespace or endpoint "%s" does not exist'
                                % name)
@@ -115,6 +118,7 @@ class Reverse(object):
         path += location.build_path(self, **self._finalize_params)
         return self.__class__({}, self._location, path=path, host=host,
                               bound_env=self._bound_env, 
+                              parent=self._parent,
                               ready=self._is_endpoint)
 
     def bind_to_env(self, bound_env):
@@ -123,6 +127,7 @@ class Reverse(object):
                               ready=self._ready,
                               need_arguments=self._need_arguments,
                               finalize_params=self._finalize_params,
+                              parent=self._parent,
                               bound_env=bound_env)
 
     @cached_property
