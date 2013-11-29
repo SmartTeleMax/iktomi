@@ -55,11 +55,11 @@ class Html(HtmlBase):
         Column(Html(BigText, markup_class=SomeWrapperClass))
     '''
 
-    def __init__(self, _impl, markup_class=Markup):
+    def __init__(self, _impl, markup_class=None):
         if callable(_impl):
             _impl = _impl()
         self.impl = _impl
-        self.markup_class = markup_class
+        self.markup_class = markup_class or self.markup_class
         # Don't call base class' __init__ since we reimplemented it in a
         # different way.
 
