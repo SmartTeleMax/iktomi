@@ -98,6 +98,12 @@ class DevServerThread(threading.Thread):
                 # getfqdn sometimes is very slow
                 return '%s:%s' % (host, port)
 
+            def log_message(self, format, *args):
+                logger.info("%s - - [%s] %s",
+                            self.client_address[0],
+                            self.log_date_time_string(),
+                            format%args)
+
         try:
             self.port = int(port)
         except ValueError:

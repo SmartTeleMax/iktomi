@@ -39,8 +39,8 @@ class Application(object):
         self.root = Reverse.from_handler(handler)
 
     def handle_error(self, env):
-        logging.exception('Exception for %s %s :',
-                          env.request.method, env.request.url)
+        logger.exception('Exception for %s %s :',
+                         env.request.method, env.request.url)
 
     def handle(self, env, data):
         try:
