@@ -57,11 +57,8 @@ def doublefork(pidfile, logfile, cwd, umask):
         sys.exit('fork #2 failed: (%d) %s\n' % (e.errno, e.strerror))
     si = open('/dev/null')
     so = open(logfile, 'a+', 0)
-    sys.stdin.close()
     os.dup2(si.fileno(), 0)
-    sys.stdout.close()
     os.dup2(so.fileno(), 1)
-    sys.stderr.close()
     os.dup2(so.fileno(), 2)
     sys.stdin = si
     sys.stdout = sys.stderr = so
