@@ -27,7 +27,7 @@ def Rule(path, handler, method=None, name=None, convs=None):
     # werkzeug-style Rule
     if name is None:
         name = handler.func_name
-    h = filters.match(path, name)
+    h = filters.match(path, name, convs=convs)
     if method is not None:
         h = h | cases(filters.method(method),
                       http_error(405))
