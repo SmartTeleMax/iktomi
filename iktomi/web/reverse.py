@@ -86,7 +86,7 @@ class Reverse(object):
                                   ready=self._is_endpoint,
                                   parent=self._parent,
                                   finalize_params=finalize_params)
-        raise UrlBuildingError('Not an endpoint')
+        raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
     def __getattr__(self, name):
         if self._is_scope and name in self._scope:
@@ -140,7 +140,7 @@ class Reverse(object):
                 args |= self._scope[''][0].url_arguments
         return args
 
-    def build_url(self, _name, **kwargs):
+    def _build_url_silent(self, _name, **kwargs):
         subreverse = self
         used_args = set()
         for part in _name.split('.'):
@@ -151,6 +151,10 @@ class Reverse(object):
         if not subreverse._ready and subreverse._is_endpoint:
             used_args |= subreverse.url_arguments
             subreverse = subreverse(**kwargs)
+        return used_args, subreverse
+
+    def build_url(self, _name, **kwargs):
+        used_args, subreverse =  self._build_url_silent(_name, **kwargs)
 
         if set(kwargs).difference(used_args):
             raise UrlBuildingError('Not all arguments are used during URL building: %s' %
@@ -163,12 +167,12 @@ class Reverse(object):
             return self._finalize().as_url
 
         if not self._is_endpoint:
-            raise UrlBuildingError('Not an endpoint')
+            raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
         if self._ready:
             path, host = self._path, self._host
         else:
-            raise UrlBuildingError('Not an endpoint')
+            raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
         # XXX there is a little mess with `domain` and `host` terms
         if ':' in host:
@@ -207,3 +211,7 @@ class Reverse(object):
 
     def __str__(self):
         return str(self.as_url)
+
+    def __repr__(self):
+        return '{}(path=\'{}\', host=\'{}\')'.format(
+                self.__class__.__name__, self._path, self._host)
