@@ -31,21 +31,32 @@ class FileEventHandlers(object):
 
     def _store_transient(self, target):
         transient = getattr(target, self.prop.key)
-        if transient is None or isinstance(transient, PersistentFile):
+        if transient is None:
+            for file_attr, target_attr in self.prop.cache_properties.items():
+                setattr(target, target_attr, None)
+            return
+        if isinstance(transient, PersistentFile):
             return
         assert isinstance(transient, TransientFile), repr(transient)
         persistent = self._2persistent(target, transient)
         file_attr = getattr(type(target), self.prop.key)
         file_attr._states[target] = persistent
 
+        for file_attr, target_attr in self.prop.cache_properties.items():
+            setattr(target, target_attr, getattr(persistent, file_attr))
+
     def _2persistent(self, target, transient):
         session = object_session(target)
         persistent_name = getattr(target, self.prop.attribute_name)
+        attr = getattr(type(target), self.prop.key)
+        file_manager = session.find_file_manager(attr)
+        persistent = file_manager.get_persistent(persistent_name,
+                                                 self.prop.persistent_cls)
 
         file_attr = getattr(target.__class__, self.prop.key)
         file_manager = session.find_file_manager(file_attr)
 
-        return file_manager.store(transient, persistent_name)
+        return file_manager.store(transient, persistent)
 
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
@@ -65,7 +76,8 @@ class FileEventHandlers(object):
                 file_attr = getattr(target.__class__, self.prop.key)
                 file_manager = session.find_file_manager(file_attr)
 
-                old = file_manager.get_persistent(old_name)
+                old = file_manager.get_persistent(old_name,
+                                                  self.prop.persistent_cls)
                 self._remove_file(old.path)
         self._store_transient(target)
 
@@ -83,7 +95,8 @@ class FileEventHandlers(object):
             file_attr = getattr(target.__class__, self.prop.key)
             file_manager = session.find_file_manager(file_attr)
 
-            old = file_manager.get_persistent(old_name)
+            old = file_manager.get_persistent(old_name,
+                                              self.prop.persistent_cls)
             self._remove_file(old.path)
 
 
@@ -94,6 +107,8 @@ class FileAttribute(object):
         self.attribute_name = prop.attribute_name
         self.name_template = prop.name_template
         self.class_ = class_
+        self.cache_properties = prop.cache_properties
+        self.persistent_cls = prop.persistent_cls
         # State for each instance
         self._states = WeakKeyDictionary()
 
@@ -111,7 +126,13 @@ class FileAttribute(object):
                 if not hasattr(session, 'file_manager'):
                     raise RuntimeError(
                             "Session doesn't support file management")
-                value = session.find_file_manager(self).get_persistent(value)
+                file_manager = session.find_file_manager(self)
+                value = file_manager.get_persistent(value,
+                                                    self.persistent_cls)
+
+                for file_attr, target_attr in self.cache_properties.items():
+                    setattr(value, file_attr, getattr(inst, target_attr))
+
             self._states[inst] = value
         return self._states[inst]
 
@@ -159,7 +180,10 @@ class FileProperty(MapperProperty):
         return self._attribute_name or self.column.key
 
     def _set_options(self, options):
-        assert not options, 'FileProperty accepts no options'
+        self.persistent_cls = options.pop('persistent_cls', PersistentFile)
+        self.cache_properties = dict(options.pop('cache_properties', {}))
+        assert not options, "Got unexpeted parameters: %s" % (
+                options.keys())
 
     def instrument_class(self, mapper):
         handlers = self.event_cls(self)

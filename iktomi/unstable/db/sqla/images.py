@@ -5,10 +5,29 @@ except ImportError:
     from PIL import Image
 from sqlalchemy.orm.session import object_session
 from iktomi.unstable.utils.image_resizers import ResizeFit
-from ..files import TransientFile
+from iktomi.utils import cached_property
+from ..files import TransientFile, PersistentFile
 from .files import FileEventHandlers, FileProperty
 
 logger = logging.getLogger(__name__)
+
+
+class ImageFile(PersistentFile):
+
+    def _get_properties(self, properties=['width', 'height']):
+        if 'width' in properties or 'height' in properties:
+            image = Image.open(self.path)
+            self.width, self.height = image.sizes
+
+    @cached_property
+    def width(self):
+        self._get_properties(['width'])
+        return self.width
+
+    @cached_property
+    def height(self):
+        self._get_properties(['height'])
+        return self.height
 
 
 class ImageEventHandlers(FileEventHandlers):
@@ -25,7 +44,9 @@ class ImageEventHandlers(FileEventHandlers):
             session = object_session(target)
             persistent_name = getattr(target, self.prop.attribute_name)
             image_attr = getattr(target.__class__, self.prop.key)
-            persistent = session.find_file_manager(image_attr).get_persistent(persistent_name)
+            file_manager = persistent = session.find_file_manager(image_attr)
+            persistent = file_manager.get_persistent(persistent_name,
+                                                     self.prop.persistent_cls)
             image = self.prop.resize(image, self.prop.image_sizes)
             if self.prop.filter:
                 if image.mode not in ['RGB', 'RGBA']:
@@ -35,7 +56,7 @@ class ImageEventHandlers(FileEventHandlers):
             ext = os.path.splitext(persistent_name)[1]
             transient = session.find_file_manager(image_attr).new_transient(ext)
             image.save(transient.path, quality=self.prop.quality)
-            session.find_file_manager(image_attr).store(transient, persistent_name)
+            session.find_file_manager(image_attr).store(transient, persistent)
             return persistent
         else:
             # Attention! This method can accept PersistentFile.
@@ -86,8 +107,10 @@ class ImageProperty(FileProperty):
         self.fill_from = options.pop('fill_from', None)
         self.filter = options.pop('fillter', None)
         self.quality = options.pop('quality', 85)
+        self.cache_properties = dict(options.pop('cache_properties', {}))
 
         assert self.fill_from is None or self.image_sizes is not None
-        assert not options, "Got unexpeted parameters: %s" % (
-                options.keys())
+
+        options.setdefault('persistent_cls', ImageFile)
+        FileProperty._set_options(self, options)
 
