@@ -1,4 +1,3 @@
-from itertools import chain
 from iktomi.utils import cached_property
 from iktomi.unstable.utils.functools import return_locals
 
@@ -44,11 +43,13 @@ class ModelFactories(object):
             cls = self.create_model(module, name, constructor, base_names)
             setattr(module, name, cls)
 
+        all_langs = [x.lang for x in all_lang_modules]
         for name, constructor, base_names, langs in self.i18n_models:
             if model_names is not None and name not in model_names:
                 pass
             if langs is None:
                 lang_modules = all_lang_modules
+                langs = list(all_langs)
             else:
                 lang_modules = [getattr(module, l) for l in langs]
             for lang_module in lang_modules:
@@ -57,6 +58,9 @@ class ModelFactories(object):
                     pass
                 cls = self.create_model(lang_module, lang_name,
                                         constructor, base_names)
+                # XXX proper name for this attribute?
+                #     or may be, store it in external storage?
+                cls._iktomi_langs = langs
                 setattr(module, lang_name, cls)
 
 
