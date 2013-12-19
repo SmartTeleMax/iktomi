@@ -74,7 +74,8 @@ class _AttrDict(object):
         return getattr(self.__inst, key)
 
 def random_name():
-    return base64.urlsafe_b64encode(os.urandom(8)).rstrip('=')
+    # altchars - do not use "-" and "_" in file names
+    return base64.b64encode(os.urandom(8), altchars="AA").rstrip('=')
 
 
 class BaseFileManager(object):
@@ -83,9 +84,9 @@ class BaseFileManager(object):
         self.persistent_root = persistent_root
         self.persistent_url = persistent_url
 
-    def get_persistent(self, name):
+    def get_persistent(self, name, cls=PersistentFile):
         assert name and not ('..' in name or name[0] in '~/'), name
-        persistent = PersistentFile(self.persistent_root, name, self)
+        persistent = cls(self.persistent_root, name, self)
         return persistent
 
     def get_persistent_url(self, file, env=None):
@@ -159,10 +160,8 @@ class FileManager(BaseFileManager):
                           transient.path)
         return transient
 
-    def store(self, transient_file, persistent_name):
+    def store(self, transient_file, persistent_file):
         '''Makes PersistentFile from TransientFile'''
-        persistent_file = PersistentFile(self.persistent_root,
-                                         persistent_name, self)
         #for i in xrange(5):
         #    persistent_file = PersistentFile(self.persistent_root,
         #                                     persistent_name, self)
