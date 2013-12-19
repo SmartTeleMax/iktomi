@@ -374,10 +374,10 @@ class FieldList(AggregateField):
             subfield = self.field(name=index)
             subfield.set_raw_value(raw_data, subfield.from_python(subvalue))
             indeces.append(index)
-        if self.indeces_input_name in self.form.raw_data:
-            del self.form.raw_data[self.indeces_input_name]
+        if self.indeces_input_name in raw_data:
+            del raw_data[self.indeces_input_name]
         for index in indeces:
-            self.form.raw_data.add(self.indeces_input_name, index)
+            raw_data.add(self.indeces_input_name, index)
 
     def get_field_template(self):
         field = self.field(name='%'+self.input_name+'-index%')
