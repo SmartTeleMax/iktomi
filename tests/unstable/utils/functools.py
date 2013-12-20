@@ -1,4 +1,4 @@
-import unittest, inspect
+import unittest, sys, inspect
 from iktomi.unstable.utils.functools import return_locals
 
 
@@ -14,3 +14,50 @@ class Tests(unittest.TestCase):
         d = decorated(0)
         self.assertIs(type(d), dict)
         self.assertEqual(d, {'c': 2})
+
+    def test_return_locals_profile_events(self):
+        '''Insure profile function gets events for function decorated with
+        return_locals at least the same as for function itself.'''
+        def collect_events(func):
+            events = []
+            def tracer(frame, event, args):
+                events.append((frame.f_code, event))
+            old_tracer = sys.getprofile()
+            sys.setprofile(tracer)
+            try:
+                func()
+            finally:
+                sys.setprofile(old_tracer)
+            return events
+        def inner():
+            return 2
+        def outer():
+            a = 1
+            b = inner()
+        events1 = set(collect_events(outer))
+        events2 = set(collect_events(return_locals(outer)))
+        self.assertTrue(events2.issuperset(events1))
+
+    def test_return_locals_debugger_events(self):
+        '''Insure debugging function gets events for function decorated with
+        return_locals at least the same as for function itself.'''
+        def collect_events(func):
+            events = []
+            def tracer(frame, event, args):
+                events.append((frame.f_code, event))
+                return tracer
+            old_tracer = sys.gettrace()
+            sys.settrace(tracer)
+            try:
+                func()
+            finally:
+                sys.settrace(old_tracer)
+            return events
+        def inner():
+            return 2
+        def outer():
+            a = 1
+            b = inner()
+        events1 = set(collect_events(outer))
+        events2 = set(collect_events(return_locals(outer)))
+        self.assertTrue(events2.issuperset(events1))
