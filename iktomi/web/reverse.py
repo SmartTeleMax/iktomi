@@ -91,7 +91,8 @@ class Reverse(object):
     def __getattr__(self, name):
         if self._is_scope and name in self._scope:
             if self._need_arguments:
-                raise UrlBuildingError('Need arguments to build last part of url')
+                return getattr(self(), name)
+                #raise UrlBuildingError('Need arguments to build last part of url')
             location, scope = self._scope[name]
             path = self._path
             host = self._host
@@ -153,6 +154,10 @@ class Reverse(object):
             subreverse = subreverse(**kwargs)
         return used_args, subreverse
 
+    def build_subreverse(self, _name, **kwargs):
+        _, subreverse = self._build_url_silent(_name, **kwargs)
+        return subreverse
+
     def build_url(self, _name, **kwargs):
         used_args, subreverse =  self._build_url_silent(_name, **kwargs)
 
@@ -172,7 +177,8 @@ class Reverse(object):
         if self._ready:
             path, host = self._path, self._host
         else:
-            raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
+            return self().as_url
+            #raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
         # XXX there is a little mess with `domain` and `host` terms
         if ':' in host:

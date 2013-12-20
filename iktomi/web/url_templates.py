@@ -128,7 +128,10 @@ class UrlTemplate(object):
                 try:
                     value = kwargs[var]
                 except KeyError:
-                    raise UrlBuildingError('Missing argument for URL builder: %s' % var)
+                    if hasattr(conv_obj, 'default'):
+                        value = conv_obj.default
+                    else:
+                        raise UrlBuildingError('Missing argument for URL builder: %s' % var)
                 result += urlquote(conv_obj.to_url(value))
             else:
                 result += part
