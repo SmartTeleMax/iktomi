@@ -1,4 +1,4 @@
-import unittest, sys, inspect
+import unittest, sys, inspect, cProfile
 from iktomi.unstable.utils.functools import return_locals
 
 
@@ -61,3 +61,10 @@ class Tests(unittest.TestCase):
         events1 = set(collect_events(outer))
         events2 = set(collect_events(return_locals(outer)))
         self.assertTrue(events2.issuperset(events1))
+
+    def test_return_locals_cProfile(self):
+        '''Insure code using return_locals is profilable with cProfile.'''
+        @return_locals
+        def func():
+            pass
+        cProfile.runctx('func()', {'func': func}, {})
