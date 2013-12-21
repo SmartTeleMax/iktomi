@@ -451,3 +451,13 @@ class ReverseTests(unittest.TestCase):
         r = web.Reverse.from_handler(app)
         self.assertEqual(r.subdomain.more.index.as_url, 'http://d1.d2/')
 
+    def test_default_values(self):
+        app = web.prefix('/<int(default=0):id1>') | web.namespace('ns') | \
+              web.match('/<int(default=0):id2>', 'url')
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.ns.url.as_url, '/0/0')
+        self.assertEqual(r.ns().url().as_url, '/0/0')
+        self.assertEqual(r.ns(id1=1).url(id2=2).as_url, '/1/2')
+        self.assertEqual(r.build_url('ns.url'), '/0/0')
+        self.assertEqual(r.build_url('ns.url', id1=1, id2=2), '/1/2')
+        

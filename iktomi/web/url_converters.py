@@ -7,6 +7,7 @@ __all__ = ['ConvertError', 'default_converters', 'Converter', 'String',
            'Integer', 'Any', 'Date']
 
 
+
 class ConvertError(Exception):
 
     @property
@@ -22,6 +23,11 @@ class Converter(object):
     '''A base class for urlconverters'''
 
     regex = '[.a-zA-Z0-9:@&+$,_%%-]+'
+    class NotSet(object): pass
+    default = NotSet
+
+    def __init__(self, default=NotSet):
+        self.default = default
 
     def to_python(self, value, env=None):
         '''
@@ -47,7 +53,8 @@ class String(Converter):
     min = 1
     max = None
 
-    def __init__(self, min=None, max=None):
+    def __init__(self, min=None, max=None, **kwargs):
+        Converter.__init__(self, **kwargs)
         self.min = min if min is not None else self.min
         self.max = max or self.max
 
@@ -85,7 +92,8 @@ class Integer(Converter):
 
 class Any(Converter):
 
-    def __init__(self, *values):
+    def __init__(self, *values, **kwargs):
+        Converter.__init__(self, **kwargs)
         self.values = values
 
     def to_python(self, value, env=None):
@@ -101,7 +109,8 @@ class Date(Converter):
 
     format = "%Y-%m-%d"
 
-    def __init__(self, format=None):
+    def __init__(self, format=None, **kwargs):
+        Converter.__init__(self, **kwargs)
         if format is not None:
             self.format = format
 
