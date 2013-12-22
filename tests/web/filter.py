@@ -87,8 +87,6 @@ class Prefix(unittest.TestCase):
         self.assertEqual(web.ask(app, '/docs/list/something'), None)
         self.assertEqual(web.ask(app, '/docs/list/other-thing'), None)
 
-
-
     def test_unicode(self):
         '''Routing rules with unicode'''
         # XXX move to urltemplate and reverse tests?
@@ -337,14 +335,28 @@ class Namespace(unittest.TestCase):
 
     def test_nested_namespaces(self):
         def test_ns(env, data):
-            self.assertEqual(env.namespace, 'ns1.ns2')
-            return 1
+            return env.namespace
 
         app = web.prefix('/ns1', name="ns1") | \
               web.prefix('/ns2', name="ns2") | \
               web.match() | test_ns
 
-        self.assertEqual(web.ask(app, '/ns1/ns2'), 1)
+        self.assertEqual(web.ask(app, '/ns1/ns2'), 'ns1.ns2')
+
+    def test_current_location(self):
+        def test_ns(env, data):
+            return env.current_location
+
+        app = web.cases(
+            web.match('/', 'm1'),
+            web.prefix('/ns', name="ns1.ns2") | web.cases(
+                web.match(''),
+                web.match('/m2', 'm2'),
+            )
+        ) | test_ns
+        self.assertEqual(web.ask(app, '/'), 'm1')
+        self.assertEqual(web.ask(app, '/ns'), 'ns1.ns2')
+        self.assertEqual(web.ask(app, '/ns/m2'), 'ns1.ns2.m2')
 
     def test_empty(self):
         self.assertRaises(TypeError, web.namespace, '')
