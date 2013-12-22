@@ -11,7 +11,7 @@ import jinja2
 import xpath
 
 from iktomi.forms import fields, convs, widgets, media, perms, \
-                         Form, Field
+                         Form, Field, FieldList, FieldSet
 
 
 class TestFormClass(unittest.TestCase):
@@ -376,6 +376,34 @@ class TestCheckBoxSelect(TestSelect):
     def check_not_multiple(self, html):
         self.assertEqual(xpath.findvalue('.//*:input/@type', html),
                          'radio')
+
+class TestFieldList(TestFormClass):
+
+    tag = 'input'
+
+    def get_value(self, html):
+        return xpath.findvalue('.//*:%s/@value'%self.tag, html)
+
+    def test_render(self):
+        class F(Form):
+            fields = [
+                FieldList('list',
+                          field=FieldSet(None, fields=[
+                              Field('name',
+                                      conv=convs.Char(),
+                                      widget=widgets.TextInput)]))
+            ]
+
+        form = F(self.env)
+
+        #form.raw_data = MultiDict({'name': '<p>Paragraph</p>'})
+        render = form.get_field('list').widget.render()
+        #html = self.parse(render)
+        #value = self.get_value(html)
+        #self.assertEqual(value, '<p>Paragraph</p>')
+        #self.assertEqual(xpath.findvalue('.//*:%s/@readonly'%self.tag, html), None)
+        #self.assertEqual(xpath.findvalue('.//*:%s/@class'%self.tag, html), 'cls')
+
 
 
 if __name__ == '__main__':

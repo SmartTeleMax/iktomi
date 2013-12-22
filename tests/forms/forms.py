@@ -282,12 +282,14 @@ class FormReadonlyFieldsTest(unittest.TestCase):
                 FieldList('list', field=Field('number', convs.Int(), permissions='r')),
             ]
         form = _Form(initial={'list':[1, 2]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'),
-                                                   ('list-indeces', '2')),
-                                                   **{'list.1': '1', 
-                                                      'list.2': '2'}))
+        self.assertEqual(sorted(form.raw_data.items()),
+            [('list-indeces', '1'),
+             ('list-indeces', '2'),
+             ('list.1', '1'), 
+             ('list.2', '2')])
         self.assertEqual(form.python_data, {'list': [1, 2]})
         self.assert_(form.accept(MultiDict((('list-indeces', '1'),
+                                            ('list-indeces', 'aa'),
                                             ('list-indeces', '2')),
                                             **{'list.1': '2',
                                                'list.2': '3'})))
@@ -305,7 +307,9 @@ class FormReadonlyFieldsTest(unittest.TestCase):
         form = _Form(initial={'list':[{'number':1}, {'number':2}]})
         self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list.1.number': '1', 'list.2.number': '2'}))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
-        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list.1.number': '2', 'list.2.number': '3'})))
+        self.assert_(form.accept(MultiDict((('list-indeces', '1'), 
+                                            ('list-indeces', '2')),
+                                           **{'list.1.number': '2', 'list.2.number': '3'})))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
 
     def test_fieldset_of_fieldsets(self):
@@ -328,7 +332,7 @@ class FormReadonlyFieldsTest(unittest.TestCase):
             'set2': {'first': 1, 'second': 2},
         }})
 
-        self.assertEqual(form.raw_data, MultiDict(**{
+        self.assertEqual(dict(form.raw_data), MultiDict(**{
             'sets.set1.first': '1',
             'sets.set1.second': '2',
             'sets.set2.first': '1',

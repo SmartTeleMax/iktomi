@@ -115,16 +115,6 @@ class BaseField(object):
     def readable(self):
         return 'r' in self.permissions
 
-    @property
-    def render_type(self):
-        # XXX deprecated, get rid of this
-        return self.widget.render_type
-
-    @property
-    def render(self):
-        # XXX deprecated, get rid of this
-        return self.widget.render
-
     def load_initial(self, initial, raw_data):
         value = initial.get(self.name, self.get_initial())
         self.set_raw_value(raw_data,
@@ -192,6 +182,7 @@ class AggregateField(BaseField):
         try:
             value = self.clean_value
         except LookupError:
+            # XXX is this necessary?
             value = self.get_initial()
         return self.from_python(value)
 
@@ -335,6 +326,7 @@ class FieldList(AggregateField):
     def get_field(self, name):
         names = name.split('.', 1)
         if not self._digit_re.match(names[0]):
+            # XXX is this needed?
             return None
         field = self.field(name=names[0])
         if len(names) > 1:
@@ -374,17 +366,12 @@ class FieldList(AggregateField):
             subfield = self.field(name=index)
             subfield.set_raw_value(raw_data, subfield.from_python(subvalue))
             indeces.append(index)
-        if self.indeces_input_name in raw_data:
+        try:
             del raw_data[self.indeces_input_name]
+        except KeyError:
+            pass
         for index in indeces:
             raw_data.add(self.indeces_input_name, index)
-
-    def get_field_template(self):
-        field = self.field(name='%'+self.input_name+'-index%')
-        # XXX looks like a HACK
-        field.set_raw_value(self.form.raw_data,
-                            field.from_python(field.get_initial()))
-        return field.widget.render()
 
 
 class FileField(Field):

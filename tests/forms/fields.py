@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import unittest
-from copy import copy
+from webob import Request
+from iktomi.forms import Form, FieldSet, FieldList, FieldBlock, Field, convs
 
-from iktomi.forms import *
 from webob.multidict import MultiDict
 
 
@@ -15,6 +15,14 @@ class FieldTests(unittest.TestCase):
         form = _Form()
         self.assert_(form.accept(MultiDict(input='value')))
         self.assertEqual(form.python_data['input'], 'value')
+
+    def test_id(self):
+        class _Form(Form):
+            fields=[Field('input', convs.Char())]
+        form = _Form()
+        self.assertEqual(form.get_field('input').id, 'input')
+        form.id = 'myform'
+        self.assertEqual(form.get_field('input').id, 'myform-input')
 
     def test_get_field(self):
         class F(Form):
@@ -73,6 +81,15 @@ class FieldTests(unittest.TestCase):
     def test_obsolete(self):
         self.assertRaises(TypeError, Field, 'name', default=1)
 
+    def test_check_value_type(self):
+        '''Pass file value to ordinary Field'''
+        class F(Form):
+            fields = [Field('inp')]
+        request = Request.blank('/', POST=dict(inp=('foo.txt', 'ggg')))
+        form = F()
+        self.assertEqual(form.accept(request.POST), False)
+        self.assertEqual(form.errors.keys(), ['inp'])
+
 
 class FieldBlockTests(unittest.TestCase):
 
@@ -117,7 +134,7 @@ class FieldBlockTests(unittest.TestCase):
         self.assert_(not form.accept({'number': '4'}))
         self.assertEqual(form.python_data, {'number': None})
         self.assertEqual(form.get_field('number').raw_value, '4')
-        self.assertEqual(form.errors, {'number': 'error'})
+        self.assertEqual(form.get_field('number').error, 'error')
 
     def test_nested(self):
         class _Form(Form):
