@@ -380,6 +380,7 @@ class FileField(Field):
     '''
 
     _null_value = None
+    conv = convs.SimpleFile
 
     def set_raw_value(self, raw_data, value):
         pass

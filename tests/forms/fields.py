@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import unittest
 from webob import Request
-from iktomi.forms import Form, FieldSet, FieldList, FieldBlock, Field, convs
+from iktomi.forms import Form, FieldSet, FieldList, FieldBlock, Field, \
+            FileField, convs
 
 from webob.multidict import MultiDict
 
@@ -158,3 +159,26 @@ class FieldBlockTests(unittest.TestCase):
         self.assertEqual(form.get_field('number').raw_value, '4')
         self.assertEqual(form.get_field('title').raw_value, 'Hello')
         self.assertEqual(form.errors, {})
+
+
+class FileFieldTests(unittest.TestCase):
+
+    def test_accept(self):
+        class _Form(Form):
+            fields=[FileField('inp')]
+        form = _Form()
+        request = Request.blank('/', POST=dict(inp=('file.txt', 'ggg')))
+        self.assert_(form.accept(request.POST),
+                     form.errors)
+        self.assertEqual(form.python_data['inp'].file.read(), 'ggg')
+
+    def test_check_value_type(self):
+        '''Pass string value to FileField'''
+        class F(Form):
+            fields = [FileField('inp')]
+        request = Request.blank('/', POST=dict(inp='ggg'))
+        form = F()
+        self.assertEqual(form.accept(request.POST), False)
+        self.assertEqual(form.errors.keys(), ['inp'])
+
+
