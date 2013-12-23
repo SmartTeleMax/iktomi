@@ -121,6 +121,23 @@ class FieldBlockTests(unittest.TestCase):
         self.assertEqual(form.get_field('number').raw_value, '4')
         self.assertEqual(form.errors, {})
 
+    def test_fieldblock_in_fieldset(self):
+        class _Form(Form):
+            fields=[FieldSet('fs', fields=[
+                FieldBlock('field block', [
+                    Field('number', convs.Int())
+                ]),
+            ])]
+        form = _Form(initial={'fs':{'number': 5}})
+        self.assertEqual(form.raw_data, MultiDict([('fs.number', '5')]))
+        self.assertEqual(form.python_data, {'fs': {'number': None}})
+        self.assert_(form.accept({'fs.number': '4'}))
+        self.assertEqual(form.python_data, {'fs': {'number': 4}})
+        self.assertEqual(form.get_field('fs.number').raw_value, '4')
+        self.assertEqual(form.errors, {})
+
+
+
     def test_validation_error(self):
         def validator(conv, value):
             raise convs.ValidationError(by_field={'number': 'error'})
@@ -180,5 +197,4 @@ class FileFieldTests(unittest.TestCase):
         form = F()
         self.assertEqual(form.accept(request.POST), False)
         self.assertEqual(form.errors.keys(), ['inp'])
-
 
