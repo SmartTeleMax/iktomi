@@ -27,7 +27,8 @@ class Converter(object):
     default = NotSet
 
     def __init__(self, default=NotSet):
-        self.default = default
+        if not default is self.NotSet:
+            self.default = default
 
     def to_python(self, value, env=None):
         '''
