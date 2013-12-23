@@ -130,7 +130,7 @@ class FieldBlockTests(unittest.TestCase):
             ])]
         form = _Form(initial={'fs':{'number': 5}})
         self.assertEqual(form.raw_data, MultiDict([('fs.number', '5')]))
-        self.assertEqual(form.python_data, {'fs': {'number': None}})
+        self.assertEqual(form.python_data, {'fs': {'number': 5}})
         self.assert_(form.accept({'fs.number': '4'}))
         self.assertEqual(form.python_data, {'fs': {'number': 4}})
         self.assertEqual(form.get_field('fs.number').raw_value, '4')

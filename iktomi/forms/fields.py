@@ -115,6 +115,10 @@ class BaseField(object):
     def readable(self):
         return 'r' in self.permissions
 
+    @cached_property
+    def field_names(self):
+        return [self.name]
+
     def load_initial(self, initial, raw_data):
         value = initial.get(self.name, self.get_initial())
         self.set_raw_value(raw_data,
@@ -232,8 +236,10 @@ class FieldSet(AggregateField):
     def set_raw_value(self, raw_data, value):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), 'To set raw value need dict, got %r' % value
-        for field in self.fields:
-            subvalue = value[field.name]
+        field_names = sum([x.field_names for x in self.fields], [])
+        for field_name in field_names:
+            subvalue = value[field_name]
+            field = self.get_field(field_name)
             field.set_raw_value(raw_data, field.from_python(subvalue))
 
     def accept(self):
@@ -262,6 +268,10 @@ class FieldBlock(FieldSet):
         kwargs.setdefault('name', '') # XXX generate unique name
         FieldSet.__init__(self, **kwargs)
 
+    @cached_property
+    def prefix(self):
+        return self.parent.prefix
+
     def accept(self):
         result = FieldSet.accept(self)
         return result[self.name]
@@ -272,14 +282,11 @@ class FieldBlock(FieldSet):
             result.update(field.load_initial(initial, raw_data))
         return result
 
-    @property
+    @cached_property
     def field_names(self):
         result = []
         for field in self.fields:
-            if isinstance(field, FieldBlock):
-                result += field.field_names
-            else:
-                result.append(field.name)
+            result += field.field_names
         return result
 
     @property
@@ -372,6 +379,14 @@ class FieldList(AggregateField):
             pass
         for index in indeces:
             raw_data.add(self.indeces_input_name, index)
+
+    def render_template_field(self):
+        # XXX move to widget
+        field = self.field(name='%'+self.input_name+'-index%')
+        # XXX looks like a HACK
+        field.set_raw_value(self.form.raw_data,
+                            field.from_python(field.get_initial()))
+        return field.widget.render()
 
 
 class FileField(Field):

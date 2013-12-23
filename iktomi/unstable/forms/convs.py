@@ -35,8 +35,9 @@ class ModelDictConv(Converter):
 
     def from_python(self, value):
         result = {}
-        for field in self.field.fields:
-            result[field.name] = getattr(value, field.name)
+        field_names = sum([x.field_names for x in self.field.fields], [])
+        for field_name in field_names:
+            result[field_name] = getattr(value, field_name)
         return result
 
     def to_python(self, value):
