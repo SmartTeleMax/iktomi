@@ -229,8 +229,9 @@ class FieldSet(AggregateField):
         return None
 
     def get_initial(self):
-        result = dict((field.name, field.get_initial())
-                      for field in self.fields)
+        field_names = sum([x.field_names for x in self.fields], [])
+        result = dict((name, self.get_field(name).get_initial())
+                      for name in field_names)
         return self.conv.accept(result, silent=True)
 
     def set_raw_value(self, raw_data, value):
