@@ -42,8 +42,9 @@ class ModelDictConv(Converter):
 
     def to_python(self, value):
         obj = self.model()
-        for field in self.field.fields:
-            setattr(obj, field.name, value[field.name])
+        field_names = sum([x.field_names for x in self.field.fields], [])
+        for field_name in field_names:
+            setattr(obj, field_name, value[field_name])
         return obj
 
 
