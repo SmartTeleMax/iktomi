@@ -102,12 +102,6 @@ class URL(str):
     def qs_get(self, key, default=None):
         return self.query.get(key, default=default)
 
-    def qs_getall(self, key):
-        return self.query.getall(key)
-
-    def qs_getone(self, key):
-        return self.query.getone(key)
-
     def get_readable(self):
         '''Gets human-readable representation of the url'''
         query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
