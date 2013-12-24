@@ -524,6 +524,8 @@ class Html(Char):
 
 
 class List(Converter):
+    '''
+    Converter for FieldList'''
 
     _obsolete = Converter._obsolete | set(['filter'])
 
@@ -539,6 +541,10 @@ class List(Converter):
 
 class ListOf(Converter):
     '''
+    Converter for scalar Fields, applies nested converter to each value
+    of the field (i.e. for each value from MultiDict) and returns a list of 
+    resulting values.
+
     Usage:
         ListOf(Converter(), *validators_and_filters, **kwargs)
     '''
