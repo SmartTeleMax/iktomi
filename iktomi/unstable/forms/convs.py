@@ -47,6 +47,17 @@ class ModelDictConv(Converter):
             setattr(obj, field_name, value[field_name])
         return obj
 
+    @property
+    def _existing_value(self):
+        if self.field is not None:
+            pd = self.field.parent.python_data
+            if self.field.name in pd:
+                return pd[self.field.name]
+            # Return blank self.model instance as initial/default value 
+            # if one does not exist
+            return self.model()
+        return [] if self.multiple else None
+
 
 class OptionLabel(unicode):
 
