@@ -43,17 +43,25 @@ class ImageEventHandlers(FileEventHandlers):
         if self.prop.image_sizes:
             session = object_session(target)
             persistent_name = getattr(target, self.prop.attribute_name)
+            ext = os.path.splitext(persistent_name)[1]
+            if not ext:
+                ext = '.' + image.format.lower()
+                # set extension if it is not set
+                # XXX hack?
+                persistent_name += ext
+                setattr(target, self.prop.attribute_name, persistent_name)
+
             image_attr = getattr(target.__class__, self.prop.key)
             file_manager = persistent = session.find_file_manager(image_attr)
             persistent = file_manager.get_persistent(persistent_name,
                                                      self.prop.persistent_cls)
+
             image = self.prop.resize(image, self.prop.image_sizes)
             if self.prop.filter:
                 if image.mode not in ['RGB', 'RGBA']:
                     image = image.convert('RGB')
                 image = image.filter(self.filter)
 
-            ext = os.path.splitext(persistent_name)[1]
             transient = session.find_file_manager(image_attr).new_transient(ext)
             image.save(transient.path, quality=self.prop.quality)
             session.find_file_manager(image_attr).store(transient, persistent)
