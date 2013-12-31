@@ -139,7 +139,7 @@ class Converter(object):
     def to_python(self, value):
         """ custom converters should override this """
         if value == '':
-            return None
+            return None # XXX is this right?
         return value
 
     def from_python(self, value):
@@ -203,7 +203,7 @@ def length(min_length, max_length):
 
 @deprecated('Use length(min, max) instead.')
 def limit(min_length, max_length):
-    return length(min_length, max_length)
+    return length(min_length, max_length) # pragma: no cover
 
 
 def between(min_value, max_value):
@@ -225,7 +225,7 @@ def between(min_value, max_value):
 
 @deprecated('Use between(min, max) instead.')
 def num_limit(min_value, max_value):
-    return between(min_value, max_value)
+    return between(min_value, max_value) # pragma: no cover
 
 
 class CharBased(Converter):
@@ -346,6 +346,7 @@ class EnumChoice(Converter):
             yield conv.from_python(python_value), label
 
     def get_label(self, value):
+        # XXX comment needed
         value = self.conv.accept(value, silent=True)
         return dict(self.choices).get(value)
 
@@ -513,14 +514,6 @@ class Html(Char):
     def sanitizer(self):
         from ..utils.html import Sanitizer
         return Sanitizer(**self._init_kwargs)
-
-    # XXX are these properties used?
-    @property
-    def tags(self):
-        return self.allowed_elements
-    @property
-    def attrs(self):
-        return self.allowed_attributes
 
 
 class List(Converter):

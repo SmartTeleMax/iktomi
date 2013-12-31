@@ -35,7 +35,7 @@ class Converter(object):
         Accepts unicode url part and returns python object.
         Should be implemented in subclasses
         '''
-        raise NotImplementedError()
+        raise NotImplementedError() # pragma: no cover
 
     def to_url(self, value):
         '''
@@ -43,7 +43,7 @@ class Converter(object):
         in url building.
         Should be implemented in subclasses
         '''
-        raise NotImplementedError()
+        raise NotImplementedError() # pragma: no cover
 
 
 class String(Converter):

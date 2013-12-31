@@ -381,14 +381,6 @@ class FieldList(AggregateField):
         for index in indeces:
             raw_data.add(self.indeces_input_name, index)
 
-    def render_template_field(self):
-        # XXX move to widget
-        field = self.field(name='%'+self.input_name+'-index%')
-        # XXX looks like a HACK
-        field.set_raw_value(self.form.raw_data,
-                            field.from_python(field.get_initial()))
-        return field.widget.render()
-
 
 class FileField(Field):
     '''

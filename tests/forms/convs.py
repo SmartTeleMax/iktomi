@@ -281,6 +281,11 @@ class BoolConverterTests(unittest.TestCase):
         field_name = conv.field.name
         self.assertEqual(conv.field.form.errors, {})
 
+    def test_from_python(self):
+        conv = init_conv(convs.Bool(required=True))
+        self.assertEqual(conv.from_python(False), '')
+        self.assertEqual(conv.from_python(True), 'checked')
+
 
 class DisplayOnlyTests(unittest.TestCase):
 
@@ -543,7 +548,7 @@ class HtmlTests(unittest.TestCase):
 
 class ValidatorTests(unittest.TestCase):
 
-    def test_limit(self):
+    def test_length(self):
         conv = init_conv(convs.Char(convs.length(2, 4)))
 
         self.assertEqual(conv.accept('11'), '11')
@@ -563,7 +568,12 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
         conv.field.form.errors = {}
 
-    def test_num_limit(self):
+        conv = init_conv(convs.Char(convs.length(2, 2)))
+        self.assertEqual(conv.accept('11'), '11')
+        self.assertEqual(conv.accept('1'), None)
+        self.assertEqual(conv.accept('111'), None)
+
+    def test_between(self):
         conv = init_conv(convs.Int(convs.between(2, 4)))
 
         self.assertEqual(conv.accept('2'), 2)

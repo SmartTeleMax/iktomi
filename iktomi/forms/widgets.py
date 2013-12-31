@@ -192,6 +192,14 @@ class FieldListWidget(AggregateWidget):
         media += self.field.field.widget.get_media()
         return media
 
+    def render_template_field(self):
+        # used in iktomi.cms: templates/widgets/fieldlist.html
+        field = self.field.field(name='%'+self.field.input_name+'-index%')
+        # XXX looks like a HACK
+        field.set_raw_value(self.field.form.raw_data,
+                            field.from_python(field.get_initial()))
+        return field.widget.render()
+
 
 class FieldSetWidget(AggregateWidget):
 
