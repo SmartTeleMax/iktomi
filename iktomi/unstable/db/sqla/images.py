@@ -17,7 +17,7 @@ class ImageFile(PersistentFile):
     def _get_properties(self, properties=['width', 'height']):
         if 'width' in properties or 'height' in properties:
             image = Image.open(self.path)
-            self.width, self.height = image.sizes
+            self.width, self.height = image.size
 
     @cached_property
     def width(self):
