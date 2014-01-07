@@ -12,7 +12,7 @@ Basic Practices
 Hello, World
 ^^^^^^^^^^^^
 
-Iktomi routing engine produces WSGI application from a couple of own web handlers.
+Iktomi produces WSGI application from a couple of own web handlers.
 In most cases, web handler is represented by function.
 
 Here is the common interface of web handlers::
@@ -21,11 +21,13 @@ Here is the common interface of web handlers::
         ...
         return response
 
-`env` is an iktomi application's current environment object. Basically it 
+`env` is an iktomi application's current environment. Basically it 
 contains only one significant attribute: `webob.Request` object in `env.request`.
-`data` and `next handler` will be described below.
+`data` will be described below.
 
-A handler returns `webob.Response`  or `None` (this case will be described below).
+A handler returns `webob.Response`  or `None` (this case will be described below),
+also it can raise `webob.exc.HTTPException` subclasses or call other 
+(in most cases, next) handlers and return their result.
 
 So, here is an example for very basic web handler::
 
@@ -35,31 +37,57 @@ So, here is an example for very basic web handler::
         name = env.request.GET.get('name', 'world')
         return webob.Response('Hello, %s!' %name)
 
-This function can be converted to WebHandler object by `web.request_filter`
-function. And any handler can be converted to WSGI app::
+Any handler can be converted to WSGI app::
 
     from iktomi import web
+    from iktomi.web.app import Application
 
-    app = web.match('/', 'index') | hello_world
-    wsgi_app = app.as_wsgi()
+    wsgi_app = Application(hello_world)
+
 
 Here it is! You can use the given object as common WSGI application, make server,
-for example, using `Flup`.
+for example, using `Flup`. Implementation of development server can be found at
+:ref:`Development server <iktomi-cli-app>`. Now we can create `manage.py` file with the 
+following content::
+
+    #!/usr/bin/python2.7
+    import sys
+    from iktomi.cli import manage
+    from iktomi.cli.app import App
+    
+    def run():
+        manage(dict(
+            # dev-server
+            app = App(wsgi_app),
+        ), sys.argv)
+    
+    
+    if __name__ == '__main__':
+        run()
+
+
+And now we can run the server::
+
+    ./manage.py app:serve
 
 
 Basic Routing
 ^^^^^^^^^^^^^
 
-There is a couple of handlers to match different url parts or other request
+There are a couple of handlers to match different url parts or other request
 properties: `web.match`, `web.prefix`, `web.methods`, `web.subdomain`, etc.
 
 Iktomi routing is based on `web.cases` and `web.match` class. Constructor 
-of class accepts a couple of other handlers. When called the instance calls 
-each of handlers until it returns `webob.Response` object. 
+of class accepts a couple of other handlers. When called the `web.cases` instance calls 
+each of handlers until one of them returns `webob.Response` object or 
+raises `webob.exc.HTTPException`. 
 
-Constructor of `web.match` class accepts a URL path to match and a handler name
-to be used for url building (see below). When called it calls next handler only
-for requests with matching urls. Let's see an example::
+If any handler returns `None`, it is interpreted as "request does not match, 
+the handler has nothing to do with it and `web.cases` should try to call the next handler".
+
+Constructor of `web.match` class accepts URL path to match and a handler name
+to be used to build an URL (see below). If the request has been matched, `web.match` calls next handler,
+otherwise returns `None`. Let's see an example::
 
     web.cases(
         web.match('/', 'index') | index,
@@ -67,8 +95,11 @@ for requests with matching urls. Let's see an example::
         web.match('/about', 'about') | about,
     )
 
-As we see, `|` operator chains handlers and makes second handler next for first.
-Important: handlers are not reusable, i.e. can't be included in application in two places.
+As we see, `|` operator chains handlers and makes second handler next for the first.
+
+*Note: handlers are stateful, they store their next and nested handlers in the attributes.
+Therefore, they can be reused (i.e. can be included in application in two places),
+because `|` operator copies instances of handlers.*
 
 And here's how it works. For request::
 
@@ -83,7 +114,7 @@ And here's how it works. For request::
    handlers and returns the result.
 
 Note that execution of chain can be cancelled by every handler. For example, 
-if `contacts` returns None, `web.cases` does not stop iteration of handlers 
+if `contacts` handler returns `None`, `web.cases` does not stop iteration of handlers 
 and `web.match('/about', 'about')` is called.
 
 URL parameters
