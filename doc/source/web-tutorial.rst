@@ -119,15 +119,16 @@ and `web.match('/about', 'about')` is called.
 
 URL parameters
 ^^^^^^^^^^^^^^
-If URL contains data that should be used in heandlers (object ids, slugs, ets),
-`werkzeug`-style URL parameters can be used in `web.match` and `web.prefix` handlers::
+If URL contains values that should be used in handlers (object ids, slugs, etc),
+`werkzeug`-style URL parameters are used::
 
     web.match('/user/<int:user_id>')
 
-These handlers use common url parsing engine. They get parameters' values from url and
-put them to `data` object by `__setattr__`.
+Where `int` is name of an url converter, and `user_id` is attribute name.
+All url-matching handlers use common url parsing engine.
+They get parameters' values from url and put them to `data` object by `__setattr__`.
 
-Iktomi provides some basic url converterss: `string` (default), `int`, `bool`, `any`. 
+Iktomi provides some basic url converters: `string` (default), `int`, `bool`, `any`. 
 It also allows you to create and use own ones (see below).
 
 Nested handlers
@@ -138,15 +139,15 @@ rules and allows to create your own handlers. And you can combine handlers as yo
 Here is an example::
 
     web.cases(
-        web.prefix('/api') | web.methods(['GET']) | web.cases(
-            web.match('/users', 'api_users') | users_list,
-            web.match('/comments', 'api_comments') | comments_list
+        web.prefix('/api', name="api") | web.methods(['GET']) | web.cases(
+            web.match('/users', 'users') | users_list,
+            web.match('/comments', 'comments') | comments_list
         ) | to_json,
 
         web.match('/', 'index') | index,
-        web.prefix('user/<int:user_id>') | web.cases(
-            web.match('', 'user_profile') | user_profile,
-            web.match('/comments', 'user_comments') | user_comments,
+        web.prefix('user/<int:user_id>', name="user") | web.cases(
+            web.match('', 'profile') | user_profile,
+            web.match('/comments', 'comments') | user_comments,
         )
     )
 
@@ -156,11 +157,25 @@ Iktomi provides url building (or reversing) engine.
 
 URL reverse object is a callable that can be created for any handler::
 
-    url_for = web.Reverse(web.locations(app))
+    root = web.Reverse.from_handler(app)
 
-And this function can be used anywhere::
-    
-    url_for('user', user_id=5)
+or the same object can be found in `env.root` attribute during the request handling.
+
+There are two ways of using `Reverse` object. Attribute-based one::
+
+    root.user(user_id=5).as_url
+    root.user(user_id=5).comments.as_url
+
+
+or string-based method::
+
+    root.build_url('user', user_id=5)
+    root.build_url('user.comments', user_id=5)
+
+*Note: string-based API is just a shortcut layer on top of attribute-based one*
+*Note: attribute-based API returns a subreverse object (also `Reverse` instance),
+while string-based API returns `web.URL` instances. If you want to get subreverse,
+use `root.build_subreverse('user', user_id=5)`*
 
 Controlling execution flow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -176,7 +191,11 @@ For example, to implement "middleware" you can do something like::
         do_something_else(result)
         return result
 
-    wrapped_app = web.request_filter(wrapper) | app
+    wrapped_app = wrapper | app
+
+*Note: `web.request_filter` is decorator transforming function to regular WebHandler,
+this allows to chain other handlers after given. The chained handler is passed as third
+argument into the handler.*
 
 It is transparent, obvious and native way. Also, it is possible to use try...except
 statements with next_handler::
@@ -188,54 +207,28 @@ statements with next_handler::
         except MyError:
             return exc.HTTPNotFound()
 
-Make an application configurable
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Common way to apply configuration and plug-in any engines is to define configuration 
-function that puts all config parameters into `env` and chain it before app.
-For example::
-
-    import cfg
-    from iktomi import web
-    from iktomi.templates import jinja2, Template
-
-    template = Template(cfg.TEMPLATES, jinja2.TEMPLATE_DIR,
-                        engines={'html': jinja2.TemplateEngine})
+or even something like that::
 
     @web.request_filter
-    def environment(env, data, next_handler):
-        env.cfg = cfg
-
-        env.url_for = url_for
-        env.template = template
-        env.db = my_db_engine()
-        env.cache = memcache_client
-
-        try:
+    def wrapper(env, data, next_handler):
+        with open_db_connection() as db:
+            env.db = db
             return next_handler(env, data)
-        finally:
-            env.db.close()
 
-    app = web.request_filter(environment) | app
 
-    url_for = web.Reverse(web.locations(app))
-
-About `iktomi.template` see in :ref:`corresponding docs <iktomi-templates>`.
 
 Scopes of environment and data valiables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-`env` and `data` objects does not just store a data, they are also used for
+`env` and `data` objects does not just store a data, also they 
 delimitate data between handlers from differrent app parts. `web.cases` handler
-is responsible for this delimitation. When called it stores it's inittial 
-state before calling nested handlers.
+is responsible for this delimitation. For each nested handler call it "stores"
+the state of `env` and `data` objects and restores it after handler execution.
 
-Each nested handler can change `env` and `data` objects. If the handler finishes 
-successfully, `web.cases` accepts  changes, otherwise it rolls changes back 
-and calls next nested handler::
+Each nested handler can change `env` and `data` objects and these changes will not affect 
+other routing branches. So you don't worry about the data you've added
+to `data` and `env` will involve any unexpected problems in other part of your app.
+Therefore, be careful with this feature, it can lead to design mistakes.
 
-    example is needed
-
-So you don't worry about the data you've added to `data` and `env` will involve
-any unexpected problems in other part of your app.
 
 Smart URL object
 ^^^^^^^^^^^^^^^^
@@ -259,7 +252,7 @@ URL as human-readable unicode string::
 
 Throwing HTTPException
 ^^^^^^^^^^^^^^^^^^^^^^
-Iktomi uses webob HTTP exceptions::
+Iktomi allows `webob.HTTPException` raising from inside a handler::
 
     from webob import exc
 
@@ -268,6 +261,15 @@ Iktomi uses webob HTTP exceptions::
         if not is_allowed(env):
             raise exc.HTTPForbidden()
         return next_handler(env, data)
+
+Also you can use `HTTPException` instances in route map::
+    
+    web.cases(
+        web.match('/', 'index') | index,
+        web.match('/contacts', 'contacts') | contacts,
+        web.match('/about', 'about') | about,
+        exc.HTTPNotFound(),
+    )
 
 Advanced Practices
 ------------------
@@ -372,3 +374,10 @@ about name clashes.::
         web.prefix('/ru') | web.namespace('ru') | part(),
     )
 
+
+Make an application configurable
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* `web.app.Application` subclassing
+* `BoundTemplate` subclassing
+* `environment` handler
