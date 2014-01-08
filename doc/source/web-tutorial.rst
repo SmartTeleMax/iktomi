@@ -131,12 +131,23 @@ They get parameters' values from url and put them to `data` object by `__setattr
 Iktomi provides some basic url converters: `string` (default), `int`, `bool`, `any`. 
 It also allows you to create and use own ones (see below).
 
-Nested handlers
-^^^^^^^^^^^^^^^
+Nested handlers and URL Namespaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is very handy way to logically organize your url map: namespaces::
+
+    web.cases(
+        web.prefix('/api', name="api") | web.cases(...),
+        # this is equal to:
+        # web.prefix('/api') | web.namespace('api') | web.cases(...),
+        web.prefix('/user/<int:user_id>', name='user')  | web.cases(...),
+    )
+
 For more complex projects a simple combinations of `web.cases` and `web.match`
 does not satisfy. Iktomi provides some handlers to create complex routing
 rules and allows to create your own handlers. And you can combine handlers as you want. 
 Here is an example::
+
 
     web.cases(
         web.prefix('/api', name="api") | web.methods(['GET']) | web.cases(
@@ -145,10 +156,30 @@ Here is an example::
         ) | to_json,
 
         web.match('/', 'index') | index,
-        web.prefix('user/<int:user_id>', name="user") | web.cases(
+        web.prefix('/user/<int:user_id>', name="user") | web.cases(
             web.match('', 'profile') | user_profile,
             web.match('/comments', 'comments') | user_comments,
         )
+    )
+
+URL namespacing is useful to include similar app parts to many places
+in your app, or for plug-in any reusable app from outside without warry 
+about name clashes.::
+
+    def handler(env, data):
+        curr_namespace = env.namespace if hasattr(env, 'namespace') else None
+        en_url = env.root.build_url('en.index')
+        curr_url = env.root.build_url('.index')
+        return webob.Response('%s %s %s' % (curr_namespace,
+                                            en_url, curr_url))
+
+    part = web.match('/index', 'index') | handler
+
+    web.cases(
+        # first renders "en /en/index /en/index"
+        web.prefix('/en', name='en') | part,
+        # second renders "ru /en/index /ru/index"
+        web.prefix('/ru', name='ru') | part,
     )
 
 Building URLs
@@ -217,7 +248,7 @@ or even something like that::
 
 
 
-Scopes of environment and data valiables
+Scopes of environment and data variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 `env` and `data` objects does not just store a data, also they 
 delimitate data between handlers from differrent app parts. `web.cases` handler
@@ -348,31 +379,7 @@ To include URL converter, pass `convs` argument to handler constructor::
     prefix('/<month:month_num>', convs={'month': MonthConv})
 
 
-URL Namespaces
-^^^^^^^^^^^^^^
 
-URL namespacing is useful to include similar app parts to many places
-in your app, or for plug-in any reusable app from outside without warry 
-about name clashes.::
-
-    def part():
-        def handler(env, data):
-            curr_namespace = env.namespace if 'namespace' in env else None
-            en_url = env.url_for('en.index')
-            curr_url = env.url_for('.index')
-            return webob.Response('%s %s %s' % (curr_namespace,
-                                                en_url, curr_url))
-
-        return web.cases(
-            web.match('/index', 'index') | handler,
-        )
-
-    web.cases(
-        # first renders "en /en/index /en/index"
-        web.prefix('/en') | web.namespace('en') | part(),
-        # second renders "ru /en/index /ru/index"
-        web.prefix('/ru') | web.namespace('ru') | part(),
-    )
 
 
 Make an application configurable
