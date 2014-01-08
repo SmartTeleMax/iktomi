@@ -379,12 +379,60 @@ To include URL converter, pass `convs` argument to handler constructor::
     prefix('/<month:month_num>', convs={'month': MonthConv})
 
 
-
-
-
 Make an application configurable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* `web.app.Application` subclassing
+Configuring `env` object::
+
+    class FrontEnvironment(web.AppEnvironment):
+        cfg = cfg
+        cache = memcache_client
+    
+        def __init__(self, *args, **kwargs):
+            super(FrontEnvironment, self).__init__(*args, **kwargs)
+            self.template_data = {}
+    
+        @cached_property
+        def url_for(self):
+            return self.root.build_url
+    
+        @storage_cached_property
+        def template(storage):
+            return BoundTemplate(storage, template_loader)
+    
+        @storage_method
+        def render_to_string(storage, template_name, _data, *args, **kwargs):
+            _data = dict(storage.template_data, **_data)
+            result = storage.template.render(template_name, _data, *args, **kwargs)
+            return Markup(result)
+    
+        @storage_method
+        def render_to_response(self, template_name, _data,
+                               content_type="text/html"):
+            _data = dict(self.template_data, **_data)
+            return self.template.render_to_response(template_name, _data,
+                                                    content_type=content_type)
+    
+        @storage_method
+        def redirect_to(storage, name, qs, **kwargs):
+            url = storage.url_for(name, **kwargs)
+            if qs:
+                url = url.qs_set(qs)
+            return HTTPSeeOther(location=str(url))
+    
+        def json(self, data):
+            return webob.Response(json.dumps(data),
+                                  content_type="application/json")
+    
+        @cached_property
+        def db(self):
+            return db_maker()
+    
+    wsgi_app = Application(app, env_class=FrontEnvironment)
+
+Describe differences between `storage_method`, `storage_property`, `storage_cached_property`, 
+`cached_property` here.
+
+
 * `BoundTemplate` subclassing
 * `environment` handler
