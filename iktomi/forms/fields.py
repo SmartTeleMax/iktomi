@@ -258,16 +258,24 @@ class FieldSet(AggregateField):
 
 
 class FieldBlock(FieldSet):
+    """
+    If FieldBlock needs to be collapsed by default,
+    pass `closed=True` kwarg to it's widget. Example:
+
+    FieldBlock('name', fields=[
+            Field1,
+            Field2,
+        ], widget=FieldBlock.widget(closed=True))
+    """
 
     conv = convs.FieldBlockConv
     widget = widgets.FieldBlockWidget
     prefix = ''
 
-    def __init__(self, title, fields=[], closed=False, **kwargs):
+    def __init__(self, title, fields=[], **kwargs):
         kwargs.update(dict(
             title=title,
             fields=fields,
-            closed=closed,
         ))
         kwargs.setdefault('name', '') # XXX generate unique name
         FieldSet.__init__(self, **kwargs)
