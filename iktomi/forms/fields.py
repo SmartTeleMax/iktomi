@@ -290,10 +290,11 @@ class FieldBlock(FieldSet):
     widget = widgets.FieldBlockWidget()
     prefix = ''
 
-    def __init__(self, title, fields=[], **kwargs):
+    def __init__(self, title, fields=[], closed=False, **kwargs):
         kwargs.update(dict(
             title=title,
             fields=fields,
+            closed=closed,
         ))
         kwargs.setdefault('name', '') # XXX generate unique name
         FieldSet.__init__(self, **kwargs)
