@@ -26,15 +26,15 @@ Routing
 ^^^^^^^
 
 * :ref:`Creating simple app <iktomi-web-tutorial>`
-* :ref:`How it works <iktomi-web>`
 * :ref:`API reference <iktomi-web-api>`
+.. * :ref:`How it works <iktomi-web>`
 
 Forms
 ^^^^^
 
 * :ref:`Form processing <iktomi-forms-tutorial>`
-* :ref:`How it works <iktomi-forms>`
 * :ref:`API reference <iktomi-forms-api>`
+.. * :ref:`How it works <iktomi-forms>`
 
 Cli
 ^^^

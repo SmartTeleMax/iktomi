@@ -30,9 +30,13 @@ class BaseField(object):
     perm_getter = FieldPerm()
 
     # defaults
-    conv = convs.Char
+    #: :class:`Converter` instance determining field's convertation method
+    conv = convs.Char()
+    #: :class:`Widget` instance determining field's render method
     widget = widgets.TextInput
+    #: Unicode label of the field
     label = None
+    #: Short description of the field
     hint = None
 
     def __init__(self, name, conv=None, parent=None, **kwargs):
@@ -80,6 +84,11 @@ class BaseField(object):
 
     @property
     def error(self):
+        '''
+        String description of validation error in this field during last accept.
+
+        `None` if there is no error.
+        '''
         return self.form.errors.get(self.input_name)
 
     @property
@@ -103,7 +112,7 @@ class BaseField(object):
     @cached_property
     def permissions(self):
         '''
-        Returns field's access permissions
+        Field's access permissions. By default, is filled from perm_getter.
         '''
         return self.perm_getter.get_perms(self)
 
@@ -125,15 +134,19 @@ class BaseField(object):
                            self.from_python(value))
         return {self.name: value}
 
+    def __repr__(self):
+        args = ', '.join([k+'='+repr(v)
+                          for k, v in self._init_kwargs.items()
+                          if k not in ['widget', 'conv', 'parent']])
+        return '{}({})'.format(self.__class__.__name__, args)
+
 
 class Field(BaseField):
     '''
     Atomic field
     '''
 
-    #: :class:`Conv` subclass or instance used to convert field data 
-    #: and validate it
-    conv = convs.Char
+    conv = convs.Char()
     _null_value = ''
 
     def get_initial(self):
@@ -171,6 +184,7 @@ class Field(BaseField):
         return True
 
     def accept(self):
+        '''Extraxts raw value from form's raw data and passes it to converter'''
         value = self.raw_value
         if not self._check_value_type(value):
             # XXX should this be silent or TypeError?
@@ -195,8 +209,8 @@ class FieldSet(AggregateField):
     '''
     Container field aggregating a couple of other different fields
     '''
-    conv = convs.Converter
-    widget = widgets.FieldSetWidget
+    conv = convs.Converter()
+    widget = widgets.FieldSetWidget()
     fields = []
 
     def __init__(self, name, conv=None, fields=None, **kwargs):
@@ -244,6 +258,12 @@ class FieldSet(AggregateField):
             field.set_raw_value(raw_data, field.from_python(subvalue))
 
     def accept(self):
+        '''
+        Accepts all children fields, collects resulting values into dict and
+        passes that dict to converter.
+
+        Returns result of converter as separate value in parent `python_data`
+        '''
         result = dict(self.python_data)
         for field in self.fields:
             if field.writable:
@@ -257,8 +277,17 @@ class FieldSet(AggregateField):
 
 class FieldBlock(FieldSet):
 
-    conv = convs.FieldBlockConv
-    widget = widgets.FieldBlockWidget
+    '''
+    Anonymous FieldSet, values of one are accepted as they are children 
+    of FieldBlock's parent.
+
+    FieldBlock is used to logically organize fields and do validation
+    of group of fields without naming that group and without dedicating 
+    result of accept to separate object.
+    '''
+
+    conv = convs.FieldBlockConv()
+    widget = widgets.FieldBlockWidget()
     prefix = ''
 
     def __init__(self, title, fields=[], **kwargs):
@@ -274,6 +303,10 @@ class FieldBlock(FieldSet):
         return self.parent.prefix
 
     def accept(self):
+        '''
+        Acts as `Field.accepts` but returns result of every child field 
+        as value in parent `python_data`.
+        '''
         result = FieldSet.accept(self)
         return result[self.name]
 
@@ -306,8 +339,8 @@ class FieldList(AggregateField):
     '''
 
     order = False
-    conv = convs.List
-    widget = widgets.FieldListWidget
+    conv = convs.List()
+    widget = widgets.FieldListWidget()
     _digit_re = re.compile('\d+$')
 
     def __init__(self, name, conv=None, field=Field(None),
@@ -388,7 +421,7 @@ class FileField(Field):
     '''
 
     _null_value = None
-    conv = convs.SimpleFile
+    conv = convs.SimpleFile()
 
     def set_raw_value(self, raw_data, value):
         pass

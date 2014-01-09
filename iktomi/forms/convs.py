@@ -41,14 +41,11 @@ class ValidationError(Exception):
 
 class Converter(object):
     '''
-    Base converter with chaining support
-    extend this class in order to get custom
-    converter.
-
-    Converting:
-
-    :meth:`to_python` method takes value from form
+    :meth:`accept` method takes value from field
     and converts it to python type.
+
+    Subclasses must redefine :meth:`to_python` method to make their 
+    own convertation and validation.
 
     :meth:`from_python` method takes value as python
     object and converts it to string or something
@@ -65,10 +62,10 @@ class Converter(object):
             new_value = do_smth(value)
             return new_value
 
-        convs.Char(max_length=2)|convs.Int()
+        convs.Char(filter_value, required=True)
 
     Validators are shortcuts to filters that do no convertations, but  only
-    do assertions. 
+    do assertions::
 
         @validator(error_message)
         def validate(conv, value):
@@ -80,7 +77,7 @@ class Converter(object):
 
     Error messages redefinition:
 
-    Set error_<type> parameter to your own message template, for example::
+    Set `error_<type>` parameter to your own message template, for example::
 
         convs.Char(regex_readable="YY.MM.DD",
                    error_regex='Should match %(regex_readable)s')`
@@ -137,18 +134,28 @@ class Converter(object):
         return value
 
     def to_python(self, value):
-        """ custom converters should override this """
+        """
+        Converts value and validates it.
+        Custom converters should override this
+        """
         if value == '':
             return None # XXX is this right?
         return value
 
     def from_python(self, value):
-        """ custom converters should override this """
+        """
+        Serializes value.
+        Custom converters should override this
+        """
         if value is None:
             value = ''
         return value
 
     def __call__(self, *args, **kwargs):
+        '''
+        Creates current object's copy with extra constructor arguments
+        (including validators) passed.
+        '''
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
         validators = tuple(self.validators_and_filters) + args
@@ -164,6 +171,12 @@ class Converter(object):
         if self.field is not None:
             return self.field.parent.python_data.get(self.field.name)
         return [] if self.multiple else None
+
+    def __repr__(self):
+        args = ', '.join([k+'='+repr(v) for
+                          k, v in self._init_kwargs.items()
+                          if k!='parent'])
+        return '{}({})'.format(self.__class__.__name__, args)
 
 
 class validator(object):
@@ -254,6 +267,8 @@ class CharBased(Converter):
 
 class Char(CharBased):
 
+    '''Converts and validates strings'''
+
     #: Regexp to match input string
     regex = None
 
@@ -279,7 +294,7 @@ class Char(CharBased):
 
 class Int(Converter):
     """
-    integer converter with max and min values support
+    Converts digital sequences to `int'
     """
 
     error_notvalid = N_('it is not valid integer')
@@ -300,7 +315,9 @@ class Int(Converter):
 
 
 class Bool(Converter):
-
+    """
+    Converts to True/False
+    """
     required = False
 
     def to_python(self, value):
@@ -538,7 +555,8 @@ class ListOf(Converter):
     of the field (i.e. for each value from MultiDict) and returns a list of 
     resulting values.
 
-    Usage:
+    Usage::
+
         ListOf(Converter(), *validators_and_filters, **kwargs)
     '''
 

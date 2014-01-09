@@ -33,40 +33,7 @@ property:
 DEFAULT_PERMISSIONS = set('rwc')
 
 
-class BasePerm(object):
-    """
-    Permission getters base class.
-
-    Describes the interface for classes, designed for determine permissions of
-    different objects, particularly Form Fields.
-    """
-
-    def get_perms(self, obj):
-        '''
-        Returns combined Environment's and object's permissions.
-        Resulting condition is intersection of them.
-        '''
-        return self.available(obj) & self.check(obj)
-
-    def available(self, obj):
-        '''
-        Returns permissions according environment's limiting condition.
-        Determined by object's context
-
-        Ancestors must override this method
-        '''
-        return DEFAULT_PERMISSIONS # pragma: no cover
-
-    def check(self, obj):
-        '''
-        Returns permissions determined by object itself
-
-        Ancestors must override this method
-        '''
-        return DEFAULT_PERMISSIONS # pragma: no cover
-
-
-class FieldPerm(BasePerm):
+class FieldPerm(object):
     '''
     Default permission getter for Field objects
 
@@ -85,8 +52,24 @@ class FieldPerm(BasePerm):
                 return perms
     '''
 
+    permissions = None
+
+    def __init__(self, permissions=None):
+        if permissions is not None:
+            self.permissions = set(permissions)
+
+    def get_perms(self, obj):
+        '''
+        Returns combined Environment's and object's permissions.
+        Resulting condition is intersection of them.
+        '''
+        return self.available(obj) & self.check(obj)
+
     def available(self, field):
         '''
+        Returns permissions according environment's limiting condition.
+        Determined by object's context
+
         Allows only field's parents' permissions
         '''
         return field.parent.permissions
@@ -94,8 +77,11 @@ class FieldPerm(BasePerm):
     def check(self, field):
         '''
         Returns permissions determined by object itself
-
-        Ancestors must override this method
         '''
-        return field.parent.permissions
+        if self.permissions is None:
+            return field.parent.permissions
+        return self.permissions
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, str(self.permissions))
 

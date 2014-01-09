@@ -57,7 +57,6 @@ class Form(object):
             self.python_data.update(field.load_initial(initial, self.raw_data))
         self.errors = {}
 
-
     @property
     def form(self):
         return self
@@ -90,6 +89,9 @@ class Form(object):
         return media
 
     def accept(self, data):
+        '''
+        Try to accpet MultiDict-like object and return if it is valid.
+        '''
         self.raw_data = MultiDict(data)
         self.errors = {}
         for field in self.fields:

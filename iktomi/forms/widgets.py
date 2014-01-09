@@ -79,6 +79,9 @@ class Widget(object):
         return ''
 
     def __call__(self, **kwargs):
+        '''
+        Creates current object's copy with extra constructor arguments passed.
+        '''
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
