@@ -33,26 +33,14 @@ def prepare_handler(handler):
 
 
 class WebHandler(object):
-    '''
-    Base class for all request handlers.
-
-    Supports chaining handler after itself::
-
-        WebHandlerSubclass() | anoter_handler
-
-    Subclasses should define __call__ with handler code. It is good style to
-    give a name similar to handler's name to method and then make an alias
-    to __call__::
-
-        class MyHandler(WebHandler):
-
-            def my_handler(self, env, data):
-                do_something(env, data)
-                return self.next_handler(env, data)
-            __call__ = my_handler
-    '''
+    '''Base class for all request handlers.'''
 
     def __or__(self, next_handler):
+        '''
+        Supports chaining handler after itself::
+
+            WebHandlerSubclass() | another_handler
+        '''
         # XXX in some cases copy count can be big
         #     for example, chaining something after a huge cases(..) handler
         #     causes a copy of each single nested handler.
@@ -77,7 +65,18 @@ class WebHandler(object):
         return '%s()' % self.__class__.__name__
 
     def __call__(self, env, data):
-        '''This method should be overridden in subclasses.'''
+        '''
+        Subclasses should define __call__ with handler code. It is good style to
+        give a name similar to handler's name to method and then make an alias
+        to __call__::
+
+            class MyHandler(WebHandler):
+
+                def my_handler(self, env, data):
+                    do_something(env, data)
+                    return self.next_handler(env, data)
+                __call__ = my_handlerThis method should be overridden in subclasses.
+        '''
         raise NotImplementedError("__call__ is not implemented in %r" % self)
 
     @property
@@ -88,17 +87,30 @@ class WebHandler(object):
         return lambda e, d: None
 
     def copy(self):
-        '''Returns copy for the handler to make handlers reusable'''
+        '''
+        Returns copy for the handler to make handlers reusable.
+        Handlers are being copied automatically on chaining,
+        so you do not need to do it manually.'''
         return copy(self)
 
 
 class cases(WebHandler):
+    # XXX bad docstring
+    '''
+    Handler incapsulating multiple routing branches and choosing one of them
+    that matches current request::
+
+        web.cases(
+            web.match('/', 'index') | index,
+            web.match('/contacts', 'contacts') | contacts,
+            web.match('/about', 'about') | about,
+        )'''
 
     def __init__(self, *handlers):
         self.handlers = map(prepare_handler, handlers)
 
     def __or__(self, next_handler):
-        'cases needs to set next handler for each handler it keeps'
+        #cases needs to set next handler for each handler it keeps
         h = self.copy()
         h.handlers = [(handler | next_handler
                             if is_chainable(handler) 
@@ -107,6 +119,11 @@ class cases(WebHandler):
         return h
 
     def cases(self, env, data):
+        '''Calls each nested handler until one of them returns nonzero result.
+
+        If any handler returns `None`, it is interpreted as 
+        "request does not match, the handler has nothing to do with it and 
+        `web.cases` should try to call the next handler".'''
         for handler in self.handlers:
             env._push()
             data._push()
@@ -155,7 +172,15 @@ class _FunctionWrapper3(WebHandler):
 
 def request_filter(func):
     '''Decorator transforming function to regular WebHandler.
-    this allows to chain other handlers after given.
-    The next handler is passed as third argument into the wrapped function'''
+    This allows to chain other handlers after given.
+    The next handler is passed as third argument into the wrapped function::
+        @web.request_filter
+        def wrapper(env, data, next_handler):
+            do_something()
+            result = next_handler(env, data)
+            return do_something_else(result)
+
+        wrapped_app = wrapper | handler
+        '''
     return functools.wraps(func)(_FunctionWrapper3(func))
 

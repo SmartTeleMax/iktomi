@@ -9,6 +9,7 @@ __all__ = ['ConvertError', 'default_converters', 'Converter', 'String',
 
 
 class ConvertError(Exception):
+    'Error converter should raise if the value does not match'
 
     @property
     def converter(self):
@@ -48,7 +49,7 @@ class Converter(object):
 
 class String(Converter):
     '''
-    Unquotes urlencoded string.
+    Unquotes urlencoded string::
     '''
 
     min = 1
@@ -92,6 +93,11 @@ class Integer(Converter):
 
 
 class Any(Converter):
+    '''
+    Checks if string value is in a list of allowed values and returns that value::
+
+        web.match('/<any(yes,no,"probably, no",maybe):answer>')
+    '''
 
     def __init__(self, *values, **kwargs):
         Converter.__init__(self, **kwargs)
@@ -107,6 +113,11 @@ class Any(Converter):
 
 
 class Date(Converter):
+    '''
+    Converts string to datetime by strptime using given format::
+
+        web.match('/<date(format="%Y.%m.%d"):date>')
+    '''
 
     format = "%Y-%m-%d"
 

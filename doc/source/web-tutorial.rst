@@ -77,8 +77,9 @@ Basic Routing
 There are a couple of handlers to match different url parts or other request
 properties: `web.match`, `web.prefix`, `web.methods`, `web.subdomain`, etc.
 
-Iktomi routing is based on `web.cases` and `web.match` class. Constructor 
-of class accepts a couple of other handlers. When called the `web.cases` instance calls 
+Iktomi routing is based on `web.cases` and `web.match` class. Constructor
+of `web.cases` class accepts a couple of other handlers.
+When called the `web.cases` instance calls 
 each of handlers until one of them returns `webob.Response` object or 
 raises `webob.exc.HTTPException`. 
 
@@ -222,7 +223,7 @@ For example, to implement "middleware" you can do something like::
         do_something_else(result)
         return result
 
-    wrapped_app = wrapper | app
+    wrapped_app = wrapper | web.cases(..)
 
 *Note: `web.request_filter` is decorator transforming function to regular WebHandler,
 this allows to chain other handlers after given. The chained handler is passed as third

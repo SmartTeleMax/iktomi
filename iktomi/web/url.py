@@ -23,6 +23,7 @@ def construct_url(path, query, host, port, schema):
 
 
 class URL(str):
+
     def __new__(cls, path, query=None, host=None, port=None, schema=None, show_host=True):
         '''
         path - urlencoded string or unicode object (not encoded at all)
@@ -43,6 +44,7 @@ class URL(str):
 
     @classmethod
     def from_url(cls, url, show_host=True):
+        '''Parse string and get URL instance'''
         # url must be idna-encoded and url-quotted
         url = urlparse(url)
         query = sum([[(k.decode('utf-8'), v.decode('utf-8'))
@@ -63,6 +65,7 @@ class URL(str):
         return self.__class__(path, **kw)
 
     def qs_set(self, *args, **kwargs):
+        '''Set values in QuerySet MultiDict'''
         if args and kwargs:
             raise TypeError('Use positional args or keyword args not both')
         query = self.query.copy()
@@ -79,6 +82,7 @@ class URL(str):
         return self._copy(query=query)
 
     def qs_add(self, *args, **kwargs):
+        '''Add value to QuerySet MultiDict'''
         query = self.query.copy()
         if args:
             mdict = MultiDict(args[0])
@@ -89,9 +93,11 @@ class URL(str):
         return self._copy(query=query)
 
     def with_host(self):
+        '''Force show_host parameter'''
         return self._copy(show_host=True)
 
     def qs_delete(self, key):
+        '''Delete value from QuerySet MultiDict'''
         query = self.query.copy()
         try:
             del query[key]
@@ -100,10 +106,11 @@ class URL(str):
         return self._copy(query=query)
 
     def qs_get(self, key, default=None):
+        '''Get a value from QuerySet MultiDict'''
         return self.query.get(key, default=default)
 
     def get_readable(self):
-        '''Gets human-readable representation of the url'''
+        '''Gets human-readable representation of the url (as unicode string)'''
         query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
                  if self.query else '')
 

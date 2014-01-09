@@ -9,6 +9,9 @@ from ..utils import cached_property
 
 
 class Location(object):
+    '''
+    Class representing an endpoint in the reverse url map.
+    '''
     def __init__(self, *builders, **kwargs):
         self.builders = list(builders)
         self.subdomains = kwargs.get('subdomains', [])
@@ -43,6 +46,12 @@ class Location(object):
 
 
 class Reverse(object):
+    '''
+    Object incapsulating reverse url map and methods needed to build urls
+    by their names, namespaces and parameters.
+
+    Usually an instance of `Reverse` can be found in `env.root`.
+    '''
     def __init__(self, scope, location=None, path='', host='', ready=False, 
                  need_arguments=False, bound_env=None, parent=None,
                  finalize_params=None):
@@ -71,6 +80,10 @@ class Reverse(object):
         return host
 
     def __call__(self, **kwargs):
+        '''
+        Get a copy of the `Reverse` but with same namespace and same url name,
+        but with arguments attached.
+        '''
         if self._ready:
             raise UrlBuildingError('Endpoint do not accept arguments')
         if self._is_endpoint or self._need_arguments:
@@ -89,6 +102,12 @@ class Reverse(object):
         raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
     def __getattr__(self, name):
+        '''
+        Get subreverse, a reverse in current namespace with the name, equal
+        to the attribute name::
+
+            env.root.index # getattr(env.root, 'index')
+        '''
         if self._is_scope and name in self._scope:
             if self._need_arguments:
                 return getattr(self(), name)
@@ -122,14 +141,6 @@ class Reverse(object):
                               parent=self._parent,
                               ready=self._is_endpoint)
 
-    def bind_to_env(self, bound_env):
-        return self.__class__(self._scope, self._location,
-                              path=self._path, host=self._host,
-                              ready=self._ready,
-                              need_arguments=self._need_arguments,
-                              finalize_params=self._finalize_params,
-                              parent=self._parent,
-                              bound_env=bound_env)
 
     @cached_property
     def url_arguments(self):
@@ -155,10 +166,23 @@ class Reverse(object):
         return used_args, subreverse
 
     def build_subreverse(self, _name, **kwargs):
+        '''
+        String-based reverse API. Returns subreverse object::
+
+            env.root.build_subreverse('user', user_id=1).profile
+        '''
         _, subreverse = self._build_url_silent(_name, **kwargs)
         return subreverse
 
     def build_url(self, _name, **kwargs):
+        '''
+        String-based reverse API. Returns URL object::
+
+            env.root.build_url('user.profile', user_id=1)
+
+        Checks that all necessary arguments are provided and all 
+        provided arguments are used.
+        '''
         used_args, subreverse =  self._build_url_silent(_name, **kwargs)
 
         if set(kwargs).difference(used_args):
@@ -168,6 +192,13 @@ class Reverse(object):
 
     @property
     def as_url(self):
+        '''
+        Reverse object converted to `web.URL`.
+
+        If Reverse is bound to env:
+            * try to build relative URL,
+            * use current domain name, port and scheme as default
+        '''
         if '' in self._scope:
             return self._finalize().as_url
 
@@ -210,13 +241,35 @@ class Reverse(object):
                                            or port != request_port))
         return URL(path, host=domain, port=port, show_host=True)
 
+    def __str__(self):
+        '''URLencoded representation of the URL'''
+        return str(self.as_url)
+
     @classmethod
     def from_handler(cls, handler):
-        from .core import locations
-        return cls(locations(handler))
+        '''
+        Get unbound instance of the class related to given handler::
 
-    def __str__(self):
-        return str(self.as_url)
+            app = web.cases(..)
+            Reverse.from_handler(app)
+        '''
+        return cls(handler._locations())
+
+    def bind_to_env(self, bound_env):
+        '''
+        Get a copy of the reverse, bound to `env` object. 
+        Can be found in env.root attribute::
+
+            # done in iktomi.web.app.Application
+            env.root = Reverse.from_handler(app).bind_to_env(env)
+        '''
+        return self.__class__(self._scope, self._location,
+                              path=self._path, host=self._host,
+                              ready=self._ready,
+                              need_arguments=self._need_arguments,
+                              finalize_params=self._finalize_params,
+                              parent=self._parent,
+                              bound_env=bound_env)
 
     def __repr__(self):
         return '{}(path=\'{}\', host=\'{}\')'.format(

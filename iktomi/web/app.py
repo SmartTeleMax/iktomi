@@ -14,6 +14,19 @@ logger = logging.getLogger(__name__)
 
 
 class AppEnvironment(StorageFrame):
+    '''
+    Base class for `env` storage frame class.
+
+    Can be subclassed to add extra functionality::
+
+        class FrontEnvironment(AppEnvironment):
+            cfg = cfg
+            cache = memcache_client
+
+            @cached_property
+            def db(self):
+                return db_maker()
+    '''
 
     def __init__(self, request, root, _parent_storage=None, **kwargs):
         StorageFrame.__init__(self, _parent_storage=_parent_storage, **kwargs)
@@ -29,6 +42,11 @@ class AppEnvironment(StorageFrame):
 
 
 class Application(object):
+    '''
+    WSGI application made from `iktomi.web.WebHandler' instance::
+
+        wsgi_app = Application(app, env_class=FrontEnvironment)
+    '''
 
     env_class = AppEnvironment
 
@@ -39,10 +57,20 @@ class Application(object):
         self.root = Reverse.from_handler(handler)
 
     def handle_error(self, env):
+        '''
+        Unhandled exception handler.
+        You can put any logging, error warning, etc here.'''
         logger.exception('Exception for %s %s :',
                          env.request.method, env.request.url)
 
     def handle(self, env, data):
+        '''
+        Calls application and handles following cases:
+            * catches `webob.HTTPException` errors.
+            * catches unhandled exceptions, calls `handle_error` method
+              and returns 500.
+            * returns 404 if the app has returned None`.
+        '''
         try:
             response = self.handler(env, data)
             if response is None:
@@ -57,6 +85,10 @@ class Application(object):
         return response
 
     def __call__(self, environ, start_response):
+        '''
+        WSGI interface method. 
+        Creates webob and iktomi wrappers and calls `handle` method.
+        '''
         request = Request(environ, charset='utf-8')
         env = VersionedStorage(self.env_class, request, self.root)
         data = VersionedStorage()
