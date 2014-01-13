@@ -56,6 +56,6 @@ def session_maker(databases, query_cls=Query, models_location='models',
         engine = create_engine(databases, **engine_params)
         return orm.sessionmaker(class_=session_class, query_cls=query_cls,
                                 bind=engine, **session_params)
-    binds = multidb_binds(databases, models_location)
+    binds = multidb_binds(databases, models_location, engine_params=engine_params)
     return orm.sessionmaker(class_=session_class, query_cls=query_cls,
                             binds=binds, **session_params)
