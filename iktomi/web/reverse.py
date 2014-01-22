@@ -124,7 +124,7 @@ class Reverse(object):
                                   parent=self,
                                   need_arguments=location.need_arguments)
         raise UrlBuildingError('Namespace or endpoint "%s" does not exist'
-                               % name)
+                               ' in "%r"' % (name, self))
 
     def _finalize(self):
         # deferred build of the last part of url for endpoints that
