@@ -26,10 +26,13 @@ class ModelFactories(object):
         return decor
 
     def create_model(self, module, name, constructor, base_names):
-        bases = tuple(getattr(module, x) if isinstance(x, basestring) else x
-                      for x in base_names)
         values = constructor(ModelsProxy(module, self))
         values['models'] = module
+        return self.make_class(module, name, base_names, values)
+
+    def make_class(self, module, name, base_names, values):
+        bases = tuple(getattr(module, x) if isinstance(x, basestring) else x
+                      for x in base_names)
         cls = type(name, bases, values)
         cls.__module__ = module.__name__
         return cls
