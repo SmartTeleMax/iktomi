@@ -70,7 +70,7 @@ class FileEventHandlers(object):
             return
         if changes.deleted:
             old_name = self._get_file_name_to_delete(target, changes)
-            if old_name is not None:
+            if old_name:
                 session = object_session(target)
 
                 file_attr = getattr(target.__class__, self.prop.key)
@@ -103,6 +103,7 @@ class FileEventHandlers(object):
 class FileAttribute(object):
 
     def __init__(self, prop, class_=None):
+        self.prop = prop
         self.column = prop.column
         self.attribute_name = prop.attribute_name
         self.name_template = prop.name_template
