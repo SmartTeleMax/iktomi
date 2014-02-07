@@ -160,7 +160,7 @@ class Paginator(object):
             return self.url.qs_delete('page')
 
     def _page_url_pair(self, page=None):
-        return _PageURL(page, self.page_url(page))
+        return _PageURL(page, self.page_url(page) if page is not None else None)
 
     @cached_property
     def pages_count(self):
@@ -187,6 +187,7 @@ class Paginator(object):
         if self.page>1:
             return self._page_url_pair(self.page-1)
         else:
+            # XXX why?
             return self._page_url_pair()
 
     @cached_property

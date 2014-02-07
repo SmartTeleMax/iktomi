@@ -89,7 +89,13 @@ class Integer(Converter):
             return value
 
     def to_url(self, value):
-        return str(value)
+        if isinstance(value, basestring):
+            # sometimes it is useful to build fake urls with placeholders,
+            # to be replaced in JS to real values
+            # For example:
+            #     root.item(id="REPLACEME")
+            return value
+        return str(int(value))
 
 
 class Any(Converter):
