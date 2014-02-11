@@ -183,24 +183,37 @@ class Subdomain(unittest.TestCase):
 
     def test_aliases(self):
         def handler(env, data):
-            return Response(env.root.domain1.as_url + ' ' +
+            return Response(env.current_location + ' ' +
+                            env.root.domain1.as_url + ' ' +
                             env.root.domain1.as_url.with_host() + ' ' +
                             env.root.domain2.as_url + ' ' +
                             env.root.domain2.as_url.with_host())
         www = web.subdomain('', 'www')
         app = web.subdomain('example.com', 'example.ru', 'example.com.ua') | web.cases(
-              web.subdomain('ru', None, primary=None) | www | web.match('/', 'domain1'),
-              web.subdomain('en', 'eng') | web.match('/', 'domain2'),
+              web.subdomain('ru', None, primary=None) | web.cases(
+                  web.subdomain('moscow') | www | web.match('/', 'domain3'),
+                  www | web.match('/', 'domain1')
+                  ),
+              web.subdomain('en', 'eng') | www | web.match('/', 'domain2'),
               )
         app = app | handler
         # XXX As for now .with_host() return primary domain, not the current one
         #     It is easy to change the behaviour, but which behaviour is
         #     correct?
         self.assertEqual(web.ask(app, 'http://ru.example.com/').body,
-                '/ http://example.com/ '
+                'domain1 / http://example.com/ '
                 'http://en.example.com/ http://en.example.com/')
+
         self.assertEqual(web.ask(app, 'http://www.ru.example.ru/').body,
-                '/ http://example.com/ '
+                'domain1 / http://example.com/ '
+                'http://en.example.com/ http://en.example.com/')
+
+        self.assertEqual(web.ask(app, 'http://www.example.ru/').body,
+                'domain1 / http://example.com/ '
+                'http://en.example.com/ http://en.example.com/')
+
+        self.assertEqual(web.ask(app, 'http://moscow.example.ru/').body,
+                'domain3 http://example.com/ http://example.com/ '
                 'http://en.example.com/ http://en.example.com/')
 
 
