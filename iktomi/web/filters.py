@@ -248,6 +248,7 @@ class subdomain(WebHandler):
         self.subdomains = [unicode(x) if x is not None else None
                            for x in subdomains]
 
+        # this attribute is used for ducktyping in Location, be careful
         self.primary = kwargs.pop('primary', self.subdomains[0])
         assert self.primary in self.subdomains
 
@@ -283,9 +284,8 @@ class subdomain(WebHandler):
 
     def _locations(self):
         locations = WebHandler._locations(self)
-        if self.primary:
-            for location, scope in locations.values():
-                location.subdomains.append(self.primary)
+        for location, scope in locations.values():
+            location.subdomains.append(self)
         return locations
 
     def __repr__(self):

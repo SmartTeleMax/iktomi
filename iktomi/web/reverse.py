@@ -30,7 +30,10 @@ class Location(object):
         return ''.join(result)
 
     def build_subdomians(self, reverse):
-        return u'.'.join(self.subdomains)
+        subdomains = [getattr(x, 'primary', x) 
+                      for x in self.subdomains
+                      if getattr(x, 'primary', x)]
+        return u'.'.join(subdomains)
 
     @property
     def url_arguments(self):

@@ -108,8 +108,10 @@ class LocationsTests(unittest.TestCase):
         chain = web.subdomain('news') | web.match('/', 'index')
         self.assert_(locations(chain).keys(), ['index'])
         self.assert_(locations(chain)['index'][0].subdomains)
-        self.assertEqual(locations(chain)['index'][0].subdomains, 
-                         ['news'])
+
+        subdomains = [x.primary 
+                      for x in locations(chain)['index'][0].subdomains]
+        self.assertEqual(subdomains, ['news'])
 
     def test_subdomains_and_cases(self):
         'Locations of web.cases with subdomains'
@@ -119,8 +121,9 @@ class LocationsTests(unittest.TestCase):
         for k in ('index', 'docs'):
             self.assert_(locations(chain).keys(), [k])
             self.assert_(locations(chain)[k][0].subdomains)
-            self.assertEqual(locations(chain)[k][0].subdomains,
-                             ['news'])
+            subdomains = [x.primary 
+                      for x in locations(chain)[k][0].subdomains]
+            self.assertEqual(subdomains, ['news'])
 
     def test_function(self):
         'Reverse working with chained functions'
