@@ -26,7 +26,8 @@ class RouteState(object):
         if subdomain:
             self.primary_subdomains.insert(0, subdomain)
             self.primary_domain = '.'.join(self.primary_subdomains)
-        self.subdomain = self.subdomain[:-len(alias_matched or '')].rstrip('.')
+        if alias_matched:
+            self.subdomain = self.subdomain[:-len(alias_matched)].rstrip('.')
 
     @property
     def path(self):
