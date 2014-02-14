@@ -1,4 +1,5 @@
 from iktomi.utils import cached_property
+from iktomi.utils.deprecation import deprecated
 from iktomi.unstable.utils.functools import return_locals
 
 
@@ -130,5 +131,6 @@ class PseudoModel(str):
     def __or__(self, other):
         return self._binary_op('|', other)
 
+    @deprecated('Use lambda to postpone operations on model attributes')
     def _binary_op(self, op, other):
         return ' '.join([self, op, str(other)])
