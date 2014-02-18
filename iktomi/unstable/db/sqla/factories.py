@@ -41,9 +41,9 @@ class ModelFactories(object):
     def create_all(self, module, all_lang_modules=(), model_names=None):
         for name, constructor, base_names in self.models:
             if hasattr(module, name):
-                pass
+                continue
             if model_names is not None and name not in model_names:
-                pass
+                continue
             cls = self.create_model(module, name, constructor, base_names)
             setattr(module, name, cls)
 
