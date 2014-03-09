@@ -96,9 +96,10 @@ class FileFieldSet(FieldSet):
 
     conv = FileFieldSetConv
 
-    def __init__(self, name, conv=FileFieldSetConv, **kwargs):
+    def __init__(self, name, **kwargs):
         kwargs.setdefault('fields', self.fields)
-        FieldSet.__init__(self, name, conv=conv, **kwargs)
+        kwargs.setdefault('conv', self.conv)
+        FieldSet.__init__(self, name, **kwargs)
 
     def get_initial(self):
         # Redefine because FieldSet.get_initial returns dict by default,
