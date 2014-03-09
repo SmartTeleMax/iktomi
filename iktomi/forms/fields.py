@@ -12,6 +12,8 @@ from .perms import FieldPerm
 
 logger = logging.getLogger(__name__)
 
+__all__ = ['BaseField', 'Field', 'FieldBlock', 'FieldSet', 'FieldList', 'FileField']
+
 
 class BaseField(object):
     '''
@@ -91,11 +93,14 @@ class BaseField(object):
         '''
         return self.form.errors.get(self.input_name)
 
-    @property
+    @cached_property
     def clean_value(self):
         '''
         Current field's converted value from form's python_data.
         '''
+        # XXX cached_property is used only for set initial state
+        #     this property should be set every time field data
+        #     has been changed, for instance, in accept method
         return self.parent.python_data[self.name]
 
     @property
@@ -189,7 +194,8 @@ class Field(BaseField):
         if not self._check_value_type(value):
             # XXX should this be silent or TypeError?
             value = [] if self.multiple else self._null_value
-        return {self.name: self.conv.accept(value)}
+        self.clean_value = self.conv.accept(value)
+        return {self.name: self.clean_value}
 
 
 class AggregateField(BaseField):
@@ -273,7 +279,8 @@ class FieldSet(AggregateField):
                 # readonly field
                 field.set_raw_value(self.form.raw_data,
                                     field.from_python(result[field.name]))
-        return {self.name: self.conv.accept(result)}
+        self.clean_value = self.conv.accept(result)
+        return {self.name: self.clean_value}
 
 
 class FieldBlock(FieldSet):
@@ -308,7 +315,8 @@ class FieldBlock(FieldSet):
         as value in parent `python_data`.
         '''
         result = FieldSet.accept(self)
-        return result[self.name]
+        self.clean_value = result[self.name]
+        return self.clean_value
 
     def load_initial(self, initial, raw_data):
         result = {}
@@ -397,7 +405,8 @@ class FieldList(AggregateField):
                     result[field.name] = old[field.name]
             else:
                 result.update(field.accept())
-        return {self.name: self.conv.accept(result)}
+        self.clean_value = self.conv.accept(result)
+        return {self.name: self.clean_value}
 
     def set_raw_value(self, raw_data, value):
         indeces = []

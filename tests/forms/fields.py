@@ -91,6 +91,34 @@ class FieldTests(unittest.TestCase):
         self.assertEqual(form.accept(request.POST), False)
         self.assertEqual(form.errors.keys(), ['inp'])
 
+    def test_clean_value(self):
+        class AssertConv(convs.Int):
+            def to_python(conv, value):
+                value = convs.Int.to_python(conv, value)
+                if value is not None:
+                    field = conv.field.form.get_field('num')
+                    self.assertEqual(field.clean_value, value)
+                return value
+
+        class F(Form):
+            fields = [FieldBlock('', fields=[
+                          Field('num',
+                                conv=convs.Int()),
+                          Field('f2',
+                                conv=AssertConv())
+                          ])]
+
+        form = F()
+        self.assertEqual(form.get_field('num').clean_value, None)
+
+        form = F(initial={'num': 2})
+        self.assertEqual(form.get_field('num').clean_value, 2)
+
+        form = F()
+        form.accept({'num': '4', 'f2': '4'})
+        self.assertEqual(form.get_field('num').clean_value, 4)
+        self.assertEqual(form.get_field('f2').clean_value, 4)
+
 
 class FieldBlockTests(unittest.TestCase):
 
