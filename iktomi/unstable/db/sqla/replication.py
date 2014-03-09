@@ -34,7 +34,8 @@ def include(prop):
     meaningful for one-to-many relations only.'''
     if isinstance(prop, QueryableAttribute):
         prop = prop.property
-    assert isinstance(prop, RelationshipProperty)
+    assert isinstance(prop, (Column, ColumnProperty, RelationshipProperty))
+    #assert isinstance(prop, RelationshipProperty)
     _included.add(prop)
 
 def exclude(prop):
