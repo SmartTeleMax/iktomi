@@ -60,7 +60,7 @@ class ImageEventHandlers(FileEventHandlers):
             if self.prop.filter:
                 if image.mode not in ['RGB', 'RGBA']:
                     image = image.convert('RGB')
-                image = image.filter(self.filter)
+                image = image.filter(self.prop.filter)
 
             transient = session.find_file_manager(image_attr).new_transient(ext)
             image.save(transient.path, quality=self.prop.quality)
