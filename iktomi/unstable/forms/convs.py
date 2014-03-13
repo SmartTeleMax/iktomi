@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from sqlalchemy.ext.associationproxy import _AssociationCollection
 from iktomi.forms.convs import *
 from iktomi.forms.convs import __all__ as _all1
 
@@ -37,7 +38,10 @@ class ModelDictConv(Converter):
         result = {}
         field_names = sum([x.field_names for x in self.field.fields], [])
         for field_name in field_names:
-            result[field_name] = getattr(value, field_name)
+            attr = getattr(value, field_name)
+            if issubclass(attr.__class__, _AssociationCollection):
+                attr = attr.copy()
+            result[field_name] = attr
         return result
 
     def to_python(self, value):
