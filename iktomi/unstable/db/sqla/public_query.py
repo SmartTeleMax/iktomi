@@ -1,7 +1,9 @@
 from sqlalchemy.orm.query import Query
-from sqlalchemy.sql import ClauseElement
-from sqlalchemy import cast, Boolean
+from sqlalchemy.orm.util import AliasedClass, class_mapper
+from sqlalchemy.sql import ClauseElement, Join, func
+from sqlalchemy import cast, Boolean, util
 from sqlalchemy.orm.util import _class_to_mapper
+from sqlalchemy.orm.strategies import EagerLazyOption, JoinedLoader
 
 
 class PublicQuery(Query):
@@ -68,7 +70,7 @@ class PublicQuery(Query):
     def offset(self, offset):
         return Query.offset(self.private(), offset)
 
-    def _add_entity_criterion(self, entity):
+    def _entity_criterion(self, entity):
         #if hasattr(entity, "property"):
         #    entity = entity.property.mapper
         if hasattr(entity, 'parententity'):
@@ -80,15 +82,22 @@ class PublicQuery(Query):
             #pass
             raise # XXX temporal, to verify it's used
         else:
+            alias = entity if isinstance(entity, AliasedClass) else cls
             prop = self.property_name
             if prop in dir(cls):
-                crit = getattr(cls, prop)
+                crit = getattr(alias, prop)
                 if crit is not None:
                     if not isinstance(crit, ClauseElement):
                         # This simplest safe way to make bare boolean column
                         # accepted as expression.
                         crit = cast(crit, Boolean)
-                    return self.filter(crit)
+                    return crit
+        return None
+
+    def _add_entity_criterion(self, entity):
+        crit = self._entity_criterion(entity)
+        if crit is not None:
+            return self.filter(crit)
         return self
 
     def private(self):
@@ -106,3 +115,33 @@ class PublicQuery(Query):
         for entity in self._join_entities:
             query = query._add_entity_criterion(entity)
         return query
+
+    def _add_eager_criterion(self, context, statement):
+        for attr, value in context.attributes.items():
+            if type(attr) is tuple and attr[0] == 'eager_row_processor':
+                mapper, prop = attr[1]
+                alias = value.aliased_class
+                crit = self._entity_criterion(alias)
+                if crit is not None:
+                    statement = statement._clone()
+                    new_from_obj = []
+                    for obj in statement._from_obj:
+                        selectable = alias._aliased_insp.selectable
+                        if isinstance(obj, Join) and obj.right == selectable:
+                            obj = obj._clone()
+                            obj.onclause = obj.onclause & crit
+                        new_from_obj.append(obj)
+                    statement._from_obj = new_from_obj
+        return statement
+
+    def _simple_statement(self, context):
+        # fixing joined load
+        # XXX is this solution correct?
+        statement = Query._simple_statement(self, context)
+        return self._add_eager_criterion(context, statement)
+
+    def _compound_eager_statement(self, context):
+        # fixing joined load
+        # XXX not tested! What is condition when this method is called
+        statement = Query._compound_eager_statement(self, context)
+        return self._add_eager_criterion(context, statement)

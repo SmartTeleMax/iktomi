@@ -13,17 +13,24 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String(100))
     public = Column(Boolean, nullable=False)
     addresses = relation("Address", backref="user")
     photos = relation("Photo", secondary="user_photo")
+
+
+class UserWithJoinedAddresses(User):
+
+    __tablename__ = None
+
+    addresses = relation("Address", lazy="joined")
 
 
 class Address(Base):
     __tablename__ = 'address'
 
     id = Column(Integer, primary_key=True)
-    email = Column(String)
+    email = Column(String(100))
     user_id = Column(Integer, ForeignKey('user.id'))
     public = Column(Boolean, nullable=False)
 
@@ -39,7 +46,7 @@ class Photo(Base):
     __tablename__ = 'photo'
 
     id = Column(Integer, primary_key=True)
-    photo = Column(String)
+    photo = Column(String(100))
     public = Column(Boolean, nullable=False)
 
 
@@ -60,7 +67,7 @@ class Doc(Base):
 
     id = Column(Integer, primary_key=True)
     type = Column(Integer)
-    title = Column(String)
+    title = Column(String(100))
     public = Column(Boolean)
 
     __mapper_args__ = {'polymorphic_on': type}
@@ -81,7 +88,7 @@ class Announce(Doc):
     __tablename__ = 'announce'
 
     id = Column(Integer, ForeignKey(Doc.id), nullable=False, primary_key=True)
-    date_start = Column(String)
+    date_start = Column(String(100))
 
     __mapper_args__ = {'polymorphic_identity': Doc.ANNOUNCE}
 
@@ -277,7 +284,6 @@ class UserAddressesTest(unittest.TestCase):
         count_by_name = dict(query.all())
         self.assertEqual(count_by_name, {'u1': 2, 'u2': 1, 'u5': 1, 'u6': 0})
 
-    @unittest.skip('test from sa_public_query')
     def test_joinedload(self):
         for name, emails in {'u1': ['u1a1', 'u1a2'],
                              'u2': ['u2a2'],
@@ -287,6 +293,20 @@ class UserAddressesTest(unittest.TestCase):
                              'u6': []}.items():
             user = self.dbp.query(User).filter_by(name=name).\
                             options(joinedload(User.addresses)).\
+                            scalar()
+            if emails is None:
+                self.assertIsNone(user)
+            else:
+                self.assertEqual(set(a.email for a in user.addresses),
+                                 set(emails))
+    def test_lazy_joined(self):
+        for name, emails in {'u1': ['u1a1', 'u1a2'],
+                             'u2': ['u2a2'],
+                             'u3': None,
+                             'u4': None,
+                             'u5': ['u5a1'],
+                             'u6': []}.items():
+            user = self.dbp.query(UserWithJoinedAddresses).filter_by(name=name).\
                             scalar()
             if emails is None:
                 self.assertIsNone(user)
