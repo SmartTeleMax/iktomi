@@ -123,6 +123,9 @@ class PublicQuery(Query):
                 alias = value.aliased_class
                 crit = self._entity_criterion(alias)
                 if crit is not None:
+                    # add criterion to join "on" clause because if we add it
+                    # to where clause we filter out objects with related 
+                    # unpublished and only unpublished items
                     statement = statement._clone()
                     new_from_obj = []
                     for obj in statement._from_obj:
