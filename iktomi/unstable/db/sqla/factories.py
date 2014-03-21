@@ -107,7 +107,7 @@ class ModelsProxy(object):
                     return PseudoModel(lang_name)
             if name in self.model_names:
                 return PseudoModel(name)
-        raise AttributeError
+        raise AttributeError("{} has not attribute {}".format(repr(self), name))
 
 
 class PseudoModel(str):
