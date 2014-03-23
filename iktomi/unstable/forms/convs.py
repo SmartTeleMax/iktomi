@@ -48,7 +48,9 @@ class ModelDictConv(Converter):
         obj = self.model()
         field_names = sum([x.field_names for x in self.field.fields], [])
         for field_name in field_names:
-            setattr(obj, field_name, value[field_name])
+            field = self.field.get_field(field_name)
+            if 'w' in field.permissions:
+                setattr(obj, field_name, value[field_name])
         return obj
 
     @property
