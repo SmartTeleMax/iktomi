@@ -349,7 +349,7 @@ class FieldList(AggregateField):
     Container aggregating a couple of similar fields
     '''
 
-    order = False
+    order = True
     conv = convs.List()
     widget = widgets.FieldListWidget()
     _digit_re = re.compile('\d+$')
