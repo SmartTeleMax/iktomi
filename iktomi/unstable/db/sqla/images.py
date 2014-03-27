@@ -115,7 +115,6 @@ class ImageProperty(FileProperty):
         self.fill_from = options.pop('fill_from', None)
         self.filter = options.pop('fillter', None)
         self.quality = options.pop('quality', 85)
-        self.cache_properties = dict(options.pop('cache_properties', {}))
 
         assert self.fill_from is None or self.image_sizes is not None
 
