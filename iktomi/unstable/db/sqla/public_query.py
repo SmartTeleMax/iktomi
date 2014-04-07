@@ -116,6 +116,24 @@ class PublicQuery(Query):
             query = query._add_entity_criterion(entity)
         return query
 
+    def _add_eager_onclause(self, obj, selectable, crit):
+        if isinstance(obj, Join):
+            if obj.right == selectable:
+                obj = obj._clone()
+                obj.onclause = obj.onclause & crit
+                return obj
+            left = self._add_eager_onclause(obj.left, selectable, crit)
+            if left is not None:
+                obj = obj._clone()
+                obj.left = left
+                return obj
+            right = self._add_eager_onclause(obj.right, selectable, crit)
+            if right is not None:
+                obj = obj._clone()
+                obj.right = right
+                return obj
+        return None
+
     def _add_eager_criterion(self, context, statement):
         for attr, value in context.attributes.items():
             if type(attr) is tuple and attr[0] == 'eager_row_processor':
@@ -130,9 +148,8 @@ class PublicQuery(Query):
                     new_from_obj = []
                     for obj in statement._from_obj:
                         selectable = alias._aliased_insp.selectable
-                        if isinstance(obj, Join) and obj.right == selectable:
-                            obj = obj._clone()
-                            obj.onclause = obj.onclause & crit
+                        new_obj = self._add_eager_onclause(obj, selectable, crit)
+                        obj = new_obj if new_obj is not None else obj
                         new_from_obj.append(obj)
                     statement._from_obj = new_from_obj
         return statement

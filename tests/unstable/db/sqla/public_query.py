@@ -24,6 +24,7 @@ class UserWithJoinedAddresses(User):
     __tablename__ = None
 
     addresses = relation("Address", lazy="joined")
+    photos = relation("Photo", secondary="user_photo", lazy="joined")
 
 
 class Address(Base):
@@ -285,34 +286,47 @@ class UserAddressesTest(unittest.TestCase):
         self.assertEqual(count_by_name, {'u1': 2, 'u2': 1, 'u5': 1, 'u6': 0})
 
     def test_joinedload(self):
-        for name, emails in {'u1': ['u1a1', 'u1a2'],
-                             'u2': ['u2a2'],
-                             'u3': None,
-                             'u4': None,
-                             'u5': ['u5a1'],
-                             'u6': []}.items():
-            user = self.dbp.query(User).filter_by(name=name).\
-                            options(joinedload(User.addresses)).\
-                            scalar()
+        for name, emails, photos in [
+                ('u1', ['u1a1', 'u1a2'], ['u1p1', 'u1p2']),
+                ('u2', ['u2a2'], ['u2p2']),
+                ('u3', None, None),
+                ('u4', None, None),
+                ('u5', ['u5a1'], ['u5p1']),
+                ('u6', [], [])]:
+            query = self.dbp.query(User).filter_by(name=name).\
+                             options(joinedload(User.addresses)).\
+                             options(joinedload(User.photos))
+            print query
+            user = query.scalar()
             if emails is None:
                 self.assertIsNone(user)
             else:
                 self.assertEqual(set(a.email for a in user.addresses),
                                  set(emails))
+            if photos is not None:
+                self.assertEqual(set(p.photo for p in user.photos),
+                                 set(photos))
+
+
     def test_lazy_joined(self):
-        for name, emails in {'u1': ['u1a1', 'u1a2'],
-                             'u2': ['u2a2'],
-                             'u3': None,
-                             'u4': None,
-                             'u5': ['u5a1'],
-                             'u6': []}.items():
-            user = self.dbp.query(UserWithJoinedAddresses).filter_by(name=name).\
-                            scalar()
+        for name, emails, photos in [
+                ('u1', ['u1a1', 'u1a2'], ['u1p1', 'u1p2']),
+                ('u2', ['u2a2'], ['u2p2']),
+                ('u3', None, None),
+                ('u4', None, None),
+                ('u5', ['u5a1'], ['u5p1']),
+                ('u6', [], [])]:
+            query = self.dbp.query(UserWithJoinedAddresses).filter_by(name=name)
+            print query
+            user = query.scalar()
             if emails is None:
                 self.assertIsNone(user)
             else:
                 self.assertEqual(set(a.email for a in user.addresses),
                                  set(emails))
+            if photos is not None:
+                self.assertEqual(set(p.photo for p in user.photos),
+                                 set(photos))
 
     def test_attribute_error(self):
         # Test for possible security issue due to misinterpreted AttibuteError
