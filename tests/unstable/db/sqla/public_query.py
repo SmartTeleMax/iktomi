@@ -296,7 +296,6 @@ class UserAddressesTest(unittest.TestCase):
             query = self.dbp.query(User).filter_by(name=name).\
                              options(joinedload(User.addresses)).\
                              options(joinedload(User.photos))
-            print query
             user = query.scalar()
             if emails is None:
                 self.assertIsNone(user)
@@ -317,7 +316,6 @@ class UserAddressesTest(unittest.TestCase):
                 ('u5', ['u5a1'], ['u5p1']),
                 ('u6', [], [])]:
             query = self.dbp.query(UserWithJoinedAddresses).filter_by(name=name)
-            print query
             user = query.scalar()
             if emails is None:
                 self.assertIsNone(user)
