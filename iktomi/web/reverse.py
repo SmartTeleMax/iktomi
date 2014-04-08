@@ -114,7 +114,6 @@ class Reverse(object):
         if self._is_scope and name in self._scope:
             if self._need_arguments:
                 return getattr(self(), name)
-                #raise UrlBuildingError('Need arguments to build last part of url')
             location, scope = self._scope[name]
             path = self._path
             host = self._host
@@ -134,7 +133,7 @@ class Reverse(object):
         # also have nested scopes
         # i.e. finalization of __call__ for as_url
         if self._need_arguments:
-            raise UrlBuildingError('Need arguments to build last part of url')
+            self = self()
         path, host = self._path, self._host
         location = self._scope[''][0]
         host = self._attach_subdomain(host, location)
