@@ -57,6 +57,10 @@ class ImageEventHandlers(FileEventHandlers):
                                                      self.prop.persistent_cls)
 
             image = self.prop.resize(image, self.prop.image_sizes)
+            if self.prop.enhancements:
+                for enhance, factor in self.prop.enhancements:
+                    image = enhance(image).enhance(factor)
+
             if self.prop.filter:
                 if image.mode not in ['RGB', 'RGBA']:
                     image = image.convert('RGB')
@@ -113,7 +117,8 @@ class ImageProperty(FileProperty):
         self.resize = options.pop('resize', None) or ResizeFit()
         # XXX implement
         self.fill_from = options.pop('fill_from', None)
-        self.filter = options.pop('fillter', None)
+        self.filter = options.pop('filter', None)
+        self.enhancements = options.pop('enhancements', [])
         self.quality = options.pop('quality', 85)
 
         assert self.fill_from is None or self.image_sizes is not None

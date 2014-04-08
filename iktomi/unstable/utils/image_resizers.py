@@ -16,6 +16,7 @@ class Resizer(object):
         raise NotImplementedError
 
     def transform(self, img, transformation, params):
+        # transformations MUST be idempotent
         if transformation == 'crop':
             return img.crop(params)
         elif transformation == 'resize':
