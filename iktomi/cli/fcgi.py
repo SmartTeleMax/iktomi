@@ -22,12 +22,18 @@ def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
     if daemonize:
         if os.path.isfile(pidfile):
             with open(pidfile, 'r') as f:
-                pid = int(f.read())
-            if is_running(pid):
+                try:
+                    pid = int(f.read())
+                except ValueError:
+                    pid = None
+
+            if pid is not None and  is_running(pid):
                 sys.exit('Already running (PID: %r)' % pid)
-            else:
+            elif pid is not None:
                 logger.info('PID file was pointing to nonexistent process %r',
                             pid)
+            else:
+                logger.info('PID file should contain a number')
         doublefork(pidfile, logfile, cwd, umask)
     logger.info('Starting FastCGI server (flup), current working dir %r' % cwd)
     fcgi.WSGIServer(wsgi_app, bindAddress=bind, umask=umask,
