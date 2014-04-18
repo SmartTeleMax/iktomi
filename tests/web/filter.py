@@ -157,18 +157,26 @@ class Subdomain(unittest.TestCase):
             self.assertEqual(env.request.path, '/')
             return Response()
 
+        def handler_with_prefix(env, data):
+            self.assertEqual(env.request.path, '/j')
+            return Response()
+
         app = web.subdomain('host') | web.cases(
             web.subdomain('') | web.match('/', 'index') | handler,
             web.subdomain('k') | web.cases(
                 web.subdomain('l') | web.cases(
                     web.match('/', 'l') | handler,
                 ),
-                web.subdomain('') | web.match('/', 'k') | handler))
+                web.subdomain('') | web.match('/', 'k') | handler),
+            web.subdomain('j') | web.match('/', 'j1') | handler,
+            web.subdomain('j') | web.match('/j', 'j2') | handler_with_prefix)
 
         self.assertEqual(web.ask(app, 'http://host/').status_int, 200)
         self.assertEqual(web.ask(app, 'http://k.host/').status_int, 200)
         self.assertEqual(web.ask(app, 'http://l.k.host/').status_int, 200)
         self.assertEqual(web.ask(app, 'http://x.l.k.host/').status_int, 200)
+        self.assertEqual(web.ask(app, 'http://j.host/').status_int, 200)
+        self.assertEqual(web.ask(app, 'http://j.host/j').status_int, 200)
         self.assert_(web.ask(app, 'http://x.k.host/') is None)
         self.assert_(web.ask(app, 'http://lk.host/') is None)
         self.assert_(web.ask(app, 'http://mhost/') is None)
