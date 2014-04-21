@@ -103,18 +103,34 @@ def N_(msg):
     '''Single translatable string marker'''
     return msg
 
-class M_(unicode):
-    '''Marker for translatable string with plural form'''
-    def __new__(cls, single, plural):
-        self = unicode.__new__(cls, single)
-        self.plural = plural
-        return self
 
-def smart_gettext(translation, msg, count=None):
-    '''If msg is instance of M_ returns multiple translation
-    otherwise return single translation'''
-    if count is None:
-        count = 1
-    if isinstance(msg, M_) and count is not None:
-        return translation.ungettext(msg, msg.plural, count)
-    return translation.ugettext(msg)
+class M_(object):
+    '''Marker for translatable string with plural form'''
+    def __init__(self, single, plural, count_field='count', format_args=None):
+        self.single = single
+        self.plural = plural
+        self.count_field = count_field
+        self.format_args = format_args
+
+    def __mod__(self, format_args):
+        return self.__class__(self.single, self.plural, count_field=self.count_field,
+                              format_args=format_args)
+
+    @property
+    def count(self):
+        args = self.format_args
+        if args is None or \
+                (isinstance(args, dict) and self.count_field not in args):
+            raise TypeError("count is required")
+        return args[self.count_field] if isinstance(args, dict) else args
+
+    def __unicode__(self):
+        args = self.format_args
+        if self.count == 1:
+            return self.single % args
+        return self.plural % args
+
+
+
+
+

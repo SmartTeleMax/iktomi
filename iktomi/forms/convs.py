@@ -21,17 +21,25 @@ class ValidationError(Exception):
         self.message = message
         self.by_field = by_field or {}
 
+    def translate(self, env, message):
+        if isinstance(message, M_):
+            trans = env.ngettext(unicode(message.single),
+                                 unicode(message.plural),
+                                 message.count)
+            return trans % message.format_args
+        return env.gettext(message)
+
     def fill_errors(self, field):
         form = field.form
         if self.message is not None:
-            form.errors[field.input_name] = self.message
+            form.errors[field.input_name] = self.translate(form.env, self.message)
         for name, message in self.by_field.items():
             if name.startswith('.'):
                 nm, f = name.lstrip('.'), field
                 for i in xrange(len(name) - len(nm) - 1):
                     f = f.parent
                 name = f.get_field(nm).input_name
-            form.errors[name] = message
+            form.errors[name] = self.translate(form.env, message)
 
     def __repr__(self):
         return "%s(%r, %r)" % (self.__class__,
@@ -85,7 +93,7 @@ class Converter(object):
 
     # obsolete parameters from previous versions
     _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max',
-                           'multiple', 'initial', 'validators_and_filters'])
+                           'multiple', 'initial'])
     required = False
     multiple = False
 
@@ -196,7 +204,9 @@ class validator(object):
 def length(min_length, max_length):
     'Sting length constraint'
     if min_length == max_length:
-        message = N_(u'length of value is limited to %(max)d')
+        message = M_(u'length of value must be exactly %(max)d symbol',
+                     u'length of value must be exactly %(max)d symbols',
+                     count_field="max")
     else:
         message = N_('length should be between %(min)d and %(max)d symbols')
 
