@@ -1,9 +1,8 @@
 import unittest, os, tempfile, shutil, cgi
-from iktomi.unstable.db.files import TransientFile, PersistentFile, \
-                                     FileManager
+from iktomi.unstable.db.files import TransientFile, FileManager
 from iktomi.unstable.forms.files import FileFieldSet
 from iktomi.forms import Form
-from iktomi.utils.storage import VersionedStorage
+from iktomi.web.app import AppEnvironment
 from webob.multidict import MultiDict
 
 
@@ -25,7 +24,7 @@ class FormFilesTests(unittest.TestCase):
                                         self.persistent_root,
                                         self.transient_url,
                                         self.persistent_url)
-        self.env = VersionedStorage(file_manager=self.file_manager)
+        self.env = AppEnvironment.create(file_manager=self.file_manager)
 
     def tearDown(self):
         shutil.rmtree(self.transient_root)

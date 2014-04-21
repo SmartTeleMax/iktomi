@@ -7,11 +7,6 @@ from .media import FormMedia
 from .fields import FieldBlock
 
 
-class FormEnvironment(object):
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-
 class FormValidationMetaClass(type):
     '''
     Metaclass to assert that some obsolete methods are not used.
@@ -33,9 +28,8 @@ class Form(object):
     __metaclass__ = FormValidationMetaClass
 
     def __init__(self, env=None, initial=None, name=None, permissions=None):
-        env = env or {}
         initial = initial or {}
-        self.env = FormEnvironment(**env) if isinstance(env, dict) else env
+        self.env = env
         self.name = name
         self.raw_data = MultiDict()
         # NOTE: `initial` is used to set initial display values for fields.

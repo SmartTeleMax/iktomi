@@ -4,13 +4,15 @@ import unittest
 from datetime import datetime, date, time
 
 from iktomi.forms import *
+from iktomi.web.app import AppEnvironment
 from webob.multidict import MultiDict
 
 
 def init_conv(conv, name='name'):
     class f(Form):
         fields = [Field(name, conv)]
-    return f().get_field(name).conv
+    env = AppEnvironment.create()
+    return f(env).get_field(name).conv
 
 
 class ConverterTests(unittest.TestCase):
@@ -425,12 +427,13 @@ class SplitDateTimeTests(unittest.TestCase):
     def test_required(self):
         Form = self.get_form(required=True)
 
-        form = Form()
+        env = AppEnvironment.create()
+        form = Form(env)
         form.accept(MultiDict({'dt.date': '',
                                'dt.time': '13:32'}))
         self.assertEqual(form.errors.keys(), ['dt'])
 
-        form = Form()
+        form = Form(env)
         form.accept(MultiDict({'dt.date': '24.03.2013',
                                'dt.time': ''}))
         self.assertEqual(form.errors.keys(), ['dt'])
@@ -466,7 +469,8 @@ class PasswordConvTests(unittest.TestCase):
 
     def test_mismatch(self):
         Form = self.get_form()
-        form = Form()
+        env = AppEnvironment.create()
+        form = Form(env)
 
         form.accept(MultiDict({'pass.pass': '123123',
                                'pass.conf': '123'}))
@@ -476,7 +480,8 @@ class PasswordConvTests(unittest.TestCase):
     def test_required(self):
         Form = self.get_form(required=True)
 
-        form = Form()
+        env = AppEnvironment.create()
+        form = Form(env)
         form.accept(MultiDict({'pass.pass': '',
                                'pass.conf': ''}))
         self.assertEqual(form.errors.keys(), ['pass'])

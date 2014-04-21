@@ -2,6 +2,7 @@
 
 import unittest
 
+from web.app import AppEnvironment
 from iktomi.forms import *
 from iktomi.unstable.forms import convs
 
@@ -9,9 +10,8 @@ from iktomi.unstable.forms import convs
 def init_conv(conv, name='name'):
     class F(Form):
         fields = [Field(name, conv)]
-    return F().get_field(name).conv
-
-
+    env = AppEnvironment.create()
+    return F(env).get_field(name).conv
 
 
 class EmailConvTests(unittest.TestCase):
@@ -68,7 +68,8 @@ class ModelDictConvTests(unittest.TestCase):
                          conv=convs.ModelDictConv(*a, **kw),
                          fields=[Field('a'), Field('b')]),
             ]
-        return F().get_field('fs').conv
+        env = AppEnvironment.create()
+        return F(env).get_field('fs').conv
 
     def test_to_python(self):
         conv = self._init_modeldict_conv()

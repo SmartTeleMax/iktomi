@@ -19,7 +19,7 @@ def ask(handler, url, method=None, data=None,
     root = Reverse.from_handler(handler)
     rq_kw = dict(method=method.upper()) if method else {}
     request = Request.blank(url, POST=data, headers=headers, **rq_kw)
-    env = VersionedStorage(env_class, request, root, **(additional_env or {}))
+    env = env_class.create(request, root, **(additional_env or {}))
     #TODO: may be later process cookies separatly
     data = VersionedStorage(**(additional_data or {}))
     return handler(env, data)

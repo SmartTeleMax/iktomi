@@ -3,6 +3,7 @@ import unittest
 from webob import Request
 from iktomi.forms import Form, FieldSet, FieldList, FieldBlock, Field, \
             FileField, convs
+from iktomi.web.app import AppEnvironment
 
 from webob.multidict import MultiDict
 
@@ -13,14 +14,16 @@ class FieldTests(unittest.TestCase):
         'Method accept of bound field returns cleaned value'
         class _Form(Form):
             fields=[Field('input', convs.Char())]
-        form = _Form()
+        env = AppEnvironment.create()
+        form = _Form(env)
         self.assert_(form.accept(MultiDict(input='value')))
         self.assertEqual(form.python_data['input'], 'value')
 
     def test_id(self):
         class _Form(Form):
             fields=[Field('input', convs.Char())]
-        form = _Form()
+        env = AppEnvironment.create()
+        form = _Form(env)
         self.assertEqual(form.get_field('input').id, 'input')
         form.id = 'myform'
         self.assertEqual(form.get_field('input').id, 'myform-input')
@@ -40,7 +43,8 @@ class FieldTests(unittest.TestCase):
                 ], name='block')
             ]
 
-        form = F()
+        env = AppEnvironment.create()
+        form = F(env)
         for nm, cls in [('fieldset', FieldSet),
                         ('fieldset.fieldlist', FieldList),
                         ('fieldset.fieldlist.1', FieldSet),
@@ -64,7 +68,8 @@ class FieldTests(unittest.TestCase):
                 Field('name', conv=convs.ListOf(convs.Int))
             ]
 
-        form = F()
+        env = AppEnvironment.create()
+        form = F(env)
         form.accept(MultiDict([('name', '1'), ('name', '2')]))
         self.assertEqual(form.python_data['name'], [1, 2])
 
@@ -75,7 +80,8 @@ class FieldTests(unittest.TestCase):
                       initial=[1,2])
             ]
 
-        form = F()
+        env = AppEnvironment.create()
+        form = F(env)
         self.assertEqual(form.raw_data,
                          MultiDict([('name', '1'), ('name', '2')]))
 
@@ -87,7 +93,8 @@ class FieldTests(unittest.TestCase):
         class F(Form):
             fields = [Field('inp')]
         request = Request.blank('/', POST=dict(inp=('foo.txt', 'ggg')))
-        form = F()
+        env = AppEnvironment.create()
+        form = F(env)
         self.assertEqual(form.accept(request.POST), False)
         self.assertEqual(form.errors.keys(), ['inp'])
 
@@ -108,13 +115,14 @@ class FieldTests(unittest.TestCase):
                                 conv=AssertConv())
                           ])]
 
-        form = F()
+        env = AppEnvironment.create()
+        form = F(env)
         self.assertEqual(form.get_field('num').clean_value, None)
 
-        form = F(initial={'num': 2})
+        form = F(env, initial={'num': 2})
         self.assertEqual(form.get_field('num').clean_value, 2)
 
-        form = F()
+        form = F(env)
         form.accept({'num': '4', 'f2': '4'})
         self.assertEqual(form.get_field('num').clean_value, 4)
         self.assertEqual(form.get_field('f2').clean_value, 4)
@@ -129,7 +137,8 @@ class FieldBlockTests(unittest.TestCase):
                     Field('number', convs.Int())
                 ]),
             ]
-        form = _Form(initial={'number': 3})
+        env = AppEnvironment.create()
+        form = _Form(env, initial={'number': 3})
         self.assertEqual(form.raw_data, MultiDict([('number', '3')]))
         self.assertEqual(form.python_data, {'number': 3})
         self.assertEqual(form.get_field('number').clean_value, 3)
@@ -141,7 +150,8 @@ class FieldBlockTests(unittest.TestCase):
                     Field('number', convs.Int())
                 ]),
             ]
-        form = _Form()
+        env = AppEnvironment.create()
+        form = _Form(env)
         self.assertEqual(form.raw_data, MultiDict([('number', '')]))
         self.assertEqual(form.python_data, {'number': None})
         self.assert_(form.accept({'number': '4'}))
@@ -156,7 +166,8 @@ class FieldBlockTests(unittest.TestCase):
                     Field('number', convs.Int())
                 ]),
             ])]
-        form = _Form(initial={'fs':{'number': 5}})
+        env = AppEnvironment.create()
+        form = _Form(env, initial={'fs':{'number': 5}})
         self.assertEqual(form.raw_data, MultiDict([('fs.number', '5')]))
         self.assertEqual(form.python_data, {'fs': {'number': 5}})
         self.assert_(form.accept({'fs.number': '4'}))
@@ -176,7 +187,8 @@ class FieldBlockTests(unittest.TestCase):
                 ],
                 conv=FieldBlock.conv(validator)),
             ]
-        form = _Form()
+        env = AppEnvironment.create()
+        form = _Form(env)
         self.assert_(not form.accept({'number': '4'}))
         self.assertEqual(form.python_data, {'number': None})
         self.assertEqual(form.get_field('number').raw_value, '4')
@@ -192,7 +204,8 @@ class FieldBlockTests(unittest.TestCase):
                     ]),
                 ]),
             ]
-        form = _Form()
+        env = AppEnvironment.create()
+        form = _Form(env)
         self.assertEqual(form.raw_data, MultiDict([('number', ''),
                                                    ('title', '')]))
         self.assertEqual(form.python_data, {'number': None,
@@ -211,7 +224,8 @@ class FileFieldTests(unittest.TestCase):
     def test_accept(self):
         class _Form(Form):
             fields=[FileField('inp')]
-        form = _Form()
+        env = AppEnvironment.create()
+        form = _Form(env)
         request = Request.blank('/', POST=dict(inp=('file.txt', 'ggg')))
         self.assert_(form.accept(request.POST),
                      form.errors)

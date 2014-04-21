@@ -28,7 +28,7 @@ class AppEnvironment(StorageFrame):
                 return db_maker()
     '''
 
-    def __init__(self, request, root, _parent_storage=None, **kwargs):
+    def __init__(self, request=None, root=None, _parent_storage=None, **kwargs):
         StorageFrame.__init__(self, _parent_storage=_parent_storage, **kwargs)
         self.request = request
         if request:
@@ -36,6 +36,12 @@ class AppEnvironment(StorageFrame):
             self._route_state = RouteState(request)
         else:
             self.root = root
+
+    def gettext(self, message):
+        return message
+
+    def ngettext(self, single, plural, count):
+        return single if count == 1 else plural
 
     @storage_property
     def current_location(self):
@@ -97,7 +103,7 @@ class Application(object):
         Creates webob and iktomi wrappers and calls `handle` method.
         '''
         request = Request(environ, charset='utf-8')
-        env = VersionedStorage(self.env_class, request, self.root)
+        env = VersionedStorage(self.env_class, request=request, root=self.root)
         data = VersionedStorage()
         response = self.handle(env, data)
         return response(environ, start_response)

@@ -4,12 +4,14 @@ import unittest
 
 from iktomi.forms import *
 from iktomi.forms.convs import ValidationError
+from iktomi.web.app import AppEnvironment
 
 
 def init_field(name='name'):
     class f(Form):
         fields = [Field(name)]
-    return f().get_field(name)
+    env = AppEnvironment.create()
+    return f(env).get_field(name)
 
 class ValidationErrorTests(unittest.TestCase):
 
@@ -34,7 +36,8 @@ class ValidationErrorTests(unittest.TestCase):
                     Field('subfield')
                 ])
             )]
-        form = f()
+        env = AppEnvironment.create()
+        form = f(env)
 
         ve = ValidationError(by_field={'.2.subfield': u'Ошибка-2',
                                        'field': u'Ошибка-3',
@@ -53,7 +56,8 @@ class ValidationErrorTests(unittest.TestCase):
                     Field('subfield')
                 ])
             ]
-        form = f()
+        env = AppEnvironment.create()
+        form = f(env)
 
         ve = ValidationError(by_field={'.subfield': u'Ошибка-1',
                                        'field': u'Ошибка-3',
@@ -78,7 +82,8 @@ class ValidationErrorTests(unittest.TestCase):
                 ]),
                 Field('other')
             ]
-        form = f()
+        env = AppEnvironment.create()
+        form = f(env)
 
         ve = ValidationError(by_field={'..another': u'1',
                                        '...other': u'2'})
