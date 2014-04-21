@@ -74,12 +74,12 @@ class ConverterTests(unittest.TestCase):
         conv = convs.Converter(v1)
         conv = conv(v2)
 
-        self.assertEqual(conv.validators_and_filters, (v1, v2))
+        self.assertEqual(conv.validators, (v1, v2))
 
         conv = convs.ListOf(convs.Int(v2), v1)
         conv = conv(v3)
-        self.assertEqual(conv.validators_and_filters, (v1, v3))
-        self.assertEqual(conv.conv.validators_and_filters, (v2,))
+        self.assertEqual(conv.validators, (v1, v3))
+        self.assertEqual(conv.conv.validators, (v2,))
 
 
 class IntConverterTests(unittest.TestCase):

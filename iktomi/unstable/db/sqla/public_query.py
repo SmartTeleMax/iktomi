@@ -1,9 +1,8 @@
 from sqlalchemy.orm.query import Query
-from sqlalchemy.orm.util import AliasedClass, class_mapper
-from sqlalchemy.sql import ClauseElement, Join, func
-from sqlalchemy import cast, Boolean, util
+from sqlalchemy.orm.util import AliasedClass
+from sqlalchemy.sql import ClauseElement, Join
+from sqlalchemy import cast, Boolean
 from sqlalchemy.orm.util import _class_to_mapper
-from sqlalchemy.orm.strategies import EagerLazyOption, JoinedLoader
 
 
 class PublicQuery(Query):

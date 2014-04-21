@@ -89,6 +89,7 @@ class Converter(object):
     required = False
     multiple = False
 
+    validators = ()
     #: Values are not accepted by Required validator
     error_required = N_('required field')
 
@@ -100,7 +101,7 @@ class Converter(object):
         self.field = weakproxy(kwargs.get('field'))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
-        self.validators_and_filters = args
+        self.validators = tuple(self.validators) + args
 
     @property
     def env(self):
@@ -119,7 +120,7 @@ class Converter(object):
         '''
         try:
             value = self.to_python(value)
-            for v in self.validators_and_filters:
+            for v in self.validators:
                 value = v(self, value)
 
             if self.required and self._is_empty(value):
@@ -158,7 +159,7 @@ class Converter(object):
         '''
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
-        validators = tuple(self.validators_and_filters) + args
+        validators = tuple(self.validators) + args
         return self.__class__(*validators, **kwargs)
 
     def assert_(self, expression, msg):
@@ -557,7 +558,7 @@ class ListOf(Converter):
 
     Usage::
 
-        ListOf(Converter(), *validators_and_filters, **kwargs)
+        ListOf(Converter(), *validators, **kwargs)
     '''
 
     multiple = True
