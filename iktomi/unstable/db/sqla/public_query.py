@@ -1,6 +1,12 @@
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql import ClauseElement, Join
+try:
+    # sa 0.9
+    from sqlalchemy.sql.selectable import FromGrouping
+except ImportError:
+    # sa 0.8
+    FromGrouping = None
 from sqlalchemy import cast, Boolean
 from sqlalchemy.orm.util import _class_to_mapper
 
@@ -131,6 +137,12 @@ class PublicQuery(Query):
                 obj = obj._clone()
                 obj.right = right
                 return obj
+        if FromGrouping is not None and isinstance(obj, FromGrouping):
+            element = self._add_eager_onclause(obj.element, selectable, crit)
+            if element is not None:
+                obj = obj._clone()
+                obj.element = element
+            return obj
         return None
 
     def _add_eager_criterion(self, context, statement):
@@ -150,7 +162,7 @@ class PublicQuery(Query):
                         new_obj = self._add_eager_onclause(obj, selectable, crit)
                         obj = new_obj if new_obj is not None else obj
                         new_from_obj.append(obj)
-                    statement._from_obj = new_from_obj
+                    statement._from_obj = type(statement._from_obj)(new_from_obj)
         return statement
 
     def _simple_statement(self, context):
