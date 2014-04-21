@@ -85,7 +85,7 @@ class Converter(object):
 
     # obsolete parameters from previous versions
     _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max',
-                           'multiple', 'initial'])
+                           'multiple', 'initial', 'validators_and_filters'])
     required = False
     multiple = False
 
