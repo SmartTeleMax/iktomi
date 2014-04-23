@@ -139,6 +139,8 @@ class Date(Converter):
             raise ConvertError(self, value)
 
     def to_url(self, value):
+        if isinstance(value, basestring):
+            return value
         return value.strftime(self.format)
 
 
