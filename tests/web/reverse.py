@@ -223,11 +223,11 @@ class ReverseTests(unittest.TestCase):
 
     def test_nested_prefixes(self):
         'Reverse with nested prefexes'
-        app = web.prefix('/news/<section>') | web.namespace('news') | web.cases(
+        app = web.prefix('/news/<section>', name='news') | web.cases(
                 web.match(),
-                web.prefix('/<int:id>') | web.namespace('item') | web.cases(
+                web.prefix('/<int:id>', name='item') | web.cases(
                     web.match(),
-                    web.prefix('/docs') | web.namespace('docs') | web.cases(
+                    web.prefix('/docs', name='docs') | web.cases(
                         web.match(),
                         web.match('/<int:id>', 'item'))))
         r = web.Reverse.from_handler(app)
@@ -246,6 +246,14 @@ class ReverseTests(unittest.TestCase):
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top').item(id=1).docs())
         self.assertRaises(UrlBuildingError, lambda: r.news(section='top')())
         self.assertRaises(UrlBuildingError, lambda: r.news.item)
+
+    def test_endpoint_with_params(self):
+        app = web.prefix('/news', name='news') | web.cases(
+                web.match('/<sort>'),
+        )
+        r = web.Reverse.from_handler(app)
+
+        self.assertEqual(r.news(sort="desc").as_url, '/news/desc')
 
     def test_string_api(self):
         'String API for reverse (build_url)'
