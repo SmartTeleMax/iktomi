@@ -78,7 +78,7 @@ class Integer(Converter):
     Extracts integer value from url part.
     '''
 
-    regex = '[1-9]\d*'
+    regex = '(?:[1-9]\d*|0)'
 
     def to_python(self, value, env=None):
         try:
