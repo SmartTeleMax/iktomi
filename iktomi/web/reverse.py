@@ -117,7 +117,10 @@ class Reverse(object):
             location, scope = self._scope[name]
             path = self._path
             host = self._host
-            ready = not location.need_arguments
+            ready = not location.need_arguments and (
+                    # in the case it is endpoint and
+                    # default rule accepts arguments, it is still callable
+                    '' not in scope or not scope[''][0].need_arguments)
             if ready:
                 path += location.build_path(self)
                 host = self._attach_subdomain(host, location)
