@@ -10,6 +10,15 @@ from datetime import datetime
 from collections import OrderedDict
 from ..utils.dt import strftime
 from ..utils.deprecation import deprecated
+try:
+    from ..utils.html import Cleaner
+    from lxml import html
+    from lxml.etree import XMLSyntaxError
+except ImportError:
+    # lxml is required for Html conv, therefore you can use forms without this
+    # functionality
+    Cleaner = None
+
 from ..utils import N_, M_, cached_property
 
 _all2 = locals().keys()
@@ -479,14 +488,25 @@ class Html(Char):
                                   'i', 'b', 'blockquote', 'sub', 'sup'))
     allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
     drop_empty_tags = frozenset(('p', 'a', 'u', 'i', 'b', 'sub', 'sup'))
+    allowed_protocols = frozenset(['ftp', 'http', 'https', 'mailto',
+                                   'tel', 'webcal', 'callto'])
     allowed_classes = {}
+    dom_callbacks = []
     #: Function returning object marked safe for template engine.
     #: For example: jinja Markup object
     Markup = lambda s, x: x
+    Cleaner = Cleaner
     class Nothing: pass
+
+    PROPERTIES = ['allowed_elements', 'allowed_attributes', 'allowed_protocols',
+                  'allowed_classes', 'dom_callbacks', 'drop_empty_tags']
+
+    LIST_PROPERTIES = ['allowed_elements', 'allowed_attributes',
+                       'allowed_protocols', 'dom_callbacks', 'drop_empty_tags']
 
     @classmethod
     def _load_arg(cls, opt):
+        assert hasattr(cls, opt)
         # XXX very complicated merges for rare cases
         #     not sure if they are necessary
         if opt in cls.__dict__:
@@ -510,38 +530,44 @@ class Html(Char):
         return result
 
     def __init__(self, *args, **kwargs):
-        from ..utils.html import PROPERTIES, LIST_PROPERTIES
-
-        for opt in PROPERTIES:
+        assert self.Cleaner is not None, \
+                'Install lxml or implement your own html cleaner'
+        for opt in self.PROPERTIES:
             if not opt in kwargs:
                result = self._load_arg(opt)
                if not result is self.Nothing:
                    kwargs[opt] = result
 
-        for opt in LIST_PROPERTIES:
+        for opt in self.LIST_PROPERTIES:
             add_key = 'add_' + opt
             if add_key in kwargs:
-                kwargs[opt] = set(kwargs.get(opt, LIST_PROPERTIES[opt]))
+                opt_value = kwargs.get(opt, [])
+                # XXX sometimes set must be ordered
+                kwargs[opt] = set(opt_value)
                 kwargs[opt].update(kwargs.pop(add_key))
 
-        super(Html, self).__init__(*args, **kwargs)
+        Char.__init__(self, *args, **kwargs)
 
     def clean_value(self, value):
-        # XXX move the import outside (in try..except)
-        from ..utils.html import ParseError
-
-        value = super(Html, self).clean_value(value)
+        value = Char.clean_value(self, value)
         try:
-            clean = self.sanitizer.sanitize(value)
-        except ParseError:
-            raise ValidationError(u'not valid html')
-        else:
-            return self.Markup(clean)
+            doc = html.fragment_fromstring(value, create_parent=True)
+        except XMLSyntaxError:
+            raise ValidationError(N_(u'Error parsing HTML'))
+        self.cleaner(doc)
+        clean = html.tostring(doc, encoding='utf-8').decode('utf-8')
+        clean = clean.split('>', 1)[1].rsplit('<', 1)[0]
+        return self.Markup(clean)
 
     @cached_property
-    def sanitizer(self):
-        from ..utils.html import Sanitizer
-        return Sanitizer(**self._init_kwargs)
+    def cleaner(self):
+        return self.Cleaner(allow_tags=self.allowed_elements,
+                            safe_attrs=self.allowed_attributes,
+                            allow_classes=self.allowed_classes,
+                            allowed_protocols=self.allowed_protocols,
+                            drop_empty_tags=self.drop_empty_tags,
+                            dom_callbacks=self.dom_callbacks,
+                            )
 
 
 class List(Converter):
