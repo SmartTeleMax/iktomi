@@ -261,6 +261,9 @@ class FieldSet(AggregateField):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), \
                 'To set raw value on %r need dict, got %r' % (self.input_name, value)
+        if not value:
+            # Field set can be optional
+            return
         field_names = sum([x.field_names for x in self.fields], [])
         for field_name in field_names:
             subvalue = value[field_name]

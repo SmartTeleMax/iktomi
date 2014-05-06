@@ -35,6 +35,9 @@ class ModelDictConv(Converter):
     model = None
 
     def from_python(self, value):
+        if value is None:
+            # Field set can be optional
+            return {}
         result = {}
         field_names = sum([x.field_names for x in self.field.fields], [])
         for field_name in field_names:
