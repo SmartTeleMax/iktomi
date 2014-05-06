@@ -58,6 +58,8 @@ class ImageEventHandlers(FileEventHandlers):
 
             image = self.prop.resize(image, self.prop.image_sizes)
             if self.prop.enhancements:
+                if image.mode not in ['RGB', 'RGBA']:
+                    image = image.convert('RGB')
                 for enhance, factor in self.prop.enhancements:
                     image = enhance(image).enhance(factor)
 
