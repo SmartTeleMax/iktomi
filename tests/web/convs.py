@@ -9,25 +9,28 @@ from datetime import date
 
 class IntConverter(unittest.TestCase):
 
+    def assertToPython(self, conv, value, result):
+        regex = conv.regex+'$'
+        if result is None:
+            assert not re.match(regex, value)
+        else:
+            assert re.match(regex, value)
+            val = conv.to_python(value)
+            self.assertEqual(val, result)
+
     def test_to_python(self):
         conv = Integer()
-        value = conv.to_python(u'4')
-        assert re.match(conv.regex, '4')
-        self.assertEqual(value, 4)
+        self.assertToPython(conv, u'4', 4)
 
     def test_to_python_zero(self):
         conv = Integer()
-        value = conv.to_python(u'0')
-        assert re.match(conv.regex, '0')
-        self.assertEqual(value, 0)
+        self.assertToPython(conv, u'0', 0)
 
     def test_to_python_fail(self):
         conv = Integer()
         self.assertRaises(ConvertError, lambda : conv.to_python(u'4w'))
-        assert not re.match(conv.regex, '004')
-        assert not re.match(conv.regex, '  4')
-        #self.assertRaises(ConvertError, lambda : conv.to_python(u'004'))
-        #self.assertRaises(ConvertError, lambda : conv.to_python(u'  4'))
+        self.assertToPython(conv, u'004', None)
+        self.assertToPython(conv, u'  4', None)
 
     def test_to_url(self):
         conv = Integer()
