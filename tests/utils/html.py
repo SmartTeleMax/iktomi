@@ -6,80 +6,88 @@ from iktomi.utils import html
 
 
 class TestSanitizer(unittest.TestCase):
-    '''Tests for sanitizer based on html5lib'''
+    '''Tests for sanitizer based on lxml'''
 
     def setUp(self):
         self.attrs = {
-            'allowed_elements': ['a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u', 'i', 'b',
+            'allow_tags': ['a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u', 'i', 'b',
                           'blockquote', 'sub', 'sup', 'span'],
-            'allowed_attributes': ['href', 'src', 'alt', 'title', 'class', 'rel'],
+            'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allowed_classes': {},
-            'strip_whitespace': True,
+            #'strip_whitespace': True,
         }
 
     def sanitize(self, text):
         return html.sanitize(text, **self.attrs)
-        
+
+    def assertSanitize(self, text, right):
+        res = self.sanitize(text)
+        self.assertEqual(res, right)
+
     def test_safe_attrs(self):
-        res = self.sanitize('<p notsafeattr="s" abbr="1" alt="Alt">Safe p</p>')
-        self.assertEqual(res, '<p alt="Alt">Safe p</p>')
+        self.assertSanitize('<p notsafeattr="s" abbr="1" alt="Alt">Safe p</p>',
+                            '<p alt="Alt">Safe p</p>')
 
     def test_safe_tags(self):
-        res = self.sanitize('<p alt="Alt">Safe p <script>bad_script()</script></p> <accept>acc</accept>')
-        self.assertEqual(res, '<p alt="Alt">Safe p bad_script()</p> acc')
+        self.assertSanitize('<p alt="Alt">Safe p <script>bad_script()</script></p> <accept>acc</accept>',
+                            '<p alt="Alt">Safe p </p> acc')
 
     def test_empty_tags(self):
-        res = self.sanitize('<p alt="Alt">p</p><p alt="Alt">  </p><p></p>')
-        self.assertEqual(res, u'<p alt="Alt">p</p> ')
-        res = self.sanitize('<b>some<span> </span>text</b>')
-        self.assertEqual(res, '<b>some<span> </span>text</b>')
-        
-    
+        self.assertSanitize('<p alt="Alt">p</p><p alt="Alt">  </p><p style="color:red"></p><p></p>',
+                            '<p alt="Alt">p</p><p alt="Alt">  </p>')
+
+        self.assertSanitize('<b>some<span> </span>text</b>',
+                             '<b>some<span> </span>text</b>')
+
+    @unittest.skip('lxml does not provide css filtration')
     def test_safe_css(self):
         u'''Ensure that sanitizer does not remove safe css'''
         self.attrs['allowed_attributes'].append('style')
         res = self.sanitize('<p style="color: #000; background-color: red; font-size: 1.2em">p</p>')
         assert 'color: #000; background-color: red; font-size: 1.2em' in res
-    
+
     def test_allowed_classes(self):
         self.attrs['allowed_classes']['p'] = ['yellow']
         self.attrs['allowed_classes']['b'] = lambda x: 'b' in x
-        
-        res = self.sanitize('<p class="yellow green">'
-                            '<sup class="yellow green" title="Alt">a</sup></p>'
-                            '<b class="has_b has_c">a</b>')
-        self.assertEqual(res, '<p class="yellow"><sup title="Alt">a</sup></p>'
-                              '<b class="has_b">a</b>')
-    
+
+        self.assertSanitize('<p class="yellow green">',
+                            '<p class="yellow"></p>')
+
+        self.assertSanitize('<sup class="yellow green" title="Alt">a</sup>',
+                            '<sup title="Alt">a</sup>')
+
+        self.assertSanitize('<b class="has_b has_c">a</b>',
+                            '<b class="has_b">a</b>')
+
     def test_tags_sticking(self):
         res = self.sanitize('<p>a</p> <p>b</p>')
         self.assertEqual(res, '<p>a</p> <p>b</p>')
         res = self.sanitize('<b>a</b> <b>b</b>')
         self.assertEqual(res, '<b>a</b> <b>b</b>')
-        res = self.sanitize('<script>a</script> <p>b</p>')
+        res = self.sanitize('<brbr>a</brbr> <p>b</p>')
         self.assertEqual(res, 'a <p>b</p>')
-        res = self.sanitize('<p><script>a</script> <script>b</script></p>')
+        res = self.sanitize('<p><brbr>a</brbr> <brbr>b</brbr></p>')
         self.assertEqual(res, '<p>a b</p>')
 
+    @unittest.skip('not supported')
     def test_autoclosing_attrs_xhtml(self):
         self.attrs['method'] = 'xhtml'
         res = self.sanitize('<br><hr>b ')
         self.assertEqual(res, '<br /><hr />b')
 
     def test_autoclosing_attrs_html(self):
-        self.attrs['method'] = 'html'
         self.attrs['drop_empty_tags'] = []
         res = self.sanitize('<br><hr>b <p>')
         self.assertEqual(res, '<br><hr>b <p></p>')
-        
-    def test_remove_empty_a(self):
-        #Not implemented by genshi
-        res = self.sanitize('<a href="moo">BLABLA</a> <a>txt <span>foo</span></a>'
-                            's  <p><a>run</a><b><a>bar</a></b></p>')
-        self.assertEqual(res, '<a href="moo">BLABLA</a> txt <span>foo</span>'
-                              's <p>run<b>bar</b></p>')
 
+    def test_remove_empty_a(self):
+        self.assertSanitize('<a href="moo">BLABLA</a> <a>txt <span>foo</span></a>',
+                            '<a href="moo">BLABLA</a> txt <span>foo</span>')
+        self.assertSanitize('<p><a>run</a><b><a>bar</a></b></p>',
+                            '<p>run<b>bar</b></p>')
+
+    @unittest.skip('lxml does not provide css filtration')
     def test_unsafe_css(self):
         u'''Special test for html5: html5lib has very ultimate css cleanup with gauntlets'''
         self.attrs['allowed_attributes'].append('style')
@@ -96,7 +104,7 @@ class TestSanitizer(unittest.TestCase):
         self.assertEqual(res, '')
         res = self.sanitize('\t    \n')
         self.assertEqual(res, '')
-        
+
     def test_on_real_data(self):
         '''
             Compare with logged genshi output to ensure that there are no
@@ -115,7 +123,7 @@ class TestSanitizer(unittest.TestCase):
                     out = open(path[:-3] + '.out', 'r').read().decode('utf-8')
                     out = html.remove_TinyMCE_trash(out) # Old sanitizer can't do this
                     #out = self.sanitize(out).strip()
-                    
+
                     res = self.sanitize(in_).strip()
                     if res != out:
                         if skips < 10:
@@ -129,18 +137,19 @@ class TestSanitizer(unittest.TestCase):
         self.attrs = {}
         res = self.sanitize('a<p color: #000" class="2">p</p><script></script>')
         self.assertEqual(res, 'a<p>p</p>')
-    
+
+    @unittest.skip('lxml does not support this option')
     def test_escaping(self):
         self.attrs['escape_invalid_tags'] = True
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
-        
-    
-    
+
+
+
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
     return clean.strip()
 
-    
+
 if __name__ == '__main__':
     unittest.main()

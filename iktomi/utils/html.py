@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from urlparse import urlsplit
+from lxml import html
 from lxml.html import clean
 
 # XXX move to iktomi.cms?
@@ -14,7 +15,8 @@ class Cleaner(clean.Cleaner):
     dom_callbacks = []
     allow_external_src = False
     allowed_protocols = frozenset(['http', 'https', 'mailto'])
-    allowed_classes = None
+    # None to allow all classes
+    allowed_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
 
@@ -56,7 +58,7 @@ class Cleaner(clean.Cleaner):
                     el.drop_tag()
 
         if self.allowed_classes is not None:
-            for el in doc.xpath('//'+tag+'[@class]'):
+            for el in doc.xpath('//*[@class]'):
                 classes = filter(None, el.attrib['class'].split())
                 if el.tag in self.allowed_classes:
                     allowed = self.allowed_classes[el.tag]
@@ -67,10 +69,17 @@ class Cleaner(clean.Cleaner):
                     classes = []
 
                 if classes:
-                    el.attrib['classes'] = ' '.join(classes)
+                    el.attrib['class'] = ' '.join(classes)
                 else:
                     el.attrib.pop('class')
 
 
         for callback in self.dom_callbacks:
             callback(doc)
+
+
+def sanitize(value, **kwargs):
+    doc = html.fragment_fromstring(value, create_parent=True)
+    Cleaner(**kwargs)(doc)
+    clean = html.tostring(doc, encoding='utf-8').decode('utf-8')
+    return clean.split('>', 1)[1].rsplit('<', 1)[0]
