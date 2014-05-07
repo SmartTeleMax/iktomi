@@ -471,14 +471,25 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.subdomain.more.index.as_url, 'http://d1.d2/')
 
     def test_default_values(self):
-        app = web.prefix('/<int(default=0):id1>') | web.namespace('ns') | web.cases(
-                web.match(),
-                web.match('/<int(default=0):id2>', 'url'))
+        app = web.prefix('/<int(default=0):id1>', name='ns') | web.cases(
+                web.match('/<int(default=0):id2>'),
+                web.match('/n/<int(default=0):id2>', 'nested'),
+                web.prefix('/o', name='other') | web.cases(
+                    web.match('/<int(default=0):id3>'),
+                ),
+            )
         r = web.Reverse.from_handler(app)
-        self.assertEqual(r.ns.as_url, '/0')
-        self.assertEqual(r.ns.url.as_url, '/0/0')
-        self.assertEqual(r.ns().url().as_url, '/0/0')
-        self.assertEqual(r.ns(id1=1).url(id2=2).as_url, '/1/2')
-        self.assertEqual(r.build_url('ns.url'), '/0/0')
-        self.assertEqual(r.build_url('ns.url', id1=1, id2=2), '/1/2')
-        
+
+        self.assertEqual(r.ns.as_url, '/0/0')
+        self.assertEqual(r.ns(id1=1, id2=2).as_url, '/1/2')
+        self.assertEqual(r.ns(id2=2).as_url, '/0/2')
+
+        self.assertEqual(r.ns.other.as_url, '/0/o/0')
+        self.assertEqual(r.ns.other(id3=1).as_url, '/0/o/1')
+
+        self.assertEqual(r.ns.nested.as_url, '/0/n/0')
+        self.assertEqual(r.ns().nested().as_url, '/0/n/0')
+        self.assertEqual(r.ns(id1=1).nested(id2=2).as_url, '/1/n/2')
+        self.assertEqual(r.build_url('ns.nested'), '/0/n/0')
+        self.assertEqual(r.build_url('ns.nested', id1=1, id2=2), '/1/n/2')
+
