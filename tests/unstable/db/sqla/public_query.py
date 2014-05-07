@@ -23,8 +23,8 @@ class UserWithJoinedAddresses(User):
 
     __tablename__ = None
 
-    addresses = relation("Address", lazy="joined")
-    photos = relation("Photo", secondary="user_photo", lazy="joined")
+    addresses_ = relation("Address", lazy="joined")
+    photos_ = relation("Photo", secondary="user_photo", lazy="joined")
 
 
 class Address(Base):
@@ -320,10 +320,10 @@ class UserAddressesTest(unittest.TestCase):
             if emails is None:
                 self.assertIsNone(user)
             else:
-                self.assertEqual(set(a.email for a in user.addresses),
+                self.assertEqual(set(a.email for a in user.addresses_),
                                  set(emails))
             if photos is not None:
-                self.assertEqual(set(p.photo for p in user.photos),
+                self.assertEqual(set(p.photo for p in user.photos_),
                                  set(photos))
 
     def test_attribute_error(self):
