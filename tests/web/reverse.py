@@ -250,10 +250,14 @@ class ReverseTests(unittest.TestCase):
     def test_endpoint_with_params(self):
         app = web.prefix('/news', name='news') | web.cases(
                 web.match('/<sort>'),
+                web.match('/<sort>/page/<int:page>', name='page'),
+                web.match('/feed', name='feed'),
         )
         r = web.Reverse.from_handler(app)
 
         self.assertEqual(r.news(sort="desc").as_url, '/news/desc')
+        self.assertEqual(r.news.page(sort="desc", page=1).as_url, '/news/desc/page/1')
+        self.assertEqual(r.news.feed.as_url, '/news/feed')
 
     def test_string_api(self):
         'String API for reverse (build_url)'

@@ -66,7 +66,15 @@ class Reverse(object):
         self._scope = scope
         self._path = path
         self._host = host
+        # ready means that self._location path and subdomain have been already
+        # added to self._path and self._host
         self._ready = ready
+
+        # in the case it is endpoint and
+        # default rule accepts arguments, it is still callable
+        self._callable = not ready or (
+                    '' in scope and scope[''][0].need_arguments)
+
         self._need_arguments = need_arguments
         self._is_endpoint = (not self._scope) or ('' in self._scope)
         self._is_scope = bool(self._scope)
@@ -87,12 +95,12 @@ class Reverse(object):
         Get a copy of the `Reverse` but with same namespace and same url name,
         but with arguments attached.
         '''
-        if self._ready:
+        if not self._callable:
             raise UrlBuildingError('Endpoint do not accept arguments')
         if self._is_endpoint or self._need_arguments:
             finalize_params = {}
             path, host = self._path, self._host
-            if self._location:
+            if self._location and not self._ready:
                 host = self._attach_subdomain(host, self._location)
                 path += self._location.build_path(self, **kwargs)
             if '' in self._scope:
@@ -117,10 +125,7 @@ class Reverse(object):
             location, scope = self._scope[name]
             path = self._path
             host = self._host
-            ready = not location.need_arguments and (
-                    # in the case it is endpoint and
-                    # default rule accepts arguments, it is still callable
-                    '' not in scope or not scope[''][0].need_arguments)
+            ready = not location.need_arguments
             if ready:
                 path += location.build_path(self)
                 host = self._attach_subdomain(host, location)
