@@ -315,7 +315,7 @@ class static_files(WebHandler):
         path_info = unquote(env.request.path)
         if path_info.startswith(self.url):
             static_path = path_info[len(self.url):]
-            while static_path[0] in ('.', '/', '~'):
+            while static_path[:1] in ('.', '/', '~'):
                 static_path = static_path[1:]
             file_path = path.join(self.location, static_path)
             if path.exists(file_path) and path.isfile(file_path):
