@@ -10,7 +10,6 @@
   {%- endif -%}
 {% endmacro -%}
 
-{% if value %}
 <table class="fieldset{% if widget.classname %} {{ widget.classname }} {% endif %}">
 {%- for subfield in field.fields %}
 {%- if subfield.readable %}
@@ -51,6 +50,3 @@
 {%- endif -%}
 {% endfor -%}
 </table>
-{% else %}
-—
-{% endif %}
