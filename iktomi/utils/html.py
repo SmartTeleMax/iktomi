@@ -16,7 +16,7 @@ class Cleaner(clean.Cleaner):
     allow_external_src = False
     allowed_protocols = frozenset(['http', 'https', 'mailto'])
     # None to allow all classes
-    allowed_classes = {}
+    allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
 
@@ -57,11 +57,11 @@ class Cleaner(clean.Cleaner):
                 if not el.attrib and not has_text:
                     el.drop_tag()
 
-        if self.allowed_classes is not None:
+        if self.allow_classes is not None:
             for el in doc.xpath('//*[@class]'):
                 classes = filter(None, el.attrib['class'].split())
-                if el.tag in self.allowed_classes:
-                    allowed = self.allowed_classes[el.tag]
+                if el.tag in self.allow_classes:
+                    allowed = self.allow_classes[el.tag]
                     condition = allowed if callable(allowed) else \
                             (lambda cls: cls in allowed)
                     classes = filter(condition, classes)
