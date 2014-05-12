@@ -130,7 +130,12 @@ class CookieAuth(web.WebHandler):
         login url and does not throw any exception.
         '''
         def _logout(env, data):
-            response = HTTPSeeOther(location=str(redirect_to))
+            location = redirect_to
+            if location is None and env.request.referer:
+                location = env.request.referer
+            elif location is None:
+                location = '/'
+            response = HTTPSeeOther(location=str(location))
             self.logout_user(env.request, response)
             return response
         return web.match('/logout', 'logout') | web.method('post') | _logout
