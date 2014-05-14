@@ -122,6 +122,8 @@ class PublicQuery(Query):
         return query
 
     def _add_eager_onclause(self, obj, selectable, crit):
+        # be careful! should return anything only if the criterion has been
+        # applied already
         if isinstance(obj, Join):
             if obj.right == selectable:
                 obj = obj._clone()
@@ -138,11 +140,12 @@ class PublicQuery(Query):
                 obj.right = right
                 return obj
         if FromGrouping is not None and isinstance(obj, FromGrouping):
+            # XXX tests required!
             element = self._add_eager_onclause(obj.element, selectable, crit)
             if element is not None:
                 obj = obj._clone()
                 obj.element = element
-            return obj
+                return obj
         return None
 
     def _add_eager_criterion(self, context, statement):
