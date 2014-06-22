@@ -7,6 +7,7 @@ how to store transient and persistent files.
 import os
 import base64
 import errno
+import mimetypes
 from shutil import copyfileobj
 from ...utils import cached_property
 
@@ -23,6 +24,11 @@ class BaseFile(object):
     @property
     def path(self):
         return os.path.join(self.root, self.name)
+
+    @property
+    def mimetype(self):
+        '''Guessed mimetype'''
+        return mimetypes.guess_type(self.path)[0]
 
     @cached_property
     def size(self):
