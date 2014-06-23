@@ -9,7 +9,9 @@ __all__ = ['ConvertError', 'default_converters', 'Converter', 'String',
 
 
 class ConvertError(Exception):
-    'Error converter should raise if the value does not match'
+    '''
+    Converter should raise ConvertError if the given value does not match
+    '''
 
     @property
     def converter(self):

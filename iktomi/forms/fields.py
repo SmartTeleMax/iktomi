@@ -192,7 +192,7 @@ class Field(BaseField):
         return True
 
     def accept(self):
-        '''Extraxts raw value from form's raw data and passes it to converter'''
+        '''Extracts raw value from form's raw data and passes it to converter'''
         value = self.raw_value
         if not self._check_value_type(value):
             # XXX should this be silent or TypeError?
@@ -349,7 +349,7 @@ class FieldBlock(FieldSet):
 
 class FieldList(AggregateField):
     '''
-    Container aggregating a couple of similar fields
+    Container aggregating an ordered set of similar fields
     '''
 
     order = True
