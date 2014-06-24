@@ -1,5 +1,3 @@
-.. _iktomi-web-api:
-
 Web Routing Reference
 =====================
 

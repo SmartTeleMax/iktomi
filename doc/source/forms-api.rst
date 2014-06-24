@@ -1,5 +1,3 @@
-.. _iktomi-forms-api:
-
 Forms Reference
 ===============
 

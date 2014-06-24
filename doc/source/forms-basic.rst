@@ -1,5 +1,3 @@
-.. _iktomi-forms-basic:
-
 Overview: Form abstraction layers
 =================================
 
@@ -38,7 +36,7 @@ The most basic usage of forms is the following::
 Iktomi form implementation contains of few abstraction layers:
 
 Forms
-^^^^^
+-----
 
 `iktomi.forms.form.Form` subclasses contain a scheme of validated data as list
 of fields. Instances of these classes provide an interface to work with entire
@@ -47,7 +45,7 @@ form, such as: validate the data (`Form.accept`), render the entire form
 values, environment, errors occured during validation.
 
 Fields
-^^^^^^
+------
 
 `iktomi.forms.fields.BaseField` instances represent one node in data scheme.
 It can be atomic data (string, integer, boolean) or data aggregated from
@@ -62,7 +60,7 @@ Finally, the main options of `BaseField` instances are converter and widget
 objects.
 
 Converters
-^^^^^^^^^
+----------
 
 `iktomi.forms.convs.Converter` instances are responsible for all staff related
 to data validation and convertation. Converter subclasses should define
@@ -102,7 +100,7 @@ Additional validation and simple one-way convertation can be made by **validator
           Char(strip, length(0, 100), required=True))
 
 Widgets
-^^^^^^^
+-------
 
 `iktomi.forms.widget.Widget` instances are responsible for visual representation
 of an item.
@@ -118,7 +116,7 @@ Examples of widgets are `TextInput`, `Textarea`, `Select`, `CheckBox`,
 
 
 Aggregate fields
-^^^^^^^^^^^^^^^^
+----------------
 
 Iktomi forms are very useful to validate and convert structured data with nested
 values.
@@ -180,11 +178,11 @@ These classes are:
     #                 {'first_name': 'Jabba', 'last_name': 'Hutt'}]}
 
 File handling
-^^^^^^^^^^^^^
+-------------
 
 
 Readonly fields, permissions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
 
 Iktomi forms have a customizable permission layer. Two permissions supported by
 default are read (`r`) and write (`w`).
@@ -204,7 +202,8 @@ Permissions can be calculated dinamically based on environment (request, logged
 in user roles, etc.).
 
 Media dependencies
-^^^^^^^^^^^^^^^^^^
+------------------
+
 For oldschool projects without js/css packing you can also use 
 `iktomi.forms.media` layer to collect static files required for all form
 widgets.

@@ -1,5 +1,3 @@
-.. _iktomi-utils:
-
 Various utilities
 =================
 

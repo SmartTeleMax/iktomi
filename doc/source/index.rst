@@ -20,31 +20,42 @@ unstable or unclear in some point, and we do not want to gurarantee their perman
 for a long time.
 
 Routing
-^^^^^^^
+-------
 
-* :ref:`Basic practices <iktomi-web-basic>`
-* :ref:`Advanced <iktomi-web-advanced>`
-* :ref:`API reference <iktomi-web-api>`
-.. * :ref:`How it works <iktomi-web>`
+.. toctree::
+    :maxdepth: 2
+
+    web-basix
+    web-advanced
+    web-api
 
 Forms
-^^^^^
+-----
 
-* :ref:`Overview: Form abstraction layers <iktomi-forms-basic>`
-* :ref:`API reference <iktomi-forms-api>`
-.. * :ref:`How it works <iktomi-forms>`
+.. toctree::
+    :maxdepth: 1
+
+    forms-basic
+    forms-api
 
 Cli
-^^^
+---
 
-* :ref:`Development server <iktomi-cli-app>`
-* :ref:`FastCGI server <iktomi-cli-fcgi>`
-* :ref:`Sqlalchemy management utilities <iktomi-cli-sqla>`
+.. toctree::
+    :maxdepth: 2
+
+    cli-app
+    cli-fcgi
+    cli-sqla
+    cli-api
 
 Utilities
-^^^^^^^^^
+---------
 
 Unsorted stuff for make iktomi working.
 
-* :ref:`Utilities <iktomi-utils>`
+.. toctree::
+    :maxdepth: 2
+
+    utils
 

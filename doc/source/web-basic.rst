@@ -1,10 +1,8 @@
-.. _iktomi-web-basic:
-
 Basic Practices
 =====================
 
 Hello, World
-^^^^^^^^^^^^
+------------
 
 Iktomi produces WSGI application from a couple of own web handlers.
 It wraps environment into webob.Request and accepts the result as webob.Response object.
@@ -49,13 +47,13 @@ following content::
     import sys
     from iktomi.cli import manage
     from iktomi.cli.app import App
-    
+
     def run():
         manage(dict(
             # dev-server
             app = App(wsgi_app),
         ), sys.argv)
-    
+
     if __name__ == '__main__':
         run()
 
@@ -66,7 +64,7 @@ And now we can run the server::
 
 
 Basic Routing
-^^^^^^^^^^^^^
+-------------
 
 There are a couple of handlers to match different url parts or other request
 properties: `web.match`, `web.prefix`, `web.methods`, `web.subdomain`, etc.
@@ -113,7 +111,8 @@ if `contacts` handler returns `None`, `web.cases` does not stop iteration of han
 and `web.match('/about', 'about')` is called.
 
 URL parameters
-^^^^^^^^^^^^^^
+--------------
+
 If URL contains values that should be used in handlers (object ids, slugs, etc),
 `werkzeug`-style URL parameters are used::
 
@@ -127,7 +126,7 @@ Iktomi provides some basic url converters: `string` (default), `int`, `bool`, `a
 It also allows you to create and use own ones (see below).
 
 Nested handlers and URL Namespaces
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------
 
 There is very handy way to logically organize your url map: namespaces::
 
@@ -178,7 +177,8 @@ about name clashes.::
     )
 
 Building URLs
-^^^^^^^^^^^^^
+-------------
+
 Iktomi provides url building (or reversing) engine. 
 
 URL reverse object is a callable that can be created for any handler::
@@ -204,7 +204,8 @@ while string-based API returns `web.URL` instances. If you want to get subrevers
 use `root.build_subreverse('user', user_id=5)`*
 
 Controlling execution flow
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
+
 Iktomi allows to natively implement many use cases without any extra essences
 like Django-middlewares, etc.
 
@@ -244,7 +245,7 @@ or even something like that::
 
 
 Scopes of environment and data variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------------
 `env` and `data` objects does not just store a data, also they 
 delimitate data between handlers from differrent app parts. `web.cases` handler
 is responsible for this delimitation. For each nested handler call it "stores"
@@ -257,7 +258,8 @@ Therefore, be careful with this feature, it can lead to design mistakes.
 
 
 Smart URL object
-^^^^^^^^^^^^^^^^
+----------------
+
 URL build functions does not return actually `str` object, but it's `web.URL`
 subclass'es instance. It allows to make common operations with queryString
 parameters (add, set, delete) and also has method returning
@@ -277,7 +279,8 @@ URL as human-readable unicode string::
     http://образец.рф/?q=ок
 
 Throwing HTTPException
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
+
 Iktomi allows `webob.HTTPException` raising from inside a handler::
 
     from webob import exc
