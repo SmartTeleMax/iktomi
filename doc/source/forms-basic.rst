@@ -232,5 +232,5 @@ options you want::
 
 or even::
 
-    field1 = Field(conv=Char(length(0, 100))
+    field1 = Field(conv=Char(length(0, 100)))
     field2 = field1(conv=field1.conv(required=True))
