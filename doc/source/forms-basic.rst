@@ -1,4 +1,4 @@
-Overview: Form abstraction layers
+Overview: Form Abstraction Layers
 =================================
 
 Form is abstraction designed to validate user form data and convert it to inner
@@ -59,6 +59,8 @@ Also there are a few auxillary attributes like `label`, `hint`.
 Finally, the main options of `BaseField` instances are converter and widget
 objects.
 
+:ref:`See more<forms-form>`.
+
 Converters
 ----------
 
@@ -115,7 +117,7 @@ Examples of widgets are `TextInput`, `Textarea`, `Select`, `CheckBox`,
 `HiddenInput`, etc.
 
 
-Aggregate fields
+Aggregate Fields
 ----------------
 
 Iktomi forms are very useful to validate and convert structured data with nested
@@ -177,11 +179,11 @@ These classes are:
     # {'characters': [{'first_name': 'Jar Jar', 'last_name': 'Binks'},
     #                 {'first_name': 'Jabba', 'last_name': 'Hutt'}]}
 
-File handling
+File Handling
 -------------
 
 
-Readonly fields, permissions
+Readonly Fields, Permissions
 ----------------------------
 
 Iktomi forms have a customizable permission layer. Two permissions supported by
@@ -201,10 +203,34 @@ field permissions are subset of the parent field's (or form's) ones::
 Permissions can be calculated dinamically based on environment (request, logged
 in user roles, etc.).
 
-Media dependencies
+Media Dependencies
 ------------------
 
 For oldschool projects without js/css packing you can also use 
 `iktomi.forms.media` layer to collect static files required for all form
 widgets.
 
+.. _form-copy:
+
+Copy Interface
+--------------
+
+Some classes (fields, widgets, converters) implement copy by `__call__`. This is
+very useful when making widely customizable interfaces.
+
+You do not need to create a subclass every time you want reuse your widgets or
+converters. From other side, there is no need to instantiate a class every time
+with all the options.
+
+Instead, you can just create an object once and then copy it redefining only
+options you want::
+
+    char = Char(length(0,100), NoUpper, required=False)
+
+    field1 = Field(conv=conv)
+    field2 = Field(conv=conv(required=True))
+
+or even::
+
+    field1 = Field(conv=Char(length(0, 100))
+    field2 = field1(conv=field1.conv(required=True))

@@ -25,7 +25,7 @@ Routing
 .. toctree::
     :maxdepth: 2
 
-    web-basix
+    web-basic
     web-advanced
     web-api
 
@@ -36,6 +36,10 @@ Forms
     :maxdepth: 1
 
     forms-basic
+    forms-form
+    forms-fields
+    forms-convs
+    forms-widgets
     forms-api
 
 Cli
