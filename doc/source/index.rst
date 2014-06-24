@@ -30,7 +30,7 @@ Routing
 Forms
 ^^^^^
 
-* :ref:`Form abstraction layers <iktomi-forms-basic>`
+* :ref:`Overview: Form abstraction layers <iktomi-forms-basic>`
 * :ref:`API reference <iktomi-forms-api>`
 .. * :ref:`How it works <iktomi-forms>`
 
