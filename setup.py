@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='iktomi',
-    version='0.3',
+    version='0.4',
     packages=['iktomi',
               'iktomi.utils',
               'iktomi.forms',
@@ -32,8 +32,8 @@ setup(
     ],
     author='Denis Otkidach',
     author_email='denis.otkidach@gmail.com',
-    maintainer='Tim Perevezentsev',
-    maintainer_email='riffm2005@gmail.com',
+    maintainer='Harut Dagesyan',
+    maintainer_email='yes@harutune.name',
     description='A web tool: routing, forms, other useful things.',
     #long_description=open('README').read(),
     url='http://github.com/SmartTeleMax/iktomi/',
