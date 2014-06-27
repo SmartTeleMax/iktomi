@@ -29,9 +29,11 @@ class Converter(object):
     class NotSet(object): pass
     default = NotSet
 
-    def __init__(self, default=NotSet):
+    def __init__(self, default=NotSet, regex=None):
         if not default is self.NotSet:
             self.default = default
+        if regex is not None:
+            self.regex = regex
 
     def to_python(self, value, env=None):
         '''
