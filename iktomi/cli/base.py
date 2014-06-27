@@ -83,7 +83,7 @@ def _command_list(commands):
 
 
 class Cli(object):
-    ''
+    'Base class for all command digests'
 
     def description(self, argv0='manage.py', command=None):
         '''Description outputed to console'''

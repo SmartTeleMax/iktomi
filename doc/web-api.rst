@@ -1,3 +1,5 @@
+:tocdepth: 1
+
 Web Routing Reference
 =====================
 
