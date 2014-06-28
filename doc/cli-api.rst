@@ -21,4 +21,23 @@ Cli
 
     .. automethod:: __call__
 
+Development Server
+------------------
+
+.. autoclass:: iktomi.cli.app.App
+    :members:
+
+
+FCGI Server
+-----------
+
+.. autoclass:: iktomi.cli.fcgi.Flup
+    :members:
+
+
+SQLAlchemy
+----------
+
+.. autoclass:: iktomi.cli.sqla.Sqla
+    :members:
 
