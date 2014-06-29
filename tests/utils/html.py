@@ -14,7 +14,7 @@ class TestSanitizer(unittest.TestCase):
                           'blockquote', 'sub', 'sup', 'span'],
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
-            'allowed_classes': {},
+            'allow_classes': {},
             #'strip_whitespace': True,
         }
 
@@ -48,8 +48,8 @@ class TestSanitizer(unittest.TestCase):
         assert 'color: #000; background-color: red; font-size: 1.2em' in res
 
     def test_allowed_classes(self):
-        self.attrs['allowed_classes']['p'] = ['yellow']
-        self.attrs['allowed_classes']['b'] = lambda x: 'b' in x
+        self.attrs['allow_classes']['p'] = ['yellow']
+        self.attrs['allow_classes']['b'] = lambda x: 'b' in x
 
         self.assertSanitize('<p class="yellow green">',
                             '<p class="yellow"></p>')

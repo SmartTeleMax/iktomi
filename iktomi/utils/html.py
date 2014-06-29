@@ -11,7 +11,6 @@ class Cleaner(clean.Cleaner):
     safe_attrs_only = True
     remove_unknown_tags = None
     drop_empty_tags = frozenset()
-    allow_classes = None
     dom_callbacks = []
     allow_external_src = False
     allowed_protocols = frozenset(['http', 'https', 'mailto'])
