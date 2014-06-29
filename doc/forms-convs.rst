@@ -30,10 +30,13 @@ value::
     Field('name',
           conv=convs.Char(required=True))
 
+
+.. _forms-convs-listof:
+
 ListOf and Multiple Values
 --------------------------
 
-Multiple values are implemented by `ListOf` converter::
+Multiple values with same key in raw data are supported by `ListOf` converter::
 
     class MyForm(Form):
 
