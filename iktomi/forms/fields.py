@@ -41,7 +41,7 @@ class BaseField(object):
     #: Short description of the field
     hint = None
 
-    def __init__(self, name, conv=None, parent=None, **kwargs):
+    def __init__(self, name, conv=None, parent=None, permissions=None, **kwargs):
         if self._obsolete & set(kwargs):
             raise TypeError(
                     'Obsolete parameters are used: %s' %
@@ -52,6 +52,8 @@ class BaseField(object):
             conv=(conv or self.conv)(field=self),
             widget=(kwargs.get('widget') or self.widget)(field=self),
         ))
+        if permissions is not None:
+            kwargs['perm_getter'] = FieldPerm(permissions)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
 
