@@ -61,43 +61,12 @@ class Converter(object):
     :meth:`accept` method takes value from field
     and converts it to python type.
 
-    Subclasses must redefine :meth:`to_python` method to make their 
+    Subclasses must redefine :meth:`to_python` method to make their
     own convertation and validation.
 
     :meth:`from_python` method takes value as python
     object and converts it to string or something
     else widget can display.
-
-    Filters and validators:
-
-    Filters are functions performing additional validation and convertation 
-    after :meth:`to_python` method. The interface of filters is following::
-
-        def filter_value(conv, value):
-            if wrong(value):
-                raise ValidationError(..)
-            new_value = do_smth(value)
-            return new_value
-
-        convs.Char(filter_value, required=True)
-
-    Validators are shortcuts to filters that do no convertations, but  only
-    do assertions::
-
-        @validator(error_message)
-        def validate(conv, value):
-            return is_valid(value)
-
-    Both filters and validators can be passed to converter as positional 
-    arguments and will be applied after :meth:`to_python` method and 
-    `required` check in order they are mentioned.
-
-    Error messages redefinition:
-
-    Set `error_<type>` parameter to your own message template, for example::
-
-        convs.Char(regex_readable="YY.MM.DD",
-                   error_regex='Should match %(regex_readable)s')`
     '''
 
     # obsolete parameters from previous versions
@@ -266,6 +235,7 @@ class CharBased(Converter):
     nontext_replacement = u'\uFFFD' # Set None to disable and empty string to
                                     # remove.
                                     # Default value is u"�"
+    #: Whether strip value before convertation or not
     strip = True
 
     def clean_value(self, value):
@@ -291,7 +261,7 @@ class Char(CharBased):
 
     #: Regexp to match input string
     regex = None
-
+    #: Error message for the case self.regex does not match
     error_regex = N_('field should match %(regex)s')
 
     def to_python(self, value):
@@ -317,6 +287,7 @@ class Int(Converter):
     Converts digital sequences to `int'
     """
 
+    #: Error message for the case value can not be converted to int
     error_notvalid = N_('it is not valid integer')
 
     def to_python(self, value):
