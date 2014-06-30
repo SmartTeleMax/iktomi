@@ -174,6 +174,7 @@ def request_filter(func):
     '''Decorator transforming function to regular WebHandler.
     This allows to chain other handlers after given.
     The next handler is passed as third argument into the wrapped function::
+
         @web.request_filter
         def wrapper(env, data, next_handler):
             do_something()

@@ -225,12 +225,14 @@ class subdomain(WebHandler):
 
     `subdomains`: a list of following values in order they are
     attempted to match:
+
         * string — domain part (without dots after and before)
         * empty string — no pattern is matched and there must not
           remain any unmatched domain part, subdomain matching is finished
         * `None` — no pattern is matched and but there can remain
           an unmatched domain part, subdomain matching can
           continue in next handlers
+
     `name`: shortcut for namespace handler chained next to subdomain:
         ::
 

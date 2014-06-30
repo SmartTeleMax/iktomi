@@ -138,7 +138,7 @@ structure using custom `Converter` subclasses.
 
 These classes are:
 
-* `FieldSet` represent a collection of various fields with different names,
+* `FieldSet` represents a collection of various fields with different names,
   converters and widgets. Purpose of `FieldSet` is to combine values into a
   dictionary or object (you can get an object of whatever type you want by
   defining your own converter for `FieldSet` with transformation rules to/from
@@ -186,6 +186,8 @@ These classes are:
 
     # {'characters': [{'first_name': 'Jar Jar', 'last_name': 'Binks'},
     #                 {'first_name': 'Jabba', 'last_name': 'Hutt'}]}
+
+:ref:`See more<forms-fields-aggregate>`.
 
 File Handling
 -------------

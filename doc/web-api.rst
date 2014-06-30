@@ -19,7 +19,7 @@ Basic handlers
 
    .. automethod:: __call__
 
-.. autoclass:: iktomi.web.request_filter
+.. autofunction:: iktomi.web.request_filter
 
 
 .. module:: iktomi.web.filters

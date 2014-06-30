@@ -391,13 +391,13 @@ class FieldList(AggregateField):
         return field
 
     @property
-    def indeces_input_name(self):
-        return self.input_name+'-indeces'
+    def indices_input_name(self):
+        return self.input_name+'-indices'
 
     def accept(self):
         old = self.python_data
         result = OrderedDict()
-        for index in self.form.raw_data.getall(self.indeces_input_name):
+        for index in self.form.raw_data.getall(self.indices_input_name):
             try:
                 #XXX: we do not convert index to int, just check it.
                 #     is it good idea?
@@ -417,19 +417,19 @@ class FieldList(AggregateField):
         return {self.name: self.clean_value}
 
     def set_raw_value(self, raw_data, value):
-        indeces = []
+        indices = []
         for index in range(1, len(value)+1):
             index = str(index)
             subvalue = value[index]
             subfield = self.field(name=index)
             subfield.set_raw_value(raw_data, subfield.from_python(subvalue))
-            indeces.append(index)
+            indices.append(index)
         try:
-            del raw_data[self.indeces_input_name]
+            del raw_data[self.indices_input_name]
         except KeyError:
             pass
-        for index in indeces:
-            raw_data.add(self.indeces_input_name, index)
+        for index in indices:
+            raw_data.add(self.indices_input_name, index)
 
 
 class FileField(Field):

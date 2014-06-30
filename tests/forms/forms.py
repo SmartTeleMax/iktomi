@@ -97,8 +97,8 @@ class FormClassInitializationTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [1, 2]})
-        self.assertEqual(form.raw_data, MultiDict([('list-indeces', '1'), 
-                                                   ('list-indeces', '2'),
+        self.assertEqual(form.raw_data, MultiDict([('list-indices', '1'), 
+                                                   ('list-indices', '2'),
                                                    ('list.1', '1'),
                                                    ('list.2', '2')
                                                   ]))
@@ -112,8 +112,8 @@ class FormClassInitializationTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [1, 2]})
-        self.assertEqual(form.raw_data, MultiDict([('list-indeces', '1'),
-                                                   ('list-indeces', '2'),
+        self.assertEqual(form.raw_data, MultiDict([('list-indices', '1'),
+                                                   ('list-indices', '2'),
                                                    ('list.1', '1'),
                                                    ('list.2', '2')
                                                   ]))
@@ -160,10 +160,10 @@ class FormErrorsTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [1, 2, 3]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2'), ('list-indeces', '3')), 
+        self.assertEqual(form.raw_data, MultiDict((('list-indices', '1'), ('list-indices', '2'), ('list-indices', '3')), 
                                                   **{'list.1': '1', 'list.2': '2', 'list.3': '3'}))
         self.assertEqual(form.python_data, {'list': [1, 2, 3]})
-        self.assert_(form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '3')), 
+        self.assert_(form.accept(MultiDict((('list-indices', '1'), ('list-indices', '3')), 
                                                   **{'list.1': '1', 'list.3': '3'})))
         self.assertEqual(form.python_data, {'list': [1, 3]})
 
@@ -304,14 +304,14 @@ class FormReadonlyFieldsTest(unittest.TestCase):
         env = AppEnvironment.create()
         form = _Form(env, initial={'list':[1, 2]})
         self.assertEqual(sorted(form.raw_data.items()),
-            [('list-indeces', '1'),
-             ('list-indeces', '2'),
+            [('list-indices', '1'),
+             ('list-indices', '2'),
              ('list.1', '1'), 
              ('list.2', '2')])
         self.assertEqual(form.python_data, {'list': [1, 2]})
-        self.assert_(form.accept(MultiDict((('list-indeces', '1'),
-                                            ('list-indeces', 'aa'),
-                                            ('list-indeces', '2')),
+        self.assert_(form.accept(MultiDict((('list-indices', '1'),
+                                            ('list-indices', 'aa'),
+                                            ('list-indices', '2')),
                                             **{'list.1': '2',
                                                'list.2': '3'})))
         self.assertEqual(form.python_data, {'list': [1, 2]})
@@ -327,10 +327,10 @@ class FormReadonlyFieldsTest(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list':[{'number':1}, {'number':2}]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'), ('list-indeces', '2')), **{'list.1.number': '1', 'list.2.number': '2'}))
+        self.assertEqual(form.raw_data, MultiDict((('list-indices', '1'), ('list-indices', '2')), **{'list.1.number': '1', 'list.2.number': '2'}))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
-        self.assert_(form.accept(MultiDict((('list-indeces', '1'), 
-                                            ('list-indeces', '2')),
+        self.assert_(form.accept(MultiDict((('list-indices', '1'), 
+                                            ('list-indices', '2')),
                                            **{'list.1.number': '2', 'list.2.number': '3'})))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
 
@@ -441,7 +441,7 @@ class FormFieldListErrorsTests(unittest.TestCase):
         form = _Form(env)
         self.assertEqual(form.raw_data, MultiDict())
         self.assertEqual(form.python_data, {'list': []})
-        self.assert_(not form.accept(MultiDict((('list-indeces', '1'), ('list-indeces', '2'), ('list-indeces', '3')), 
+        self.assert_(not form.accept(MultiDict((('list-indices', '1'), ('list-indices', '2'), ('list-indices', '3')), 
                                            **{'list.1': '1', 'list.2': '2', 'list.3': '3s'})))
         self.assertEqual(form.python_data, {'list': [1, 2, None]})
         self.assertEqual(form.errors, {'list.3': convs.Int.error_notvalid})
@@ -455,10 +455,10 @@ class FormFieldListErrorsTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = F(env, initial={'list': [1]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indeces', '1'),), 
+        self.assertEqual(form.raw_data, MultiDict((('list-indices', '1'),), 
                                            **{'list.1': '1'}))
         self.assertEqual(form.python_data, {'list': [1]})
-        self.assert_(not form.accept(MultiDict((('list-indeces', '2'), ('list-indeces', '1')), 
+        self.assert_(not form.accept(MultiDict((('list-indices', '2'), ('list-indices', '1')), 
                                            **{'list.1': '1s', 'list.2': '2'})))
         self.assertEqual(form.python_data, {'list': [2, 1]})
         self.assertEqual(form.errors, {'list.1': convs.Int.error_notvalid})
