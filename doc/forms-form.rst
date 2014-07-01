@@ -70,8 +70,35 @@ For details of rendering engine, see :ref:`Widgets<forms-widgets>` section.
 Filling Initial Data
 --------------------
 
-Storing Raw and Python Data
----------------------------
+Form may have initial value. This is useful, for example, for object editing
+forms::
+
+    initial = as_dict(obj)
+    form = ObjForm(initial=obj)
+
+Initial value is set to forms'python data, and then re-filled with each field's
+loaded initial value. At the same time form's raw value is updated to be in
+accordance with initial value.
+
+To learn how each field loads an initial value, see :ref:`Fields: Setting
+initial value<forms-fields-initial>` section.
+
 
 Providing Access to the Environment
 -----------------------------------
+
+Form instances have one more purpose. They store `env` object, a request-level
+iktomi environment, and provide an access to this environment for all other
+objects in form hierarchy: fields, convs, widgets::
+
+    form = MyForm(env)
+
+    form.env # same as
+    form.get_field(field_name).env # same as
+    form.get_field(field_name).widget.env # same as
+    form.get_field(field_name).conv.env
+
+The environment can be used to acces a database, template engine, webob.Request,
+configuration, etc.
+
+.. About iktomi environment object see.
