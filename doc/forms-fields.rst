@@ -133,17 +133,15 @@ fields into a dictionary or object::
     print form.python_data
     # {"name": {'first_name': 'Jar Jar', 'last_name': "Binks"}}
 
-To get object of custom type as a result of `FieldSet` you can define a custom
-converter for that field. The converter must implement dict-to-object
-convertation rules in `to_python` method and object-to-dict convertation rules
-in `from_python` method.
-
-You can see `iktomi.unstable.forms.convs.ModelDictConv` as an example of custom
-FieldSet converter.
-
-And, of course, you can add extra validation rules to this converter.
-
 FieldSet adds it's input name as prefix for child fields, joined with a dot.
+
+There is a way to get object of custom type as a result of `FieldSet`.
+See :ref:`Custom FieldSet Value Type<iktomi-forms-convs-fsobject>`.
+
+And, of course, you can add extra validation rules for FieldSet, including
+combined common validation of child values.
+See :ref:`Collective validation<iktomi-forms-convs-fsvalidation>`.
+
 
 FieldBlock
 ~~~~~~~~~~
