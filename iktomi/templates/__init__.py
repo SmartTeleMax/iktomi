@@ -10,10 +10,14 @@ from ..utils import cached_property
 __all__ = ('Template',)
 
 
-class TemplateError(Exception): pass
+class TemplateError(Exception):
+    '''Error raised in the case template can not be found'''
+    pass
 
 
 class Template(object):
+    '''Proxy class managing a set of template engines'''
+
     def __init__(self, *dirs, **kwargs):
         self.globs = kwargs.get('globs', {})
         self.cache = kwargs.get('cache', False)
@@ -25,6 +29,12 @@ class Template(object):
             self.engines[template_type] = engine
 
     def render(self, template_name, **kw):
+        '''
+        Given a template name and template vars.
+        Searches a template file based on engine set, and renders it 
+        with corresponding engine.
+        Returns a string.
+        '''
         logger.debug('Rendering template "%s"', template_name)
         vars = self.globs.copy()
         vars.update(kw)
@@ -48,7 +58,10 @@ class Template(object):
 
 class BoundTemplate(object):
     '''
-    Usage:
+    Object used to bound a `Template` object to iktomi environment.
+
+    Usage::
+
         template = Template(...) # global var
 
         def environment(env, data, nxt):
@@ -79,10 +92,15 @@ class BoundTemplate(object):
         return d
 
     def render(self, template_name, __data=None, **kw):
+        '''Given a template name and template data.
+        Renders a template and returns as string'''
         return self.template.render(template_name,
                                     **self._vars(__data, **kw))
 
-    def render_to_response(self, template_name, __data, content_type="text/html"):
+    def render_to_response(self, template_name, __data,
+                           content_type="text/html"):
+        '''Given a template name and template data.
+        Renders a template and returns webob.Response object'''
         resp = self.render(template_name, __data)
         return Response(resp,
                         content_type=content_type)

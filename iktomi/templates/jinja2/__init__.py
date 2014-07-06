@@ -13,6 +13,9 @@ TEMPLATE_DIR = join(CURDIR, 'templates')
 
 
 class TemplateEngine(object):
+    '''
+    Jinja2 engine adapter.
+    '''
     def __init__(self, paths, cache=False, extensions=None):
         '''
         paths - list of paths
@@ -30,5 +33,5 @@ class TemplateEngine(object):
         )
 
     def render(self, template_name, **kw):
-        'Interface method'
+        'Interface method called from `Template.render`'
         return self.env.get_template(template_name).render(**kw)

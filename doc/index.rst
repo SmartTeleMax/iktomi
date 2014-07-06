@@ -53,6 +53,14 @@ Cli
     cli-sqla
     cli-api
 
+Templates
+---------
+
+.. toctree::
+    :maxdepth: 2
+
+    templates-api
+
 Utilities
 ---------
 
