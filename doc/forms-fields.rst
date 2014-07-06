@@ -7,6 +7,8 @@ It can be atomic data (string, integer, boolean) or data aggregated from
 collection of other fields (`FieldList` or `FieldSet`, see below).
 Atomic values correspond to `Field` class.
 
+Fields implement :ref:`copy<form-copy>` interface.
+
 Field Naming
 ------------
 
