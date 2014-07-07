@@ -49,6 +49,7 @@ Converters
 ----------
 
 .. autoexception:: iktomi.forms.convs.ValidationError
+    :members:
 
 .. autoclass:: iktomi.forms.convs.Converter
     :members:
@@ -60,6 +61,7 @@ Converters
     :members:
 
     .. automethod:: clean_value
+    .. autoattribute:: strip
 
 
 .. autoclass:: iktomi.forms.convs.Int
@@ -72,6 +74,9 @@ Converters
     :members:
 
 .. autoclass:: iktomi.forms.convs.EnumChoice
+    :members:
+
+.. autoclass:: iktomi.forms.convs.BaseDatetime
     :members:
 
 .. autoclass:: iktomi.forms.convs.Datetime

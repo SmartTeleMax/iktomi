@@ -74,6 +74,11 @@ class BoundTemplate(object):
         self.env = env
 
     def get_template_vars(self):
+        '''
+        Redefine this method to add extra template variables
+        always available in loaded templates.
+
+        Called on each template render'''
         return {}
 
     @cached_property
@@ -100,7 +105,7 @@ class BoundTemplate(object):
     def render_to_response(self, template_name, __data,
                            content_type="text/html"):
         '''Given a template name and template data.
-        Renders a template and returns webob.Response object'''
+        Renders a template and returns `webob.Response` object'''
         resp = self.render(template_name, __data)
         return Response(resp,
                         content_type=content_type)

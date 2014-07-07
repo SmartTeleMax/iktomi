@@ -25,6 +25,13 @@ _all2 = locals().keys()
 
 
 class ValidationError(Exception):
+    '''
+    Error raised from inside of `Converter.to_python` or validator function.
+
+    `message`: error message for current validating field, for most cases.
+
+    `by_field`: dictionary containing {field-name: error message} pairs.
+    '''
 
     def __init__(self, message=None, by_field=None):
         self.message = message
@@ -72,10 +79,19 @@ class Converter(object):
     # obsolete parameters from previous versions
     _obsolete = frozenset(['max_length', 'min_length', 'null', 'min', 'max',
                            'multiple', 'initial'])
+    #: Flag of whether perform require check after :meth:`to_python` method or not.
+    #: The resulting value is checked to be non-empty (`[]`, `None`).
     required = False
     multiple = False
 
+    #: An ordered list of validator functions. Are passed as position args 
+    #: to the converter::
+    #:
+    #:     Int(validator1, validator2)
+    #:
+    #: When a converter is copied, new validators are added to existing ones.
     validators = ()
+
     #: Values are not accepted by Required validator
     error_required = N_('required field')
 
@@ -91,6 +107,7 @@ class Converter(object):
 
     @property
     def env(self):
+        '''A shortcut for `form.env`'''
         return self.field.env
 
     def _is_empty(self, value):
@@ -180,7 +197,7 @@ class validator(object):
 # Some useful validators
 
 def length(min_length, max_length):
-    'Sting length constraint'
+    'String length constraint'
     if min_length == max_length:
         message = M_(u'length of value must be exactly %(max)d symbol',
                      u'length of value must be exactly %(max)d symbols',
@@ -263,6 +280,8 @@ class Char(CharBased):
     regex = None
     #: Error message for the case self.regex does not match
     error_regex = N_('field should match %(regex)s')
+    #: Whether strip value before convertation or not
+    strip = True
 
     def to_python(self, value):
         # converting
@@ -330,11 +349,18 @@ class DisplayOnly(Converter):
 
 
 class EnumChoice(Converter):
-    '''In addition to Converter interface it must provide methods options and
-    get_label.'''
+    '''
+    In addition to Converter interface it must provide 
+    :meth:`options` and :meth:`get_label` methods.
+    '''
 
+    #: converter for value, before it is tested to be in a set of acceptable
+    #: values
     conv = Char()
-    # choices: [(python_value, label), ...]
+
+    #: acceptable choices list::
+    #:
+    #:     EnumChoice(choices=[(python_value, label), ...])
     choices = ()
     error_required = N_('you must select a value')
 
@@ -349,22 +375,34 @@ class EnumChoice(Converter):
         return value
 
     def options(self):
+        '''
+        Yields `(raw_value, label)` pairs for all acceptable choices.
+        '''
         conv = self.conv
         for python_value, label in self.choices:
             yield conv.from_python(python_value), label
 
     def get_label(self, value):
+        '''
+        Returns a label for given value
+        '''
         # XXX comment needed
         value = self.conv.accept(value, silent=True)
         return dict(self.choices).get(value)
 
 
 class BaseDatetime(CharBased):
+    '''
+    A base class for `Datetime`, `Date` and `Time` converters.
+    '''
 
+    #: format used to convert from string by `strptime`
+    #: and to convert to string by `strftime`.
     format = None
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
                     ('%m', 'MM'), ('%Y', 'YYYY'))
+    #: error message for wrong format.
     error_wrong_format = N_('Wrong format (%(readable_format)s)')
     nontext_replacement = ''
 
@@ -424,6 +462,10 @@ class Time(BaseDatetime):
 
 
 class SplitDateTime(Converter):
+    '''
+    Converter for FieldSet, allowing get a single `datetime.datetime`
+    object from two fields: date and time.
+    '''
 
     def from_python(self, value):
         if value is None:
@@ -455,8 +497,10 @@ class Html(Char):
         Html(add_allowed_elements=['span'], add_dom_callbacks=[myfunc])
     '''
 
+    #: a list of allowed HTML elements
     allowed_elements = frozenset(('a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u',
                                   'i', 'b', 'blockquote', 'sub', 'sup'))
+    #: a list of allowed HTML attributes
     allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
     drop_empty_tags = frozenset(('p', 'a', 'u', 'i', 'b', 'sub', 'sup'))
     allowed_protocols = frozenset(['ftp', 'http', 'https', 'mailto',
