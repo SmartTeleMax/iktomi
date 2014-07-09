@@ -43,30 +43,36 @@ class ImageEventHandlers(FileEventHandlers):
         if self.prop.image_sizes:
             session = object_session(target)
             persistent_name = getattr(target, self.prop.attribute_name)
-            ext = os.path.splitext(persistent_name)[1]
+            pn, ext = os.path.splitext(persistent_name)
+
+            image = self.prop.resize(image, self.prop.image_sizes)
+
+            if self.prop.force_rgb and image.mode not in ['RGB', 'RGBA']:
+                image = image.convert('RGB')
+                if ext == '.gif':
+                    image.format = 'jpeg'
+                    ext = '.jpeg'
+
+            if self.prop.enhancements:
+                for enhance, factor in self.prop.enhancements:
+                    image = enhance(image).enhance(factor)
+
+            if self.prop.filter:
+                image = image.filter(self.prop.filter)
+
             if not ext:
-                ext = '.' + image.format.lower()
                 # set extension if it is not set
+                ext = '.' + image.format.lower()
+
+            if pn + ext != persistent_name:
+                persistent_name = pn + ext
                 # XXX hack?
-                persistent_name += ext
                 setattr(target, self.prop.attribute_name, persistent_name)
 
             image_attr = getattr(target.__class__, self.prop.key)
             file_manager = persistent = session.find_file_manager(image_attr)
             persistent = file_manager.get_persistent(persistent_name,
                                                      self.prop.persistent_cls)
-
-            image = self.prop.resize(image, self.prop.image_sizes)
-            if self.prop.enhancements:
-                if image.mode not in ['RGB', 'RGBA']:
-                    image = image.convert('RGB')
-                for enhance, factor in self.prop.enhancements:
-                    image = enhance(image).enhance(factor)
-
-            if self.prop.filter:
-                if image.mode not in ['RGB', 'RGBA']:
-                    image = image.convert('RGB')
-                image = image.filter(self.prop.filter)
 
             transient = session.find_file_manager(image_attr).new_transient(ext)
             image.save(transient.path, quality=self.prop.quality)
@@ -121,6 +127,9 @@ class ImageProperty(FileProperty):
         self.fill_from = options.pop('fill_from', None)
         self.filter = options.pop('filter', None)
         self.enhancements = options.pop('enhancements', [])
+        self.force_rgb = self.enhancements or \
+                         self.filter or \
+                         options.pop('force_rgb', True)
         self.quality = options.pop('quality', 85)
 
         assert self.fill_from is None or self.image_sizes is not None

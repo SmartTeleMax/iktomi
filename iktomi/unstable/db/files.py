@@ -136,6 +136,7 @@ class FileManager(BaseFileManager):
                     bufsize = min(bufsize, length-pos)
                     data = inp.read(bufsize)
                     fp.write(data)
+                    assert bufsize == len(data)
                     pos += bufsize
 
     def create_transient(self, input_stream, original_name, length=None):
