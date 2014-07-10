@@ -4,12 +4,12 @@ __all__ = ['match', 'method', 'static_files', 'prefix',
            'subdomain', 'namespace', 'by_method']
 
 import logging
-import mimetypes
 import os
 from os import path
 import posixpath
 from urllib import unquote
 from webob.exc import HTTPMethodNotAllowed
+from webob.static import FileApp
 from .core import WebHandler, cases
 from . import Response
 from .url_templates import UrlTemplate
@@ -315,21 +315,22 @@ class static_files(WebHandler):
         return url_for_static
 
     def translate_path(self, pth):
-        # copied from SimpleHTTPServer
         """Translate a /-separated PATH to the local filename syntax."""
-        trailing_slash = pth.rstrip().endswith('/')
-        pth = posixpath.normpath(pth)
+        # initially copied from SimpleHTTPServer
         words = pth.split('/')
         words = filter(None, words)
         pth = self.location
         for word in words:
+            # Do not allow path separators other than /,
+            # drive names and . ..
             drive, word = os.path.splitdrive(word)
             head, word = os.path.split(word)
             if drive or head or word in (os.curdir, os.pardir):
                 return None
             pth = os.path.join(pth, word)
-        if trailing_slash:
-            pth += '/'
+
+        assert pth.startswith(self.location + '/')
+        assert pth == path.normpath(pth)
         return pth
 
     def static_files(self, env, data):
@@ -337,13 +338,7 @@ class static_files(WebHandler):
         if path_info.startswith(self.url):
             file_path = self.translate_path(path_info[len(self.url):])
             if file_path and path.exists(file_path) and path.isfile(file_path):
-                mime = mimetypes.guess_type(file_path)[0]
-                response = Response()
-                if mime:
-                    response.content_type = mime
-                with open(file_path, 'r') as f:
-                    response.write(f.read())
-                return response
+                return FileApp(file_path)
             else:
                 logger.info('Client requested non existent static data "%s"',
                             file_path)
