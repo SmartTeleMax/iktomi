@@ -14,17 +14,22 @@ class MyUploadedFile(TempUploadedFile):
     temp_path = os.path.join(cfg.MEDIA, 'temp')
     temp_url = '/media/temp/'
 
+def check_terms(conv, value):
+    if not value:
+        raise convs.ValidationError('Please, accept the terms os service')
+    return value
 
 class FileForm(Form):
 
     fields = [
-        Field('accept', label='I accept the terms of service',
-              conv=convs.Bool(required=True),
+        Field('accept',
+              label='I accept the terms of service',
+              conv=convs.Bool(check_terms),
               widget=widgets.CheckBox()),
         FileFieldSet('file', label='File',
                      file_cls=MyUploadedFile,
                      conv=FileFieldSetConv(required=True),
-                     template='fileinput.html'),
+                     widget=FileFieldSet.widget(template='fileinput.html')),
     ]
 
 #class OptionalFileForm(Form):
