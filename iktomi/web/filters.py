@@ -5,7 +5,9 @@ __all__ = ['match', 'method', 'static_files', 'prefix',
 
 import logging
 import mimetypes
+import os
 from os import path
+import posixpath
 from urllib import unquote
 from webob.exc import HTTPMethodNotAllowed
 from .core import WebHandler, cases
@@ -312,14 +314,29 @@ class static_files(WebHandler):
             return path.join(self.url, part)
         return url_for_static
 
+    def translate_path(self, pth):
+        # copied from SimpleHTTPServer
+        """Translate a /-separated PATH to the local filename syntax."""
+        trailing_slash = pth.rstrip().endswith('/')
+        pth = posixpath.normpath(pth)
+        words = pth.split('/')
+        words = filter(None, words)
+        pth = self.location
+        for word in words:
+            drive, word = os.path.splitdrive(word)
+            head, word = os.path.split(word)
+            if drive or head or word in (os.curdir, os.pardir):
+                return None
+            pth = os.path.join(pth, word)
+        if trailing_slash:
+            pth += '/'
+        return pth
+
     def static_files(self, env, data):
         path_info = unquote(env.request.path)
         if path_info.startswith(self.url):
-            static_path = path_info[len(self.url):]
-            while static_path[:1] in ('.', '/', '~'):
-                static_path = static_path[1:]
-            file_path = path.join(self.location, static_path)
-            if path.exists(file_path) and path.isfile(file_path):
+            file_path = self.translate_path(path_info[len(self.url):])
+            if file_path and path.exists(file_path) and path.isfile(file_path):
                 mime = mimetypes.guess_type(file_path)[0]
                 response = Response()
                 if mime:
