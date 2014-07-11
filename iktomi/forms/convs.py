@@ -29,9 +29,10 @@ class ValidationError(Exception):
     '''
     Error raised from inside of `Converter.to_python` or validator function.
 
-    `message`: error message for current validating field, for most cases.
-
-    `by_field`: dictionary containing {field-name: error message} pairs.
+    :param unicode message: error message for current validating
+        field, for most cases.
+    :param dict by_field: contains {field-name: error message} pairs.
+    :param dict format_args: used to format error message.
     '''
 
     default_message = N_('Something is wrong')
@@ -87,6 +88,8 @@ class Converter(object):
     :meth:`from_python` method takes value as python
     object and converts it to string or something
     else widget can display.
+
+    Accepts a list of validators as **\*args**.
     '''
 
     # obsolete parameters from previous versions
@@ -132,7 +135,8 @@ class Converter(object):
         checks `required` condition, applies filters and validators,
         catches ValidationError.
 
-        If `silent=False`, writes errors to `form.errors`.
+        :param value: a value to be accepted
+        :param silent=False: write errors to `form.errors` or not
         '''
         try:
             value = self.to_python(value)
@@ -316,7 +320,7 @@ class Char(CharBased):
 
 class Int(Converter):
     """
-    Converts digital sequences to `int'
+    Converts digital sequences to `int`
     """
 
     #: Error message for the case value can not be converted to int
@@ -339,7 +343,7 @@ class Int(Converter):
 
 class Bool(Converter):
     """
-    Converts to True/False
+    Converts to `True`/`False`
     """
     required = False
 
@@ -350,15 +354,6 @@ class Bool(Converter):
         if value:
             return 'checked'
         return ''
-
-
-class DisplayOnly(Converter):
-
-    def from_python(self, value):
-        return value
-
-    def to_python(self, value):
-        return self._existing_value
 
 
 class EnumChoice(Converter):
@@ -412,6 +407,8 @@ class BaseDatetime(CharBased):
     #: format used to convert from string by `strptime`
     #: and to convert to string by `strftime`.
     format = None
+    #: format used in error message. By default, generated automatically 
+    #: based `format` and `replacements` attributes
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
                     ('%m', 'MM'), ('%Y', 'YYYY'))
@@ -447,6 +444,9 @@ class BaseDatetime(CharBased):
 
 
 class Datetime(BaseDatetime):
+    '''
+    Subclass of `BaseDatetime` for `datetime.datetime`
+    '''
 
     format = '%d.%m.%Y, %H:%M'
 
@@ -455,6 +455,9 @@ class Datetime(BaseDatetime):
 
 
 class Date(BaseDatetime):
+    '''
+    Subclass of `BaseDatetime` for `datetime.date`
+    '''
 
     format = '%d.%m.%Y'
 
@@ -463,6 +466,9 @@ class Date(BaseDatetime):
 
 
 class Time(BaseDatetime):
+    '''
+    Subclass of `BaseDatetime` for `datetime.time`
+    '''
 
     format = '%H:%M'
 
@@ -474,6 +480,18 @@ class Time(BaseDatetime):
 
     def convert_datetime(self, value):
         return datetime.strptime(value, self.format).time()
+
+
+class DisplayOnly(Converter):
+    """
+    Does nothing, always returns a value of field before validation
+    """
+
+    def from_python(self, value):
+        return value
+
+    def to_python(self, value):
+        return self._existing_value
 
 
 class SplitDateTime(Converter):
@@ -507,24 +525,33 @@ class Html(Char):
     :class:`Sanitizer<iktomi.utils.html.Sanitizer>`
     options and passes them into Sanitizer's constructor.
 
-    For list properties it is allowed to use :meth:`add_%s` interface::
+    For list properties there is :meth:`add_%s` interface::
 
         Html(add_allowed_elements=['span'], add_dom_callbacks=[myfunc])
     '''
 
-    #: a list of allowed HTML elements
+    #: A list of allowed HTML elements
     allowed_elements = frozenset(('a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u',
                                   'i', 'b', 'blockquote', 'sub', 'sup'))
-    #: a list of allowed HTML attributes
+    #: A list of allowed HTML attributes
     allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
+    #: A list of tags to be dropped if they are empty
     drop_empty_tags = frozenset(('p', 'a', 'u', 'i', 'b', 'sub', 'sup'))
     allowed_protocols = frozenset(['ftp', 'http', 'https', 'mailto',
                                    'tel', 'webcal', 'callto'])
+    #: A dict containing an element name as a key and class test as value.
+    #: Test can be a set of strings (for simple strict match) or callable
+    #: accepting class name and returning True/False.
+    #: Set to `None` to allow all classes.
     allowed_classes = {}
+    #: A list of callbacks applied to DOM tree before it is
+    #: rendered back to HTML.
     dom_callbacks = []
     #: Function returning object marked safe for template engine.
-    #: For example: jinja Markup object
+    #: For example, `jinja2.Markup` object.
     Markup = lambda s, x: x
+    #: A Cleaner class. Be default, 'iktomi.utils.html.Cleaner' is used.
+    #: It is a `lxml.html.clean.Cleaner` subclass
     Cleaner = Cleaner
     class Nothing: pass
 
@@ -665,6 +692,10 @@ class FieldBlockConv(Converter):
 
 
 class SimpleFile(Converter):
+    '''
+    Simpliest converter for files. Returns a file from webob Request.POST
+    "as is".
+    '''
 
     def _is_empty(self, file):
         return file == u'' or file is None #XXX WEBOB ONLY !!!

@@ -100,6 +100,9 @@ Converters
 .. autoclass:: iktomi.forms.convs.ListOf
     :members:
 
+.. autoclass:: iktomi.forms.convs.FieldBlockConv
+    :members:
+
 .. autoclass:: iktomi.forms.convs.SimpleFile
     :members:
 
