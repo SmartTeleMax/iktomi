@@ -18,14 +18,15 @@ class TemplateEngine(object):
     '''
     def __init__(self, paths, cache=False, extensions=None):
         '''
-        paths - list of paths
-        extensions - list of extensions
+        :param paths: list of paths
+        :param extensions: list of extensions
         '''
         self.extensions = extensions or []
         self.env = self._make_env(paths)
 
 
     def _make_env(self, paths):
+        # XXX make an interface method
         return jinja2.Environment(
             loader=jinja2.FileSystemLoader(paths),
             autoescape=True,

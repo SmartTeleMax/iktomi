@@ -59,6 +59,7 @@ Templates
 .. toctree::
     :maxdepth: 2
 
+    templates
     templates-api
 
 Utilities
