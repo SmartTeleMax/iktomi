@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from copy import copy
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +16,18 @@ class RouteState(object):
         self.subdomain = self._domain
         self.request = request
 
-    def copy(self):
-        return copy(self)
+    def __copy__(self):
+        copy = object.__new__(type(self))
+        copy.__dict__.update(self.__dict__)
+        return copy
 
     def add_prefix(self, prefix):
-        self = self.copy()
+        self = self.__copy__()
         self._prefixes += (prefix,)
         return self
 
     def add_subdomain(self, subdomain, alias_matched):
-        self = self.copy()
+        self = self.__copy__()
         if subdomain:
             self.primary_subdomains = (subdomain, ) + self.primary_subdomains
             self.primary_domain = '.'.join(self.primary_subdomains)
