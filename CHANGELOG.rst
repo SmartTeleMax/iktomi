@@ -1,5 +1,5 @@
-4.1
----
+0.4.1
+-----
 
 * Correct path normalization for `static_files`.
 * `ValidationError.format_args` added.
