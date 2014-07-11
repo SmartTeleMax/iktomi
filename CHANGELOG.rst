@@ -5,15 +5,13 @@
 * `ValidationError.format_args` added.
 * `LaziCli` for lazy imports in manage.py file.
 
-Minor features
-~~~~~~~~~~~~~~
+**Minor features**
 
 * Regex can be set for url converters.
 * Default error message `ValidationError` with no args.
 * `webob.FileApp` is used for `static_files`.
 
-Minor Bugfixes
-~~~~~~~~
+**Minor Bugfixes**
 
 * Fixed tests for HTML sanitizer
 * Field.permissions still uses FieldPerm even if it is set by param
