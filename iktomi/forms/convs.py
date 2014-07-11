@@ -24,6 +24,7 @@ from ..utils import N_, M_, cached_property
 _all2 = locals().keys()
 
 
+
 class ValidationError(Exception):
     '''
     Error raised from inside of `Converter.to_python` or validator function.
@@ -33,7 +34,11 @@ class ValidationError(Exception):
     `by_field`: dictionary containing {field-name: error message} pairs.
     '''
 
+    default_message = N_('Something is wrong')
+
     def __init__(self, message=None, by_field=None, format_args=None):
+        if not (message or by_field):
+            message = self.default_message
         self.message = message
         self.by_field = by_field or {}
         self.format_args = format_args or {}

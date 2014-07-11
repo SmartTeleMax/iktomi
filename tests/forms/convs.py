@@ -38,6 +38,15 @@ class ConverterTests(unittest.TestCase):
         self.assertEqual(value, 'value')
         self.assertEqual(conv.field.form.errors, {})
 
+    def test_empty_error(self):
+        'Converter to_python method'
+        def validator(conv, value):
+            raise convs.ValidationError()
+        conv = init_conv(convs.Converter(validator))
+        conv.accept('value')
+        self.assertEqual(conv.field.form.errors,
+                         {'name': convs.ValidationError.default_message})
+
     def test_obsolete(self):
         'Convertor accepting obsolete parameters'
         self.assertRaises(TypeError, convs.Converter, null=True)
