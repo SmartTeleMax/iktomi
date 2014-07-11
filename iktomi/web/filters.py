@@ -91,11 +91,10 @@ class prefix(WebHandler):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
         if matched is not None:
             update_data(data, kwargs)
-            env._route_state.add_prefix(matched)
+            env._route_state = env._route_state.add_prefix(matched)
             result = self.next_handler(env, data)
             if result is not None:
                 return result
-            env._route_state.pop_prefix()
         return None
     __call__ = prefix
 
@@ -280,7 +279,8 @@ class subdomain(WebHandler):
                 matches = not subdomain
 
             if matches:
-                env._route_state.add_subdomain(self.primary, subd)
+                env._route_state = \
+                        env._route_state.add_subdomain(self.primary, subd)
                 return self.next_handler(env, data)
         return None
     __call__ = subdomain

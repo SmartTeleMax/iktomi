@@ -176,6 +176,7 @@ class Subdomain(unittest.TestCase):
         self.assertEqual(web.ask(app, 'http://l.k.host/').status_int, 200)
         self.assertEqual(web.ask(app, 'http://x.l.k.host/').status_int, 200)
         self.assertEqual(web.ask(app, 'http://j.host/').status_int, 200)
+        # Test if subdomains in routing are cleaned properly
         self.assertEqual(web.ask(app, 'http://j.host/j').status_int, 200)
         self.assert_(web.ask(app, 'http://x.k.host/') is None)
         self.assert_(web.ask(app, 'http://lk.host/') is None)
