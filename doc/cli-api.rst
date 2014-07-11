@@ -21,6 +21,9 @@ Cli
 
     .. automethod:: __call__
 
+.. autoclass:: iktomi.cli.lazy.LazyCli
+
+
 Development Server
 ------------------
 
