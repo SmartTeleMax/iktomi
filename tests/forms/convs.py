@@ -315,8 +315,10 @@ class DateTests(unittest.TestCase):
 
     def test_readable_format(self):
         '''Ensure that readable format string for DateTime conv is generated correctly'''
-        conv = convs.Date(format="%d.%m.%Y")()
+        conv = init_conv(convs.Date(format="%d.%m.%Y"))
         self.assertEqual(conv.readable_format, 'DD.MM.YYYY')
+        self.assertEqual(conv.accept('31'), None)
+        self.assertIn(conv.readable_format, conv.field.form.errors['name'])
 
     def test_from_python(self):
         '''Date converter from_python method'''

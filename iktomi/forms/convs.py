@@ -33,17 +33,22 @@ class ValidationError(Exception):
     `by_field`: dictionary containing {field-name: error message} pairs.
     '''
 
-    def __init__(self, message=None, by_field=None):
+    def __init__(self, message=None, by_field=None, format_args=None):
         self.message = message
         self.by_field = by_field or {}
+        self.format_args = format_args or {}
 
     def translate(self, env, message):
+        format_args = self.format_args
         if isinstance(message, M_):
             trans = env.ngettext(unicode(message.single),
                                  unicode(message.plural),
                                  message.count)
-            return trans % message.format_args
-        return env.gettext(message)
+            format_args = dict(format_args,
+                               **message.format_args)
+        else:
+            trans = env.gettext(message)
+        return trans % format_args
 
     def fill_errors(self, field):
         form = field.form
@@ -54,7 +59,10 @@ class ValidationError(Exception):
                 nm, f = name.lstrip('.'), field
                 for i in xrange(len(name) - len(nm) - 1):
                     f = f.parent
-                name = f.get_field(nm).input_name
+                rel_field = f.get_field(nm)
+                name = rel_field.input_name
+            else:
+                rel_field = form.get_field(name)
             form.errors[name] = self.translate(form.env, message)
 
     def __repr__(self):
@@ -428,7 +436,9 @@ class BaseDatetime(CharBased):
         try:
             return self.convert_datetime(value)
         except ValueError:
-            raise ValidationError(self.error_wrong_format)
+            format_args = dict(readable_format=self.readable_format)
+            raise ValidationError(self.error_wrong_format,
+                                  format_args=format_args)
 
 
 class Datetime(BaseDatetime):
