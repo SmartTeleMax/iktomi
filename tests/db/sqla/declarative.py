@@ -2,7 +2,14 @@ import unittest
 from sqlalchemy import Column, Integer, ForeignKey, \
                        PrimaryKeyConstraint, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import SAWarning
 from iktomi.db.sqla.declarative import AutoTableNameMeta, TableArgsMeta
+
+import warnings
+# sqlalchemy/sql/schema.py:496: SAWarning:
+# Can't validate argument 'dialect2_b';
+# can't locate any SQLAlchemy dialect named 'dialect2'
+warnings.filterwarnings('ignore', "can't validate argument", SAWarning)
 
 
 class AutoTableNameTest(unittest.TestCase):
