@@ -1,13 +1,26 @@
-.. automodule:: iktomi.utils
 
 Various utilities
 =================
+
+.. automodule:: iktomi.utils
 
 Property sugar
 -------------
 
 .. autofunction:: iktomi.utils.cached_property
 .. autofunction:: iktomi.utils.cached_class_property
+
+Versioned Storage
+-----------------
+
+.. automodule:: iktomi.utils.storage
+.. autoclass:: iktomi.utils.storage.VersionedStorage
+   :members:
+
+.. autoclass:: iktomi.utils.storage.StorageFrame
+.. autoclass:: iktomi.utils.storage.storage_property
+.. autoclass:: iktomi.utils.storage.storage_cached_property
+.. autoclass:: iktomi.utils.storage.storage_method
 
 Internationalization
 --------------------
@@ -18,6 +31,22 @@ Internationalization
    :members:
 
    .. automethod:: __mod__
+
+
+Paginator
+---------
+
+.. autoclass:: iktomi.utils.paginator.Paginator
+   :members:
+
+   .. automethod:: __nonzero__
+
+.. autoclass:: iktomi.utils.paginator.ModelPaginator
+   :members:
+
+.. autoclass:: iktomi.utils.paginator.FancyPageRange
+.. autoclass:: iktomi.utils.paginator.ChunkedPageRange
+
 
 Other
 -----

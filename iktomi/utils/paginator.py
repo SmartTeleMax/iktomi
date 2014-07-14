@@ -52,6 +52,8 @@ class FancyPageRange(object):
 
 class ChunkedPageRange(object):
 
+    '''Splits pages range into chunks.'''
+
     def __init__(self, size=10):
         self.paginator_chunk_size = self.size = size
 
@@ -103,14 +105,23 @@ class _PageURL(tuple):
 
 
 class Paginator(object):
+    '''
+    Paginator on top of `webob.Request`.
+    '''
 
+    #: limit of items on the page
     limit = 0
+    #: total count of items
     count = 0
+    #: name of GET argument
     page_param = 'page'
+    #: show host in URL or not
     show_host = False
+    #: items on the current page
     items = ()
-    impl = staticmethod(full_page_range) # Callable returning the list of pages
-                                         # to show in paginator.
+    #: Callable returning the list of pages
+    #: to show in paginator.
+    impl = staticmethod(full_page_range)
 
     def __init__(self, request, **kwargs):
         self.request = request
@@ -149,11 +160,18 @@ class Paginator(object):
     @cached_property
     def url(self):
         '''Current or base URL. Can be redefined via keyword argument on
-        initialization.'''
+        initialization.
+
+        Returns `iktomi.web.URL object.
+        `'''
         return URL.from_url(self.request.url, show_host=self.show_host)
 
     def page_url(self, page):
-        '''Returns URL for page.'''
+        '''
+        Returns URL for page, page is included as query parameter.
+
+        Can be redefined by keyword argument
+        '''
         if page is not None and page != 1:
             return self.url.qs_set(**{self.page_param: page})
         elif page is not None:
@@ -234,6 +252,10 @@ class Paginator(object):
 
 class ModelPaginator(Paginator):
 
+    '''
+    Paginator for sqlalchemy query.
+    '''
+
     def __init__(self, request, query, **kwargs):
         self._query = query
         Paginator.__init__(self, request, **kwargs)
@@ -244,6 +266,8 @@ class ModelPaginator(Paginator):
 
     @cached_property
     def items(self):
+        '''Items on the current page. Filled in automatically based on query
+        and currrent page'''
         return self.slice(self._query)
 
     def __getitem__(self, key):

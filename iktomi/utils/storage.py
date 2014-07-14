@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+'''
+Versioned storage, a classes for `env` and `data` objects.
+'''
 
 class StorageFrame(object):
+
+    '''A single frame in the storage'''
 
     def __init__(self, _parent_storage=None, **kwargs):
         self._parent_storage = _parent_storage
@@ -16,6 +21,18 @@ class StorageFrame(object):
         return d
 
 class VersionedStorage(object):
+    '''Storage implements state managing interface, allowing to safely set
+    attributes for `env` and `data` objects.
+
+    Safity means that state of the storage is rolled back every time routing
+    case returns ContinueRoute signal (`None`).
+
+    Be very accurate defining methods or properties for storage, choose correct
+    method or property type depending on what do you want to achieve.
+
+    Regular methods will hold the state of storage frame they are added to.
+    If you want to have an access to actual value, use storage property and
+    method decorators.'''
 
     def __init__(self, cls=StorageFrame, *args, **kwargs):
         kwargs['_root_storage'] = self
@@ -49,6 +66,7 @@ class VersionedStorage(object):
         delattr(self._storage, name)
 
     def as_dict(self):
+        '''Returns attributes of storage as dict'''
         return self._storage.as_dict()
 
 
