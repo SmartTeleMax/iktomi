@@ -48,9 +48,6 @@ Cli
 .. toctree::
     :maxdepth: 2
 
-    cli-app
-    cli-fcgi
-    cli-sqla
     cli-api
 
 Templates
