@@ -17,6 +17,9 @@ _illegal_s = re.compile(r"((^|[^%])(%%)*%s)")
 # calendar.  ;)
 
 def strftime(dt, fmt):
+    '''
+    `strftime` implementation working before 1900
+    '''
     if _illegal_s.search(fmt):
         raise TypeError("This strftime implementation does not handle %s")
     if dt.year > 1900:
