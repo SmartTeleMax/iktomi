@@ -1,4 +1,4 @@
-:tocdepth: 1
+:tocdepth: 2
 
 Cli Reference
 ===============

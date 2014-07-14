@@ -41,7 +41,7 @@ def manage(commands, argv=None, delim=':'):
                 elif len(splited) == 1:
                     k,v = splited[0], True
                 else:
-                    sys.exit('Error while parsing argument "%s"' % item)
+                    sys.exit('Error while parsing argument "{}"'.format(item))
                 kwargs[k] = v
             else:
                 args.append(item)
@@ -56,13 +56,14 @@ def manage(commands, argv=None, delim=':'):
             digest = commands[digest_name]
         except KeyError:
             _command_list(commands)
-            sys.exit('Command "%s" not found' % digest_name)
+            sys.exit('Command "{}" not found'.format(digest_name))
         try:
             if command is None:
                 if isinstance(digest, Cli):
                     help_ = digest.description(argv[0], digest_name)
                     sys.stdout.write(help_)
-                    sys.exit('ERROR: "%s" is command digest' % digest_name)
+                    sys.exit('ERROR: "{}" command digest requires command name'\
+                                .format(digest_name))
                     return
                 digest(*args, **kwargs)
             else:
@@ -70,7 +71,7 @@ def manage(commands, argv=None, delim=':'):
         except CommandNotFound:
             help_ = digest.description(argv[0], digest_name)
             sys.stdout.write(help_)
-            sys.exit('Command "%s:%s" not found' % (digest_name, command))
+            sys.exit('Command "{}:{}" not found'.format(digest_name, command))
     else:
         _command_list(commands)
         sys.exit('Please provide any command')
@@ -85,28 +86,44 @@ def _command_list(commands):
 class Cli(object):
     'Base class for all command digests'
 
+    def _fix_docstring(self, doc, indent=0):
+        doc = doc.lstrip('\n').rstrip()
+        doc = doc.split('\n\n')[0].rstrip(':')
+        doc =  '\n'.join('\t'*indent + x.lstrip()
+                         for x in doc.splitlines())
+        doc += '\n'
+        return doc
+
     def description(self, argv0='manage.py', command=None):
         '''Description outputed to console'''
         command = command or self.__class__.__name__.lower()
+        if not argv0.startswith('./') and not argv0.startswith('/'):
+            argv0 = './' + argv0
 
         import inspect
         _help = ''
+        _help += '%s\n' % command
         if self.__doc__:
-            _help += '%s\n' % self.__doc__
+            _help += self._fix_docstring(self.__doc__) +'\n'
         else:
             _help += '%s\n' % command
-        for attr in dir(self):
-            if attr.startswith('command'):
-                func = getattr(self, attr)
-                if func.__doc__:
-                    _help += "\t%s\n" % func.__doc__
-                else:
-                    comm = attr.replace('command_', '', 1)
-                    args = inspect.getargspec(func).args[1:]
-                    args = (' [' + '] ['.join(args) + ']') if args else ''
 
-                    _help += "\t./%s %s:%s%s\n" % \
-                                     (argv0, command, comm, args)
+        funcs = [(attr, getattr(self, attr))
+                 for attr in dir(self)
+                 if attr.startswith('command_')]
+        funcs.sort(key=lambda x: x[1].func_code.co_firstlineno)
+
+        for attr, func in funcs:
+            func = getattr(self, attr)
+            comm = attr.replace('command_', '', 1)
+            args = inspect.getargspec(func).args[1:]
+            args = (' [' + '] ['.join(args) + ']') if args else ''
+
+            _help += "\t{} {}:{}{}\n".format(
+                            argv0, command, comm, args)
+
+            if func.__doc__:
+                _help += self._fix_docstring(func.__doc__, 2)
         return _help
 
     def __call__(self, command_name, *args, **kwargs):
@@ -117,7 +134,7 @@ class Cli(object):
                 getattr(self, 'command_'+command_name)(*args, **kwargs)
             except ConverterError, e:
                 sys.stderr.write('One of the arguments for '
-                                 'command "%s" is wrong:\n' % command_name)
+                                 'command "{}" is wrong:\n'.format(command_name))
                 sys.stderr.write(str(e))
         else:
             raise CommandNotFound()
@@ -128,7 +145,8 @@ class argument(object):
 
     def __init__(self, arg_id, *validators, **kwargs):
         assert type(arg_id) in (int, str), \
-            'First argument of argument (%r) decorator must be "str" or "int" type' % arg_id
+            'First argument of argument ({!r}) decorator must be "str" '\
+            'or "int" type'.format(arg_id)
         self.arg_id = arg_id
         self.validators = validators
         self.required = kwargs.get('required', True)
@@ -140,9 +158,9 @@ class argument(object):
                 try:
                     arg = args[self.arg_id]
                 except IndexError:
-                    raise ConverterError('Total positional args = %d, '
-                        'but you apply converter for %d argument '
-                        '(indexing starts from 0)' % (len(args), self.arg_id))
+                    raise ConverterError('Total positional args = {:d}, '
+                        'but you apply converter for {:d} argument '
+                        '(indexing starts from 0)'.format(len(args), self.arg_id))
                 arg = self.convert(arg)
                 args[self.arg_id] = arg
             elif isinstance(self.arg_id, str):
@@ -151,7 +169,8 @@ class argument(object):
                     arg = self.convert(arg)
                     kwargs[self.arg_id] = arg
                 if not arg and self.required:
-                    raise ConverterError('Keyword argument "%s" is required' % self.arg_id)
+                    raise ConverterError('Keyword argument "{}" is required'\
+                                            .format(self.arg_id))
             return func(*args, **kwargs)
         return wrapper
 
@@ -165,12 +184,12 @@ class argument(object):
         try:
             return int(value)
         except Exception:
-            raise ConverterError('Cannot convert %r to int' % value)
+            raise ConverterError('Cannot convert {!r} to int'.format(value))
 
     @staticmethod
     def to_date(value):
         try:
             return datetime.datetime.strptime(value, '%d/%m/%Y').date()
         except Exception:
-            raise ConverterError('Cannot convert %r to date, please provide '
-                                 'string in format "dd/mm/yyyy"' % value)
+            raise ConverterError('Cannot convert {!r} to date, please provide '
+                                 'string in format "dd/mm/yyyy"'.format(value))

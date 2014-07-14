@@ -5,10 +5,9 @@ import sys
 import time
 import logging
 import threading
-from os import path
 from itertools import chain
 
-from .base import Cli, CommandNotFound
+from .base import Cli
 
 __all__ = ['App']
 
@@ -39,7 +38,14 @@ def flush_fds():
 
 
 class App(Cli):
-    'Development application'
+    '''
+    Development application
+
+    :param app: iktomi app
+    :param shell_namespace: dict with initial namespace for shell command
+    :param extra_files: extra files to watch and reload if they are changed
+    :param bootstrap: bootstrap function before called dev server is being runned
+    '''
     format = '%(levelname)s [%(name)s] %(message)s'
 
     def __init__(self, app, shell_namespace=None, extra_files=None, bootstrap=None):
@@ -49,6 +55,11 @@ class App(Cli):
         self.bootstrap = bootstrap
 
     def command_serve(self, host='', port='8000', level='debug'):
+        '''
+        Run development server with automated reload on code change::
+
+            ./manage.py app:serve [host] [port] [level]
+        '''
         logging.basicConfig(level=getattr(logging, level.upper()), format=self.format)
         if self.bootstrap:
             logger.info('Bootstraping...')
@@ -76,6 +87,13 @@ class App(Cli):
             sys.exit()
 
     def command_shell(self):
+        '''
+        Shell command::
+
+            ./manage.py app:shell
+
+        Executed with `self.shell_namespace` as local variables namespace.
+        '''
         from code import interact
         interact('Namespace %r' % self.shell_namespace,
                  local=self.shell_namespace)

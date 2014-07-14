@@ -41,6 +41,18 @@ def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
 
 
 class Flup(Cli):
+    '''
+    Flup FastCGI server
+
+    :param app: iktomi app
+    :param bind: socket file
+    :param logfile: log file
+    :param pidfile: PID file
+    :param cwd: current working directory
+    :param umask:
+    :param dict fastcgi_params: arguments accepted by flup `WSGIServer`,
+        plus `preforked`
+    '''
 
     def __init__(self, app, bind='', logfile=None, pidfile=None,
                  cwd='.', umask=002, fastcgi_params=None):
@@ -59,6 +71,11 @@ class Flup(Cli):
         self.fastcgi_params = fastcgi_params or {}
 
     def command_start(self, daemonize=False):
+        '''
+        Start a server::
+
+            ./manage.py flup:start [--daemonize]
+        '''
         if daemonize:
             safe_makedirs(self.logfile, self.pidfile)
         flup_fastcgi(self.app, bind=self.bind, pidfile=self.pidfile,
@@ -66,6 +83,11 @@ class Flup(Cli):
                      cwd=self.cwd, umask=self.umask, **self.fastcgi_params)
 
     def command_stop(self):
+        '''
+        Stop a server::
+
+            ./manage.py flup:stop
+        '''
         if self.pidfile:
             if not os.path.exists(self.pidfile):
                 sys.exit("Pidfile %r doesn't exist" % self.pidfile)

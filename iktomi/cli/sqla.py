@@ -19,7 +19,7 @@ __all__ = ['Sqla']
 def drop_everything(engine):
     '''Droping all tables and custom types (enums) using `engine`.
     Taken from http://www.sqlalchemy.org/trac/wiki/UsageRecipes/DropEverything
-    
+
     This method is more robust than `metadata.drop_all(engine)`. B.c. when
     you change a table or a type name, `drop_all` does not consider the old one.
     Thus, DB holds some unused entities.'''
@@ -58,7 +58,16 @@ def drop_everything(engine):
 
 
 class Sqla(Cli):
-    'SQLAlchemy database handling'
+    '''
+    SQLAlchemy database handling
+
+    :param session_maker: sqlalchemy session maker function
+    :param initial: a function acceptind sqlalchemy session and filling-in
+        a database with default initial data
+    :param dict generators: a dictionary with generator functions. Generator
+        functions should fill database with "lorem ipsum" data.
+        They accept sqlalchemy session and a cnumber of objects to be created.
+    '''
 
     def __init__(self, session_maker, initial=None, generators=None):
         self.session = session_maker()
@@ -76,6 +85,14 @@ class Sqla(Cli):
         return str(CreateTable(table))
 
     def command_create_tables(self):
+        '''
+        Create tables according sqlalchemy data model.
+
+        Is not a complex migration tool like alembic, just creates tables that
+        does not exist::
+
+            ./manage.py sqla:create_tables
+        '''
         print('Creating table(s)...')
         for metadata, engines in self._get_binds().items():
             for engine in engines:
@@ -86,6 +103,11 @@ class Sqla(Cli):
                     metadata.create_all(engine, tables=[table])
 
     def command_drop_tables(self):
+        '''
+        Drops all tables without dropping a database::
+
+            ./manage.py sqla:drop_tables
+        '''
         answer = raw_input('All data will lost. Are you sure? [y/N] ')
         if answer.strip().lower()!='y':
             sys.exit('Interrupted')
@@ -97,15 +119,30 @@ class Sqla(Cli):
         print('Done')
 
     def command_init(self):
+        '''
+        Runs init function::
+
+            ./manage.py sqla:init
+        '''
         if self.initial:
             self.initial(self.session)
 
     def command_reset(self):
+        '''
+        Drops all tables, creates tables and runs init function::
+
+            ./manage.py sqla:reset
+        '''
         self.command_drop_tables()
         self.command_create_tables()
         self.command_init()
 
     def command_schema(self, model_name=None):
+        '''
+        Prints current database schema (according sqlalchemy database model)::
+
+            ./manage.py sqla:reset
+        '''
         for table, engine in self.session._Session__binds.items():
             if model_name:
                 if model_name == table.name:
@@ -114,6 +151,17 @@ class Sqla(Cli):
                 print(self._schema(table))
 
     def command_gen(self, *names):
+        '''
+        Runs generator functions.
+
+        Run `docs` generator function::
+
+            ./manage.py sqla:gen docs
+
+        Run `docs` generator function with `count=10`::
+
+            ./manage.py sqla:gen docs:10
+        '''
         if not names:
             raise Exception('Please provide generator names')
         for name in names:
@@ -125,3 +173,4 @@ class Sqla(Cli):
             print('Generating `{0}` count={1}'.format(name, count))
             create(self.session, count)
             self.session.commit()
+

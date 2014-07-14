@@ -1,9 +1,10 @@
 import warnings, functools
 
 def deprecated(comment=None):
-    '''This is a decorator which can be used to mark functions
+    '''
+    This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emitted
-    when the function is used. Usage:
+    when the function is used. Usage::
 
         @deprecated()
         def foo():
