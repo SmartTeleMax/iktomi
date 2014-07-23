@@ -220,7 +220,7 @@ class Chain(unittest.TestCase):
         chain = h
         self.assertEqual(chain(VS(), VS()), 1)
 
-    @skip
+    @skip('need to be fixed')
     def test_chain_reuse_copy_count(self):
         'Assert chaining does not cause too much copy calls'
         class CountHandler(web.WebHandler):
