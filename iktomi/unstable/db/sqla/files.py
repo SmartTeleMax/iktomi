@@ -159,6 +159,9 @@ class FileAttribute(object):
             setattr(inst, self.attribute_name, name)
         elif isinstance(value, PersistentFile):
             setattr(inst, self.attribute_name, value.name)
+
+            for file_attr, target_attr in self.cache_properties.items():
+                setattr(inst, target_attr, getattr(value, file_attr))
         else:
             raise ValueError('File property value must be TransientFile, '\
                              'PersistentFile or None')
