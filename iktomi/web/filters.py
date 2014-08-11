@@ -81,6 +81,7 @@ class prefix(WebHandler):
     '''
 
     def __init__(self, _prefix, convs=None, name=None):
+        self.url = _prefix
         self.builder = UrlTemplate(_prefix, match_whole_str=False, 
                                    converters=convs)
         if name is not None:
