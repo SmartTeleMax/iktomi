@@ -202,6 +202,10 @@ class Field(BaseField):
         self.clean_value = self.conv.accept(value)
         return {self.name: self.clean_value}
 
+    def json_data(self):
+        value = self.from_python(self.clean_value)
+        return {self.name: {'text': value}}
+
 
 class AggregateField(BaseField):
 
@@ -290,6 +294,12 @@ class FieldSet(AggregateField):
         self.clean_value = self.conv.accept(result)
         return {self.name: self.clean_value}
 
+    def json_data(self):
+        data = {}
+        for field in self.fields:
+            data.update(field.json_data())
+        return {self.name: data}
+
 
 class FieldBlock(FieldSet):
     '''
@@ -347,6 +357,12 @@ class FieldBlock(FieldSet):
             if field_name in self.parent.python_data:
                 result[field_name] = self.parent.python_data[field_name]
         return result
+
+    def json_data(self):
+        data = {}
+        for field in self.fields:
+            data.update(field.json_data())
+        return data
 
 
 class FieldList(AggregateField):
@@ -430,6 +446,14 @@ class FieldList(AggregateField):
             pass
         for index in indices:
             raw_data.add(self.indices_input_name, index)
+
+    def json_data(self):
+        data = []
+        for index in self.form.raw_data.getall(self.indices_input_name):
+            field = self.field(name=str(index))
+            data.append(dict(field.json_data(),
+                             _key=int(index)))
+        return data
 
 
 class FileField(Field):

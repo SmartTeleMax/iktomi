@@ -86,6 +86,16 @@ class Widget(object):
         kwargs.setdefault('field', self.field)
         return self.__class__(**kwargs)
 
+    @property
+    def widget_name(self):
+        return type(self).__name__
+
+    def json(self):
+        return dict(widget=self.widget_name,
+                    key=self.field.name,
+                    required=self.field.conv.required,
+                    multiple=self.multiple)
+
 
 class TextInput(Widget):
 
@@ -150,6 +160,11 @@ class Select(Widget):
                     options=self.get_options(data['value']),
                     required=('true' if self.field.conv.required else 'false'))
 
+    def json(self):
+        data = Widget.prepare_data(self)
+        return dict(super(Select, self).json(),
+                    options=self.get_options(data['value']))
+
 
 class CheckBoxSelect(Select):
 
@@ -179,6 +194,10 @@ class CharDisplay(Widget):
                     value=self.getter(data['value']),
                     should_escape=self.escape)
 
+    def json(self):
+        return dict(super(CharDisplay, self).json(),
+                    should_escape=self.escape)
+
 
 class AggregateWidget(Widget):
 
@@ -189,6 +208,7 @@ class AggregateWidget(Widget):
 class FieldListWidget(AggregateWidget):
 
     template = 'widgets/fieldlist'
+    widget_name = "FieldList"
 
     def get_media(self):
         media = Widget.get_media(self)
@@ -203,16 +223,31 @@ class FieldListWidget(AggregateWidget):
                             field.from_python(field.get_initial()))
         return field.widget.render()
 
+    def json(self):
+        subfield = self.field.field(name='%'+self.field.input_name+'-index%')
+        initial = subfield.json_data() # XXX
+        return dict(super(FieldListWidget, self).json(),
+                    subwidget=dict(subfield.widget.json(),
+                                   initial=initial))
+
 
 class FieldSetWidget(AggregateWidget):
 
     template = 'widgets/fieldset'
+    widget_name = "FieldSet"
 
     def get_media(self):
         media = Widget.get_media(self)
         for field in self.field.fields:
             media += field.widget.get_media()
         return media
+
+    def json(self):
+        widgets = [x.widget.json() for x in
+                   self.field.fields]
+        return dict(super(FieldSetWidget, self).json(),
+                    widgets=widgets)
+
 
 
 class FieldBlockWidget(FieldSetWidget):
