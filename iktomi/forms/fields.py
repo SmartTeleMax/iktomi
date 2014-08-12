@@ -202,10 +202,6 @@ class Field(BaseField):
         self.clean_value = self.conv.accept(value)
         return {self.name: self.clean_value}
 
-    def json_data(self):
-        value = self.from_python(self.clean_value)
-        return {self.name: {'text': value}}
-
 
 class AggregateField(BaseField):
 
@@ -217,7 +213,7 @@ class AggregateField(BaseField):
         except LookupError:
             # XXX is this necessary?
             value = self.get_initial()
-        return self.from_python(value)
+        return self.conv.from_python(value)
 
 
 class FieldSet(AggregateField):
@@ -294,12 +290,6 @@ class FieldSet(AggregateField):
         self.clean_value = self.conv.accept(result)
         return {self.name: self.clean_value}
 
-    def json_data(self):
-        data = {}
-        for field in self.fields:
-            data.update(field.json_data())
-        return {self.name: data}
-
 
 class FieldBlock(FieldSet):
     '''
@@ -357,12 +347,6 @@ class FieldBlock(FieldSet):
             if field_name in self.parent.python_data:
                 result[field_name] = self.parent.python_data[field_name]
         return result
-
-    def json_data(self):
-        data = {}
-        for field in self.fields:
-            data.update(field.json_data())
-        return data
 
 
 class FieldList(AggregateField):
