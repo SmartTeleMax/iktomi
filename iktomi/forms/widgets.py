@@ -93,6 +93,11 @@ class Widget(object):
     def json(self):
         return dict(widget=self.widget_name,
                     key=self.field.name,
+                    render_type=self.render_type,
+                    label=self.field.label or '',
+                    hint=self.field.hint or '',
+                    id=self.field.id,
+                    input_name=self.field.input_name,
                     required=self.field.conv.required,
                     multiple=self.multiple)
 
