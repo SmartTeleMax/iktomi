@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict
 
 from .form import Form
-from .fields import BaseField, Field, FieldSet, FieldBlock, FieldList
+from .fields import Field, FieldSet, FieldBlock, FieldList
 from . import widgets_json
 
 class JSONForm(Form):
@@ -79,10 +79,10 @@ class JSONField(BaseJSONField, Field):
 
     def get_data(self):
         value = self.conv.from_python(self.clean_value)
-        return {self.name: {'text': value}}
+        return {self.name: value}
 
     def accept(self):
-        value = self.raw_value.get('text')
+        value = self.raw_value
         if not self._check_value_type(value):
             # XXX should this be silent or TypeError?
             value = [] if self.multiple else self._null_value
