@@ -54,7 +54,8 @@ class JSONForm(Form):
         self.errors = {}
         for field in self.fields:
             if field.writable:
-                self.python_data.update(field.accept())
+                value = self.raw_value.get(field.name)
+                self.python_data.update(field.accept(value))
             else:
                 # readonly field
                 self.raw_value.update(field.get_data())
@@ -63,13 +64,11 @@ class JSONForm(Form):
 
 class BaseJSONField(object):
 
+    raw_value = None
+
     def load_initial(self, initial):
         value = initial.get(self.name, self.get_initial())
         return {self.name: value}
-
-    @property
-    def raw_value(self):
-        return self.parent.raw_value.get(self.name) or {}
 
 
 class JSONField(BaseJSONField, Field):
@@ -81,12 +80,12 @@ class JSONField(BaseJSONField, Field):
         value = self.conv.from_python(self.clean_value)
         return {self.name: value}
 
-    def accept(self):
-        value = self.raw_value
-        if not self._check_value_type(value):
+    def accept(self, raw_value):
+        self.raw_value = raw_value
+        if not self._check_value_type(raw_value):
             # XXX should this be silent or TypeError?
-            value = [] if self.multiple else self._null_value
-        self.clean_value = self.conv.accept(value)
+            raw_value = [] if self.multiple else self._null_value
+        self.clean_value = self.conv.accept(raw_value)
         return {self.name: self.clean_value}
 
 
@@ -95,11 +94,15 @@ class JSONFieldSet(BaseJSONField, FieldSet):
     widget = widgets_json.FieldSetWidget()
     set_raw_value = None
 
-    def accept(self):
+    def accept(self, raw_value):
+        if not isinstance(raw_value, dict):
+            raw_value = {} # XXX
+        self.raw_value = raw_value
+
         result = dict(self.python_data)
         for field in self.fields:
             if field.writable:
-                result.update(field.accept())
+                result.update(field.accept(raw_value))
             else:
                 self.raw_value.update(field.get_data())
                 # readonly field
@@ -119,8 +122,8 @@ class JSONFieldBlock(BaseJSONField, FieldBlock):
 
     widget = widgets_json.FieldBlockWidget()
 
-    def accept(self):
-        JSONFieldSet.accept(self)
+    def accept(self, raw_value):
+        JSONFieldSet.accept(self, raw_value)
         return self.clean_value
 
     def load_initial(self, initial):
@@ -142,9 +145,12 @@ class JSONFieldList(BaseJSONField, FieldList):
     set_raw_value = False
     indices_input_name = None
 
-    def accept(self):
+    def accept(self, raw_values):
         old = self.python_data
-        raw_values = self.raw_value
+        if not isinstance(raw_values, list):
+            raw_values = []
+        self.raw_value = raw_values
+
         result = OrderedDict()
         for raw_value in raw_values:
             index = result['_key']
@@ -163,7 +169,7 @@ class JSONFieldList(BaseJSONField, FieldList):
                 if index in old:
                     result[field.name] = old[field.name]
             else:
-                result.update(field.accept())
+                result.update(field.accept(raw_value))
         self.clean_value = self.conv.accept(result)
         return {self.name: self.clean_value}
 
