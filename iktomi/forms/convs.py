@@ -224,17 +224,12 @@ def length(min_length, max_length):
 
     message = message % dict(min=min_length, max=max_length)
 
-    @validator(message)
-    def wrapper(conv, value):
-        if not value:
-            # it meens that this value is not required
-            return True
-        if len(value) < min_length:
-            return False
-        if len(value) > max_length:
-            return False
-        return True
-    return wrapper
+    def check_length(conv, value):
+        if value and not (min_length <= len(value) <= max_length):
+            raise ValidationError(message)
+        return value
+
+    return check_length
 
 
 @deprecated('Use length(min, max) instead.')
