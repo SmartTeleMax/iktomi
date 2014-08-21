@@ -101,6 +101,10 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.get_readable(),
                          u'http://сайт.рф/урл/?q=поиск')
 
+    def test_from_url_broken_unicode(self):
+        url = URL.from_url('/search?q=hello%E3%81')
+        self.assertEqual(url.get_readable(),
+                         u'/search?q=hello�')
 
 class UrlTemplateTest(unittest.TestCase):
     def test_match(self):

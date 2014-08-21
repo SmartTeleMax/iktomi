@@ -47,7 +47,8 @@ class URL(str):
         '''Parse string and get URL instance'''
         # url must be idna-encoded and url-quotted
         url = urlparse(url)
-        query = sum([[(k.decode('utf-8'), v.decode('utf-8'))
+        query = sum([[(k.decode('utf-8', errors="replace"),
+                       v.decode('utf-8', errors="replace"))
                       for v in values]
                      for k, values in parse_qs(url.query).items()], [])
         host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
