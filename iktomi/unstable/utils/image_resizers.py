@@ -49,14 +49,28 @@ class ResizeFit(Resizer):
 
 class ResizeCrop(Resizer):
 
+    def __init__(self, *args, **kwargs):
+        self.force = kwargs.pop('force', False)
+        Resizer.__init__(self, *args, **kwargs)
+        assert not (self.force and self.expand)
+
     def transformations(self, img, target_size):
         sw, sh = img.size
         tw, th = target_size
-        if not self.expand and sw<=tw and sh<=th:
+        if not self.expand and not self.force and sw<=tw and sh<=th:
             return []
+
+        if self.force and (sw<=tw or sh<=th):
+            if sw*th>sh*tw:
+                # crop right and left side
+                tw, th = sh*tw//th, sh
+            else:
+                # crop upper and bottom side
+                tw, th = sw, sw*th//tw
 
         transforms = []
         if sw*th>sh*tw:
+            # crop right and left side
             if sh!=th and (sh>th or self.expand):
                 w = sw*th//sh
                 transforms.append(('resize', (w, th)))
@@ -65,6 +79,7 @@ class ResizeCrop(Resizer):
                 wd = (sw-tw)//2
                 transforms.append(('crop', (wd, 0, tw+wd, sh)))
         else:
+            # crop upper and bottom side
             if sw!=tw and (sw>tw or self.expand):
                 h = sh*tw//sw
                 transforms.append(('resize', (tw, h)))
