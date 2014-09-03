@@ -30,7 +30,7 @@ _converter_pattern = re.compile(r'''^<
 _static_url_pattern = re.compile(r'^[^<]*?$')
 
 def construct_re(url_template, match_whole_str=False, converters=None,
-                 default_converter='string'):
+                 default_converter='string', _anonymous=False):
     '''
     url_template - str or unicode representing template
 
@@ -66,7 +66,10 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             variable = groups['variable']
             builder_params.append((variable, conv_object))
             url_params[variable] = conv_object
-            result += '(?P<%s>%s)' % (variable, conv_object.regex)
+            if _anonymous:
+                result += conv_object.regex
+            else:
+                result += '(?P<%s>%s)' % (variable, conv_object.regex)
             continue
         raise ValueError('Incorrect url template "%s"' % url_template)
     if match_whole_str:
