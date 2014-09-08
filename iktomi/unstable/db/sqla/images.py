@@ -45,20 +45,20 @@ class ImageEventHandlers(FileEventHandlers):
             persistent_name = getattr(target, self.prop.attribute_name)
             pn, ext = os.path.splitext(persistent_name)
 
-            image = self.prop.resize(image, self.prop.image_sizes)
+            image_crop = self.prop.resize(image, self.prop.image_sizes)
 
-            if self.prop.force_rgb and image.mode not in ['RGB', 'RGBA']:
-                image = image.convert('RGB')
+            if self.prop.force_rgb and image_crop.mode not in ['RGB', 'RGBA']:
+                image_crop = image_crop.convert('RGB')
                 if ext == '.gif':
-                    image.format = 'jpeg'
+                    image_crop.format = 'jpeg'
                     ext = '.jpeg'
 
             if self.prop.enhancements:
                 for enhance, factor in self.prop.enhancements:
-                    image = enhance(image).enhance(factor)
+                    image_crop = enhance(image_crop).enhance(factor)
 
             if self.prop.filter:
-                image = image.filter(self.prop.filter)
+                image_crop = image_crop.filter(self.prop.filter)
 
             if not ext:
                 # set extension if it is not set
@@ -75,7 +75,7 @@ class ImageEventHandlers(FileEventHandlers):
                                                      self.prop.persistent_cls)
 
             transient = session.find_file_manager(image_attr).new_transient(ext)
-            image.save(transient.path, quality=self.prop.quality)
+            image_crop.save(transient.path, quality=self.prop.quality)
             session.find_file_manager(image_attr).store(transient, persistent)
             return persistent
         else:
