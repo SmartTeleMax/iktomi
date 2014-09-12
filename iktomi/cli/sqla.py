@@ -82,7 +82,8 @@ class Sqla(Cli):
 
     def _schema(self, table):
         from sqlalchemy.schema import CreateTable
-        return str(CreateTable(table))
+        engine = self.session.get_bind(clause=table)
+        return str(CreateTable(table, bind=engine))
 
     def command_create_tables(self):
         '''
@@ -141,7 +142,7 @@ class Sqla(Cli):
         '''
         Prints current database schema (according sqlalchemy database model)::
 
-            ./manage.py sqla:reset
+            ./manage.py sqla:schema
         '''
         for table, engine in self.session._Session__binds.items():
             if model_name:
