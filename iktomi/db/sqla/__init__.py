@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from importlib import import_module
 from sqlalchemy import orm, create_engine
 from sqlalchemy.orm.query import Query
-from iktomi.utils import import_string
 from iktomi.utils.deprecation import deprecated
 
 
@@ -30,7 +30,7 @@ def multidb_binds(databases, package=None, engine_params=None):
     binds = {}
     for ref, uri in databases.items():
         md_ref = '.'.join(filter(None, [package, ref]))
-        metadata = import_string(md_ref, 'metadata')
+        metadata = import_module(md_ref).metadata
         engine = create_engine(uri, **engine_params)
         # Dot before [name] is required to allow setting logging level etc. for
         # all them at once.
