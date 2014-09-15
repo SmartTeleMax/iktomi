@@ -4,7 +4,7 @@
         {%- if widget.classname %} class="{{ widget.classname }}"{% endif %}
         {%- if widget.size %} size="{{ widget.size }}"{% endif %}>
   {% for option in options -%}
-  <option value="{{ option.value|escape }}"
+  <option value="{{ option.value|forceescape }}"
           {%- if option.selected %} selected="selected" class="selected"{% endif %}>
     {{- option.title|escape -}}
   </option>
