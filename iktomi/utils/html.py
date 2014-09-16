@@ -3,7 +3,6 @@
 from urlparse import urlsplit
 from lxml import html
 from lxml.html import clean
-import lxml.etree as ET
 # XXX move to iktomi.cms?
 
 class Cleaner(clean.Cleaner):
