@@ -27,7 +27,7 @@ class Cleaner(clean.Cleaner):
             doc = doc.getroot()
         self.extra_clean(doc)
 
-    def transform_br_to_par(self, doc):
+    def transform_br_to_p(self, doc):
         for br in doc.xpath("/div/br"):
             index = doc.index(br)
             # left par
@@ -139,7 +139,7 @@ class Cleaner(clean.Cleaner):
             callback(doc)
         
         if not self.allow_br_on_top:
-            self.transform_br_to_par(doc)
+            self.transform_br_to_p(doc)
 
         if self.forbid_on_top:
             self.clean_top(doc)
