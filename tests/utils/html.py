@@ -15,6 +15,7 @@ class TestSanitizer(unittest.TestCase):
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
+            'forbid_on_top': [],
             #'strip_whitespace': True,
         }
 
@@ -136,15 +137,37 @@ class TestSanitizer(unittest.TestCase):
     def test_no_initial_data(self):
         self.attrs = {}
         res = self.sanitize('a<p color: #000" class="2">p</p><script></script>')
-        self.assertEqual(res, 'a<p>p</p>')
+        self.assertEqual(res, '<p>a</p><p>p</p>')
 
     @unittest.skip('lxml does not support this option')
     def test_escaping(self):
         self.attrs['escape_invalid_tags'] = True
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
+    
+    def test_forbid_on_top(self):
+        self.attrs['forbid_on_top'] = ['b', 'i', 'br']
+       
+        self.assertSanitize("head<b>bold</b>tail",
+                            "<p>head<b>bold</b>tail</p>")
 
+        self.assertSanitize("head<b>bold</b>boldtail<i>italic</i><p>par</p>tail",
+                            "<p>head<b>bold</b>boldtail<i>italic</i></p><p>par</p><p>tail</p>")
+        
+        self.assertSanitize("<p>par</p><b>bla</b>text<p>blabla</p>",
+                            "<p>par</p><p><b>bla</b>text</p><p>blabla</p>")
 
+        self.assertSanitize("<p>par</p>text<b>bla</b>text<p>blabla</p>",
+                             "<p>par</p><p>text<b>bla</b>text</p><p>blabla</p>")
+
+        self.assertSanitize('first<br>second<br>third',
+                            '<p>first</p><p>second</p><p>third</p>')
+
+        self.assertSanitize('first<br>second<p>third</p>',
+                             '<p>first</p><p>second</p><p>third</p>')
+        
+        self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
+                             '<p>first</p><p>tail</p><p>second</p><p>third</p>')
 
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
