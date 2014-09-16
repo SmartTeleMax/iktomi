@@ -1,11 +1,13 @@
 import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, \
                        ForeignKeyConstraint, create_engine
-from sqlalchemy.orm import sessionmaker, relationship, composite
+from sqlalchemy.orm import sessionmaker, relationship, composite, \
+                           column_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.sql.functions import char_length
 from testalchemy import DBHistory
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.unstable.db.sqla import replication
@@ -1044,3 +1046,42 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(c2_a.data, 'a')
         c2_b = self.db.query(C2LangB).get(2)
         self.assertIsNone(c2_b.data)
+
+    def test_replicate_expression_property(self):
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            expr = column_property(data+' '+data)
+            func = column_property(char_length(data))
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            expr = column_property(data+' '+data)
+            func = column_property(char_length(data))
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2, data='aaa')
+            self.db.add(a1)
+        self.assertEqual(a1.expr, 'aaa aaa')
+        self.assertEqual(a1.func, 3)
+        # Test when reflection doesn't exist
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.data, 'aaa')
+        self.assertEqual(a2.expr, 'aaa aaa')
+        self.assertEqual(a2.func, 3)
+        # Update data
+        with self.db.begin():
+            a1.data = 'aaaaa'
+        # Test when reflection is already loaded
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_updated_one(A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.data, 'aaaaa')
+        self.assertEqual(a2.expr, 'aaaaa aaaaa')
+        self.assertEqual(a2.func, 5)
