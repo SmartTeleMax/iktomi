@@ -17,7 +17,11 @@ class Cleaner(clean.Cleaner):
     allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
-    forbid_on_top = []
+    forbid_on_top = ['b', 'big', 'i', 'small', 'tt',
+                     'abbr', 'acronym', 'cite', 'code',
+                     'dfn', 'em', 'kbd', 'strong', 'samp',
+                     'var', 'a', 'bdo', 'br', 'map', 'object',
+                     'q', 'span', 'sub', 'sup']
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
@@ -41,7 +45,7 @@ class Cleaner(clean.Cleaner):
         for child in doc.getchildren():
             i = doc.index(child)
             
-            if child.tag == 'br':
+            if child.tag == 'br' and 'br' in self.forbid_on_top:
                 par = html.Element('p')
                 doc.insert(i, par)
                 par.text = child.tail

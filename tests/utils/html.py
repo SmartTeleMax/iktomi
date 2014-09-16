@@ -15,6 +15,7 @@ class TestSanitizer(unittest.TestCase):
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
+            'forbid_on_top': [],
             #'strip_whitespace': True,
         }
 
@@ -136,7 +137,7 @@ class TestSanitizer(unittest.TestCase):
     def test_no_initial_data(self):
         self.attrs = {}
         res = self.sanitize('a<p color: #000" class="2">p</p><script></script>')
-        self.assertEqual(res, 'a<p>p</p>')
+        self.assertEqual(res, '<p>a</p><p>p</p>')
 
     @unittest.skip('lxml does not support this option')
     def test_escaping(self):
@@ -145,7 +146,7 @@ class TestSanitizer(unittest.TestCase):
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
     
     def test_forbid_on_top(self):
-        self.attrs['forbid_on_top'] = ['b', 'i']
+        self.attrs['forbid_on_top'] = ['b', 'i', 'br']
        
         self.assertSanitize("head<b>bold</b>tail",
                             "<p>head<b>bold</b>tail</p>")
