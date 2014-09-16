@@ -10,7 +10,8 @@ from iktomi import web
 from iktomi.web.app import Application, AppEnvironment
 from iktomi.utils.storage import VersionedStorage
 from iktomi.utils import cached_property
-from webtest import TestApp
+# import as TA because py.test generates warning about TestApp name
+from webtest import TestApp as TA
 
 skip = getattr(unittest, 'skip', lambda x: None)
 
@@ -69,7 +70,7 @@ class ApplicationTests(unittest.TestCase):
         self.assertRaises(TypeError, self.app, env, data)
 
     def test_wsgi(self):
-        testapp = TestApp(self.wsgi_app)
+        testapp = TA(self.wsgi_app)
         self.assertEqual(testapp.get('/').body, 'index')
 
     def test_env_class(self):

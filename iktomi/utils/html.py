@@ -33,26 +33,27 @@ class Cleaner(clean.Cleaner):
     def clean_top(self, doc):
         par = None
         first_par = False
-        # create paragraph if there text in the beginning of top 
-        if doc.text:
+        # create paragraph if there text in the beginning of top
+        if (doc.text or "").strip():
             par = html.Element('p')
             doc.insert(0, par)
             par.text = doc.text
             doc.text = None
             # remember if first paragraph created from text
             first_par = True
-        
+
         for child in doc.getchildren():
             i = doc.index(child)
-            
+
             if child.tag == 'br' and 'br' in self.forbid_on_top:
                 par = html.Element('p')
                 doc.insert(i, par)
                 par.text = child.tail
                 doc.remove(child)
                 continue
-            
-            if child.tag not in self.forbid_on_top and child.tail:
+
+            if child.tag not in self.forbid_on_top and \
+                    (child.tail or "").strip():
                 par = html.Element('p')
                 par.text = child.tail
                 child.tail = None
@@ -68,7 +69,7 @@ class Cleaner(clean.Cleaner):
                 if first_par and i == 0:
                     continue
                 par = None
-           
+
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
             scheme, netloc, path, query, fragment = urlsplit(el.attrib['href'])
@@ -87,8 +88,7 @@ class Cleaner(clean.Cleaner):
                         el.drop_tag()
                     else:
                         el.attrib.pop(attr)
-        
-        
+
         if self.a_without_href:
             for link in doc.xpath('//a[not(@href)]'):
                 link.drop_tag()
