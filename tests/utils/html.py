@@ -143,9 +143,32 @@ class TestSanitizer(unittest.TestCase):
         self.attrs['escape_invalid_tags'] = True
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
+    
+    def test_forbid_on_top(self):
+        self.attrs['forbid_on_top'] = ['b', 'i']
+       
+        self.assertSanitize("head<b>bold</b>tail",
+                            "<p>head<b>bold</b>tail</p>")
+
+        self.assertSanitize("head<b>bold</b>boldtail<i>italic</i><p>par</p>tail",
+                            "<p>head<b>bold</b>boldtail<i>italic</i></p><p>par</p><p>tail</p>")
+        
+        self.assertSanitize("<p>par</p><b>bla</b>text<p>blabla</p>",
+                            "<p>par</p><p><b>bla</b>text</p><p>blabla</p>")
+
+        self.assertSanitize("<p>par</p>text<b>bla</b>text<p>blabla</p>",
+                             "<p>par</p><p>text<b>bla</b>text</p><p>blabla</p>")
 
 
+    def test_br_to_par(self):
+        self.attrs['allow_br_on_top'] = False
 
+        self.assertSanitize('first<br>second<br>third',
+                            '<p>first</p><p>second</p><p>third</p>')
+
+        self.assertSanitize('first<br>second<p>third</p>',
+                             '<p>first</p><p>second</p><p>third</p>')
+       
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
     return clean.strip()

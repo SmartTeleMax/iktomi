@@ -3,7 +3,7 @@
 from urlparse import urlsplit
 from lxml import html
 from lxml.html import clean
-
+import lxml.etree as ET
 # XXX move to iktomi.cms?
 
 class Cleaner(clean.Cleaner):
@@ -18,6 +18,8 @@ class Cleaner(clean.Cleaner):
     allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
+    forbid_on_top = []
+    allow_br_on_top = True
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
@@ -26,6 +28,67 @@ class Cleaner(clean.Cleaner):
             doc = doc.getroot()
         self.extra_clean(doc)
 
+    def transform_br_to_par(self, doc):
+        for br in doc.xpath("/div/br"):
+            index = doc.index(br)
+            # left par
+            par = html.Element('p')
+            lft = br.getprevious()
+            
+            while lft is not None and lft.tag not in ('p', 'br'):
+                par.insert(0, lft)
+                lft = br.getprevious()
+            
+            if doc.text is not None:
+                par.text = doc.text
+                doc.text = None
+            if par.text or par.getchildren():
+                doc.insert(index, par)
+            # right par
+            par = html.Element('p')
+            
+            if br.tail:
+                par.text = br.tail
+            rgt = br.getnext()
+            
+            while rgt is not None and rgt.tag not in ('p', 'br'):
+                par.append(rgt)
+                rgt = br.getnext()
+    
+            if par.text or par.getchildren():
+                doc.insert(index + 1, par)
+                
+            doc.remove(br)
+
+    def clean_top(self, doc):
+        par = None
+        first_par = False
+        # create paragraph if there text in the beginning of top 
+        if doc.text:
+            par = html.Element('p')
+            doc.insert(0, par)
+            par.text = doc.text
+            doc.text = None
+            # remember if first paragraph created from text
+            first_par = True
+        
+        for i, child in enumerate(doc.getchildren()):
+            if child.tag in self.forbid_on_top:
+                if par is None:
+                    par = html.Element('p')
+                    doc.insert(i, par)
+                par.append(child)
+            else:
+                if first_par and i == 0:
+                    continue
+                if child.tag not in self.forbid_on_top and child.tail:
+                    par = html.Element('p')
+                    par.text = child.tail
+                    child.tail = None
+                    doc.insert(i+1, par)
+                else:
+                    par = None
+           
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
             scheme, netloc, path, query, fragment = urlsplit(el.attrib['href'])
@@ -44,8 +107,8 @@ class Cleaner(clean.Cleaner):
                         el.drop_tag()
                     else:
                         el.attrib.pop(attr)
-
-
+        
+        
         if self.a_without_href:
             for link in doc.xpath('//a[not(@href)]'):
                 link.drop_tag()
@@ -75,6 +138,12 @@ class Cleaner(clean.Cleaner):
 
         for callback in self.dom_callbacks:
             callback(doc)
+        
+        if not self.allow_br_on_top:
+            self.transform_br_to_par(doc)
+
+        if self.forbid_on_top:
+            self.clean_top(doc)
 
 
 def sanitize(value, **kwargs):
