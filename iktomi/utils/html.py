@@ -18,7 +18,6 @@ class Cleaner(clean.Cleaner):
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
     forbid_on_top = []
-    allow_br_on_top = True
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
@@ -26,38 +25,6 @@ class Cleaner(clean.Cleaner):
             # ElementTree instance, instead of an element
             doc = doc.getroot()
         self.extra_clean(doc)
-
-    def transform_br_to_p(self, doc):
-        for br in doc.xpath("/div/br"):
-            index = doc.index(br)
-            # left par
-            par = html.Element('p')
-            lft = br.getprevious()
-            
-            while lft is not None and lft.tag not in ('p', 'br'):
-                par.insert(0, lft)
-                lft = br.getprevious()
-            
-            if doc.text is not None:
-                par.text = doc.text
-                doc.text = None
-            if par.text or par.getchildren():
-                doc.insert(index, par)
-            # right par
-            par = html.Element('p')
-            
-            if br.tail:
-                par.text = br.tail
-            rgt = br.getnext()
-            
-            while rgt is not None and rgt.tag not in ('p', 'br'):
-                par.append(rgt)
-                rgt = br.getnext()
-    
-            if par.text or par.getchildren():
-                doc.insert(index + 1, par)
-                
-            doc.remove(br)
 
     def clean_top(self, doc):
         par = None
@@ -71,7 +38,23 @@ class Cleaner(clean.Cleaner):
             # remember if first paragraph created from text
             first_par = True
         
-        for i, child in enumerate(doc.getchildren()):
+        for child in doc.getchildren():
+            i = doc.index(child)
+            
+            if child.tag == 'br':
+                par = html.Element('p')
+                doc.insert(i, par)
+                par.text = child.tail
+                doc.remove(child)
+                continue
+            
+            if child.tag not in self.forbid_on_top and child.tail:
+                par = html.Element('p')
+                par.text = child.tail
+                child.tail = None
+                doc.insert(i+1, par)
+                continue
+
             if child.tag in self.forbid_on_top:
                 if par is None:
                     par = html.Element('p')
@@ -80,13 +63,7 @@ class Cleaner(clean.Cleaner):
             else:
                 if first_par and i == 0:
                     continue
-                if child.tag not in self.forbid_on_top and child.tail:
-                    par = html.Element('p')
-                    par.text = child.tail
-                    child.tail = None
-                    doc.insert(i+1, par)
-                else:
-                    par = None
+                par = None
            
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
@@ -137,9 +114,6 @@ class Cleaner(clean.Cleaner):
 
         for callback in self.dom_callbacks:
             callback(doc)
-        
-        if not self.allow_br_on_top:
-            self.transform_br_to_p(doc)
 
         if self.forbid_on_top:
             self.clean_top(doc)

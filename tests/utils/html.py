@@ -159,16 +159,15 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize("<p>par</p>text<b>bla</b>text<p>blabla</p>",
                              "<p>par</p><p>text<b>bla</b>text</p><p>blabla</p>")
 
-
-    def test_br_to_par(self):
-        self.attrs['allow_br_on_top'] = False
-
         self.assertSanitize('first<br>second<br>third',
                             '<p>first</p><p>second</p><p>third</p>')
 
         self.assertSanitize('first<br>second<p>third</p>',
                              '<p>first</p><p>second</p><p>third</p>')
-       
+        
+        self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
+                             '<p>first</p><p>tail</p><p>second</p><p>third</p>')
+
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
     return clean.strip()
