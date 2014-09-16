@@ -4,6 +4,7 @@ try:
 except ImportError:       # pragma: no cover
     from PIL import Image # pragma: no cover
 from sqlalchemy.orm.session import object_session
+from sqlalchemy.orm.util import identity_key
 from iktomi.unstable.utils.image_resizers import ResizeFit
 from iktomi.utils import cached_property
 from ..files import TransientFile, PersistentFile
@@ -99,6 +100,12 @@ class ImageEventHandlers(FileEventHandlers):
             if value is None:
                 base = getattr(target, self.prop.fill_from)
                 if base is None:
+                    return
+                if not os.path.isfile(base.path):
+                    logger.warn('Original file is absent %s %s %s',
+                                identity_key(instance=target),
+                                self.prop.fill_from,
+                                base.path)
                     return
 
                 ext = os.path.splitext(base.name)[1]

@@ -2,7 +2,7 @@
 
 from ..utils import weakproxy
 from . import convs
-from .media import FormMedia, FormCSSRef, FormJSRef
+from .media import FormMedia
 
 class Widget(object):
 
