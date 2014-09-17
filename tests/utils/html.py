@@ -15,7 +15,7 @@ class TestSanitizer(unittest.TestCase):
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
-            'forbid_on_top': [],
+            'wrap_in_p': [],
             #'strip_whitespace': True,
         }
 
@@ -137,7 +137,7 @@ class TestSanitizer(unittest.TestCase):
     def test_no_initial_data(self):
         self.attrs = {}
         res = self.sanitize('a<p color: #000" class="2">p</p><script></script>')
-        self.assertEqual(res, '<p>a</p><p>p</p>')
+        self.assertEqual(res, 'a<p>p</p>')
 
     @unittest.skip('lxml does not support this option')
     def test_escaping(self):
@@ -145,8 +145,9 @@ class TestSanitizer(unittest.TestCase):
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
 
-    def test_forbid_on_top(self):
-        self.attrs['forbid_on_top'] = ['b', 'i', 'br']
+    def test_wrap_in_p(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
 
         self.assertSanitize("head<b>bold</b>tail",
                             "<p>head<b>bold</b>tail</p>")
@@ -169,17 +170,28 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
                              '<p>first</p><p>tail</p><p>second</p><p>third</p>')
 
-    def test_forbid_on_top_trailing_br(self):
+    def test_wrap_in_p_trailing_br(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
         self.assertSanitize("<p>head</p><br> ",
-                            "<p>head</p> ") # the white space can be absent
+                            "<p>head</p>")
 
-    def test_forbid_on_top_double_br(self):
-        self.attrs['forbid_on_top'] = ['b', 'i', 'br']
+    def test_wrap_in_p_double_br(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+
         self.assertSanitize("head<br><br>tail",
                             "<p>head</p><p>tail</p>")
 
         self.assertSanitize("head<br> <br>tail",
-                            "<p>head</p> <p>tail</p>") # the white space can be absent
+                            "<p>head</p><p>tail</p>")
+
+        self.assertSanitize("<br><br><br><br>", "")
+
+    def test_wrap_inline_tags(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.assertSanitize('first<br>second<br>third',
+                            'first<br>second<br>third')
 
 
 def spaceless(clean, **kwargs):

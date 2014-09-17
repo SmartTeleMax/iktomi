@@ -17,11 +17,14 @@ class Cleaner(clean.Cleaner):
     allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
-    forbid_on_top = ['b', 'big', 'i', 'small', 'tt',
-                     'abbr', 'acronym', 'cite', 'code',
-                     'dfn', 'em', 'kbd', 'strong', 'samp',
-                     'var', 'a', 'bdo', 'br', 'map', 'object',
-                     'q', 'span', 'sub', 'sup']
+
+    wrap_inline_tags = False
+    # Tags to wrap in paragraphs on top 
+    wrap_in_p = ['b', 'big', 'i', 'small', 'tt',
+                 'abbr', 'acronym', 'cite', 'code',
+                 'dfn', 'em', 'kbd', 'strong', 'samp',
+                 'var', 'a', 'bdo', 'br', 'map', 'object',
+                 'q', 'span', 'sub', 'sup']
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
@@ -45,14 +48,15 @@ class Cleaner(clean.Cleaner):
         for child in doc.getchildren():
             i = doc.index(child)
 
-            if child.tag == 'br' and 'br' in self.forbid_on_top:
-                par = html.Element('p')
-                doc.insert(i, par)
-                par.text = child.tail
+            if child.tag == 'br' and 'br' in self.wrap_in_p:
+                if (child.tail or "").strip():
+                    par = html.Element('p')
+                    doc.insert(i, par)
+                    par.text = child.tail
                 doc.remove(child)
                 continue
 
-            if child.tag not in self.forbid_on_top and \
+            if child.tag not in self.wrap_in_p and \
                     (child.tail or "").strip():
                 par = html.Element('p')
                 par.text = child.tail
@@ -60,7 +64,7 @@ class Cleaner(clean.Cleaner):
                 doc.insert(i+1, par)
                 continue
 
-            if child.tag in self.forbid_on_top:
+            if child.tag in self.wrap_in_p:
                 if par is None:
                     par = html.Element('p')
                     doc.insert(i, par)
@@ -119,7 +123,7 @@ class Cleaner(clean.Cleaner):
         for callback in self.dom_callbacks:
             callback(doc)
 
-        if self.forbid_on_top:
+        if self.wrap_inline_tags and self.wrap_in_p:
             self.clean_top(doc)
 
 
