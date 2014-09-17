@@ -170,8 +170,9 @@ class TestSanitizer(unittest.TestCase):
                              '<p>first</p><p>tail</p><p>second</p><p>third</p>')
 
     def test_forbid_on_top_trailing_br(self):
+        self.attrs['forbid_on_top'] = ['b', 'i', 'br']
         self.assertSanitize("<p>head</p><br> ",
-                            "<p>head</p> ") # the white space can be absent
+                            "<p>head</p>")
 
     def test_forbid_on_top_double_br(self):
         self.attrs['forbid_on_top'] = ['b', 'i', 'br']
@@ -179,7 +180,9 @@ class TestSanitizer(unittest.TestCase):
                             "<p>head</p><p>tail</p>")
 
         self.assertSanitize("head<br> <br>tail",
-                            "<p>head</p> <p>tail</p>") # the white space can be absent
+                            "<p>head</p><p>tail</p>")
+        
+        self.assertSanitize("<br><br><br><br>", "")
 
 
 def spaceless(clean, **kwargs):

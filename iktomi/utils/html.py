@@ -46,9 +46,10 @@ class Cleaner(clean.Cleaner):
             i = doc.index(child)
 
             if child.tag == 'br' and 'br' in self.forbid_on_top:
-                par = html.Element('p')
-                doc.insert(i, par)
-                par.text = child.tail
+                if (child.tail or "").strip():
+                    par = html.Element('p')
+                    doc.insert(i, par)
+                    par.text = child.tail
                 doc.remove(child)
                 continue
 
