@@ -1,8 +1,5 @@
 import os, logging
-try:
-    from PIL import Image # pragma: no cover
-except ImportError:       # pragma: no cover
-    import Image
+from PIL import Image
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.util import identity_key
 from iktomi.unstable.utils.image_resizers import ResizeFit

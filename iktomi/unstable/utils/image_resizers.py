@@ -1,7 +1,4 @@
-try:
-    from PIL import Image # pragma: no cover
-except ImportError:       # pragma: no cover
-    import Image
+from PIL import Image
 
 
 class Resizer(object):
