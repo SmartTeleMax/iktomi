@@ -17,6 +17,8 @@ class Cleaner(clean.Cleaner):
     allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
+
+    wrap_inline_tags = False
     # Tags to wrap in paragraphs on top 
     wrap_in_p = ['b', 'big', 'i', 'small', 'tt',
                  'abbr', 'acronym', 'cite', 'code',
@@ -121,7 +123,7 @@ class Cleaner(clean.Cleaner):
         for callback in self.dom_callbacks:
             callback(doc)
 
-        if self.wrap_in_p:
+        if self.wrap_inline_tags and self.wrap_in_p:
             self.clean_top(doc)
 
 

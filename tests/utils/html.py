@@ -137,7 +137,7 @@ class TestSanitizer(unittest.TestCase):
     def test_no_initial_data(self):
         self.attrs = {}
         res = self.sanitize('a<p color: #000" class="2">p</p><script></script>')
-        self.assertEqual(res, '<p>a</p><p>p</p>')
+        self.assertEqual(res, 'a<p>p</p>')
 
     @unittest.skip('lxml does not support this option')
     def test_escaping(self):
@@ -147,6 +147,7 @@ class TestSanitizer(unittest.TestCase):
 
     def test_wrap_in_p(self):
         self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
 
         self.assertSanitize("head<b>bold</b>tail",
                             "<p>head<b>bold</b>tail</p>")
@@ -171,18 +172,26 @@ class TestSanitizer(unittest.TestCase):
 
     def test_wrap_in_p_trailing_br(self):
         self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
         self.assertSanitize("<p>head</p><br> ",
                             "<p>head</p>")
 
     def test_wrap_in_p_double_br(self):
         self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+
         self.assertSanitize("head<br><br>tail",
                             "<p>head</p><p>tail</p>")
 
         self.assertSanitize("head<br> <br>tail",
                             "<p>head</p><p>tail</p>")
-        
+
         self.assertSanitize("<br><br><br><br>", "")
+
+    def test_wrap_inline_tags(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.assertSanitize('first<br>second<br>third',
+                            'first<br>second<br>third')
 
 
 def spaceless(clean, **kwargs):
