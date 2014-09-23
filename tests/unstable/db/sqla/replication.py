@@ -1,11 +1,13 @@
 import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, \
                        ForeignKeyConstraint, create_engine
-from sqlalchemy.orm import sessionmaker, relationship, composite
+from sqlalchemy.orm import sessionmaker, relationship, composite, \
+                           column_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.sql.functions import char_length
 from testalchemy import DBHistory
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.unstable.db.sqla import replication
@@ -1044,3 +1046,101 @@ class ReplicationTests(unittest.TestCase):
         self.assertEqual(c2_a.data, 'a')
         c2_b = self.db.query(C2LangB).get(2)
         self.assertIsNone(c2_b.data)
+
+    def test_replicate_expression_property(self):
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            expr = column_property(data+' '+data)
+            func = column_property(char_length(data))
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            data = Column(String)
+            expr = column_property(data+' '+data)
+            func = column_property(char_length(data))
+        self.create_all()
+        # Data
+        with self.db.begin():
+            a1 = A1(id=2, data='aaa')
+            self.db.add(a1)
+        self.assertEqual(a1.expr, 'aaa aaa')
+        self.assertEqual(a1.func, 3)
+        # Test when reflection doesn't exist
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.data, 'aaa')
+        self.assertEqual(a2.expr, 'aaa aaa')
+        self.assertEqual(a2.func, 3)
+        # Update data
+        with self.db.begin():
+            a1.data = 'aaaaa'
+        # Test when reflection is already loaded
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_updated_one(A2)
+        self.assertIsNotNone(a2)
+        self.assertEqual(a2.data, 'aaaaa')
+        self.assertEqual(a2.expr, 'aaaaa aaaaa')
+        self.assertEqual(a2.func, 5)
+
+    def test_ordering_list_duplicate_reference(self):
+        # Schema
+        class A1(self.Base):
+            id = Column(Integer, primary_key=True)
+            bs = relationship('B1', order_by='B1.position',
+                               cascade='all,delete-orphan',
+                               collection_class=ordering_list('position'))
+        class C1(self.Base):
+            id = Column(Integer, primary_key=True)
+        class B1(self.Base):
+            a_id = Column(ForeignKey(A1.id), nullable=False, primary_key=True)
+            position = Column(Integer, nullable=False, primary_key=True)
+            c_id = Column(ForeignKey(C1.id), nullable=False)
+            c = relationship(C1)
+            data = Column(String)
+        class A2(self.Base):
+            id = Column(Integer, primary_key=True)
+            bs = relationship('B2', order_by='B2.position',
+                               cascade='all,delete-orphan',
+                               collection_class=ordering_list('position'))
+        class C2(self.Base):
+            id = Column(Integer, primary_key=True)
+        class B2(self.Base):
+            a_id = Column(ForeignKey(A2.id), nullable=False, primary_key=True)
+            position = Column(Integer, nullable=False, primary_key=True)
+            c_id = Column(ForeignKey(C2.id), nullable=False)
+            c = relationship(C2)
+            data = Column(String)
+        self.create_all()
+        # Data
+        with self.db.begin():
+            c1 = C1(id=1)
+            self.db.add(c1)
+            c2 = replication.replicate(c1, C2)
+        with self.db.begin():
+            a1 = A1(bs=[B1(c=c1, data='a'), B1(c=c1, data='b')])
+            self.db.add(a1)
+        # Test when reflection doesn't exist
+        with DBHistory(self.db) as hist, self.db.begin():
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(A2)
+        self.assertEqual(len(a2.bs), 2)
+        self.assertEqual(a2.bs[0].data, 'a')
+        self.assertEqual(a2.bs[1].data, 'b')
+        self.assertIs(a2.bs[0].c, c2)
+        self.assertIs(a2.bs[1].c, c2)
+        # Test when reflection exists
+        with DBHistory(self.db) as hist, self.db.begin():
+            a1.bs += [B1(c=c1, data='c')]
+            a2 = replication.replicate(a1, A2)
+        hist.assert_created_one(B2)
+        self.assertEqual(len(a2.bs), 3)
+        self.assertEqual(a2.bs[0].data, 'a')
+        self.assertEqual(a2.bs[1].data, 'b')
+        self.assertEqual(a2.bs[2].data, 'c')
+        self.assertIs(a2.bs[0].c, c2)
+        self.assertIs(a2.bs[1].c, c2)
+        self.assertIs(a2.bs[2].c, c2)

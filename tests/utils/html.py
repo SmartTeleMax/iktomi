@@ -15,6 +15,7 @@ class TestSanitizer(unittest.TestCase):
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
+            'wrap_in_p': [],
             #'strip_whitespace': True,
         }
 
@@ -144,6 +145,53 @@ class TestSanitizer(unittest.TestCase):
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
 
+    def test_wrap_in_p(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+
+        self.assertSanitize("head<b>bold</b>tail",
+                            "<p>head<b>bold</b>tail</p>")
+
+        self.assertSanitize("head<b>bold</b>boldtail<i>italic</i><p>par</p>tail",
+                            "<p>head<b>bold</b>boldtail<i>italic</i></p><p>par</p><p>tail</p>")
+
+        self.assertSanitize("<p>par</p><b>bla</b>text<p>blabla</p>",
+                            "<p>par</p><p><b>bla</b>text</p><p>blabla</p>")
+
+        self.assertSanitize("<p>par</p>text<b>bla</b>text<p>blabla</p>",
+                             "<p>par</p><p>text<b>bla</b>text</p><p>blabla</p>")
+
+        self.assertSanitize('first<br>second<br>third',
+                            '<p>first</p><p>second</p><p>third</p>')
+
+        self.assertSanitize('first<br>second<p>third</p>',
+                             '<p>first</p><p>second</p><p>third</p>')
+
+        self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
+                             '<p>first</p><p>tail</p><p>second</p><p>third</p>')
+
+    def test_wrap_in_p_trailing_br(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+        self.assertSanitize("<p>head</p><br> ",
+                            "<p>head</p>")
+
+    def test_wrap_in_p_double_br(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+
+        self.assertSanitize("head<br><br>tail",
+                            "<p>head</p><p>tail</p>")
+
+        self.assertSanitize("head<br> <br>tail",
+                            "<p>head</p><p>tail</p>")
+
+        self.assertSanitize("<br><br><br><br>", "")
+
+    def test_wrap_inline_tags(self):
+        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.assertSanitize('first<br>second<br>third',
+                            'first<br>second<br>third')
 
 
 def spaceless(clean, **kwargs):

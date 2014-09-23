@@ -3,7 +3,6 @@
 from urlparse import urlsplit
 from lxml import html
 from lxml.html import clean
-
 # XXX move to iktomi.cms?
 
 class Cleaner(clean.Cleaner):
@@ -19,12 +18,61 @@ class Cleaner(clean.Cleaner):
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
 
+    wrap_inline_tags = False
+    # Tags to wrap in paragraphs on top 
+    wrap_in_p = ['b', 'big', 'i', 'small', 'tt',
+                 'abbr', 'acronym', 'cite', 'code',
+                 'dfn', 'em', 'kbd', 'strong', 'samp',
+                 'var', 'a', 'bdo', 'br', 'map', 'object',
+                 'q', 'span', 'sub', 'sup']
+
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
         if hasattr(doc, 'getroot'):
             # ElementTree instance, instead of an element
             doc = doc.getroot()
         self.extra_clean(doc)
+
+    def clean_top(self, doc):
+        par = None
+        first_par = False
+        # create paragraph if there text in the beginning of top
+        if (doc.text or "").strip():
+            par = html.Element('p')
+            doc.insert(0, par)
+            par.text = doc.text
+            doc.text = None
+            # remember if first paragraph created from text
+            first_par = True
+
+        for child in doc.getchildren():
+            i = doc.index(child)
+
+            if child.tag == 'br' and 'br' in self.wrap_in_p:
+                if (child.tail or "").strip():
+                    par = html.Element('p')
+                    doc.insert(i, par)
+                    par.text = child.tail
+                doc.remove(child)
+                continue
+
+            if child.tag not in self.wrap_in_p and \
+                    (child.tail or "").strip():
+                par = html.Element('p')
+                par.text = child.tail
+                child.tail = None
+                doc.insert(i+1, par)
+                continue
+
+            if child.tag in self.wrap_in_p:
+                if par is None:
+                    par = html.Element('p')
+                    doc.insert(i, par)
+                par.append(child)
+            else:
+                if first_par and i == 0:
+                    continue
+                par = None
 
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
@@ -44,7 +92,6 @@ class Cleaner(clean.Cleaner):
                         el.drop_tag()
                     else:
                         el.attrib.pop(attr)
-
 
         if self.a_without_href:
             for link in doc.xpath('//a[not(@href)]'):
@@ -75,6 +122,9 @@ class Cleaner(clean.Cleaner):
 
         for callback in self.dom_callbacks:
             callback(doc)
+
+        if self.wrap_inline_tags and self.wrap_in_p:
+            self.clean_top(doc)
 
 
 def sanitize(value, **kwargs):
