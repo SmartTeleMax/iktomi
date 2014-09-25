@@ -77,7 +77,10 @@ class JSONField(BaseJSONField, Field):
     from_python = None
 
     def get_data(self):
-        value = self.conv.from_python(self.clean_value)
+        if self.error and self.writable:
+            value = self.raw_value
+        else:
+            value = self.conv.from_python(self.clean_value)
         return {self.name: value}
 
     def accept(self, raw_value):
