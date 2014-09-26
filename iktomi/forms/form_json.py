@@ -54,7 +54,9 @@ class JSONForm(Form):
         self.errors = {}
         for field in self.fields:
             if field.writable:
-                value = self.raw_value.get(field.name)
+                value = self.raw_value.get(field.name) \
+                            if field.name \
+                            else self.raw_value
                 self.python_data.update(field.accept(value))
             else:
                 # readonly field
@@ -92,10 +94,7 @@ class JSONField(BaseJSONField, Field):
         return {self.name: self.clean_value}
 
 
-class JSONFieldSet(BaseJSONField, FieldSet):
-
-    widget = widgets_json.FieldSetWidget()
-    set_raw_value = None
+class _JSONFieldSet(object):
 
     def accept(self, raw_value):
         if not isinstance(raw_value, dict):
@@ -105,7 +104,10 @@ class JSONFieldSet(BaseJSONField, FieldSet):
         result = dict(self.python_data)
         for field in self.fields:
             if field.writable:
-                result.update(field.accept(raw_value))
+                value = self.raw_value.get(field.name) \
+                            if field.name \
+                            else self.raw_value
+                result.update(field.accept(value))
             else:
                 self.raw_value.update(field.get_data())
                 # readonly field
@@ -114,6 +116,12 @@ class JSONFieldSet(BaseJSONField, FieldSet):
         self.clean_value = self.conv.accept(result)
         return {self.name: self.clean_value}
 
+
+class JSONFieldSet(_JSONFieldSet, BaseJSONField, FieldSet):
+
+    widget = widgets_json.FieldSetWidget()
+    set_raw_value = None
+
     def get_data(self):
         data = {}
         for field in self.fields:
@@ -121,12 +129,12 @@ class JSONFieldSet(BaseJSONField, FieldSet):
         return {self.name: data}
 
 
-class JSONFieldBlock(BaseJSONField, FieldBlock):
+class JSONFieldBlock(_JSONFieldSet, BaseJSONField, FieldBlock):
 
     widget = widgets_json.FieldBlockWidget()
 
     def accept(self, raw_value):
-        JSONFieldSet.accept(self, raw_value)
+        _JSONFieldSet.accept(self, raw_value)
         return self.clean_value
 
     def load_initial(self, initial):
