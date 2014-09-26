@@ -2,10 +2,11 @@
 
 from . import convs
 from .widgets import Widget
+from iktomi.utils import cached_property
 
 class Widget(Widget):
 
-    @property
+    @cached_property
     def widget_name(self):
         return type(self).__name__
 
