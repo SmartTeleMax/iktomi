@@ -185,6 +185,8 @@ class Field(BaseField):
             raw_data[self.input_name] = value
 
     def _check_value_type(self, values):
+        if values is None:
+            values = []
         if not self.multiple:
             values = [values]
         for value in values:

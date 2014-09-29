@@ -3,6 +3,8 @@
 from . import convs
 from .widgets import Widget
 from iktomi.utils import cached_property
+from jinja2 import Markup
+
 
 class Widget(Widget):
 
@@ -13,11 +15,14 @@ class Widget(Widget):
     def render(self):
         return dict(widget=self.widget_name,
                     key=self.field.name,
+                    renders_hint=self.renders_hint,
                     render_type=self.render_type,
-                    label=self.field.label or '',
-                    hint=self.field.hint or '',
-                    id=self.field.id,
-                    input_name=self.field.input_name,
+                    label=unicode(self.field.label or ''),
+                    hint=unicode(self.field.hint or ''),
+                    safe_label=isinstance(self.field.label, Markup),
+                    safe_hint=isinstance(self.field.hint, Markup),
+                    #id=self.field.id,
+                    #input_name=self.field.input_name,
                     required=self.field.conv.required,
                     multiple=self.multiple,
                     classname=self.classname)
@@ -98,11 +103,9 @@ class CharDisplay(Widget):
 class FieldListWidget(Widget):
 
     def render(self):
-        subfield = self.field.field(name='%'+self.field.input_name+'-index%')
-        initial = subfield.json_data() # XXX
-        return dict(super(FieldListWidget, self).render(),
-                    subwidget=dict(subfield.widget.render(),
-                                   initial=initial))
+        subfield = self.field.field(parent=self.field)
+        return dict(Widget.render(self),
+                    subwidget=subfield.widget.render())
 
 
 class FieldSetWidget(Widget):
@@ -112,7 +115,6 @@ class FieldSetWidget(Widget):
                    self.field.fields]
         return dict(super(FieldSetWidget, self).render(),
                     widgets=widgets)
-
 
 
 class FieldBlockWidget(FieldSetWidget):

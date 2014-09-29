@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+import logging
 import json
 from collections import OrderedDict
 
 from .form import Form
 from .fields import Field, FieldSet, FieldBlock, FieldList
 from . import widgets_json
+
+
+logger = logging.getLogger(__name__)
+
 
 class JSONForm(Form):
 
@@ -164,7 +169,7 @@ class JSONFieldList(BaseJSONField, FieldList):
 
         result = OrderedDict()
         for raw_value in raw_values:
-            index = result['_key']
+            index = result.get('_key', '')
             try:
                 #XXX: we do not convert index to int, just check it.
                 #     is it good idea?
