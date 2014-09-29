@@ -630,9 +630,8 @@ class List(Converter):
 
     def from_python(self, value):
         result = OrderedDict()
-        if value is not None:
-            for index, item in enumerate(value):
-                result[str(index+1)] = item
+        for index, item in enumerate(value):
+            result[str(index+1)] = item
         return result
 
     def to_python(self, value):
