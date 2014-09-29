@@ -2,7 +2,6 @@
 from sqlalchemy.ext.associationproxy import _AssociationCollection
 from iktomi.forms.convs import *
 from iktomi.forms.convs import __all__ as _all1
-from iktomi.forms.fields import FieldList
 
 import re
 from iktomi.utils import N_
@@ -55,8 +54,6 @@ class ModelDictConv(Converter):
             field = self.field.get_field(field_name)
             if 'w' in field.permissions:
                 setattr(obj, field_name, value[field_name])
-            if isinstance(field, FieldList) and not value[field_name]:
-                setattr(obj, field_name, [])
         return obj
 
     @property
