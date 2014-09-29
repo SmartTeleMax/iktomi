@@ -97,8 +97,6 @@ class CharDisplay(Widget):
 
 class FieldListWidget(Widget):
 
-    widget_name = "FieldList"
-
     def render(self):
         subfield = self.field.field(name='%'+self.field.input_name+'-index%')
         initial = subfield.json_data() # XXX
@@ -108,8 +106,6 @@ class FieldListWidget(Widget):
 
 
 class FieldSetWidget(Widget):
-
-    widget_name = "FieldSet"
 
     def render(self):
         widgets = [x.widget.render() for x in
@@ -121,7 +117,6 @@ class FieldSetWidget(Widget):
 
 class FieldBlockWidget(FieldSetWidget):
 
-    widget_name = "FieldBlock"
     render_type = 'full-width'
 
 
