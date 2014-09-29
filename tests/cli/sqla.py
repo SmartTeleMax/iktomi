@@ -18,6 +18,6 @@ class SchemaTests(unittest.TestCase):
             id = Column(Integer, primary_key=True)
             text = Column(MEDIUMTEXT)
         engine = create_engine('mysql+pymysql://')
-        cli = Sqla(orm.sessionmaker(bind=engine))
+        cli = Sqla(orm.sessionmaker(bind=engine), metadata=Base.metadata)
         schema = cli._schema(Obj.__table__)
         self.assertIn('MEDIUMTEXT', schema)

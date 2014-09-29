@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import sys
 from sqlalchemy import create_engine
 from sqlalchemy.types import SchemaType
@@ -41,7 +42,7 @@ def drop_everything(engine):
         for col in inspector.get_columns(table_name):
             if isinstance(col['type'], SchemaType):
                 types.append(col['type'])
-        t = Table(table_name,metadata,*fks)
+        t = Table(table_name, metadata, *fks)
         tbs.append(t)
         all_fks.extend(fks)
     try:
@@ -62,6 +63,8 @@ class Sqla(Cli):
     SQLAlchemy database handling
 
     :param session_maker: sqlalchemy session maker function
+    :param metadata: sqlalchemy metadata object or dictionary mapping names to
+        metadata objects for multi-DB configuration to deal with
     :param initial: a function acceptind sqlalchemy session and filling-in
         a database with default initial data
     :param dict generators: a dictionary with generator functions. Generator
@@ -69,55 +72,75 @@ class Sqla(Cli):
         They accept sqlalchemy session and a cnumber of objects to be created.
     '''
 
-    def __init__(self, session_maker, initial=None, generators=None):
+    def __init__(self, session_maker, metadata, initial=None, generators=None):
         self.session = session_maker()
+        self.metadata = metadata
         self.initial = initial
         self.generators = generators or {}
-
-    def _get_binds(self):
-        metadatas = {}
-        for table, engine in self.session._Session__binds.items():
-            metadatas.setdefault(table.metadata, set()).add(engine)
-        return metadatas
 
     def _schema(self, table):
         from sqlalchemy.schema import CreateTable
         engine = self.session.get_bind(clause=table)
         return str(CreateTable(table, bind=engine))
 
-    def command_create_tables(self):
+    def command_create_tables(self, meta_name=None, verbose=False):
         '''
         Create tables according sqlalchemy data model.
 
         Is not a complex migration tool like alembic, just creates tables that
         does not exist::
 
-            ./manage.py sqla:create_tables
+            ./manage.py sqla:create_tables [--verbose] [meta_name]
         '''
-        print('Creating table(s)...')
-        for metadata, engines in self._get_binds().items():
-            for engine in engines:
-                for table in metadata.sorted_tables:
-                    # XXX Output of schema is commented since it doesn't work
-                    # for dialect-specific things.
-                    #print('{0}: {1}\n{2}'.format(engine, table.name, self._schema(table)))
-                    metadata.create_all(engine, tables=[table])
 
-    def command_drop_tables(self):
+        def _create_metadata_tables(metadata):
+            for table in metadata.sorted_tables:
+                if verbose:
+                    print(self._schema(table))
+                else:
+                    print('  '+table.name)
+                engine = self.session.get_bind(clause=table)
+                metadata.create_all(bind=engine, tables=[table])
+
+        if isinstance(self.metadata, MetaData):
+            print('Creating tables...')
+            _create_metadata_tables(self.metadata)
+        else:
+            for current_meta_name, metadata in self.metadata.items():
+                if meta_name not in (current_meta_name, None):
+                    continue
+                print('Creating tables for {}...'.format(current_meta_name))
+                _create_metadata_tables(metadata)
+
+    def command_drop_tables(self, meta_name=None):
         '''
         Drops all tables without dropping a database::
 
-            ./manage.py sqla:drop_tables
+            ./manage.py sqla:drop_tables [meta_name]
         '''
         answer = raw_input('All data will lost. Are you sure? [y/N] ')
         if answer.strip().lower()!='y':
             sys.exit('Interrupted')
-        print('Droping table(s)...')
-        for metadata, engines in self._get_binds().items():
-            for engine in engines:
-                print('... in {0}'.format(engine.url))
+
+        def _drop_metadata_tables(metadata):
+            table = metadata.tables.itervalues().next()
+            if table is None:
+                print('Failed to find engine')
+            else:
+                engine = self.session.get_bind(clause=table)
                 drop_everything(engine)
-        print('Done')
+                print('Done')
+
+        if isinstance(self.metadata, MetaData):
+            print('Droping tables... ', end='')
+            _drop_metadata_tables(self.metadata)
+        else:
+            for current_meta_name, metadata in self.metadata.items():
+                if meta_name not in (current_meta_name, None):
+                    continue
+                print('Droping tables for {}... '.format(current_meta_name),
+                      end='')
+                _drop_metadata_tables(metadata)
 
     def command_init(self):
         '''
@@ -138,18 +161,39 @@ class Sqla(Cli):
         self.command_create_tables()
         self.command_init()
 
-    def command_schema(self, model_name=None):
+    def command_schema(self, name=None):
         '''
         Prints current database schema (according sqlalchemy database model)::
 
-            ./manage.py sqla:schema
+            ./manage.py sqla:schema [name]
         '''
-        for table, engine in self.session._Session__binds.items():
-            if model_name:
-                if model_name == table.name:
+        meta_name = table_name = None
+        if name:
+            if isinstance(self.metadata, MetaData):
+                model_name = name
+            elif '.' in name:
+                meta_name, table_name = name.split('.', 1)
+            else:
+                meta_name = name
+
+        def _print_metadata_schema(metadata):
+            if table_name is None:
+                for table in metadata.sorted_tables:
                     print(self._schema(table))
             else:
+                try:
+                    table = metadata.tables[table_name]
+                except KeyError:
+                    sys.exit('Table {} is not found'.format(name))
                 print(self._schema(table))
+
+        if isinstance(self.metadata, MetaData):
+            _print_metadata_schema(self.metadata)
+        else:
+            for current_meta_name, metadata in self.metadata.items():
+                if meta_name not in (current_meta_name, None):
+                    continue
+                _print_metadata_schema(metadata)
 
     def command_gen(self, *names):
         '''
@@ -174,4 +218,3 @@ class Sqla(Cli):
             print('Generating `{0}` count={1}'.format(name, count))
             create(self.session, count)
             self.session.commit()
-
