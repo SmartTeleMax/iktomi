@@ -52,7 +52,7 @@ class ModelDictConv(Converter):
         field_names = sum([x.field_names for x in self.field.fields], [])
         for field_name in field_names:
             field = self.field.get_field(field_name)
-            if 'w' in field.permissions:
+            if field.writable:
                 setattr(obj, field_name, value[field_name])
         return obj
 
