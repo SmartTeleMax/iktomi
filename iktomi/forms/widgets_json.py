@@ -102,10 +102,13 @@ class CharDisplay(Widget):
 
 class FieldListWidget(Widget):
 
+    sortable = True
+
     def render(self):
         subfield = self.field.field(parent=self.field)
         return dict(Widget.render(self),
-                    subwidget=subfield.widget.render())
+                    subwidget=subfield.widget.render(),
+                    sortable=self.sortable)
 
 
 class FieldSetWidget(Widget):
