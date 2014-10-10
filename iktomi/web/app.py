@@ -106,4 +106,9 @@ class Application(object):
         env = VersionedStorage(self.env_class, request=request, root=self.root)
         data = VersionedStorage()
         response = self.handle(env, data)
-        return response(environ, start_response)
+        try:
+            result = response(environ, start_response)
+        except Exception:
+            self.handle_error(env)
+            result = HTTPInternalServerError()(environ, start_response)
+        return result

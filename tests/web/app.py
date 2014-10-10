@@ -25,7 +25,10 @@ class ApplicationTests(unittest.TestCase):
         return web.cases(
                 web.match('/', 'index') | (lambda e,d: Response(body='index')),
                 web.match('/500', 'err500') | (lambda e,d: 1+''),
-                web.match('/403', 'err403') | exc)
+                web.match('/403', 'err403') | exc,
+                web.match('/broken_response', 'broken_response') | \
+                            (lambda e,d: 0),
+            )
 
     @cached_property
     def wsgi_app(self):
@@ -68,6 +71,28 @@ class ApplicationTests(unittest.TestCase):
         self.assertEqual(response.status_int, 500)
         assert isinstance(errors[0], TypeError)
         self.assertRaises(TypeError, self.app, env, data)
+
+    def test_broken_response(self):
+        wa = self.wsgi_app
+
+        errors = []
+        def handle_error(env):
+            _, e, _ = sys.exc_info()
+            errors.append(e)
+        wa.handle_error = handle_error
+
+        #env, data = self.env_data(wa, '/none')
+        environ = {
+            'SERVER_NAME': 'localhost',
+            'SERVER_PORT': '80',
+            'REQUEST_METHOD': 'GET',
+            'SCRIPT_NAME': '',
+            'PATH_INFO': '/broken_response',
+        }
+        def start_response(status, headers):
+            self.assertTrue(status.startswith('500'))
+        wa(environ, start_response)
+        self.assertTrue(isinstance(errors[0], TypeError))
 
     def test_wsgi(self):
         testapp = TA(self.wsgi_app)
