@@ -27,7 +27,7 @@ def strftime(dt, fmt):
 
     fmt = fmt.replace('%c', '%a %b %d %H:%M:%S %Y')\
              .replace('%Y', str(dt.year))\
-             .replace('%y', ("%04d" %dt.year)[-2:])
+             .replace('%y', '{:04}'.format(dt.year)[-2:])
 
     year = dt.year
     # For every non-leap year century, advance by

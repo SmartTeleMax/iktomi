@@ -9,8 +9,8 @@ from .url_templates import urlquote
 
 
 def construct_url(path, query, host, port, schema):
-    query = ('?' + '&'.join(['%s=%s' % (urlquote(k), urlquote(v)) \
-                            for k,v in query.iteritems()])  \
+    query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
+                            for k, v in query.iteritems())
              if query else '')
 
     path = path
@@ -24,7 +24,8 @@ def construct_url(path, query, host, port, schema):
 
 class URL(str):
 
-    def __new__(cls, path, query=None, host=None, port=None, schema=None, show_host=True):
+    def __new__(cls, path, query=None, host=None, port=None, schema=None,
+                show_host=True):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
@@ -112,7 +113,8 @@ class URL(str):
 
     def get_readable(self):
         '''Gets human-readable representation of the url (as unicode string)'''
-        query = (u'?' + u'&'.join([u'%s=%s' % (k,v) for k, v in self.query.iteritems()]) \
+        query = (u'?' + u'&'.join(u'{}={}'.format(k, v)
+                                  for k, v in self.query.iteritems())
                  if self.query else '')
 
         path = urllib.unquote(self.path).decode('utf-8')
@@ -123,4 +125,4 @@ class URL(str):
             return path + query
 
     def __repr__(self):
-        return '<URL %r>' % str.__repr__(self)
+        return '<URL {!r}>'.format(str(self))

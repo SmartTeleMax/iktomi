@@ -46,7 +46,7 @@ def doublefork(pidfile, logfile, cwd, umask):
         if os.fork():
             os._exit(os.EX_OK)
     except OSError, e:
-        sys.exit('fork #1 failed: (%d) %s\n' % (e.errno, e.strerror))
+        sys.exit('fork #1 failed: ({}) {}'.format(e.errno, e.strerror))
     os.setsid()
     os.chdir(cwd)
     os.umask(umask)
@@ -54,7 +54,7 @@ def doublefork(pidfile, logfile, cwd, umask):
         if os.fork():
             os._exit(os.EX_OK)
     except OSError, e:
-        sys.exit('fork #2 failed: (%d) %s\n' % (e.errno, e.strerror))
+        sys.exit('fork #2 failed: ({}) {}'.format(e.errno, e.strerror))
     si = open('/dev/null')
     so = open(logfile, 'a+', 0)
     os.dup2(si.fileno(), 0)

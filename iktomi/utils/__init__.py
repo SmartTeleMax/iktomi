@@ -9,13 +9,13 @@ def quoteattr(value):
     but is safe for HTML'''
     if value == '':
         return '""'
-    return '"%s"' % saxutils.escape(unicode(value), {'"': '&quot;'})
+    return '"{}"'.format(saxutils.escape(unicode(value), {'"': '&quot;'}))
 
 def quoteattrs(data):
     '''Takes dict of attributes and returns their HTML representation'''
     items = []
     for key, value in data.items():
-        items.append('%s=%s' % (key, quoteattr(value)))
+        items.append('{}={}'.format(key, quoteattr(value)))
     return ' '.join(items)
 
 def quote_js(text):
@@ -26,7 +26,7 @@ def quote_js(text):
     text = text.replace('\n', '\\n');
     text = text.replace('\r', '');
     for char in '\'"<>&':
-        text = text.replace(char, '\\x%2x' % ord(char))
+        text = text.replace(char, '\\x{:02x}'.format(ord(char)))
     return text
 
 def weakproxy(obj):
@@ -75,11 +75,11 @@ class cached_class_property(object):
 # (any Unicode character, excluding the surrogate blocks, FFFE, and FFFF)
 _char_tail = ''
 if sys.maxunicode > 0x10000:
-    _char_tail = u'%s-%s' % (unichr(0x10000),
-                             unichr(min(sys.maxunicode, 0x10FFFF)))
+    _char_tail = u'{}-{}'.format(unichr(0x10000),
+                                 unichr(min(sys.maxunicode, 0x10FFFF)))
 _nontext_sub = re.compile(
-                ur'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD%s]' % _char_tail,
-                re.U).sub
+            ur'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD{}]'.format(_char_tail),
+            re.U).sub
 def replace_nontext(text, replacement=u'\uFFFD'):
     return _nontext_sub(replacement, text)
 

@@ -4,6 +4,7 @@ from ..utils import weakproxy
 from . import convs
 from .media import FormMedia
 
+
 class Widget(object):
 
     # obsolete parameters from previous versions
@@ -30,8 +31,8 @@ class Widget(object):
     def __init__(self, field=None, **kwargs):
         if self._obsolete & set(kwargs):
             raise TypeError(
-                    'Obsolete parameters are used: %s' %
-                        list(self._obsolete & set(kwargs)))
+                    'Obsolete parameters are used: {}'.format(
+                                list(self._obsolete & set(kwargs))))
         self.field = weakproxy(field)
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)

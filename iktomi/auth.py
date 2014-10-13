@@ -24,7 +24,7 @@ def encrypt_password(raw_password, algorithm='sha1', salt=None):
     raw_password = raw_password.encode('utf-8')
     salt = salt.encode('utf-8')
     hash = hashlib.new(algorithm, salt+raw_password).hexdigest()
-    return '%s$%s$%s' % (algorithm, salt, hash)
+    return '{}${}${}'.format(algorithm, salt, hash)
 
 
 def check_password(raw_password, enc_password):
@@ -82,8 +82,9 @@ class CookieAuth(web.WebHandler):
         if not self.storage.set(self._cookie_name+':'+key.encode('utf-8'),
                                 str(user_identity)):
             if self.crash_without_storage:
-                raise Exception('Storage `%r` is gone or down' % self.storage)
-            logger.info('storage "%r" is unrichable', self.storage)
+                raise Exception(
+                        'Storage {!r} is gone or down'.format(self.storage))
+            logger.info('storage "%r" is unreachable', self.storage)
         return response
 
     def logout_user(self, request, response):

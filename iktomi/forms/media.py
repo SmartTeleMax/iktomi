@@ -43,7 +43,7 @@ class FormMedia(object):
         return self._media == other._media
 
     def __repr__(self):
-        return '%s(items=%r)' % (self.__class__.__name__, self._media)
+        return '{}(items={!r})'.format(self.__class__.__name__, self._media)
 
 
 class FormMediaAtom(object):
@@ -73,13 +73,13 @@ class FormMediaAtom(object):
         return media
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.data)
+        return '{}({!r})'.format(self.__class__.__name__, self.data)
 
     def render(self):
         '''Renders media item to HTML'''
-        return self.holder.env.template.render('media/%s.html' % self.macro, 
-                                               data=self.data,
-                                               env=self.holder.env)
+        return self.holder.env.template.render(
+                                        'media/{}.html'.format(self.macro), 
+                                        data=self.data, env=self.holder.env)
 
 class FormCSSRef(FormMediaAtom):
 

@@ -57,8 +57,8 @@ class match(WebHandler):
         return {self.url_name: (Location(self.builder), {})}
 
     def __repr__(self):
-        return '%s(\'%s\', \'%s\')' % \
-                (self.__class__.__name__, self.url, self.url_name)
+        return '{}({!r}, {!r})'.format(self.__class__.__name__,
+                                       self.url, self.url_name)
 
 
 class prefix(WebHandler):
@@ -106,7 +106,7 @@ class prefix(WebHandler):
         return locations
 
     def __repr__(self):
-        return '%s(\'%r\')' % (self.__class__.__name__, self.builder)
+        return '{}({!r})'.format(self.__class__.__name__, self.url)
 
 
 class namespace(WebHandler):
@@ -197,7 +197,7 @@ class method(WebHandler):
     __call__ = method
 
     def __repr__(self):
-        return 'method(%s)' % ', '.join(repr(n) for n in self._names)
+        return 'method({})'.format(', '.join(repr(n) for n in self._names))
 
 
 class by_method(cases):
@@ -293,8 +293,7 @@ class subdomain(WebHandler):
         return locations
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.subdomains)
-
+        return '{}({!r})'.format(self.__class__.__name__, self.subdomains)
 
 
 class static_files(WebHandler):
@@ -348,6 +347,6 @@ class static_files(WebHandler):
     __call__ = static_files
 
     def __repr__(self):
-        return '%s(\'%r\', \'%r\')' % (self.__class__.__name__, 
+        return '{}({!r}, {!r})'.format(self.__class__.__name__, 
                                        self.location, self.url)
 

@@ -19,7 +19,7 @@ def deprecated(comment=None):
     def deco(func):
         @functools.wraps(func)
         def new_func(*args, **kwargs):
-            message = "Call to deprecated function %s." % func.__name__
+            message = "Call to deprecated function {}.".format(func.__name__)
             if comment is not None:
                 message += ' ' + comment
             warnings.warn(message, category=DeprecationWarning)

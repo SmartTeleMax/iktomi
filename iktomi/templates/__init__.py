@@ -52,8 +52,9 @@ class Template(object):
                 template_type = ext[1:]
                 if template_type in self.engines:
                     return file_name[len(d)+1:], self.engines[template_type]
-        raise TemplateError('Template or engine for template "%s" not found. Dirs %r' % \
-                            (pattern, self.dirs))
+        raise TemplateError(
+                'Template or engine for template "{}" not found in '\
+                'directories {!r}'.format(pattern, self.dirs))
 
 
 class BoundTemplate(object):

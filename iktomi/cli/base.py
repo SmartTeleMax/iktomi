@@ -102,11 +102,11 @@ class Cli(object):
 
         import inspect
         _help = ''
-        _help += '%s\n' % command
+        _help += '{}\n'.format(command)
         if self.__doc__:
             _help += self._fix_docstring(self.__doc__) +'\n'
         else:
-            _help += '%s\n' % command
+            _help += '{}\n'.format(command)
 
         funcs = [(attr, getattr(self, attr))
                  for attr in dir(self)

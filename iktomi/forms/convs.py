@@ -72,9 +72,8 @@ class ValidationError(Exception):
             form.errors[name] = self.translate(form.env, message)
 
     def __repr__(self):
-        return "%s(%r, %r)" % (self.__class__,
-                               self.message,
-                               self.by_field)
+        return "{}({!r}, {!r})".format(self.__class__, self.message,
+                                       self.by_field)
 
 
 class Converter(object):
@@ -114,8 +113,8 @@ class Converter(object):
     def __init__(self, *args, **kwargs):
         if self._obsolete & set(kwargs):
             raise TypeError(
-                    'Obsolete parameters are used: %s' %
-                        list(self._obsolete & set(kwargs)))
+                    'Obsolete parameters are used: {}'.format(
+                                list(self._obsolete & set(kwargs))))
         self.field = weakproxy(kwargs.get('field'))
         self._init_kwargs = kwargs
         self.__dict__.update(kwargs)
@@ -520,7 +519,7 @@ class Html(Char):
     :class:`Sanitizer<iktomi.utils.html.Sanitizer>`
     options and passes them into Sanitizer's constructor.
 
-    For list properties there is :meth:`add_%s` interface::
+    For list properties there is :meth:`add_*` interface::
 
         Html(add_allowed_elements=['span'], add_dom_callbacks=[myfunc])
     '''
@@ -529,7 +528,8 @@ class Html(Char):
     allowed_elements = frozenset(('a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u',
                                   'i', 'b', 'blockquote', 'sub', 'sup'))
     #: A list of allowed HTML attributes
-    allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class', 'rel'))
+    allowed_attributes = frozenset(('href', 'src', 'alt', 'title', 'class',
+                                    'rel'))
     #: A list of tags to be dropped if they are empty
     drop_empty_tags = frozenset(('p', 'a', 'u', 'i', 'b', 'sub', 'sup'))
     allowed_protocols = frozenset(['ftp', 'http', 'https', 'mailto',

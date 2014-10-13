@@ -44,7 +44,8 @@ class Location(object):
                self.builders == other.builders and self.subdomains == other.subdomains
 
     def __repr__(self):
-        return '%s(*%r, subdomains=%r)' % (self.__class__.__name__, self.builders, self.subdomains)
+        return '{}(*{!r}, subdomains={!r})'.format(
+                    self.__class__.__name__, self.builders, self.subdomains)
 
 
 
@@ -133,8 +134,8 @@ class Reverse(object):
                                   bound_env=self._bound_env,
                                   parent=self,
                                   need_arguments=location.need_arguments)
-        raise UrlBuildingError('Namespace or endpoint "%s" does not exist'
-                               ' in "%r"' % (name, self))
+        raise UrlBuildingError('Namespace or endpoint "{}" does not exist'
+                               ' in {!r}'.format(name, self))
 
     def _finalize(self):
         # deferred build of the last part of url for endpoints that
@@ -196,8 +197,9 @@ class Reverse(object):
         used_args, subreverse =  self._build_url_silent(_name, **kwargs)
 
         if set(kwargs).difference(used_args):
-            raise UrlBuildingError('Not all arguments are used during URL building: %s' %
-                                   ', '.join(set(kwargs).difference(used_args)))
+            raise UrlBuildingError(
+                'Not all arguments are used during URL building: {}'\
+                    .format(', '.join(set(kwargs).difference(used_args))))
         return subreverse.as_url
 
     @property

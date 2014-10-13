@@ -28,14 +28,14 @@ def flup_fastcgi(wsgi_app, bind, cwd=None, pidfile=None, logfile=None,
                     pid = None
 
             if pid is not None and  is_running(pid):
-                sys.exit('Already running (PID: %r)' % pid)
+                sys.exit('Already running (PID: {})'.format(pid))
             elif pid is not None:
                 logger.info('PID file was pointing to nonexistent process %r',
                             pid)
             else:
                 logger.info('PID file should contain a number')
         doublefork(pidfile, logfile, cwd, umask)
-    logger.info('Starting FastCGI server (flup), current working dir %r' % cwd)
+    logger.info('Starting FastCGI server (flup), current working dir %r', cwd)
     fcgi.WSGIServer(wsgi_app, bindAddress=bind, umask=umask,
                     debug=False, **params).run()
 
@@ -90,7 +90,7 @@ class Flup(Cli):
         '''
         if self.pidfile:
             if not os.path.exists(self.pidfile):
-                sys.exit("Pidfile %r doesn't exist" % self.pidfile)
+                sys.exit("Pidfile {!r} doesn't exist".format(self.pidfile))
             with open(self.pidfile) as pidfile:
                 pid = int(pidfile.read())
             for sig in [signal.SIGINT, signal.SIGTERM, signal.SIGKILL]:

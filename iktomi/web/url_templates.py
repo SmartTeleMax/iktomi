@@ -69,9 +69,9 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             if _anonymous:
                 result += conv_object.regex
             else:
-                result += '(?P<%s>%s)' % (variable, conv_object.regex)
+                result += '(?P<{}>{})'.format(variable, conv_object.regex)
             continue
-        raise ValueError('Incorrect url template "%s"' % url_template)
+        raise ValueError('Incorrect url template {!r}'.format(url_template))
     if match_whole_str:
         result += '$'
     return re.compile(result), url_params, builder_params
@@ -81,7 +81,8 @@ def init_converter(conv_class, args):
     if args:
         #XXX: taken from werkzeug
         storage = type('_Storage', (), {'__getitem__': lambda s, x: x})()
-        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))(%s)' % args, {}, storage)
+        args, kwargs = eval(u'(lambda *a, **kw: (a, kw))({})'.format(args),
+                            {}, storage)
         return conv_class(*args, **kwargs)
     return conv_class()
 
@@ -135,7 +136,7 @@ class UrlTemplate(object):
                         value = conv_obj.default
                     else:
                         raise UrlBuildingError('Missing argument for '
-                                               'URL builder: %s' % var)
+                                               'URL builder: {}'.format(var))
                 result += urlquote(conv_obj.to_url(value))
             else:
                 result += part
@@ -153,6 +154,6 @@ class UrlTemplate(object):
                self.match_whole_str == other.match_whole_str
 
     def __repr__(self):
-        return '%s(%r, match_whole_str=%r)' % (self.__class__.__name__, 
-                                               self.template.encode('utf-8'),
-                                               self.match_whole_str)
+        return '{}({!r}, match_whole_str={!r})'.format(
+                self.__class__.__name__, self.template.encode('utf-8'),
+                self.match_whole_str)

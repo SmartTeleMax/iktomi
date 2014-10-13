@@ -95,7 +95,7 @@ class App(Cli):
         Executed with `self.shell_namespace` as local variables namespace.
         '''
         from code import interact
-        interact('Namespace %r' % self.shell_namespace,
+        interact('Namespace {!r}'.format(self.shell_namespace),
                  local=self.shell_namespace)
 
 
@@ -114,18 +114,19 @@ class DevServerThread(threading.Thread):
         class RequestHandler(WSGIRequestHandler):
             def address_string(slf):
                 # getfqdn sometimes is very slow
-                return '%s:%s' % (host, port)
+                return '{}:{}'.format(host, port)
 
             def log_message(self, format, *args):
                 logger.info("%s - - [%s] %s",
                             self.client_address[0],
                             self.log_date_time_string(),
-                            format%args)
+                            format % args)
 
         try:
             self.port = int(port)
         except ValueError:
-            raise ValueError('Please provide valid port value insted of "%s"' % port)
+            raise ValueError(
+                'Please provide valid port value insted of "{}"'.format(port))
         self.running = True
         self.server = make_server(self.host, self.port, app, server_class=DevServer,
                                   handler_class=RequestHandler)

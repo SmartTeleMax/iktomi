@@ -44,8 +44,8 @@ class BaseField(object):
     def __init__(self, name, conv=None, parent=None, permissions=None, **kwargs):
         if self._obsolete & set(kwargs):
             raise TypeError(
-                    'Obsolete parameters are used: %s' %
-                        list(self._obsolete & set(kwargs)))
+                    'Obsolete parameters are used: {}'.format(
+                                list(self._obsolete & set(kwargs))))
         kwargs.update(dict(
             parent=parent,
             name=name,
@@ -113,7 +113,7 @@ class BaseField(object):
         if self.form.id:
             # We use template names in list to replace, so we must use it here to
             # insure unique IDs.
-            return '%s-%s' % (self.form.id, self.input_name)
+            return '{}-{}'.format(self.form.id, self.input_name)
         return self.input_name
 
     def from_python(self, value):
@@ -262,7 +262,8 @@ class FieldSet(AggregateField):
     def set_raw_value(self, raw_data, value):
         # fills in raw_data multidict, resulting keys are field's absolute names
         assert isinstance(value, dict), \
-                'To set raw value on %r need dict, got %r' % (self.input_name, value)
+                'To set raw value on {!r} need dict, got {!r}'\
+                        .format(self.input_name, value)
         if not value:
             # Field set can be optional
             return

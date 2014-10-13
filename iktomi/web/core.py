@@ -62,7 +62,7 @@ class WebHandler(object):
         return {}
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return '{}()'.format(self.__class__.__name__)
 
     def __call__(self, env, data):
         '''
@@ -75,9 +75,11 @@ class WebHandler(object):
                 def my_handler(self, env, data):
                     do_something(env, data)
                     return self.next_handler(env, data)
-                __call__ = my_handlerThis method should be overridden in subclasses.
+                __call__ = my_handler  # This method should be overridden 
+                                       # in subclasses.
         '''
-        raise NotImplementedError("__call__ is not implemented in %r" % self)
+        raise NotImplementedError(
+                '__call__ is not implemented in {!r}'.format(self))
 
     @property
     def next_handler(self):
@@ -144,13 +146,14 @@ class cases(WebHandler):
                 handler_locations = handler._locations()
                 for k, v in handler_locations.items():
                     if k in locations:
-                        raise ValueError('Location "%s" already exists' % k)
+                        raise ValueError(
+                                'Location "{}" already exists'.format(k))
                     locations[k] = v
         return locations
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__,
-                           ', '.join(repr(h) for h in self.handlers))
+        return '{}({})'.format(self.__class__.__name__,
+                               ', '.join(repr(h) for h in self.handlers))
 
 
 class _FunctionWrapper3(WebHandler):
@@ -167,7 +170,7 @@ class _FunctionWrapper3(WebHandler):
     __call__ = function_wrapper
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.handler)
+        return '{}({!r})'.format(self.__class__.__name__, self.handler)
 
 
 def request_filter(func):
