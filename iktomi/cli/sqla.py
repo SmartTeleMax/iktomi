@@ -123,7 +123,7 @@ class Sqla(Cli):
             sys.exit('Interrupted')
 
         def _drop_metadata_tables(metadata):
-            table = metadata.tables.itervalues().next()
+            table = next(metadata.tables.itervalues(), None)
             if table is None:
                 print('Failed to find engine')
             else:
