@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os
 import datetime
 
 
@@ -27,6 +28,15 @@ def manage(commands, argv=None, delim=':'):
     are passed to the method. For details, see
     :class:`Cli<iktomi.management.commands.Cli>` docs.
     '''
+
+    # Default django autocompletion script is registered to manage.py
+    # We use the same name for this script and it seems to be ok 
+    # to implement the same interface
+    auto_complete = 'IKTOMI_AUTO_COMPLETE' in os.environ or \
+                    'DJANGO_AUTO_COMPLETE' in os.environ
+    if auto_complete:
+        sys.exit(1, 'Autocomplete is not implemented yet')
+
     argv = sys.argv if argv is None else argv
     if len(argv) > 1:
         cmd_name = argv[1]
