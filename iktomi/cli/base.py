@@ -48,7 +48,7 @@ def manage(commands, argv=None, delim=':'):
                 value = value.get_digest()
 
             for cmd_name, _ in value.get_funcs():
-                cmd_name = cmd_name.lstrip("command_")
+                cmd_name = cmd_name[8:]
                 suggest.append(cmd_name)
             if curr == ":":
                 curr = ''
