@@ -4,7 +4,6 @@ import sys
 import os
 import datetime
 
-
 __all__ = ['manage']
 
 
@@ -30,12 +29,40 @@ def manage(commands, argv=None, delim=':'):
     '''
 
     # Default django autocompletion script is registered to manage.py
-    # We use the same name for this script and it seems to be ok 
+    # We use the same name for this script and it seems to be ok
     # to implement the same interface
+    def perform_auto_complete(commands):
+        from lazy import LazyCli
+        cwords = os.environ['COMP_WORDS'].split()[1:]
+        cword = int(os.environ['COMP_CWORD'])
+
+        try:
+            curr = cwords[cword - 1]
+        except IndexError:
+            curr = ''
+
+        suggest = []
+        if len(cwords) > 1 and cwords[0] in commands.keys():
+            value = commands[cwords[0]]
+            if isinstance(value, LazyCli):
+                value = value.get_digest()
+
+            for cmd_name, _ in value.get_funcs():
+                cmd_name = cmd_name[8:]
+                suggest.append(cmd_name)
+            if curr == ":":
+                curr = ''
+        else:
+            suggest += commands.keys() + [x+":" for x in commands.keys()]
+        suggest.sort()
+        output = " ".join(filter(lambda x: x.startswith(curr), suggest))
+        sys.stdout.write(output)
+
     auto_complete = 'IKTOMI_AUTO_COMPLETE' in os.environ or \
                     'DJANGO_AUTO_COMPLETE' in os.environ
     if auto_complete:
-        sys.exit(1, 'Autocomplete is not implemented yet')
+        perform_auto_complete(commands)
+        sys.exit(0)
 
     argv = sys.argv if argv is None else argv
     if len(argv) > 1:
@@ -104,6 +131,11 @@ class Cli(object):
         doc += '\n'
         return doc
 
+    def get_funcs(self):
+        return [(attr, getattr(self, attr))
+                 for attr in dir(self)
+                 if attr.startswith('command_')]
+
     def description(self, argv0='manage.py', command=None):
         '''Description outputed to console'''
         command = command or self.__class__.__name__.lower()
@@ -118,9 +150,7 @@ class Cli(object):
         else:
             _help += '{}\n'.format(command)
 
-        funcs = [(attr, getattr(self, attr))
-                 for attr in dir(self)
-                 if attr.startswith('command_')]
+        funcs = self.get_funcs()
         funcs.sort(key=lambda x: x[1].func_code.co_firstlineno)
 
         for attr, func in funcs:
