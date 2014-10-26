@@ -42,15 +42,24 @@ class cached_property(object):
     '''Turns decorated method into caching property (method is called once on
     first access to property).'''
 
-    def __init__(self, method, name=None):
+    def __init__(self, method, name=None, unmask_errors=True):
         self.method = method
         self.name = name or method.__name__
+        self.unmask_errors = unmask_errors
         self.__doc__ = method.__doc__
 
     def __get__(self, inst, cls):
         if inst is None:
             return self
-        result = self.method(inst)
+        if self.unmask_errors:
+            try:
+                result = self.method(inst)
+            except AttributeError:
+                exc_info = sys.exc_info()
+                raise RuntimeError, exc_info[1], exc_info[2]
+        else:
+            result = self.method(inst)
+
         setattr(inst, self.name, result)
         return result
 
@@ -59,12 +68,21 @@ class cached_class_property(object):
     '''Turns decorated method into caching class property (method is called
     once on first access to property of class or any of its instances).'''
 
-    def __init__(self, method, name=None):
+    def __init__(self, method, name=None, unmask_errors=True):
         self.method = method
         self.name = name or method.__name__
+        self.unmask_errors = unmask_errors
+        self.__doc__ = method.__doc__
 
     def __get__(self, inst, cls):
-        result = self.method(cls)
+        if self.unmask_errors:
+            try:
+                result = self.method(inst)
+            except AttributeError:
+                exc_info = sys.exc_info()
+                raise RuntimeError, exc_info[1], exc_info[2]
+        else:
+            result = self.method(inst)
         setattr(cls, self.name, result)
         return result
 
