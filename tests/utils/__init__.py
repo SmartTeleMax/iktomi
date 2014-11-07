@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import unittest, json
-from iktomi.utils import quoteattr, quoteattrs, quote_js, weakproxy
+from iktomi.utils import (
+    quoteattr, quoteattrs, quote_js, weakproxy,
+    cached_property, cached_class_property,
+)
 
 
 class Tests(unittest.TestCase):
@@ -40,3 +43,52 @@ class Tests(unittest.TestCase):
         del o
         with self.assertRaises(ReferenceError):
             p.a
+
+    def test_cached_property(self):
+        class C(object):
+            def __init__(self):
+                self.c = 0
+            @cached_property
+            def p(self):
+                self.c += 1
+                return 'a'
+        self.assertIsInstance(C.p, cached_property)
+        obj = C()
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(obj.c, 1)
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(obj.c, 1)
+        del obj.p
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(obj.c, 2)
+        obj = C()
+        obj.p = 'b'
+        self.assertEqual(obj.p, 'b')
+        self.assertEqual(obj.c, 0)
+        del obj.p
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(obj.c, 1)
+
+    def test_cached_class_property(self):
+        def create_C():
+            class C(object):
+                c = 0
+                @cached_class_property
+                def p(cls):
+                    cls.c += 1
+                    return 'a'
+            return C
+        C = create_C()
+        obj = C()
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(C.c, 1)
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(C.c, 1)
+        self.assertEqual(C.p, 'a')
+        self.assertEqual(C.c, 1)
+        C = create_C()
+        obj = C()
+        self.assertEqual(C.p, 'a')
+        self.assertEqual(C.c, 1)
+        self.assertEqual(obj.p, 'a')
+        self.assertEqual(C.c, 1)
