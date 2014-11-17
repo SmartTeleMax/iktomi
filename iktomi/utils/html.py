@@ -33,19 +33,26 @@ class Cleaner(clean.Cleaner):
             doc = doc.getroot()
         self.extra_clean(doc)
 
-    def wrapper_tag(self):
-        if 'p' in self.allow_tags:
-            return 'p'
-        elif 'div' in self.allow_tags:
-            return 'div'
+    def top_tag(self):
+        if self.wrap_inline_tags in (None, True):
+            if 'p' in self.allow_tags:
+                return html.Element('p')
+            elif 'div' in self.allow_tags:
+                return html.Element('div')
+        elif self.wrap_inline_tags in ('p', 'div'):
+            if 'p' in self.allow_tags or 'div' in self.allow_tags:
+                return html.Element(self.wrap_inline_tags)
+        elif hasattr(self.wrap_inline_tags, '__call__'):
+            return self.wrap_inline_tags()
 
     def clean_top(self, doc):
         par = None
         first_par = False
-        assert self.wrapper_tag() is not None, 'Cannot wrap in forbidden tag'
+        if self.top_tag() is None:
+            raise AssertionError, 'Cannot wrap in forbidden tag'
         # create paragraph if there text in the beginning of top
         if (doc.text or "").strip():
-            par = html.Element(self.wrapper_tag())
+            par = self.top_tag()
             doc.insert(0, par)
             par.text = doc.text
             doc.text = None
@@ -57,7 +64,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag == 'br' and 'br' in self.tags_to_wrap:
                 if (child.tail or "").strip():
-                    par = html.Element(self.wrapper_tag())
+                    par = self.top_tag()
                     doc.insert(i, par)
                     par.text = child.tail
                 doc.remove(child)
@@ -65,7 +72,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag not in self.tags_to_wrap and \
                     (child.tail or "").strip():
-                par = html.Element('p')
+                par = self.top_tag()
                 par.text = child.tail
                 child.tail = None
                 doc.insert(i+1, par)
@@ -73,7 +80,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag in self.tags_to_wrap:
                 if par is None:
-                    par = html.Element(self.wrapper_tag())
+                    par = self.top_tag()
                     doc.insert(i, par)
                 par.append(child)
             else:
@@ -130,7 +137,7 @@ class Cleaner(clean.Cleaner):
         for callback in self.dom_callbacks:
             callback(doc)
 
-        if self.wrap_inline_tags and self.tags_to_wrap:
+        if self.wrap_inline_tags is not False and self.tags_to_wrap:
             self.clean_top(doc)
 
 

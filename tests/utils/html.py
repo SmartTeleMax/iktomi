@@ -3,7 +3,7 @@ import unittest
 import os
 import re
 from iktomi.utils import html
-
+from lxml.html import Element
 
 class TestSanitizer(unittest.TestCase):
     '''Tests for sanitizer based on lxml'''
@@ -195,7 +195,7 @@ class TestSanitizer(unittest.TestCase):
 
     def test_p_not_allowed(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
-        self.attrs['wrap_inline_tags'] = True
+        self.attrs['wrap_inline_tags'] = 'div'
         # replacing p with div in allow_tags
         self.attrs['allow_tags'].remove('p')
         self.attrs['allow_tags'].append('div')
@@ -203,11 +203,21 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize("head<br><br>tail",
                             "<div>head</div><div>tail</div>")
 
+    def test_lambda_wrap_tag(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = lambda:Element('span')
+        self.assertSanitize("head<br><br>tail",
+                            "<span>head</span><span>tail</span>")
+
     def test_no_wrap_tags(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
         self.attrs['allow_tags'].remove('p')
         self.assertRaises(AssertionError, self.sanitize, 'head<br><br>tail')
+        self.attrs['wrap_inline_tags'] = 'div'
+        self.assertRaises(AssertionError, self.sanitize, 'head<br><br>tail')
+
+
 
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
