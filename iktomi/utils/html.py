@@ -17,13 +17,12 @@ class Cleaner(clean.Cleaner):
     allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
-
     # False : no tags wrapping;
     # None/True : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
     # if div allowed;
     # 'div'/'p' : wrap tags in 'div' or 'p' respectively
     # lambda : wrap tags in tag from lambda
-    wrap_inline_tags = False
+    wrap_inline_tags = None
     # Tags to wrap in paragraphs on top
     tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
                     'abbr', 'acronym', 'cite', 'code',
@@ -33,7 +32,7 @@ class Cleaner(clean.Cleaner):
 
     def __init__(self, *args, **kwargs):
         clean.Cleaner.__init__(self, *args, **kwargs)
-        if self.wrap_inline_tags is not False:
+        if self.wrap_inline_tags is True:
             if self.top_tag() is None:
                 raise ValueError('Cannot find top element')
 
@@ -45,6 +44,8 @@ class Cleaner(clean.Cleaner):
         self.extra_clean(doc)
 
     def top_tag(self):
+        if self.allow_tags is None:
+            return
         if self.wrap_inline_tags in (None, True):
             if 'p' in self.allow_tags:
                 return html.Element('p')
@@ -62,7 +63,7 @@ class Cleaner(clean.Cleaner):
         par = None
         first_par = False
         if self.top_tag() is None:
-            raise ValueError('Cannot wrap in forbidden tag')
+            return
         # create paragraph if there text in the beginning of top
         if (doc.text or "").strip():
             par = self.top_tag()

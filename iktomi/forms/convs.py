@@ -542,13 +542,13 @@ class Html(Char):
     #: A list of callbacks applied to DOM tree before it is
     #: rendered back to HTML.
     dom_callbacks = []
-    wrap_inline_tags = False
+    wrap_inline_tags = None
     # Tags to wrap in paragraphs on top
     tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
-                 'abbr', 'acronym', 'cite', 'code',
-                 'dfn', 'em', 'kbd', 'strong', 'samp',
-                 'var', 'a', 'bdo', 'br', 'map', 'object',
-                 'q', 'span', 'sub', 'sup']
+                    'abbr', 'acronym', 'cite', 'code',
+                    'dfn', 'em', 'kbd', 'strong', 'samp',
+                    'var', 'a', 'bdo', 'br', 'map', 'object',
+                    'q', 'span', 'sub', 'sup']
     #: Function returning object marked safe for template engine.
     #: For example, `jinja2.Markup` object.
     Markup = lambda s, x: x
