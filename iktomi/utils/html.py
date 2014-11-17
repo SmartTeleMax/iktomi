@@ -26,6 +26,13 @@ class Cleaner(clean.Cleaner):
                     'var', 'a', 'bdo', 'br', 'map', 'object',
                     'q', 'span', 'sub', 'sup']
 
+    def __init__(self, *args, **kwargs):
+        clean.Cleaner.__init__(self, *args, **kwargs)
+        if self.wrap_inline_tags is not False:
+            if self.top_tag() is None:
+                raise ValueError('Cannot find top element')
+
+
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
         if hasattr(doc, 'getroot'):
@@ -43,13 +50,15 @@ class Cleaner(clean.Cleaner):
             if 'p' in self.allow_tags or 'div' in self.allow_tags:
                 return html.Element(self.wrap_inline_tags)
         elif hasattr(self.wrap_inline_tags, '__call__'):
-            return self.wrap_inline_tags()
+            element = self.wrap_inline_tags()
+            if element.tag in self.allow_tags:
+                return element
 
     def clean_top(self, doc):
         par = None
         first_par = False
         if self.top_tag() is None:
-            raise AssertionError, 'Cannot wrap in forbidden tag'
+            raise ValueError('Cannot wrap in forbidden tag')
         # create paragraph if there text in the beginning of top
         if (doc.text or "").strip():
             par = self.top_tag()

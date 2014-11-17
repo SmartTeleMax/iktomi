@@ -208,15 +208,21 @@ class TestSanitizer(unittest.TestCase):
         self.attrs['wrap_inline_tags'] = lambda:Element('span')
         self.assertSanitize("head<br><br>tail",
                             "<span>head</span><span>tail</span>")
+        self.attrs['allow_tags'].remove('p')
 
     def test_no_wrap_tags(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
         self.attrs['allow_tags'].remove('p')
-        self.assertRaises(AssertionError, self.sanitize, 'head<br><br>tail')
+        self.assertRaises(ValueError, self.sanitize, 'head<br><br>tail')
         self.attrs['wrap_inline_tags'] = 'div'
-        self.assertRaises(AssertionError, self.sanitize, 'head<br><br>tail')
+        self.assertRaises(ValueError, self.sanitize, 'head<br><br>tail')
 
+    # cannot create Cleaner with wrong parameters
+    def test_create_cleaner_with_wrong_parameters(self):
+        self.attrs['wrap_inline_tags'] = None
+        self.attrs['allow_tags'].remove('p')
+        self.assertRaises(ValueError, html.Cleaner, **self.attrs)
 
 
 def spaceless(clean, **kwargs):
