@@ -20,11 +20,11 @@ class Cleaner(clean.Cleaner):
 
     wrap_inline_tags = False
     # Tags to wrap in paragraphs on top 
-    wrap_in_p = ['b', 'big', 'i', 'small', 'tt',
-                 'abbr', 'acronym', 'cite', 'code',
-                 'dfn', 'em', 'kbd', 'strong', 'samp',
-                 'var', 'a', 'bdo', 'br', 'map', 'object',
-                 'q', 'span', 'sub', 'sup']
+    tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
+                    'abbr', 'acronym', 'cite', 'code',
+                    'dfn', 'em', 'kbd', 'strong', 'samp',
+                    'var', 'a', 'bdo', 'br', 'map', 'object',
+                    'q', 'span', 'sub', 'sup']
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
@@ -48,7 +48,7 @@ class Cleaner(clean.Cleaner):
         for child in doc.getchildren():
             i = doc.index(child)
 
-            if child.tag == 'br' and 'br' in self.wrap_in_p:
+            if child.tag == 'br' and 'br' in self.tags_to_wrap:
                 if (child.tail or "").strip():
                     par = html.Element('p')
                     doc.insert(i, par)
@@ -56,7 +56,7 @@ class Cleaner(clean.Cleaner):
                 doc.remove(child)
                 continue
 
-            if child.tag not in self.wrap_in_p and \
+            if child.tag not in self.tags_to_wrap and \
                     (child.tail or "").strip():
                 par = html.Element('p')
                 par.text = child.tail
@@ -64,7 +64,7 @@ class Cleaner(clean.Cleaner):
                 doc.insert(i+1, par)
                 continue
 
-            if child.tag in self.wrap_in_p:
+            if child.tag in self.tags_to_wrap:
                 if par is None:
                     par = html.Element('p')
                     doc.insert(i, par)
@@ -123,7 +123,7 @@ class Cleaner(clean.Cleaner):
         for callback in self.dom_callbacks:
             callback(doc)
 
-        if self.wrap_inline_tags and self.wrap_in_p:
+        if self.wrap_inline_tags and self.tags_to_wrap:
             self.clean_top(doc)
 
 

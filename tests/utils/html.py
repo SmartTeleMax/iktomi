@@ -15,7 +15,7 @@ class TestSanitizer(unittest.TestCase):
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
-            'wrap_in_p': [],
+            'tags_to_wrap': [],
             #'strip_whitespace': True,
         }
 
@@ -145,8 +145,8 @@ class TestSanitizer(unittest.TestCase):
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
 
-    def test_wrap_in_p(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+    def test_tags_to_wrap(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
 
         self.assertSanitize("head<b>bold</b>tail",
@@ -170,14 +170,14 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
                              '<p>first</p><p>tail</p><p>second</p><p>third</p>')
 
-    def test_wrap_in_p_trailing_br(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+    def test_tags_to_wrap_trailing_br(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
         self.assertSanitize("<p>head</p><br> ",
                             "<p>head</p>")
 
-    def test_wrap_in_p_double_br(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+    def test_tags_to_wrap_double_br(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
 
         self.assertSanitize("head<br><br>tail",
@@ -189,7 +189,7 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize("<br><br><br><br>", "")
 
     def test_wrap_inline_tags(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.assertSanitize('first<br>second<br>third',
                             'first<br>second<br>third')
 
