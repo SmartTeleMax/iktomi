@@ -19,7 +19,7 @@ class Cleaner(clean.Cleaner):
     a_without_href = True
 
     wrap_inline_tags = False
-    # Tags to wrap in paragraphs on top 
+    # Tags to wrap in paragraphs on top
     tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
                     'abbr', 'acronym', 'cite', 'code',
                     'dfn', 'em', 'kbd', 'strong', 'samp',
@@ -33,12 +33,19 @@ class Cleaner(clean.Cleaner):
             doc = doc.getroot()
         self.extra_clean(doc)
 
+    def wrapper_tag(self):
+        if 'p' in self.allow_tags:
+            return 'p'
+        elif 'div' in self.allow_tags:
+            return 'div'
+
     def clean_top(self, doc):
         par = None
         first_par = False
+        assert self.wrapper_tag() is not None, 'Cannot wrap in forbidden tag'
         # create paragraph if there text in the beginning of top
         if (doc.text or "").strip():
-            par = html.Element('p')
+            par = html.Element(self.wrapper_tag())
             doc.insert(0, par)
             par.text = doc.text
             doc.text = None
@@ -50,7 +57,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag == 'br' and 'br' in self.tags_to_wrap:
                 if (child.tail or "").strip():
-                    par = html.Element('p')
+                    par = html.Element(self.wrapper_tag())
                     doc.insert(i, par)
                     par.text = child.tail
                 doc.remove(child)
@@ -66,7 +73,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag in self.tags_to_wrap:
                 if par is None:
-                    par = html.Element('p')
+                    par = html.Element(self.wrapper_tag())
                     doc.insert(i, par)
                 par.append(child)
             else:

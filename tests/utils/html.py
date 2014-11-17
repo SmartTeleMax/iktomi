@@ -193,6 +193,21 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('first<br>second<br>third',
                             'first<br>second<br>third')
 
+    def test_p_not_allowed(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+        # replacing p with div in allow_tags
+        self.attrs['allow_tags'].remove('p')
+        self.attrs['allow_tags'].append('div')
+
+        self.assertSanitize("head<br><br>tail",
+                            "<div>head</div><div>tail</div>")
+
+    def test_no_wrap_tags(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+        self.attrs['allow_tags'].remove('p')
+        self.assertRaises(AssertionError, self.sanitize, 'head<br><br>tail')
 
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
