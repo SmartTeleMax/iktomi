@@ -18,6 +18,11 @@ class Cleaner(clean.Cleaner):
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
 
+    # False : no tags wrapping;
+    # None/True : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
+    # if div allowed;
+    # 'div'/'p' : wrap tags in 'div' or 'p' respectively
+    # lambda : wrap tags in tag from lambda
     wrap_inline_tags = False
     # Tags to wrap in paragraphs on top
     tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
@@ -31,7 +36,6 @@ class Cleaner(clean.Cleaner):
         if self.wrap_inline_tags is not False:
             if self.top_tag() is None:
                 raise ValueError('Cannot find top element')
-
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
