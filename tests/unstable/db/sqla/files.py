@@ -241,7 +241,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertTrue(os.path.exists(obj.file.path))
         self.assertEqual(pf1.path, obj.file.path)
 
-    @unittest.skip('Not implemented')
+    @unittest.expectedFailure
     def test_update_file2file_not_random(self):
         obj = self.Model()
 
@@ -267,7 +267,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(obj.file_by_id.path))
         self.assertEqual(open(obj.file_by_id.path).read(), 'test2')
 
-    @unittest.skip('Not implemented')
+    @unittest.expectedFailure
     def test_update_random_collision(self):
         obj = self.Model()
         self.db.add(obj)
