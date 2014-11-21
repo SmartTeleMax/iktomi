@@ -41,6 +41,15 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('<b>some<span> </span>text</b>',
                              '<b>some<span> </span>text</b>')
 
+        self.assertSanitize('<p>head</p><p><br></p><p>tail</p>',
+                            '<p>head</p><p>tail</p>')
+
+        self.assertSanitize('<p>head</p><p><b><i> <br />  </i></b></p><p>tail</p>',
+                            '<p>head</p><p>tail</p>')
+
+        self.assertSanitize('<p>head</p><p><b>mid<i></i></b></p><p>tail</p>',
+                            '<p>head</p><p><b>mid</b></p><p>tail</p>')
+
     @unittest.skip('lxml does not provide css filtration')
     def test_safe_css(self):
         u'''Ensure that sanitizer does not remove safe css'''
