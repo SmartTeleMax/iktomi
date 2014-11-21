@@ -50,6 +50,10 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('<p>head</p><p><b>mid<i></i></b></p><p>tail</p>',
                             '<p>head</p><p><b>mid</b></p><p>tail</p>')
 
+        self.attrs['allow_tags'].append('div')
+        self.assertSanitize('<div>text<br>text</div>',
+                            '<div>text<br>text</div>')
+
     @unittest.skip('lxml does not provide css filtration')
     def test_safe_css(self):
         u'''Ensure that sanitizer does not remove safe css'''
