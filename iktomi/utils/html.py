@@ -82,8 +82,7 @@ class Cleaner(clean.Cleaner):
         children = el.getchildren()
         empty_children = all(map(self.is_element_empty, children))
         text = el.text and el.text.strip(u'  \t\r\n\v\f\u00a0')
-        if not text and empty_children:
-            return True
+        return not text and empty_children
 
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
