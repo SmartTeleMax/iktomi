@@ -20,7 +20,7 @@ class Cleaner(clean.Cleaner):
     # False : no tags wrapping;
     # None : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
     # True : try to wrap tags on top in 'p' if 'p' is allowed or 'div', 
-    #    and raise error if no top_tag was found
+    #    and raise error if no get_wrapper_tag was found
     # if div allowed;
     # 'div'/'p' : wrap tags in 'div' or 'p' respectively
     # lambda : wrap tags in tag from lambda
@@ -35,7 +35,7 @@ class Cleaner(clean.Cleaner):
     def __init__(self, *args, **kwargs):
         clean.Cleaner.__init__(self, *args, **kwargs)
         if self.wrap_inline_tags is True:
-            if self.top_tag() is None:
+            if self.get_wrapper_tag() is None:
                 raise ValueError('Cannot find top element')
 
     def __call__(self, doc):
@@ -46,7 +46,7 @@ class Cleaner(clean.Cleaner):
         self.extra_clean(doc)
 
     # retrieve tag to wrap around inline tags
-    def top_tag(self):
+    def get_wrapper_tag(self):
         if self.allow_tags is None:
             return
         if self.wrap_inline_tags in (None, True):
@@ -65,11 +65,11 @@ class Cleaner(clean.Cleaner):
     def clean_top(self, doc):
         par = None
         first_par = False
-        if self.top_tag() is None:
+        if self.get_wrapper_tag() is None:
             return
         # create paragraph if there text in the beginning of top
         if (doc.text or "").strip():
-            par = self.top_tag()
+            par = self.get_wrapper_tag()
             doc.insert(0, par)
             par.text = doc.text
             doc.text = None
@@ -81,7 +81,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag == 'br' and 'br' in self.tags_to_wrap:
                 if (child.tail or "").strip():
-                    par = self.top_tag()
+                    par = self.get_wrapper_tag()
                     doc.insert(i, par)
                     par.text = child.tail
                 doc.remove(child)
@@ -89,7 +89,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag not in self.tags_to_wrap and \
                     (child.tail or "").strip():
-                par = self.top_tag()
+                par = self.get_wrapper_tag()
                 par.text = child.tail
                 child.tail = None
                 doc.insert(i+1, par)
@@ -97,7 +97,7 @@ class Cleaner(clean.Cleaner):
 
             if child.tag in self.tags_to_wrap:
                 if par is None:
-                    par = self.top_tag()
+                    par = self.get_wrapper_tag()
                     doc.insert(i, par)
                 par.append(child)
             else:
