@@ -57,7 +57,7 @@ class Cleaner(clean.Cleaner):
         elif self.wrap_inline_tags in ('p', 'div'):
             if 'p' in self.allow_tags or 'div' in self.allow_tags:
                 return html.Element(self.wrap_inline_tags)
-        elif hasattr(self.wrap_inline_tags, '__call__'):
+        elif callable(self.wrap_inline_tags):
             element = self.wrap_inline_tags()
             if element.tag in self.allow_tags:
                 return element
