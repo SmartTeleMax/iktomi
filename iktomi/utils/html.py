@@ -18,7 +18,9 @@ class Cleaner(clean.Cleaner):
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
     # False : no tags wrapping;
-    # None/True : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
+    # None : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
+    # True : try to wrap tags on top in 'p' if 'p' is allowed or 'div', 
+    #    and raise error if no top_tag was found
     # if div allowed;
     # 'div'/'p' : wrap tags in 'div' or 'p' respectively
     # lambda : wrap tags in tag from lambda
@@ -43,6 +45,7 @@ class Cleaner(clean.Cleaner):
             doc = doc.getroot()
         self.extra_clean(doc)
 
+    # retrieve tag to wrap around inline tags
     def top_tag(self):
         if self.allow_tags is None:
             return
