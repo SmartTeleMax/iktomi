@@ -197,6 +197,19 @@ class UserAddressesTest(unittest.TestCase):
             user = self.dbp.query(User).filter_by(name=name).scalar()
             self.assertEqual(set(a.photo for a in user.photos), set(photos))
 
+    def test_mtm_relation_with_entities(self):
+        user_ids_without_entities = self.dbp.query(User)\
+                                            .join(User_Photo)\
+                                            .all()
+
+        user_ids_with_entities = self.dbp.query(User)\
+                                         .join(User_Photo)\
+                                         .with_entities(User_Photo.user_id)\
+                                         .all()
+
+        self.assertEqual(len(set(user_ids_with_entities)),
+                         len(set(user_ids_without_entities)))
+
     def test_relation_scalar(self):
         for email, name in {'u1a1': 'u1',
                             'u1a2': 'u1',
@@ -375,3 +388,6 @@ class UserAddressesTest(unittest.TestCase):
         doc = self.dbp.query(Doc).filter_by(title='a1').scalar()
         self.assertEqual(doc.date_start, 'tomorrow')
 
+
+if __name__=='__main__':
+    unittest.main()
