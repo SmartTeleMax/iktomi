@@ -61,8 +61,8 @@ class PublicQuery(Query):
         # others.
         return Query.from_self(self.private(), *ent)
 
-    def with_entities(self, *eentities):
-        return Query.with_entities(self.private(), *eentities)
+    def with_entities(self, *entities):
+        return Query.with_entities(self.private(), *entities)
 
     def count(self):
         # Without it it works with slow implementation of count(), while
