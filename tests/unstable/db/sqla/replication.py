@@ -1060,10 +1060,6 @@ class ReplicationTests(unittest.TestCase):
             data = Column(String)
             expr = column_property(data+' '+data)
             func = column_property(char_length(data))
-        @event.listens_for(A2.expr, 'set')
-        @event.listens_for(A2.func, 'set')
-        def attr_set(target, value, oldvalue, initiator):
-            self.fail('Computed attribute must not be copied on replication')
         self.create_all()
         # Data
         with self.db.begin():
