@@ -119,8 +119,8 @@ class ResizeMixed(Resizer):
     # XXX is this method needed?
     #    return self.get_resizer(img).transform(img, *args)
 
-    def __call__(self, img, size):
-        return self.get_resizer(img, size)(img, size)
+    def __call__(self, img, target_size):
+        return self.get_resizer(img.size, target_size)(img, target_size)
 
 
 class ResizeFixedWidth(Resizer):

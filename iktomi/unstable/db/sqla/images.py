@@ -73,7 +73,10 @@ class ImageEventHandlers(FileEventHandlers):
                                                      self.prop.persistent_cls)
 
             transient = session.find_file_manager(image_attr).new_transient(ext)
-            image_crop.save(transient.path, quality=self.prop.quality)
+            kw = dict(quality=self.prop.quality)
+            if self.prop.optimize:
+                kw = dict(kw, optimize=True)
+            image_crop.save(transient.path, **kw)
             session.find_file_manager(image_attr).store(transient, persistent)
             return persistent
         else:
@@ -135,6 +138,7 @@ class ImageProperty(FileProperty):
                          self.filter or \
                          options.pop('force_rgb', True)
         self.quality = options.pop('quality', 85)
+        self.optimize = options.pop('optimize', False)
 
         assert self.fill_from is None or self.image_sizes is not None
 
