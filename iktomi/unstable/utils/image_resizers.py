@@ -100,13 +100,14 @@ class ResizeCrop(Resizer):
 
 class ResizeMixed(Resizer):
 
-    def __init__(self, hor_resize, vert_resize):
+    def __init__(self, hor_resize, vert_resize, rate=1):
         self.hor_resize = hor_resize
         self.vert_resize = vert_resize
+        self.rate = rate
 
     def get_resizer(self, size, target_size):
         sw, sh = size
-        if sw >= sh:
+        if sw >= sh * self.rate:
             return self.hor_resize
         else:
             return self.vert_resize
