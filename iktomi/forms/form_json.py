@@ -6,6 +6,7 @@ from collections import OrderedDict
 from .form import Form
 from .fields import Field, FieldSet, FieldBlock, FieldList
 from . import widgets_json
+from webob.multidict import MultiDict
 
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,7 @@ class BaseJSONField(object):
 
 class JSONField(BaseJSONField, Field):
 
+    widget = widgets_json.TextInput()
     set_raw_value = None
     from_python = None
 
