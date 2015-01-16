@@ -6,7 +6,6 @@ from collections import OrderedDict
 from .form import Form
 from .fields import Field, FieldSet, FieldBlock, FieldList
 from . import widgets_json
-from webob.multidict import MultiDict
 
 
 logger = logging.getLogger(__name__)
