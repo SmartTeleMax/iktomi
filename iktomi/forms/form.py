@@ -92,9 +92,11 @@ class Form(object):
             if field.writable:
                 self.python_data.update(field.accept())
             else:
-                # readonly field
-                value = self.python_data[field.name]
-                field.set_raw_value(self.raw_data, field.from_python(value))
+                for name in field.field_names:
+                    # readonly field
+                    subfield = self.get_field(name)
+                    value = self.python_data[subfield.name]
+                    subfield.set_raw_value(self.raw_data, subfield.from_python(value))
         return self.is_valid
 
     def get_field(self, name):
