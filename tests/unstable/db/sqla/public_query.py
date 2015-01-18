@@ -197,6 +197,21 @@ class UserAddressesTest(unittest.TestCase):
             user = self.dbp.query(User).filter_by(name=name).scalar()
             self.assertEqual(set(a.photo for a in user.photos), set(photos))
 
+    def test_mtm_relation_with_entities(self):
+        users_without_entities = self.dbp.query(User)\
+                                         .join(User_Photo)\
+                                         .all()
+
+        user_ids_without_entities = [(x.id,) for x in users_without_entities]
+
+        user_ids_with_entities = self.dbp.query(User)\
+                                         .join(User_Photo)\
+                                         .with_entities(User_Photo.user_id)\
+                                         .all()
+
+        self.assertEqual(set(user_ids_with_entities),
+                         set(user_ids_without_entities))
+
     def test_relation_scalar(self):
         for email, name in {'u1a1': 'u1',
                             'u1a2': 'u1',
@@ -264,7 +279,7 @@ class UserAddressesTest(unittest.TestCase):
         self.assertEqual(query.count(), 0)
         self.assertEqual(query.all(), [])
 
-    @unittest.skip('test from sa_public_query')
+    @unittest.expectedFailure
     def test_public_by_private_exists(self):
         query = self.dbp.query(User).filter(User.addresses.any(email='u2a1'))
         self.assertEqual(query.count(), 0)
@@ -278,7 +293,7 @@ class UserAddressesTest(unittest.TestCase):
                               ('u2', 'u2a2'),
                               ('u5', 'u5a1')]))
 
-    @unittest.skip('test from sa_public_query')
+    @unittest.expectedFailure
     def test_relation_group_count(self):
         query = self.dbp.query(User.name, func.count(Address.id))\
                         .outerjoin(User.addresses).group_by(User.id)
@@ -375,3 +390,6 @@ class UserAddressesTest(unittest.TestCase):
         doc = self.dbp.query(Doc).filter_by(title='a1').scalar()
         self.assertEqual(doc.date_start, 'tomorrow')
 
+
+if __name__=='__main__':
+    unittest.main()

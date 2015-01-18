@@ -92,3 +92,12 @@ class Tests(unittest.TestCase):
         self.assertEqual(C.c, 1)
         self.assertEqual(obj.p, 'a')
         self.assertEqual(C.c, 1)
+
+#    def test_cached_property_attribute_error(self):
+#        class C(object):
+#            @cached_property
+#            def p(self):
+#                return self.c
+#
+#        c = C()
+#        self.assertRaises(Exception, hasattr, c, 'p')

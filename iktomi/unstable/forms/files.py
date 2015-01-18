@@ -12,9 +12,10 @@ class FileFieldSetConv(convs.Converter):
     error_hacking = 'Transient file name is not provided or is incorrect'
 
     def from_python(self, value):
-        return {'transient_name': value.name if value and value.mode == 'transient' else None,
+        is_transient = value and value.mode == 'transient'
+        return {'transient_name': value.name if is_transient else None,
                 #'original_name': value and value.original_name,
-                'original_name': value.name if value and value.mode == 'transient' else None, # XXX
+                'original_name': value.name if is_transient else None, # XXX
                 'file': value,
                 'mode': value.mode if value is not None else 'empty'}
 

@@ -1,6 +1,7 @@
 import unittest
 from sqlalchemy import Column, Integer, String, ForeignKey, \
                        ForeignKeyConstraint, create_engine
+from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker, relationship, composite, \
                            column_property
 from sqlalchemy.orm.collections import attribute_mapped_collection

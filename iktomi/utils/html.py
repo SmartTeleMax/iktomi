@@ -74,6 +74,16 @@ class Cleaner(clean.Cleaner):
                     continue
                 par = None
 
+    def is_element_empty(self, el):
+        if el.tag == 'br':
+            return True
+        if el.tag not in self.drop_empty_tags:
+            return False
+        children = el.getchildren()
+        empty_children = all(map(self.is_element_empty, children))
+        text = el.text and el.text.strip(u'  \t\r\n\v\f\u00a0')
+        return not text and empty_children
+
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
             scheme, netloc, path, query, fragment = urlsplit(el.attrib['href'])
@@ -97,12 +107,6 @@ class Cleaner(clean.Cleaner):
             for link in doc.xpath('//a[not(@href)]'):
                 link.drop_tag()
 
-        for tag in self.drop_empty_tags:
-            for el in doc.xpath('//'+tag+'[not(./*)]'):
-                has_text = el.text and el.text.strip(u'  \t\r\n\v\f\u00a0')
-                if not el.attrib and not has_text:
-                    el.drop_tag()
-
         if self.allow_classes is not None:
             for el in doc.xpath('//*[@class]'):
                 classes = filter(None, el.attrib['class'].split())
@@ -125,6 +129,11 @@ class Cleaner(clean.Cleaner):
 
         if self.wrap_inline_tags and self.wrap_in_p:
             self.clean_top(doc)
+
+        for tag in self.drop_empty_tags:
+            for el in doc.xpath('//'+tag):
+                if not el.attrib and self.is_element_empty(el):
+                    el.drop_tree()
 
 
 def sanitize(value, **kwargs):

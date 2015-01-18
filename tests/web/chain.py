@@ -8,7 +8,6 @@ from iktomi.web.core import _FunctionWrapper3
 from iktomi.utils.storage import VersionedStorage
 from webob.exc import HTTPNotFound
 
-skip = getattr(unittest, 'skip', lambda x: None)
 VS = VersionedStorage
 F = web.request_filter
 
@@ -220,7 +219,7 @@ class Chain(unittest.TestCase):
         chain = h
         self.assertEqual(chain(VS(), VS()), 1)
 
-    @skip('need to be fixed')
+    @unittest.expectedFailure
     def test_chain_reuse_copy_count(self):
         'Assert chaining does not cause too much copy calls'
         class CountHandler(web.WebHandler):
