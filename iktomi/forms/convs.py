@@ -99,7 +99,7 @@ class Converter(object):
     required = False
     multiple = False
 
-    #: An ordered list of validator functions. Are passed as position args 
+    #: An ordered list of validator functions. Are passed as position args
     #: to the converter::
     #:
     #:     Int(validator1, validator2)
@@ -352,7 +352,7 @@ class Bool(Converter):
 
 class EnumChoice(Converter):
     '''
-    In addition to Converter interface it must provide 
+    In addition to Converter interface it must provide
     :meth:`options` and :meth:`get_label` methods.
     '''
 
@@ -401,7 +401,7 @@ class BaseDatetime(CharBased):
     #: format used to convert from string by `strptime`
     #: and to convert to string by `strftime`.
     format = None
-    #: format used in error message. By default, generated automatically 
+    #: format used in error message. By default, generated automatically
     #: based `format` and `replacements` attributes
     readable_format = None
     replacements = (('%H', 'HH'), ('%M', 'MM'), ('%d', 'DD'),
@@ -542,6 +542,13 @@ class Html(Char):
     #: A list of callbacks applied to DOM tree before it is
     #: rendered back to HTML.
     dom_callbacks = []
+    wrap_inline_tags = None
+    # Tags to wrap in paragraphs on top
+    tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
+                    'abbr', 'acronym', 'cite', 'code',
+                    'dfn', 'em', 'kbd', 'strong', 'samp',
+                    'var', 'a', 'bdo', 'br', 'map', 'object',
+                    'q', 'span', 'sub', 'sup']
     #: Function returning object marked safe for template engine.
     #: For example, `jinja2.Markup` object.
     Markup = lambda s, x: x
@@ -551,10 +558,12 @@ class Html(Char):
     class Nothing: pass
 
     PROPERTIES = ['allowed_elements', 'allowed_attributes', 'allowed_protocols',
-                  'allowed_classes', 'dom_callbacks', 'drop_empty_tags']
+                  'allowed_classes', 'dom_callbacks', 'drop_empty_tags',
+                  'wrap_inline_tags']
 
     LIST_PROPERTIES = ['allowed_elements', 'allowed_attributes',
-                       'allowed_protocols', 'dom_callbacks', 'drop_empty_tags']
+                       'allowed_protocols', 'dom_callbacks',
+                       'drop_empty_tags', 'tags_to_wrap']
 
     @classmethod
     def _load_arg(cls, opt):
@@ -597,7 +606,6 @@ class Html(Char):
                 # XXX sometimes set must be ordered
                 kwargs[opt] = set(opt_value)
                 kwargs[opt].update(kwargs.pop(add_key))
-
         Char.__init__(self, *args, **kwargs)
 
     def clean_value(self, value):
@@ -619,6 +627,8 @@ class Html(Char):
                             allowed_protocols=self.allowed_protocols,
                             drop_empty_tags=self.drop_empty_tags,
                             dom_callbacks=self.dom_callbacks,
+                            wrap_inline_tags=self.wrap_inline_tags,
+                            tags_to_wrap=self.tags_to_wrap,
                             )
 
 
@@ -641,7 +651,7 @@ class List(Converter):
 class ListOf(Converter):
     '''
     Converter for scalar Fields, applies nested converter to each value
-    of the field (i.e. for each value from MultiDict) and returns a list of 
+    of the field (i.e. for each value from MultiDict) and returns a list of
     resulting values.
 
     Usage::

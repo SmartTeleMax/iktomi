@@ -561,6 +561,12 @@ class HtmlTests(unittest.TestCase):
         self.assertEqual(conv.accept('<p>Hello!</p>'), None)
         self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
 
+    def test_tag_wrapping(self):
+        conv = init_conv(convs.Html(wrap_inline_tags=True,
+                                    tags_to_wrap=['b', 'i']))
+        cleaner = conv.cleaner
+        self.assertEqual(cleaner.wrap_inline_tags, True)
+        self.assertEqual(cleaner.tags_to_wrap, ['b', 'i'])
 
 class ValidatorTests(unittest.TestCase):
 
@@ -610,3 +616,5 @@ class ValidatorTests(unittest.TestCase):
         conv.field.form.errors = {}
 
 
+if __name__=='__main__':
+    unittest.main()

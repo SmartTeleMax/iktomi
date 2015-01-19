@@ -3,7 +3,7 @@ import unittest
 import os
 import re
 from iktomi.utils import html
-
+from lxml.html import Element
 
 class TestSanitizer(unittest.TestCase):
     '''Tests for sanitizer based on lxml'''
@@ -15,7 +15,7 @@ class TestSanitizer(unittest.TestCase):
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
-            'wrap_in_p': [],
+            'tags_to_wrap': [],
             #'strip_whitespace': True,
         }
 
@@ -158,8 +158,8 @@ class TestSanitizer(unittest.TestCase):
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
 
-    def test_wrap_in_p(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+    def test_tags_to_wrap(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
 
         self.assertSanitize("head<b>bold</b>tail",
@@ -183,14 +183,14 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
                              '<p>first</p><p>tail</p><p>second</p><p>third</p>')
 
-    def test_wrap_in_p_trailing_br(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+    def test_tags_to_wrap_trailing_br(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
         self.assertSanitize("<p>head</p><br> ",
                             "<p>head</p>")
 
-    def test_wrap_in_p_double_br(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+    def test_tags_to_wrap_double_br(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
 
         self.assertSanitize("head<br><br>tail",
@@ -202,9 +202,39 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize("<br><br><br><br>", "")
 
     def test_wrap_inline_tags(self):
-        self.attrs['wrap_in_p'] = ['b', 'i', 'br']
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = False
         self.assertSanitize('first<br>second<br>third',
                             'first<br>second<br>third')
+
+    def test_p_not_allowed(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = 'div'
+        # replacing p with div in allow_tags
+        self.attrs['allow_tags'].remove('p')
+        self.attrs['allow_tags'].append('div')
+
+        self.assertSanitize("head<br><br>tail",
+                            "<div>head</div><div>tail</div>")
+
+    def test_lambda_wrap_tag(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = lambda:Element('span')
+        self.assertSanitize("head<br><br>tail",
+                            "<span>head</span><span>tail</span>")
+        self.attrs['allow_tags'].remove('p')
+
+    def test_no_wrap_tags(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+        self.attrs['allow_tags'].remove('p')
+        self.assertRaises(ValueError, self.sanitize, 'head<br><br>tail')
+
+    # cannot create Cleaner with wrong parameters
+    def test_create_cleaner_with_wrong_parameters(self):
+        self.attrs['wrap_inline_tags'] = True
+        self.attrs['allow_tags'].remove('p')
+        self.assertRaises(ValueError, html.Cleaner, **self.attrs)
 
 
 def spaceless(clean, **kwargs):

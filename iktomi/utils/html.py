@@ -17,14 +17,26 @@ class Cleaner(clean.Cleaner):
     allow_classes = {}
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
+    # False : no tags wrapping;
+    # None : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
+    # True : try to wrap tags on top in 'p' if 'p' is allowed or 'div', 
+    #    and raise error if no get_wrapper_tag was found
+    # if div allowed;
+    # 'div'/'p' : wrap tags in 'div' or 'p' respectively
+    # lambda : wrap tags in tag from lambda
+    wrap_inline_tags = None
+    # Tags to wrap in paragraphs on top
+    tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
+                    'abbr', 'acronym', 'cite', 'code',
+                    'dfn', 'em', 'kbd', 'strong', 'samp',
+                    'var', 'a', 'bdo', 'br', 'map', 'object',
+                    'q', 'span', 'sub', 'sup']
 
-    wrap_inline_tags = False
-    # Tags to wrap in paragraphs on top 
-    wrap_in_p = ['b', 'big', 'i', 'small', 'tt',
-                 'abbr', 'acronym', 'cite', 'code',
-                 'dfn', 'em', 'kbd', 'strong', 'samp',
-                 'var', 'a', 'bdo', 'br', 'map', 'object',
-                 'q', 'span', 'sub', 'sup']
+    def __init__(self, *args, **kwargs):
+        clean.Cleaner.__init__(self, *args, **kwargs)
+        if self.wrap_inline_tags is True:
+            if self.get_wrapper_tag() is None:
+                raise ValueError('Cannot find top element')
 
     def __call__(self, doc):
         clean.Cleaner.__call__(self, doc)
@@ -33,12 +45,31 @@ class Cleaner(clean.Cleaner):
             doc = doc.getroot()
         self.extra_clean(doc)
 
+    # retrieve tag to wrap around inline tags
+    def get_wrapper_tag(self):
+        if self.allow_tags is None:
+            return
+        if self.wrap_inline_tags in (None, True):
+            if 'p' in self.allow_tags:
+                return html.Element('p')
+            elif 'div' in self.allow_tags:
+                return html.Element('div')
+        elif self.wrap_inline_tags in ('p', 'div'):
+            if 'p' in self.allow_tags or 'div' in self.allow_tags:
+                return html.Element(self.wrap_inline_tags)
+        elif callable(self.wrap_inline_tags):
+            element = self.wrap_inline_tags()
+            if element.tag in self.allow_tags:
+                return element
+
     def clean_top(self, doc):
         par = None
         first_par = False
+        if self.get_wrapper_tag() is None:
+            return
         # create paragraph if there text in the beginning of top
         if (doc.text or "").strip():
-            par = html.Element('p')
+            par = self.get_wrapper_tag()
             doc.insert(0, par)
             par.text = doc.text
             doc.text = None
@@ -48,25 +79,25 @@ class Cleaner(clean.Cleaner):
         for child in doc.getchildren():
             i = doc.index(child)
 
-            if child.tag == 'br' and 'br' in self.wrap_in_p:
+            if child.tag == 'br' and 'br' in self.tags_to_wrap:
                 if (child.tail or "").strip():
-                    par = html.Element('p')
+                    par = self.get_wrapper_tag()
                     doc.insert(i, par)
                     par.text = child.tail
                 doc.remove(child)
                 continue
 
-            if child.tag not in self.wrap_in_p and \
+            if child.tag not in self.tags_to_wrap and \
                     (child.tail or "").strip():
-                par = html.Element('p')
+                par = self.get_wrapper_tag()
                 par.text = child.tail
                 child.tail = None
                 doc.insert(i+1, par)
                 continue
 
-            if child.tag in self.wrap_in_p:
+            if child.tag in self.tags_to_wrap:
                 if par is None:
-                    par = html.Element('p')
+                    par = self.get_wrapper_tag()
                     doc.insert(i, par)
                 par.append(child)
             else:
@@ -127,7 +158,7 @@ class Cleaner(clean.Cleaner):
         for callback in self.dom_callbacks:
             callback(doc)
 
-        if self.wrap_inline_tags and self.wrap_in_p:
+        if self.wrap_inline_tags is not False and self.tags_to_wrap:
             self.clean_top(doc)
 
         for tag in self.drop_empty_tags:
