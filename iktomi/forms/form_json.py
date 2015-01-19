@@ -80,6 +80,7 @@ class BaseJSONField(object):
 
 class JSONField(BaseJSONField, Field):
 
+    widget = widgets_json.TextInput()
     set_raw_value = None
     from_python = None
 

@@ -83,6 +83,12 @@ class CheckBox(Widget):
 
     render_type = 'checkbox'
 
+    def render(self):
+        checked = self.field.get_data()[self.field.name]
+        return dict(Widget.render(self),
+                    checked=checked)
+
+
 
 class CharDisplay(Widget):
 
