@@ -132,6 +132,4 @@ class FieldBlockWidget(FieldSetWidget):
 
 
 class FileInput(Widget):
-
-    template = 'widgets/file'
-
+    pass
