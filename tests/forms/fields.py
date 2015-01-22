@@ -218,6 +218,33 @@ class FieldBlockTests(unittest.TestCase):
         self.assertEqual(form.get_field('title').raw_value, 'Hello')
         self.assertEqual(form.errors, {})
 
+    def test_fieldblock_readonly(self):
+        class _Form(Form):
+            fields=[
+                FieldBlock('field block',
+                           fields=[
+                                    Field('number',
+                                          convs.Int()),
+                                    Field('title',
+                                          convs.Char()),
+                                  ],
+                           permissions='r'),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env)
+        self.assertEqual(form.raw_data, MultiDict([('number', ''),
+                                                   ('title', '')]))
+        self.assertEqual(form.python_data, {'number': None,
+                                            'title': None})
+        self.assert_(form.accept({'number': '4', 'title': 'Hello'}),
+                     form.errors)
+        self.assertEqual(form.python_data, {'number': None,
+                                            'title': None})
+        self.assertEqual(form.get_field('number').raw_value, '')
+        self.assertEqual(form.get_field('title').raw_value, '')
+        self.assertEqual(form.errors, {})
+
+
 
 class FileFieldTests(unittest.TestCase):
 
@@ -239,4 +266,3 @@ class FileFieldTests(unittest.TestCase):
         form = F()
         self.assertEqual(form.accept(request.POST), False)
         self.assertEqual(form.errors.keys(), ['inp'])
-
