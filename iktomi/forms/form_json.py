@@ -4,7 +4,7 @@ import json
 from collections import OrderedDict
 
 from .form import Form
-from .fields import Field, FieldSet, FieldBlock, FieldList
+from .fields import Field, FieldSet, FieldBlock, FieldList, FileField
 from . import widgets_json
 
 
@@ -199,8 +199,14 @@ class JSONFieldList(BaseJSONField, FieldList):
                              _key=int(index)))
         return data
 
+
+class JSONFileField(JSONField, FileField):
+
+    widget = widgets_json.FileInput()
+
+
 Form = JSONForm
 Field = JSONField
 FieldSet = JSONFieldSet
-FieldList = JSONFieldList
-FieldBlock = JSONFieldBlock
+FieldList = JSONFieldListFieldBlock = JSONFieldBlock
+FileField = JSONFileField
