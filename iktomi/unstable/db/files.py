@@ -56,6 +56,9 @@ class BaseFile(object):
 class TransientFile(BaseFile):
 
     mode = 'transient'
+    def __init__(self, *args, **kwargs):
+        BaseFile.__init__(self, *args, **kwargs)
+        self.stored_to = None
 
     @property
     def url(self):
@@ -180,6 +183,7 @@ class FileManager(BaseFileManager):
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
         os.rename(transient_file.path, persistent_file.path)
+        transient_file.stored_to = persistent_file
         return persistent_file
 
     def get_transient_url(self, file, env=None):
