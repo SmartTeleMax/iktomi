@@ -56,9 +56,7 @@ class BaseFile(object):
 class TransientFile(BaseFile):
 
     mode = 'transient'
-    def __init__(self, *args, **kwargs):
-        BaseFile.__init__(self, *args, **kwargs)
-        self.stored_to = None
+    stored_to = None
 
     @property
     def url(self):
