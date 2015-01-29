@@ -208,5 +208,6 @@ class JSONFileField(JSONField, FileField):
 Form = JSONForm
 Field = JSONField
 FieldSet = JSONFieldSet
-FieldList = JSONFieldListFieldBlock = JSONFieldBlock
+FieldList = JSONFieldList
+FieldBlock = JSONFieldBlock
 FileField = JSONFileField
