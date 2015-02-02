@@ -31,9 +31,6 @@ class ReplicationTests(unittest.TestCase):
     def create_all(self):
         self.Base.metadata.create_all()
 
-    def assertNothingChanged(self, hist):
-        map(self.assertFalse, [hist.created, hist.deleted, hist.updated])
-
     def test_reflect(self):
         # Schema
         class A1(self.Base):
@@ -50,7 +47,7 @@ class ReplicationTests(unittest.TestCase):
         # Test when reflection doesn't exist
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.reflect(a1, A2)
-        self.assertNothingChanged(hist)
+        hist.assert_nothing_happened()
         self.assertIsNone(a2)
         # Data for target (reflection exists)
         with self.db.begin():
@@ -59,14 +56,14 @@ class ReplicationTests(unittest.TestCase):
         # Test when reflection is already loaded
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.reflect(a1, A2)
-        self.assertNothingChanged(hist)
+        hist.assert_nothing_happened()
         self.assertIsNotNone(a2)
         self.assertEqual(a2.same, 's2')
         # Once more but when reflection is not loaded
         self.db.expunge(a2)
         with DBHistory(self.db) as hist, self.db.begin():
             a2 = replication.reflect(a1, A2)
-        self.assertNothingChanged(hist)
+        hist.assert_nothing_happened()
         self.assertIsNotNone(a2)
         self.assertEqual(a2.same, 's2')
 
@@ -164,7 +161,7 @@ class ReplicationTests(unittest.TestCase):
         with DBHistory(self.db) as hist, self.db.begin():
             c2 = replication.replicate(c1, C2)
         hist.assert_created_one(C2)
-        self.assertEqual(len(hist.created), 1)
+        self.assertEqual(len(hist.created_idents), 1)
         self.assertEqual(c2.id, c1.id)
         self.assertIsNone(c2.parent)
         # Reflection for child already exists and loaded
@@ -299,7 +296,7 @@ class ReplicationTests(unittest.TestCase):
         with DBHistory(self.db) as hist, self.db.begin():
             p2 = replication.replicate(p1, P2)
         hist.assert_created_one(P2)
-        assert len(hist.created)==1
+        assert len(hist.created_idents)==1
         self.assertEqual(p2.id, p1.id)
         self.assertIsNone(p2.child)
         # Replication from other side, property is reflected
