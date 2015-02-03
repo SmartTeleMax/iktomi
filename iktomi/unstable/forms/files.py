@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from iktomi.forms import convs, widgets, Field, FieldSet, FileField
+from iktomi.utils import cached_property
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +20,14 @@ class FileFieldSetConv(convs.Converter):
                 'file': value,
                 'mode': value.mode if value is not None else 'empty'}
 
+    @cached_property
+    def file_manager(self):
+        return self.env.file_manager
+
     def _to_python(self, file=None, mode=None,
                    transient_name=None, original_name=None):
 
-        file_manager = self.env.file_manager
+        file_manager = self.file_manager
 
         if not self._is_empty(file):
             file = file_manager.create_transient(file.file, file.filename)
