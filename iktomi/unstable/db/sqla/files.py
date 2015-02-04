@@ -173,6 +173,7 @@ class FileProperty(MapperProperty):
     event_cls = FileEventHandlers
 
     def __init__(self, column, name_template, attribute_name=None, **options):
+        super(FileProperty, self).__init__()
         self.column = column
         self._attribute_name = attribute_name
         self.name_template = name_template
@@ -191,10 +192,14 @@ class FileProperty(MapperProperty):
 
     def instrument_class(self, mapper):
         handlers = self.event_cls(self)
-        event.listen(mapper, 'before_insert', handlers.before_insert, propagate=True)
-        event.listen(mapper, 'before_update', handlers.before_update, propagate=True)
-        event.listen(mapper, 'after_delete', handlers.after_delete, propagate=True)
-        setattr(mapper.class_, self.key, self.attribute_cls(self, mapper.class_))
+        event.listen(mapper, 'before_insert', handlers.before_insert,
+                     propagate=True)
+        event.listen(mapper, 'before_update', handlers.before_update,
+                     propagate=True)
+        event.listen(mapper, 'after_delete', handlers.after_delete,
+                     propagate=True)
+        setattr(mapper.class_, self.key,
+                self.attribute_cls(self, mapper.class_))
 
     # XXX Implement merge?
 
