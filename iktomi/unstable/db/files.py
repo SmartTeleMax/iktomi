@@ -79,9 +79,10 @@ class _AttrDict(object):
     def __getitem__(self, key):
         return getattr(self.__inst, key)
 
-def random_name():
+def random_name(length=32):
     # altchars - do not use "-" and "_" in file names
-    return base64.b64encode(os.urandom(8), altchars="AA").rstrip('=')
+    name = base64.b64encode(os.urandom(length), altchars="AA").rstrip('=')
+    return name[:length]
 
 
 class BaseFileManager(object):
@@ -105,12 +106,20 @@ class ReadonlyFileManager(BaseFileManager):
 
 class FileManager(BaseFileManager):
 
+    transient_length = 16
+    persistent_length = 32
+
     def __init__(self, transient_root, persistent_root,
-                 transient_url, persistent_url):
+                 transient_url, persistent_url,
+                 transient_length=None,
+                 persistent_length=None):
         self.transient_root = transient_root
         self.persistent_root = persistent_root
         self.transient_url = transient_url
         self.persistent_url = persistent_url
+
+        self.transient_length = transient_length or self.transient_length
+        self.persistent_length = persistent_length or self.persistent_length
 
     def delete(self, file_obj):
         # XXX Is this right place again?
@@ -153,7 +162,7 @@ class FileManager(BaseFileManager):
     def new_transient(self, ext=''):
         '''Creates empty TransientFile with random name and given extension.
         File on FS is not created'''
-        name = os.urandom(8).encode('hex') + ext
+        name = random_name(self.transient_length) + ext
         return TransientFile(self.transient_root, name, self)
 
     def get_transient(self, name):
@@ -189,7 +198,8 @@ class FileManager(BaseFileManager):
         assert '{random}' in name_template, \
                'Non-random name templates are not supported yet'
         for i in xrange(5):
-            name = name_template.format(item=inst, random=random_name())
+            name = name_template.format(item=inst,
+                    random=random_name(self.persistent_length))
             name = name + ext
             # XXX Must differ from old value[s].
             if name != old_name or not '{random}' in name_template:

@@ -2,6 +2,7 @@ import os, errno, logging
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.interfaces import MapperProperty
 from sqlalchemy.orm.attributes import get_history
+from sqlalchemy.orm.util import class_mapper
 from sqlalchemy import event
 from sqlalchemy.util import set_creation_order
 from weakref import WeakKeyDictionary
@@ -221,6 +222,12 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
             registry[k] = v
 
     def find_file_manager(self, target):
+        if hasattr(target, 'metadata'):
+            assert class_mapper(type(target)) is not None
+            if target.metadata in registry:
+                return registry[target.metadata]
+            return file_manager
+
         assert isinstance(target, FileAttribute)
         if target in registry:
             return registry[target]
