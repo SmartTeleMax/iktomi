@@ -99,11 +99,7 @@ class FormClassInitializationTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [5, 6, 7]})
-        # TODO: fix FieldList
-        # self.assertEqual(form.get_data(), {'list':{'number-1':5,
-        #                                            'number-2':6,
-        #                                            'number-3':7,
-        #                                            }})
+        self.assertEqual(form.get_data(), {'list':[{'1':'5'}, {'2':'6'}, {'3':'7'}]})
         self.assertEqual(form.python_data, {'list': [5, 6, 7]})
 
     def test_fieldlist_with_initial_and_initial(self):
@@ -114,12 +110,7 @@ class FormClassInitializationTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [5, 6, 7]})
-        # TODO: fix FieldList
-        # self.assertEqual(form.raw_data, MultiDict([('list-indices', '1'),
-        #                                            ('list-indices', '2'),
-        #                                            ('list.1', '1'),
-        #                                            ('list.2', '2')
-        #                                           ]))
+        self.assertEqual(form.get_data(), {'list':[{'1':'5'}, {'2':'6'}, {'3':'7'}]})
         self.assertEqual(form.python_data, {'list': [5, 6, 7]})
 
 
@@ -155,14 +146,14 @@ class FormErrorsTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'set': {'first': 1,
                                                     'second': 2},
                                             'third': None})
-        # TODO: check required format for errors(nested dicts or by ".") 
-        self.assertEqual(form.errors, {'set.second': convs.Int.error_required,
+        # TODO: check required format for errors(nested dicts or by ".")
+        self.assertEqual(form.errors, {'set':{'second': convs.Int.error_required},
                                        'third': convs.Int.error_notvalid})
         self.assertEqual(form.get_data(), {'set':{'first': '1',
                                                   'second': '',},
                                            'third': '3f'})
 
-    # TODO: fix FieldList 
+    # TODO: fix FieldList
     def test_fieldlist_with_initial_delete(self):
         'Fieldlist element deletion'
         class _Form(Form):
@@ -171,10 +162,8 @@ class FormErrorsTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [5, 6, 7]})
+        self.assertEqual(form.get_data(), {'list':[{'1':'5'}, {'2':'6'}, {'3':'7'}]})
         self.assertEqual(form.python_data, {'list': [5, 6, 7]})
-        #self.assertTrue(form.accept((('list-indices', '1'), ('list-indices', '3')), 
-        #                                          **{'list.1': '1', 'list.3': '3'})))
-        #self.assertEqual(form.python_data, {'list': [1, 3]})
 
     def test_form__clean(self):
         'Assert clean__ method existance causes errors'
@@ -229,11 +218,11 @@ class FormClassAcceptTests(unittest.TestCase):
         env = AppEnvironment.create()
         form = _Form(env)
         self.assertEqual(form.python_data, {'list': []})
-        self.assertEqual(form.get_data(), {})
+        self.assertEqual(form.get_data(), {'list':[]})
         self.assert_(form.accept({}))
         self.assertEqual(form.python_data, {'list': []})
         self.assertEqual(form.errors, {})
-        self.assertEqual(form.get_data(), {})
+        self.assertEqual(form.get_data(), {'list':[]})
 
     def test_fieldset_is_required(self):
         'Fieldset is required and accepted value is empty'
@@ -246,5 +235,183 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'set': {'number': None}})
         self.assert_(form.accept({}))
         self.assertEqual(form.python_data, {'set': {'number': None}})
-        self.assertEqual(form.get_field('set.number').raw_value, '')
+        self.assertEqual(form.get_field('set.number').get_data(), {'number', ''})
         self.assertEqual(form.errors, {})
+
+
+class FormReadonlyFieldsTest(unittest.TestCase):
+
+    def test_readonly(self):
+        'Accept of readonly fields'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), permissions='r'),
+                Field('second', convs.Int()),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env)
+        self.assert_(form.accept(dict(first='1', second='2')))
+        self.assertEqual(form.python_data, {'first':None, 'second':2})
+
+    def test_with_initial(self):
+        'Accept of readonly fields with initial values'
+        class _Form(Form):
+            fields=[
+                Field('first', convs.Int(), initial=1, permissions='r'),
+                Field('second', convs.Int()),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env)
+        self.assert_(form.accept(dict(first='3', second='2')))
+        self.assertEqual(form.python_data, {'first':1, 'second':2})
+        self.assertEqual(form.get_data(), {'first':'1', 'second':'2'})
+
+    def test_fieldset(self):
+        'Accept of readonly fieldset with initial values'
+        class _Form(Form):
+            fields=[
+                FieldSet('set', fields=[
+                    Field('first', convs.Int(), initial=1, permissions='r'),
+                    Field('second', convs.Int(), initial=2),
+                ]),
+                Field('third', convs.Int()),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env)
+        self.assert_(form.accept({'set':{'first': '2',
+                                         'second': '2'},
+                                  'third': '3'}))
+        self.assertEqual(form.python_data, {'set': {'first': 1,
+                                                    'second': 2},
+                                            'third': 3})
+        self.assertEqual(form.get_data(), {'set':{'first': '1',
+                                                  'second': '2'},
+                                           'third':'3'})
+
+    def test_fieldlist(self):
+        'Accept of readonly fieldlist with initial values'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int(), permissions='r')),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env, initial={'list':[5, 6]})
+        self.assertEqual(form.python_data, {'list': [5, 6]})
+        self.assert_(form.accept(dict(list=[{'1':1}, {'2':2}]) ) )
+        self.assertEqual(form.python_data, {'list': [5, 6]})
+
+    def test_fieldlist_of_fieldsets(self):
+        'Accept of fieldlist of readonly fieldsets'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=FieldSet(
+                    'set',
+                    fields=[Field('number', convs.Int(), permissions='r')],
+                )),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env, initial={'list':[{'number':1}, {'number':2}]})
+        self.assertEqual(form.raw_data, MultiDict((('list-indices', '1'), ('list-indices', '2')), **{'list.1.number': '1', 'list.2.number': '2'}))
+        self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
+        self.assert_(form.accept(MultiDict((('list-indices', '1'),
+                                            ('list-indices', '2')),
+                                           **{'list.1.number': '2', 'list.2.number': '3'})))
+        self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
+
+    def test_fieldset_of_fieldsets(self):
+        'Accept of readonly fieldset of fieldsets'
+        class _Form(Form):
+            fields=[
+                FieldSet('sets', fields=[
+                    FieldSet('set1', fields=[
+                        Field('first', convs.Int(), permissions='r'),
+                        Field('second', convs.Int()),
+                    ]),
+                    FieldSet('set2', fields=[
+                        Field('first', convs.Int()),
+                        Field('second', convs.Int(), permissions='r'),
+                    ]),
+                ]),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env, initial={'sets':{
+            'set1': {'first': 1, 'second': 2},
+            'set2': {'first': 1, 'second': 2},
+        }})
+
+        self.assertEqual(form.get_data(),
+            {'sets':{'set1':{'first': '1',
+                             'second': '2',},
+                     'set2':{'first': '1',
+                             'second': '2'}},
+        })
+
+        self.assert_(form.accept(
+            {'sets':{'set1':{'first': 'incorrect',
+                             'second': '2',},
+                     'set2':{'first': '1',
+                             'second': 'incorrect'}},
+
+            }
+        ))
+
+        self.assertEqual(form.python_data, {'sets': {
+            'set1': {'first': 1, 'second': 2},
+            'set2': {'first': 1, 'second': 2},
+        }})
+
+        self.assertEqual(form.get_data(),
+            {'sets':{'set1':{'first': '1',
+                             'second': '2',},
+                     'set2':{'first': '1',
+                             'second': '2'}},
+        })
+
+    def test_fieldset_of_fieldsets_with_noreq(self):
+        'Accept of readonly fieldset of fieldsets with required=False'
+        class _Form(Form):
+            fields=[
+                FieldSet('sets', fields=[
+                    FieldSet('set1', fields=[
+                        Field('first', convs.Int(required=False), permissions='r'),
+                        Field('second', convs.Int()),
+                    ]),
+                    FieldSet('set2', fields=[
+                        Field('first', convs.Int()),
+                        Field('second', convs.Int(required=False), permissions='r'),
+                    ]),
+                ]),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env, initial={'sets':{
+            'set1': {'first': None, 'second': 2},
+            'set2': {'first': 1, 'second': None},
+        }})
+
+        self.assertEqual(form.get_data(),
+            {'sets':{'set1':{'first': '',
+                             'second': '2',},
+                     'set2':{'first': '1',
+                            'second': ''}},
+            })
+
+        self.assert_(form.accept(
+            {'sets':{'set1':{'first': 'incorrect',
+                             'second': '2',},
+                     'set2':{'first': '1',
+                             'second': 'incorrect'}},
+
+            }
+        ))
+
+        self.assertEqual(form.python_data, {'sets': {
+            'set1': {'first': None, 'second': 2},
+            'set2': {'first': 1, 'second': None},
+        }})
+
+        self.assertEqual(form.get_data(),
+            {'sets':{'set1':{'first': '',
+                             'second': '2',},
+                     'set2':{'first': '1',
+                            'second': ''}},
+            })

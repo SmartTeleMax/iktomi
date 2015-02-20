@@ -169,8 +169,8 @@ class JSONFieldList(BaseJSONField, FieldList):
         self.raw_value = raw_values
 
         result = OrderedDict()
-        for raw_value in raw_values:
-            index = result.get('_key', '')
+        for raw_value  in raw_values:
+            index = raw_value.keys()[0]#get('_key', '')
             try:
                 #XXX: we do not convert index to int, just check it.
                 #     is it good idea?
@@ -183,7 +183,7 @@ class JSONFieldList(BaseJSONField, FieldList):
             field = self.field(name=str(index))
             if not field.writable:
                 # readonly field
-                if index in old:
+                if index in old.keys():
                     result[field.name] = old[field.name]
             else:
                 result.update(field.accept(raw_value))
@@ -195,9 +195,8 @@ class JSONFieldList(BaseJSONField, FieldList):
         data = []
         for index in self.python_data:
             field = self.field(name=str(index))
-            data.append(dict(field.get_data(),
-                             _key=int(index)))
-        return data
+            data.append(field.get_data())
+        return {self.name: data}
 
 
 class JSONFileField(JSONField, FileField):
