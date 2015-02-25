@@ -83,6 +83,7 @@ class JSONField(BaseJSONField, Field):
     widget = widgets_json.TextInput()
     set_raw_value = None
     from_python = None
+    raw_value = Field._null_value
 
     def get_data(self):
         if self.error and self.writable:
@@ -92,6 +93,8 @@ class JSONField(BaseJSONField, Field):
         return {self.name: value}
 
     def accept(self, raw_value):
+        if raw_value is None:
+            raw_value = self._null_value
         self.raw_value = raw_value
         if not self._check_value_type(raw_value):
             # XXX should this be silent or TypeError?
@@ -170,7 +173,7 @@ class JSONFieldList(BaseJSONField, FieldList):
 
         result = OrderedDict()
         for raw_value  in raw_values:
-            index = raw_value.keys()[0]#get('_key', '')
+            index = raw_value.get('_key', '')
             try:
                 #XXX: we do not convert index to int, just check it.
                 #     is it good idea?
@@ -186,7 +189,7 @@ class JSONFieldList(BaseJSONField, FieldList):
                 if index in old.keys():
                     result[field.name] = old[field.name]
             else:
-                result.update(field.accept(raw_value))
+                result.update(field.accept(raw_value[str(index)]))
         self.clean_value = self.conv.accept(result)
         return {self.name: self.clean_value}
 
@@ -195,7 +198,9 @@ class JSONFieldList(BaseJSONField, FieldList):
         data = []
         for index in self.python_data:
             field = self.field(name=str(index))
-            data.append(field.get_data())
+            raw_data = field.get_data()
+            raw_data.update({'_key':str(index)})
+            data.append(raw_data)
         return {self.name: data}
 
 

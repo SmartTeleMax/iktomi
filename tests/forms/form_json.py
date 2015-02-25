@@ -99,7 +99,9 @@ class FormClassInitializationTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [5, 6, 7]})
-        self.assertEqual(form.get_data(), {'list':[{'1':'5'}, {'2':'6'}, {'3':'7'}]})
+        self.assertEqual(form.get_data(), {'list':[{'1':'5', '_key':'1'},
+                                                   {'2':'6', '_key':'2'},
+                                                   {'3':'7', '_key':'3'}]})
         self.assertEqual(form.python_data, {'list': [5, 6, 7]})
 
     def test_fieldlist_with_initial_and_initial(self):
@@ -110,7 +112,9 @@ class FormClassInitializationTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [5, 6, 7]})
-        self.assertEqual(form.get_data(), {'list':[{'1':'5'}, {'2':'6'}, {'3':'7'}]})
+        self.assertEqual(form.get_data(), {'list':[{'1':'5', '_key':'1'},
+                                                   {'2':'6', '_key':'2'},
+                                                   {'3':'7', '_key':'3'}]})
         self.assertEqual(form.python_data, {'list': [5, 6, 7]})
 
 
@@ -147,13 +151,12 @@ class FormErrorsTests(unittest.TestCase):
                                                     'second': 2},
                                             'third': None})
         # TODO: check required format for errors(nested dicts or by ".")
-        self.assertEqual(form.errors, {'set':{'second': convs.Int.error_required},
+        self.assertEqual(form.errors, {'set.second': convs.Int.error_required,
                                        'third': convs.Int.error_notvalid})
         self.assertEqual(form.get_data(), {'set':{'first': '1',
                                                   'second': '',},
                                            'third': '3f'})
 
-    # TODO: fix FieldList
     def test_fieldlist_with_initial_delete(self):
         'Fieldlist element deletion'
         class _Form(Form):
@@ -162,7 +165,9 @@ class FormErrorsTests(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list': [5, 6, 7]})
-        self.assertEqual(form.get_data(), {'list':[{'1':'5'}, {'2':'6'}, {'3':'7'}]})
+        self.assertEqual(form.get_data(), {'list':[{'1':'5', '_key':'1'},
+                                                   {'2':'6', '_key':'2'},
+                                                   {'3':'7', '_key':'3'}]})
         self.assertEqual(form.python_data, {'list': [5, 6, 7]})
 
     def test_form__clean(self):
@@ -235,7 +240,7 @@ class FormClassAcceptTests(unittest.TestCase):
         self.assertEqual(form.python_data, {'set': {'number': None}})
         self.assert_(form.accept({}))
         self.assertEqual(form.python_data, {'set': {'number': None}})
-        self.assertEqual(form.get_field('set.number').get_data(), {'number', ''})
+        self.assertEqual(form.get_field('set.number').get_data(), {'number': ''})
         self.assertEqual(form.errors, {})
 
 
@@ -297,7 +302,8 @@ class FormReadonlyFieldsTest(unittest.TestCase):
         env = AppEnvironment.create()
         form = _Form(env, initial={'list':[5, 6]})
         self.assertEqual(form.python_data, {'list': [5, 6]})
-        self.assert_(form.accept(dict(list=[{'1':1}, {'2':2}]) ) )
+        self.assert_(form.accept(dict(list=[{'1':1, '_key':'1'},
+                                            {'2':2, '_key':'2'}]) ) )
         self.assertEqual(form.python_data, {'list': [5, 6]})
 
     def test_fieldlist_of_fieldsets(self):
@@ -311,11 +317,13 @@ class FormReadonlyFieldsTest(unittest.TestCase):
             ]
         env = AppEnvironment.create()
         form = _Form(env, initial={'list':[{'number':1}, {'number':2}]})
-        self.assertEqual(form.raw_data, MultiDict((('list-indices', '1'), ('list-indices', '2')), **{'list.1.number': '1', 'list.2.number': '2'}))
+        self.assertEqual(form.get_data(), {'list':[{'1':{'number':'1'}, '_key':'1'},
+                                                   {'2':{'number':'2'}, '_key':'2'},]
+                                           })
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
-        self.assert_(form.accept(MultiDict((('list-indices', '1'),
-                                            ('list-indices', '2')),
-                                           **{'list.1.number': '2', 'list.2.number': '3'})))
+        self.assert_(form.accept({'list':[{'1':{'number':'1'}, '_key':'1'},
+                                          {'2':{'number':'2'}, '_key':'2'}]
+                                  }))
         self.assertEqual(form.python_data, {'list': [{'number':1}, {'number':2}]})
 
     def test_fieldset_of_fieldsets(self):
@@ -415,3 +423,48 @@ class FormReadonlyFieldsTest(unittest.TestCase):
                      'set2':{'first': '1',
                             'second': ''}},
             })
+
+
+
+
+
+class FormFieldListErrorsTests(unittest.TestCase):
+
+    def test_fieldlist(self):
+        'Fieldlist errors'
+        class _Form(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        env = AppEnvironment.create()
+        form = _Form(env)
+        self.assertEqual(form.get_data(), {'list':[]})
+        self.assertEqual(form.python_data, {'list': []})
+        self.assert_(not form.accept({'list':[{'1':'1', '_key':'1'},
+                                              {'2':'2', '_key':'2'},
+                                              {'3':'3s', '_key':'3'},
+                                              ]}))
+
+        self.assertEqual(form.get_data(), {'list':[{'1':'1', '_key':'1'},
+                                                   {'2':'2', '_key':'2'},
+                                                   {'3':'', '_key':'3'},
+                                                   ]
+                                           })
+        self.assertEqual(form.python_data, {'list': [1, 2, None]})
+        self.assertEqual(form.errors, {'list.3': convs.Int.error_notvalid})
+
+    def test_fieldlist_with_initial(self):
+        '''Fieldlist errors (list of one initial value), when submiting
+        new value before initial and incorrect value insted of initial'''
+        class F(Form):
+            fields=[
+                FieldList('list', field=Field('number', convs.Int())),
+            ]
+        env = AppEnvironment.create()
+        form = F(env, initial={'list': [1]})
+        self.assertEqual(form.get_data(), {'list': [{'1': u'1', '_key': '1'}]})
+        self.assertEqual(form.python_data, {'list': [1]})
+        self.assert_(not form.accept({'list': [{'1': '1s', '_key':'1'},
+                                               {'2': '2',  '_key':'2'}]}))
+        self.assertEqual(form.python_data, {'list': [1, 2]})
+        self.assertEqual(form.errors, {'list.1': convs.Int.error_notvalid})
