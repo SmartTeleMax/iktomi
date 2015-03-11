@@ -1,4 +1,4 @@
-import os, errno, logging
+import os, errno, logging, inspect
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.interfaces import MapperProperty
 from sqlalchemy.orm.attributes import get_history
@@ -223,7 +223,9 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
 
     def find_file_manager(self, target):
         if hasattr(target, 'metadata'):
-            assert class_mapper(type(target)) is not None
+            if not inspect.isclass(target):
+                target = type(target)
+            assert class_mapper(target) is not None
             if target.metadata in registry:
                 return registry[target.metadata]
             return file_manager
