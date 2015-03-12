@@ -46,12 +46,12 @@ class BaseField(object):
             raise TypeError(
                     'Obsolete parameters are used: {}'.format(
                                 list(self._obsolete & set(kwargs))))
-        kwargs.update(dict(
+        kwargs.update(
             parent=parent,
             name=name,
             conv=(conv or self.conv)(field=self),
             widget=(kwargs.get('widget') or self.widget)(field=self),
-        ))
+        )
         if permissions is not None:
             kwargs['perm_getter'] = FieldPerm(permissions)
         self._init_kwargs = kwargs
@@ -229,11 +229,11 @@ class FieldSet(AggregateField):
         if kwargs.get('parent'):
             conv = (conv or self.conv)(field=self)
             fields = [field(parent=self) for field in fields]
-        kwargs.update(dict(
+        kwargs.update(
             name=name,
             conv=conv,
             fields=fields,
-        ))
+        )
         BaseField.__init__(self, **kwargs)
 
     @property
@@ -307,10 +307,10 @@ class FieldBlock(FieldSet):
     prefix = ''
 
     def __init__(self, title, fields=[], **kwargs):
-        kwargs.update(dict(
+        kwargs.update(
             title=title,
             fields=fields,
-        ))
+        )
         kwargs.setdefault('name', '') # XXX generate unique name
         FieldSet.__init__(self, **kwargs)
 
@@ -365,12 +365,12 @@ class FieldList(AggregateField):
         if parent:
             conv = (conv or self.conv)(field=self)
             field = field(parent=self)
-        kwargs.update(dict(
+        kwargs.update(
             parent=parent,
             name=name,
             conv=conv,
             field=field,
-        ))
+        )
         BaseField.__init__(self, **kwargs)
 
     @property
