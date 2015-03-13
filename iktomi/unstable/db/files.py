@@ -206,4 +206,16 @@ class FileManager(BaseFileManager):
                 return name
         raise Exception('Unable to find new file name')
 
+    def create_symlink(self, source_file, target_file):
+        source_path = os.path.normpath(source_file.path)
+        target_path = os.path.normpath(target_file.path)
+        assert target_path.startswith(self.persistent_root), \
+              'Target file must be in %s folder' % self.persistent_root
+        target_dir = os.path.dirname(target_path)
+        source_path_rel = os.path.relpath(source_path, target_dir)
+        if not os.path.isdir(target_dir):
+            os.makedirs(target_dir)
+        if os.path.islink(target_path):
+            os.unlink(target_path)
+        os.symlink(source_path_rel, target_path)
 
