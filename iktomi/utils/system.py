@@ -55,12 +55,13 @@ def doublefork(pidfile, logfile, cwd, umask):
             os._exit(os.EX_OK)
     except OSError, e:
         sys.exit('fork #2 failed: ({}) {}'.format(e.errno, e.strerror))
-    si = open('/dev/null')
-    so = open(logfile, 'a+', 0)
-    os.dup2(si.fileno(), 0)
-    os.dup2(so.fileno(), 1)
-    os.dup2(so.fileno(), 2)
-    sys.stdin = si
-    sys.stdout = sys.stderr = so
+    if logfile is not None:
+        si = open('/dev/null')
+        so = open(logfile, 'a+', 0)
+        os.dup2(si.fileno(), 0)
+        os.dup2(so.fileno(), 1)
+        os.dup2(so.fileno(), 2)
+        sys.stdin = si
+        sys.stdout = sys.stderr = so
     with open(pidfile, 'w') as f:
         f.write(str(os.getpid()))
