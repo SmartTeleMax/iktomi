@@ -639,6 +639,8 @@ class List(Converter):
     _obsolete = Converter._obsolete | set(['filter'])
 
     def from_python(self, value):
+        if value is None:
+            value = []
         result = OrderedDict()
         for index, item in enumerate(value):
             result[str(index+1)] = item
