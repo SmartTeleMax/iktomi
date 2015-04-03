@@ -161,7 +161,7 @@ class Field(BaseField):
 
     def get_initial(self):
         if hasattr(self, 'initial'):
-            return self.initial
+            return self.initial() if callable(self.initial) else self.initial
         if self.multiple:
             return []
         return None
