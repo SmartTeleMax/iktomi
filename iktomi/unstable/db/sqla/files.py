@@ -222,22 +222,19 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
             registry[k] = v
 
     def find_file_manager(self, target):
-        if hasattr(target, 'metadata'):
+        if isinstance(target, FileAttribute):
+            assert hasattr(target, 'class_')
+            target = target.class_
+        else:
             if not inspect.isclass(target):
                 target = type(target)
-            assert class_mapper(target) is not None
-            if target.metadata in registry:
-                return registry[target.metadata]
-            return file_manager
 
-        assert isinstance(target, FileAttribute)
+        assert hasattr(target, 'metadata')
+        assert class_mapper(target) is not None
         if target in registry:
             return registry[target]
-        if hasattr(target, 'class_'):
-            if target.class_ in registry:
-                return registry[target.class_]
-            if target.class_.metadata in registry:
-                return registry[target.class_.metadata]
+        if target.metadata in registry:
+            return registry[target.metadata]
         return file_manager
 
     def session_maker(*args, **kwargs):
