@@ -21,6 +21,7 @@ class Widget(Widget):
                     hint=unicode(self.field.hint or ''),
                     safe_label=isinstance(self.field.label, Markup),
                     safe_hint=isinstance(self.field.hint, Markup),
+                    readonly=not self.field.writable,
                     #id=self.field.id,
                     #input_name=self.field.input_name,
                     required=self.field.conv.required,
@@ -128,6 +129,7 @@ class FieldSetWidget(Widget):
 
 class FieldBlockWidget(FieldSetWidget):
 
+    # TODO: add unique name to prevent component key collision
     render_type = 'full-width'
 
 
