@@ -22,7 +22,10 @@ class FileFieldSetConv(convs.Converter):
 
     @cached_property
     def file_manager(self):
-        return self.env.db.find_file_manager(self.field.form.model)
+        if hasattr(self.env, 'db') and hasattr(self.env.db, 'find_file_manager'):
+            # XXX ducktyping hack?
+            return self.env.db.find_file_manager(self.field.form.model)
+        return self.env.file_manager
 
     def _to_python(self, file=None, mode=None,
                    transient_name=None, original_name=None):
