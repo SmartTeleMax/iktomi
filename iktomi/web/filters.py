@@ -8,7 +8,7 @@ import os
 from os import path
 import posixpath
 from urllib import unquote
-from webob.exc import HTTPMethodNotAllowed
+from webob.exc import HTTPMethodNotAllowed, HTTPNotFound
 from webob.static import FileApp
 from .core import WebHandler, cases
 from . import Response
@@ -335,6 +335,8 @@ class static_files(WebHandler):
 
     def static_files(self, env, data):
         path_info = unquote(env.request.path)
+        if path_info.endswith('/'):
+            raise HTTPNotFound
         if path_info.startswith(self.url):
             file_path = self.translate_path(path_info[len(self.url):])
             if file_path and path.exists(file_path) and path.isfile(file_path):
