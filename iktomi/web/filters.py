@@ -335,9 +335,10 @@ class static_files(WebHandler):
 
     def static_files(self, env, data):
         path_info = unquote(env.request.path)
-        if path_info.endswith('/'):
-            raise HTTPNotFound
         if path_info.startswith(self.url):
+            if not path_info[len(self.url):]:
+                # If there are nothing to process left in url
+                raise HTTPNotFound
             file_path = self.translate_path(path_info[len(self.url):])
             if file_path and path.exists(file_path) and path.isfile(file_path):
                 return FileApp(file_path)
