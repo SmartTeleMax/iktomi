@@ -98,13 +98,14 @@ class URL(str):
         '''Force show_host parameter'''
         return self._copy(show_host=True)
 
-    def qs_delete(self, key):
+    def qs_delete(self, *keys):
         '''Delete value from QuerySet MultiDict'''
         query = self.query.copy()
-        try:
-            del query[key]
-        except KeyError:
-            pass
+        for key in set(keys):
+            try:
+                del query[key]
+            except KeyError:
+                pass
         return self._copy(query=query)
 
     def qs_get(self, key, default=None):
