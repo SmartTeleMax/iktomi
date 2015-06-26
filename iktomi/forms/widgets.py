@@ -189,6 +189,9 @@ class AggregateWidget(Widget):
 
 class FieldListWidget(AggregateWidget):
 
+    allow_create = True
+    allow_delete = True
+
     template = 'widgets/fieldlist'
 
     def get_media(self):
