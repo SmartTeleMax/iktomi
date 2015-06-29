@@ -236,6 +236,10 @@ class TestSanitizer(unittest.TestCase):
         self.attrs['allow_tags'].remove('p')
         self.assertRaises(ValueError, html.Cleaner, **self.attrs)
 
+    def test_wrong_href(self):
+        self.assertSanitize('<p>First <a href="%22http://www.test.ru/%22">Second</a> Third</p>',
+                            '<p>First Second Third</p>')
+
 
 def spaceless(clean, **kwargs):
     clean = re.compile('\s+').sub(' ', clean)
