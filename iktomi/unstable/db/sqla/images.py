@@ -116,8 +116,7 @@ class ImageEventHandlers(FileEventHandlers):
                 setattr(target, self.prop.attribute_name, name)
 
                 persistent = self._2persistent(target, base)
-                file_attr = getattr(type(target), self.prop.key)
-                file_attr._states[target] = persistent
+                setattr(target, self.prop.key, persistent)
 
 
 class ImageProperty(FileProperty):
