@@ -174,12 +174,6 @@ class CharDisplay(Widget):
     #: Function converting the value to string.
     getter = staticmethod(lambda v: v)
 
-    def prepare_data(self):
-        data = Widget.prepare_data(self)
-        return dict(data,
-                    value=self.getter(data['value']),
-                    should_escape=self.escape)
-
 
 class AggregateWidget(Widget):
 

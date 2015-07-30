@@ -185,6 +185,8 @@ class Field(BaseField):
             raw_data[self.input_name] = value
 
     def _check_value_type(self, values):
+        if values is None:
+            values = []
         if not self.multiple:
             values = [values]
         for value in values:
@@ -213,7 +215,7 @@ class AggregateField(BaseField):
         except LookupError:
             # XXX is this necessary?
             value = self.get_initial()
-        return self.from_python(value)
+        return self.conv.from_python(value)
 
 
 class FieldSet(AggregateField):
@@ -431,6 +433,14 @@ class FieldList(AggregateField):
             pass
         for index in indices:
             raw_data.add(self.indices_input_name, index)
+
+    def json_data(self):
+        data = []
+        for index in self.form.raw_data.getall(self.indices_input_name):
+            field = self.field(name=str(index))
+            data.append(dict(field.json_data(),
+                             _key=int(index)))
+        return data
 
 
 class FileField(Field):

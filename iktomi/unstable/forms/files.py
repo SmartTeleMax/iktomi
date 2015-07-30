@@ -66,11 +66,7 @@ class FileFieldSetConv(convs.Converter):
         return file
 
     def to_python(self, value):
-        value = self._to_python(**value)
-        #XXX Hack
-        self.field.set_raw_value(self.field.form.raw_data, 
-                                 self.from_python(value))
-        return value
+        return self._to_python(**value)
 
 
 def check_file_path(conv, value):
