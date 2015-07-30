@@ -13,20 +13,23 @@ class Widget(Widget):
         return type(self).__name__
 
     def render(self):
-        return dict(widget=self.widget_name,
-                    key=self.field.name,
-                    renders_hint=self.renders_hint,
-                    render_type=self.render_type,
-                    label=unicode(self.field.label or ''),
-                    hint=unicode(self.field.hint or ''),
-                    safe_label=isinstance(self.field.label, Markup),
-                    safe_hint=isinstance(self.field.hint, Markup),
-                    readonly=not self.field.writable,
-                    #id=self.field.id,
-                    #input_name=self.field.input_name,
-                    required=self.field.conv.required,
-                    multiple=self.multiple,
-                    classname=self.classname)
+        props = dict(widget=self.widget_name,
+                     key=self.field.name,
+                     renders_hint=self.renders_hint,
+                     render_type=self.render_type,
+                     label=unicode(self.field.label or ''),
+                     hint=unicode(self.field.hint or ''),
+                     safe_label=isinstance(self.field.label, Markup),
+                     safe_hint=isinstance(self.field.hint, Markup),
+                     readonly=not self.field.writable,
+                     #id=self.field.id,
+                     #input_name=self.field.input_name,
+                     required=self.field.conv.required,
+                     multiple=self.multiple,
+                     classname=self.classname)
+        if hasattr(self.field, 'initial'):
+            props['initial'] = self.field.initial
+        return props
 
 
 class TextInput(Widget):
