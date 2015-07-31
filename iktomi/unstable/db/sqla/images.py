@@ -74,9 +74,10 @@ class ImageEventHandlers(FileEventHandlers):
             persistent = file_manager.get_persistent(persistent_name,
                                                      self.prop.persistent_cls)
 
-            transient = session.find_file_manager(image_attr).new_transient(ext)
-            image.save(transient.path, quality=self.prop.quality)
-            session.find_file_manager(image_attr).store(transient, persistent)
+            transient2 = session.find_file_manager(image_attr).new_transient(ext)
+            image.save(transient2.path, quality=self.prop.quality)
+            session.find_file_manager(image_attr).store(transient2, persistent)
+            transient.stored_to = persistent # XXX hack
             return persistent
         else:
             # Attention! This method can accept PersistentFile.
