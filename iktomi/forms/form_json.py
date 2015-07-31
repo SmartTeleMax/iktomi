@@ -3,9 +3,10 @@ import logging
 import json
 from collections import OrderedDict
 
-from .form import Form
-from .fields import Field, FieldSet, FieldBlock, FieldList, FileField
-from . import widgets_json
+from iktomi.forms import Form
+from iktomi.forms import fields
+from iktomi.forms.fields import Field, FieldSet, FieldBlock, FieldList, FileField
+from iktomi.forms import widgets_json
 
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ class JSONForm(Form):
         for field in self.fields:
             if field.writable:
                 value = self.raw_value.get(field.name) \
-                            if field.name \
+                            if not isinstance(field, fields.FieldBlock) \
                             else self.raw_value
                 self.python_data.update(field.accept(value))
             else:
@@ -114,7 +115,7 @@ class _JSONFieldSet(object):
         for field in self.fields:
             if field.writable:
                 value = self.raw_value.get(field.name) \
-                            if field.name \
+                            if not isinstance(field, fields.FieldBlock) \
                             else self.raw_value
                 result.update(field.accept(value))
             else:
