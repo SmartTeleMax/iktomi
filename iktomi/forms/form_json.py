@@ -77,6 +77,9 @@ class BaseJSONField(object):
     def load_initial(self, initial):
         value = initial.get(self.name, self.get_initial())
         return {self.name: value}
+    
+    def get_json_value(self):
+        return json.dumps(self.get_data()[self.name])
 
 
 class JSONField(BaseJSONField, Field):
@@ -103,8 +106,6 @@ class JSONField(BaseJSONField, Field):
         self.clean_value = self.conv.accept(raw_value)
         return {self.name: self.clean_value}
 
-    def get_json_value(self):
-        return json.dumps(self.get_data()[self.name])
 
 
 class _JSONFieldSet(object):
