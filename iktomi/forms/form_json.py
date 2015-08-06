@@ -107,7 +107,6 @@ class JSONField(BaseJSONField, Field):
         return {self.name: self.clean_value}
 
 
-
 class _JSONFieldSet(object):
 
     def accept(self, raw_value):
