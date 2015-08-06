@@ -119,18 +119,18 @@ class BaseField(object):
     def from_python(self, value):
         return self.conv.from_python(value)
 
-    @cached_property
+    @property
     def permissions(self):
         '''
         Field's access permissions. By default, is filled from perm_getter.
         '''
         return self.perm_getter.get_perms(self)
 
-    @cached_property
+    @property
     def writable(self):
         return 'w' in self.permissions
 
-    @cached_property
+    @property
     def readable(self):
         return 'r' in self.permissions
 
