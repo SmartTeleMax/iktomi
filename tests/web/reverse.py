@@ -203,6 +203,17 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.doc(id=1).as_url, '/docs/1')
         self.assertEqual(r.news(id=1).as_url, '/news/1')
 
+    def test_nested_prefix_without_ns(self):
+        chain = web.prefix('/docs', name='docs') | web.cases(
+            web.match('/', name='all'),
+            web.prefix('/news') | web.cases(
+                web.match('/', 'news_index'),
+                web.match('/all', 'news_all')
+            )
+        )
+        r = web.Reverse.from_handler(chain)
+        self.assertEqual(r.docs.all.as_url, '/docs/')
+        self.assertEqual(r.docs.news_index.as_url, '/docs/news/')
 
     def test_unicode(self):
         'Reverse with unicode'
