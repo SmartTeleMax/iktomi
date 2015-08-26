@@ -214,18 +214,20 @@ class validator(object):
 
 def length(min_length, max_length):
     'String length constraint'
+
+    format_args = dict(min=min_length, max=max_length)
+
     if min_length == max_length:
         message = M_(u'length of value must be exactly %(max)d symbol',
                      u'length of value must be exactly %(max)d symbols',
-                     count_field="max")
+                     count_field="max",
+                     format_args=format_args)
     else:
         message = N_('length should be between %(min)d and %(max)d symbols')
 
-    message = message % dict(min=min_length, max=max_length)
-
     def check_length(conv, value):
         if value and not (min_length <= len(value) <= max_length):
-            raise ValidationError(message)
+            raise ValidationError(message, format_args=format_args)
         return value
 
     return check_length
