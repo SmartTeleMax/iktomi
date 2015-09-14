@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='iktomi',
-    version='0.4.1',
+    version='0.4.2',
     packages=['iktomi',
               'iktomi.utils',
               'iktomi.forms',
