@@ -3,6 +3,9 @@
 
 * Option for Html cleaner: wrap inline tags in paragraphs on the top level.
 * Fixed schema generation whith dialect-specific fields.
+* Fixed schema generation for single DB configuration.
+* SQLAlchemy 1.0 support; drop support of SQLAlchemy 0.8.
+
 
 **Minor features:**
 
@@ -13,6 +16,19 @@
   multi-DB configuration.
 * ResizeCrop accept force option: image will be cropped to target 
   proportion even it is smaller that target size.
+* Command-line autocompletion interface.
+* Made Html converter's tag wrapping behaviour configurable
+* Html Cleaner ability to drop empty tags (configurable).
+* ImageResizer's interface change: pass size instead of image object, making it useful
+  in AJAX requests handling.
+* Add option `rate` to ResizeMixed, determining at which rate the image is 
+  considered vertical or horizontal.
+* Redefinable `file_manager` for `FileFieldSetConv`.
+* Used `base64` to generate random file names for both transient and persistent files.
+* Allow to set a length for both persistent and transient random file names.
+* `find_file_manager` now accepts mapped objects with metadata.
+* Added create_symlink method to `FileManager`.
+* Support multiple arguments for `URL.qs_delete`.
 
 **Minor bugfixes:**
 
@@ -21,6 +37,13 @@
 * Warning instead of exception during image resizing via fill_from property
   if original file has been lost.
 * URL.from_url does not fail for broken unicode input.
+* Fixed error handling and non-response return object in application.
+* Fixed drop table command if there are no tables in metadata.
+* Fixed readonly FieldBlock.
+* Fixed PublicQuery.with_entities() to honor public condition.
+* Fixed the case there is no logfile passed to fcgi CLI command.
+* Fixed `None` python value handling in `convs.List.from_python`.
+* Return 404 if static directory is requested.
 
 0.4.1
 -----
