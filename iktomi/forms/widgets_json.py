@@ -26,6 +26,7 @@ class Widget(Widget):
                      #input_name=self.field.input_name,
                      required=self.field.conv.required,
                      multiple=self.multiple,
+                     form_id=self.field.form.id,
                      classname=self.classname)
         if hasattr(self.field, 'initial'):
             props['initial'] = self.field.initial
