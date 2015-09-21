@@ -31,7 +31,7 @@ class Cleaner(clean.Cleaner):
                     'dfn', 'em', 'kbd', 'strong', 'samp',
                     'var', 'a', 'bdo', 'br', 'map', 'object',
                     'q', 'span', 'sub', 'sup']
-    split_paragraphs_by_brs = True
+    split_paragraphs_by_br = True
 
     def __init__(self, *args, **kwargs):
         clean.Cleaner.__init__(self, *args, **kwargs)
@@ -180,7 +180,7 @@ class Cleaner(clean.Cleaner):
         if self.wrap_inline_tags is not False and self.tags_to_wrap:
             self.clean_top(doc)
 
-        if self.split_paragraphs_by_brs:
+        if self.split_paragraphs_by_br:
             self.remove_brs_from_pars(doc)
 
         for tag in self.drop_empty_tags:
