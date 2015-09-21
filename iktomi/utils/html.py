@@ -19,7 +19,7 @@ class Cleaner(clean.Cleaner):
     a_without_href = True
     # False : no tags wrapping;
     # None : try to wrap tags on top in 'p' if 'p' is allowed or 'div'
-    # True : try to wrap tags on top in 'p' if 'p' is allowed or 'div', 
+    # True : try to wrap tags on top in 'p' if 'p' is allowed or 'div',
     #    and raise error if no get_wrapper_tag was found
     # if div allowed;
     # 'div'/'p' : wrap tags in 'div' or 'p' respectively
@@ -31,6 +31,7 @@ class Cleaner(clean.Cleaner):
                     'dfn', 'em', 'kbd', 'strong', 'samp',
                     'var', 'a', 'bdo', 'br', 'map', 'object',
                     'q', 'span', 'sub', 'sup']
+    split_paragraphs_by_br = True
 
     def __init__(self, *args, **kwargs):
         clean.Cleaner.__init__(self, *args, **kwargs)
@@ -115,6 +116,24 @@ class Cleaner(clean.Cleaner):
         text = el.text and el.text.strip(u'  \t\r\n\v\f\u00a0')
         return not text and empty_children
 
+    def remove_brs_from_pars(self, doc):
+        def split_by_br(par):
+            br = par.find('.//br')
+            if br is not None:
+                next_par = html.Element('p')
+                par.addnext(next_par)
+                if br.tail:
+                    next_par.text = br.tail
+                    br.tail = None
+                nxt = br.getnext()
+                while nxt is not None:
+                    next_par.append(nxt)
+                    nxt = br.getnext()
+                br.drop_tag()
+                split_by_br(next_par)
+        for p in doc.findall('.//p'):
+            split_by_br(p)
+
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
             scheme, netloc, path, query, fragment = urlsplit(el.attrib['href'])
@@ -160,6 +179,9 @@ class Cleaner(clean.Cleaner):
 
         if self.wrap_inline_tags is not False and self.tags_to_wrap:
             self.clean_top(doc)
+
+        if self.split_paragraphs_by_br:
+            self.remove_brs_from_pars(doc)
 
         for tag in self.drop_empty_tags:
             for el in doc.xpath('//'+tag):
