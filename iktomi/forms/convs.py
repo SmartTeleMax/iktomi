@@ -545,6 +545,7 @@ class Html(Char):
     #: rendered back to HTML.
     dom_callbacks = []
     wrap_inline_tags = None
+    split_paragraphs_by_br = True
     # Tags to wrap in paragraphs on top
     tags_to_wrap = ['b', 'big', 'i', 'small', 'tt',
                     'abbr', 'acronym', 'cite', 'code',
@@ -561,7 +562,7 @@ class Html(Char):
 
     PROPERTIES = ['allowed_elements', 'allowed_attributes', 'allowed_protocols',
                   'allowed_classes', 'dom_callbacks', 'drop_empty_tags',
-                  'wrap_inline_tags']
+                  'wrap_inline_tags', 'split_paragraphs_by_br']
 
     LIST_PROPERTIES = ['allowed_elements', 'allowed_attributes',
                        'allowed_protocols', 'dom_callbacks',
@@ -630,6 +631,7 @@ class Html(Char):
                             drop_empty_tags=self.drop_empty_tags,
                             dom_callbacks=self.dom_callbacks,
                             wrap_inline_tags=self.wrap_inline_tags,
+                            split_paragraphs_by_br=self.split_paragraphs_by_br,
                             tags_to_wrap=self.tags_to_wrap,
                             )
 
