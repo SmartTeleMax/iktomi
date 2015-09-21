@@ -201,6 +201,21 @@ class TestSanitizer(unittest.TestCase):
 
         self.assertSanitize("<br><br><br><br>", "")
 
+    
+    def test_split_paragraphs_by_br(self):
+        self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
+        self.attrs['wrap_inline_tags'] = True
+        self.attrs['drop_empty_tags'] = []
+
+        self.assertSanitize("<p>head<br><br><br></p>",
+                            "<p>head</p><p></p><p></p><p></p>")
+
+        self.assertSanitize("<p>head<br>body<br>tail</p>",
+                            "<p>head</p><p>body</p><p>tail</p>")
+
+        self.assertSanitize("<p>head<br><b>body<sup>letters</sup></b><br><i>ta</i>il</p>",
+                            "<p>head</p><p><b>body<sup>letters</sup></b></p><p><i>ta</i>il</p>")
+
     def test_wrap_inline_tags(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = False
@@ -242,5 +257,3 @@ def spaceless(clean, **kwargs):
     return clean.strip()
 
 
-if __name__ == '__main__':
-    unittest.main()
