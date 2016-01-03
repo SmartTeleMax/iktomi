@@ -178,7 +178,8 @@ class Converter(object):
         '''
         kwargs = dict(self._init_kwargs, **kwargs)
         kwargs.setdefault('field', self.field)
-        validators = tuple(self.validators) + args
+        validators = kwargs.pop('validators', self.validators)
+        validators = tuple(validators) + args
         return self.__class__(*validators, **kwargs)
 
     def assert_(self, expression, msg):

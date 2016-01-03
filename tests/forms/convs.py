@@ -78,12 +78,11 @@ class ConverterTests(unittest.TestCase):
         self.assertEqual(result, [2, 3, 4])
 
     def test_validators_copy(self):
-        v1 = lambda c, v: v
-        v2 = lambda c, v: v
-        v3 = lambda c, v: v
+        def v1(c, v): pass
+        def v2(c, v): pass
+        def v3(c, v): pass
 
-        conv = convs.Converter(v1)
-        conv = conv(v2)
+        conv = convs.Converter(v1)(v2)
 
         self.assertEqual(conv.validators, (v1, v2))
 
@@ -91,6 +90,15 @@ class ConverterTests(unittest.TestCase):
         conv = conv(v3)
         self.assertEqual(conv.validators, (v1, v3))
         self.assertEqual(conv.conv.validators, (v2,))
+
+        conv = convs.Converter(v1)(validators=[])
+        self.assertEqual(conv.validators, ())
+
+        conv = convs.Converter(v1)(validators=[v2])
+        self.assertEqual(conv.validators, (v2))
+
+        conv = convs.Converter(v1)(v3, validators=[v2])
+        self.assertEqual(conv.validators, (v2, v3))
 
 
 class IntConverterTests(unittest.TestCase):
