@@ -95,7 +95,7 @@ class ConverterTests(unittest.TestCase):
         self.assertEqual(conv.validators, ())
 
         conv = convs.Converter(v1)(validators=[v2])
-        self.assertEqual(conv.validators, (v2))
+        self.assertEqual(conv.validators, (v2,))
 
         conv = convs.Converter(v1)(v3, validators=[v2])
         self.assertEqual(conv.validators, (v2, v3))
