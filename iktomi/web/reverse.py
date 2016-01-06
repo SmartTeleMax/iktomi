@@ -44,8 +44,12 @@ class Location(object):
                self.builders == other.builders and self.subdomains == other.subdomains
 
     def __repr__(self):
-        return '{}(*{!r}, subdomains={!r})'.format(
-                    self.__class__.__name__, self.builders, self.subdomains)
+        if self.subdomains:
+            return '{}(*{!r}, subdomains={!r})'.format(
+                        self.__class__.__name__, self.builders,
+                        self.subdomains)
+        return '{}(*{!r})'.format(
+                    self.__class__.__name__, self.builders)
 
 
 

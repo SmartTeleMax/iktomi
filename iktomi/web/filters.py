@@ -139,8 +139,9 @@ class namespace(WebHandler):
         builders = []
         while all_locations and all_locations[0].builders:
             builder = all_locations[0].builders[0]
-            if any(x.builders and x.builders[0] is builder
-                   for x in all_locations[1:]):
+            if len(all_locations) > 1 and \
+                not any(not (x.builders and x.builders[0] is builder)
+                        for x in all_locations[1:]):
                 builders.append(builder)
                 for loc in all_locations:
                     loc.builders.pop(0)
@@ -168,6 +169,7 @@ class namespace(WebHandler):
         for loc in locations.values():
             loc[0].builders = builders
             loc[0].subdomains = subdomains
+
         return locations
 
 
