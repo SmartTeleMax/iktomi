@@ -1,3 +1,11 @@
+0.4.3
+-----
+
+* `split_paragraphs_by_br` option for Html Cleaner to force paragraphs to be splitted
+  by `<br>` tags.
+* Fixed a bug with building a reverse for nested `prefix` filters without namespaces.
+* Fixed validators redefinition on converter copy by `Converter.__call__`.
+
 0.4.2
 -----
 
