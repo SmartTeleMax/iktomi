@@ -356,6 +356,25 @@ class TestSelect(TestFormClass):
         self.assertEqual(options, [('1', 'first', False),
                                    ('2', 'second', False)])
 
+    def test_render_enum_boolean(self):
+        class F(Form):
+            fields = [
+                Field('name',
+                      conv=convs.EnumChoice(conv=convs.Bool(),
+                                            required=True,
+                                            choices=[(False, u'no'),
+                                                     (True, u'yes')]),
+                      initial=False,
+                      widget=self.widget())
+            ]
+
+        form = F(self.env)
+        render = form.get_field('name').widget.render()
+        html = self.parse(render)
+        options = self.get_options(html)
+        self.assertEqual(options, [('', 'no', True),
+                                   ('checked', 'yes', False)])
+
 
 class TestCheckBoxSelect(TestSelect):
 

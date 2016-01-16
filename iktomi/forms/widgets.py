@@ -126,23 +126,29 @@ class Select(Widget):
 
     def get_options(self, value):
         options = []
-        if not self.multiple and (value == '' or not self.field.conv.required):
-            options = [{'value': '',
-                        'title': self.null_label,
-                        'selected': value in (None, '')}]
+
         # XXX ugly
         choice_conv = self.field.conv
         if isinstance(choice_conv, convs.ListOf):
             choice_conv = choice_conv.conv
         assert isinstance(choice_conv, convs.EnumChoice)
 
+        has_null_value = False
+
         values = value if self.multiple else [value]
         values = map(unicode, values)
         for choice, label in choice_conv.options():
             choice = unicode(choice)
+            has_null_value = has_null_value or choice == ''
             options.append(dict(value=choice,
                                 title=label,
                                 selected=(choice in values)))
+
+        if not self.multiple and not has_null_value and \
+                (value == '' or not self.field.conv.required):
+            options.insert(0, {'value': '',
+                               'title': self.null_label,
+                               'selected': value in (None, '')})
         return options
 
     def prepare_data(self):
