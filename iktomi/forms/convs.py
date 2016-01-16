@@ -213,25 +213,29 @@ class validator(object):
 
 # Some useful validators
 
-def length(min_length, max_length):
+class length(object):
     'String length constraint'
 
-    format_args = dict(min=min_length, max=max_length)
+    func_name = 'check_length' # XXX for backward compatibility
 
-    if min_length == max_length:
-        message = M_(u'length of value must be exactly %(max)d symbol',
-                     u'length of value must be exactly %(max)d symbols',
-                     count_field="max",
-                     format_args=format_args)
-    else:
-        message = N_('length should be between %(min)d and %(max)d symbols')
+    def __init__(self, min_length, max_length):
+        self.min_length = min_length
+        self.max_length = max_length
 
-    def check_length(conv, value):
-        if value and not (min_length <= len(value) <= max_length):
-            raise ValidationError(message, format_args=format_args)
+        self.format_args = dict(min=min_length, max=max_length)
+
+        if min_length == max_length:
+            self.message = M_(u'length of value must be exactly %(max)d symbol',
+                              u'length of value must be exactly %(max)d symbols',
+                              count_field="max",
+                              format_args=self.format_args)
+        else:
+            self.message = N_('length should be between %(min)d and %(max)d symbols')
+
+    def __call__(self, conv, value):
+        if value and not (self.min_length <= len(value) <= self.max_length):
+            raise ValidationError(self.message, format_args=self.format_args)
         return value
-
-    return check_length
 
 
 @deprecated('Use length(min, max) instead.')
@@ -296,6 +300,14 @@ class Char(CharBased):
     error_regex = N_('field should match %(regex)s')
     #: Whether strip value before convertation or not
     strip = True
+
+    @property
+    def max_length(self):
+        length_validators = [x for x in self.validators
+                             if isinstance(x, length)]
+        if length_validators:
+            return min([x.max_length for x in length_validators])
+        return None
 
     def to_python(self, value):
         # converting
