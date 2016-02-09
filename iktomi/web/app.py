@@ -13,8 +13,15 @@ from .reverse import Reverse
 
 logger = logging.getLogger(__name__)
 
-HOSTNAME_REGEX = re.compile("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])(?::\d+)?$")
-IP_REGEX = re.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?::\d+)?$")
+ip_number = '([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])'
+dns_letter = '([a-z\d]|[a-z\d][a-z\d\-]*[a-z\d])'
+HOSTNAME_REGEX = re.compile("^({letter}\.)*{letter}[a-z](?::\d+)?$".format(letter=dns_letter), re.I)
+IP_REGEX = re.compile("^({number}\.){times}{number}(?::\d+)?$".format(number=ip_number,times="{3}"), re.I)
+
+
+def is_host_valid(host):
+    return (re.match(HOSTNAME_REGEX, host) and not re.match(IP_REGEX, host)) or\
+            re.match(IP_REGEX, host)
 
 
 class AppEnvironment(StorageFrame):
@@ -101,16 +108,13 @@ class Application(object):
             response = HTTPInternalServerError()
         return response
 
-    def is_host_valid(self, host):
-        return re.match(HOSTNAME_REGEX, host) or re.match(IP_REGEX, host)
-
     def __call__(self, environ, start_response):
         '''
         WSGI interface method. 
         Creates webob and iktomi wrappers and calls `handle` method.
         '''
         # validating Host header to prevent problems with url parsing
-        if not self.is_host_valid(environ['HTTP_HOST']):
+        if not is_host_valid(environ['HTTP_HOST']):
             logger.warning('Unusual header "Host: {}", return HTTPNotFound'\
                            .format(environ['HTTP_HOST']))
             return HTTPNotFound()(environ, start_response)
