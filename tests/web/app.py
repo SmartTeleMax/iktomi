@@ -118,3 +118,6 @@ class HostnameValidationTest(unittest.TestCase):
         self.assertFalse(is_host_valid('255.255.255.256'))
         self.assertFalse(is_host_valid('.yandex.ru'))
         self.assertFalse(is_host_valid('.yandex.ru:8080'))
+        self.assertTrue(is_host_valid('test-test.ru'))
+        self.assertFalse(is_host_valid('-test-test.ru'))
+        self.assertFalse(is_host_valid('test-test.ru-'))

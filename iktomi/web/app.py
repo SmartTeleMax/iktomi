@@ -13,11 +13,14 @@ from .reverse import Reverse
 
 logger = logging.getLogger(__name__)
 
-ip_number = '([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])'
-dns_letter = '([a-z\d]|[a-z\d][a-z\d\-]*[a-z\d])'
-HOSTNAME_REGEX = re.compile("^({letter}\.)*{letter}[a-z](?::\d+)?$".format(letter=dns_letter), re.I)
-IP_REGEX = re.compile("^({number}\.){times}{number}(?::\d+)?$".format(number=ip_number,times="{3}"), re.I)
-
+ip_number = '(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])'
+dns_letter = '[a-z\d]([a-z\d\-]*[a-z\d])?'
+port = '(?::\d+)'
+HOSTNAME_REGEX = re.compile("^({letter}\.)*{letter}[a-z]{port}?$".format(letter=dns_letter, 
+                                                                         port=port), re.I)
+IP_REGEX = re.compile("^({number}\.){times}{number}{port}?$".format(number=ip_number, 
+                                                                    times="{3}", 
+                                                                    port=port), re.I)
 
 def is_host_valid(host):
     return (re.match(HOSTNAME_REGEX, host) and not re.match(IP_REGEX, host)) or\
