@@ -102,6 +102,7 @@ class Application(object):
         WSGI interface method. 
         Creates webob and iktomi wrappers and calls `handle` method.
         '''
+        environ['HTTP_HOST'] = environ['HTTP_HOST'].lstrip('.')
         request = Request(environ, charset='utf-8')
         env = VersionedStorage(self.env_class, request=request, root=self.root)
         data = VersionedStorage()
