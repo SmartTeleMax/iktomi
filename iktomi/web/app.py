@@ -13,6 +13,9 @@ from .reverse import Reverse
 
 logger = logging.getLogger(__name__)
 
+HOSTNAME_REGEX = re.compile("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$")
+IP_REGEX = re.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
+
 
 class AppEnvironment(StorageFrame):
     '''
@@ -99,9 +102,7 @@ class Application(object):
         return response
 
     def is_host_valid(self, host):
-        hostname_regex = r"^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
-        ip_regex = r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
-        return re.match(hostname_regex, host) or re.match(ip_regex, host)
+        return re.match(HOSTNAME_REGEX, host) or re.match(IP_REGEX, host)
 
     def __call__(self, environ, start_response):
         '''
