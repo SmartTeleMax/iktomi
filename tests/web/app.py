@@ -7,7 +7,7 @@ import unittest
 from webob import Response, Request
 from webob.exc import HTTPMethodNotAllowed
 from iktomi import web
-from iktomi.web.app import Application, AppEnvironment
+from iktomi.web.app import Application, AppEnvironment, is_host_valid
 from iktomi.utils.storage import VersionedStorage
 from iktomi.utils import cached_property
 # import as TA because py.test generates warning about TestApp name
@@ -88,6 +88,7 @@ class ApplicationTests(unittest.TestCase):
             'REQUEST_METHOD': 'GET',
             'SCRIPT_NAME': '',
             'PATH_INFO': '/broken_response',
+            'HTTP_HOST': 'localhost'
         }
         def start_response(status, headers):
             self.assertTrue(status.startswith('500'))
@@ -103,3 +104,20 @@ class ApplicationTests(unittest.TestCase):
         wa = Application(self.app, AppEnv)
         assert wa.env_class == AppEnv
 
+
+class HostnameValidationTest(unittest.TestCase):
+
+    def test_host_name_validity(self):
+        self.assertTrue(is_host_valid('localhost'))
+        self.assertTrue(is_host_valid('localhost:8000'))
+        self.assertTrue(is_host_valid('127.0.0.1'))
+        self.assertTrue(is_host_valid('88.55.111.101'))
+        self.assertTrue(is_host_valid('LOCALHOST'))
+        self.assertTrue(is_host_valid('YaNdEx.Ru'))
+        self.assertTrue(is_host_valid('255.255.255.2ss'))
+        self.assertFalse(is_host_valid('255.255.255.256'))
+        self.assertFalse(is_host_valid('.yandex.ru'))
+        self.assertFalse(is_host_valid('.yandex.ru:8080'))
+        self.assertTrue(is_host_valid('test-test.ru'))
+        self.assertFalse(is_host_valid('-test-test.ru'))
+        self.assertFalse(is_host_valid('test-test.ru-'))
