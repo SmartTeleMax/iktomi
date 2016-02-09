@@ -3,6 +3,7 @@
 __all__ = ['Application', 'AppEnvironment']
 
 import logging
+import re
 from iktomi.utils.storage import VersionedStorage, StorageFrame, storage_property
 from webob.exc import HTTPException, HTTPInternalServerError, \
                       HTTPNotFound
@@ -11,6 +12,9 @@ from .route_state import RouteState
 from .reverse import Reverse
 
 logger = logging.getLogger(__name__)
+
+HOSTNAME_REGEX = re.compile("^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$")
+IP_REGEX = re.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
 
 
 class AppEnvironment(StorageFrame):
@@ -97,11 +101,19 @@ class Application(object):
             response = HTTPInternalServerError()
         return response
 
+    def is_host_valid(self, host):
+        return re.match(HOSTNAME_REGEX, host) or re.match(IP_REGEX, host)
+
     def __call__(self, environ, start_response):
         '''
         WSGI interface method. 
         Creates webob and iktomi wrappers and calls `handle` method.
         '''
+        # validating Host header to prevent problems with url parsing
+        if not self.is_host_valid(environ['HTTP_HOST']):
+            logger.warning('Unusual header "Host: {}", return HTTPNotFound'\
+                           .format(environ['HTTP_HOST']))
+            return HTTPNotFound()(environ, start_response)
         request = Request(environ, charset='utf-8')
         env = VersionedStorage(self.env_class, request=request, root=self.root)
         data = VersionedStorage()
