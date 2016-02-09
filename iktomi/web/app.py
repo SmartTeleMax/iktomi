@@ -102,7 +102,10 @@ class Application(object):
         WSGI interface method. 
         Creates webob and iktomi wrappers and calls `handle` method.
         '''
-        environ['HTTP_HOST'] = environ['HTTP_HOST'].lstrip('.')
+        if environ['HTTP_HOST'].startswith('.'):
+            logger.warning('Unusual header "Host: {}", return HTTPNotFound'\
+                           .format(environ['HTTP_HOST']))
+            return HTTPNotFound()(environ, start_response)
         request = Request(environ, charset='utf-8')
         env = VersionedStorage(self.env_class, request=request, root=self.root)
         data = VersionedStorage()
