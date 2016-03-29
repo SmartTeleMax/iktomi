@@ -100,6 +100,12 @@ class ConverterTests(unittest.TestCase):
         conv = convs.Converter(v1)(v3, validators=[v2])
         self.assertEqual(conv.validators, (v2, v3))
 
+        conv = convs.Converter(v1)(v3, validators=[v2])(v1)
+        self.assertEqual(conv.validators, (v2, v3, v1))
+
+        conv = convs.Converter(v3, validators=[v2])
+        self.assertEqual(conv.validators, (v2, v3))
+
 
 class IntConverterTests(unittest.TestCase):
 
