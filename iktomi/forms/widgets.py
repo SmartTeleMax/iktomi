@@ -145,7 +145,8 @@ class Select(Widget):
                                 selected=(choice in values)))
 
         if not self.multiple and not has_null_value and \
-                (value == '' or not self.field.conv.required):
+                (value == '' or not self.field.conv.required) and \
+                self.null_label is not None:
             options.insert(0, {'value': '',
                                'title': self.null_label,
                                'selected': value in (None, '')})
