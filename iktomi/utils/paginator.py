@@ -188,7 +188,7 @@ class Paginator(object):
         if not self.limit or self.count<self.limit:
             return 1
         if self.count % self.limit <= self.orphans:
-            return self.count / self.limit
+            return self.count // self.limit
         return int(math.ceil(float(self.count)/self.limit))
 
     def slice(self, items):
