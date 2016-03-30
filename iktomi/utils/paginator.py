@@ -122,6 +122,8 @@ class Paginator(object):
     #: Callable returning the list of pages
     #: to show in paginator.
     impl = staticmethod(full_page_range)
+    #: The minimum number of items allowed on the last page
+    orphans = 0
 
     def __init__(self, request, **kwargs):
         self.request = request
@@ -185,6 +187,8 @@ class Paginator(object):
         '''Number of pages.'''
         if not self.limit or self.count<self.limit:
             return 1
+        if self.count % self.limit <= self.orphans:
+            return self.count / self.limit
         return int(math.ceil(float(self.count)/self.limit))
 
     def slice(self, items):
@@ -192,6 +196,8 @@ class Paginator(object):
         if self.limit:
             if self.page>self.pages_count:
                 return []
+            if self.page == self.pages_count and self.orphans:
+                return items[self.limit*(self.page-1):]
             return items[self.limit*(self.page-1):self.limit*self.page]
         else:
             return items[:]
