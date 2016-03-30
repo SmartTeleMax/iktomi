@@ -196,7 +196,7 @@ class Paginator(object):
         if self.limit:
             if self.page>self.pages_count:
                 return []
-            if self.page == self.pages_count and self.orphans:
+            if self.page == self.pages_count:
                 return items[self.limit*(self.page-1):]
             return items[self.limit*(self.page-1):self.limit*self.page]
         else:
