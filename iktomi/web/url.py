@@ -53,6 +53,9 @@ class URL(str):
                       for v in values]
                      for k, values in parse_qs(url.query).items()], [])
         host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
+        if isinstance(host, unicode):
+            host = host.encode('idna')
+
         port = url.netloc.split(':')[1] if ':' in url.netloc else ''
         return cls(urllib.unquote(url.path).decode('utf-8'),
                    query, host.decode('idna'),
