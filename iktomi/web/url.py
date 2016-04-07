@@ -57,7 +57,11 @@ class URL(str):
             host = host.encode('idna')
 
         port = url.netloc.split(':')[1] if ':' in url.netloc else ''
-        return cls(urllib.unquote(url.path).decode('utf-8'),
+        if isinstance(url.path, unicode):
+            path = urllib.unquote(url.path)
+        else:
+            path = urllib.unquote(url.path).decode('utf-8')
+        return cls(path,
                    query, host.decode('idna'),
                    port, url.scheme, show_host)
 
