@@ -57,13 +57,17 @@ class URL(str):
             host = host.encode('idna')
 
         port = url.netloc.split(':')[1] if ':' in url.netloc else ''
-        return cls(urllib.unquote(url.path).decode('utf-8'),
+        path = urllib.unquote(url.path)
+        if isinstance(url.path, str):
+            path = path.decode('utf-8')
+
+        return cls(path,
                    query, host.decode('idna'),
                    port, url.scheme, show_host)
 
     def _copy(self, **kwargs):
         path = kwargs.pop('path', self.path)
-        kw = dict(query=self.query, host=self.host, 
+        kw = dict(query=self.query, host=self.host,
                   port=self.port, schema=self.schema,
                   show_host=self.show_host)
         kw.update(kwargs)

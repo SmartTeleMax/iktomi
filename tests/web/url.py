@@ -114,6 +114,13 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.get_readable(),
                          u'/search?q=hello�')
 
+    def test_cyrillic_path(self):
+        url1 = URL.from_url('http://test.ru/тест') # encoded unicode
+        url2 = URL.from_url(u'http://test.ru/тест') # decoded unicode
+        # should work both without errors
+        self.assertEqual(url1.path, '/%D1%82%D0%B5%D1%81%D1%82')
+        self.assertEqual(url1.path, url2.path)
+
 class UrlTemplateTest(unittest.TestCase):
     def test_match(self):
         'Simple match'
