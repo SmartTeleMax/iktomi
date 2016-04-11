@@ -8,6 +8,7 @@
 *.orig
 dist
 venv
+venv-*
 build
 MANIFEST
 pip-log.txt
@@ -15,7 +16,6 @@ coverage.xml
 nosetests.xml
 examples/filefield/media/
 .DS_Store
-.pycamp
 .coverage
 .swp
 .ropeproject
