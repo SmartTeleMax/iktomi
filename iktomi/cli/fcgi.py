@@ -98,7 +98,7 @@ class Flup(Cli):
                     if terminate(pid, sig, 3):
                         os.remove(self.pidfile)
                         sys.exit()
-                except OSError, exc:
+                except OSError as exc:
                     if exc.errno != errno.ESRCH:
                         raise
                     elif sig == signal.SIGINT:

@@ -104,9 +104,9 @@ class Application(object):
                 logger.debug('Application returned None '
                              'instead of Response object')
                 response = HTTPNotFound()
-        except HTTPException, e:
+        except HTTPException as e:
             response = e
-        except Exception, e:
+        except Exception as e:
             self.handle_error(env)
             response = HTTPInternalServerError()
         return response

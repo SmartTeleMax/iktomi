@@ -144,7 +144,7 @@ class Converter(object):
 
             if self.required and self._is_empty(value):
                 raise ValidationError(self.error_required)
-        except ValidationError, e:
+        except ValidationError as e:
             if not silent:
                 e.fill_errors(self.field)
             #NOTE: by default value for field is in python_data,
