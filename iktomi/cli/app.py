@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 try:
     MAXFD = os.sysconf("SC_OPEN_MAX")
-except:
+except: # pragma: no cover
     MAXFD = 256
 
 
@@ -33,11 +33,11 @@ def flush_fds():
     for fd in range(3, MAXFD + 1):
         try:
             os.fsync(fd)
-        except OSError:
+        except OSError: # pragma: no cover
             pass
 
 
-class App(Cli):
+class App(Cli): # pragma: no cover
     '''
     Development application
 
@@ -99,7 +99,7 @@ class App(Cli):
                  local=self.shell_namespace)
 
 
-class DevServerThread(threading.Thread):
+class DevServerThread(threading.Thread): # pragma: no cover
 
     def __init__(self, host, port, app):
         from wsgiref.simple_server import make_server, WSGIServer, \
@@ -143,7 +143,7 @@ def iter_module_files():
     for module in sys.modules.values():
         filename = getattr(module, '__file__', None)
         if filename:
-            while not os.path.isfile(filename):
+            while not os.path.isfile(filename): # pragma: no cover
                 filename = os.path.dirname(filename)
                 if not filename:
                     break
@@ -153,7 +153,7 @@ def iter_module_files():
                 yield filename
 
 
-def wait_for_code_change(extra_files=None, interval=1):
+def wait_for_code_change(extra_files=None, interval=1): # pragma: no cover
     mtimes = {}
     while 1:
         for filename in chain(iter_module_files(), extra_files or ()):

@@ -94,7 +94,7 @@ class CookieAuth(web.WebHandler):
             if key is not None:
                 if not self.storage.delete(self._cookie_name + ':' + \
                                                 key.encode('utf-8')):
-                    logger.info('storage "%r" is unrichable', self.storage)
+                    logger.info('storage "%r" is unreachable', self.storage)
 
     def login(self, template='login'):
         '''

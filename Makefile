@@ -12,7 +12,9 @@ test-%: devbuild-%
 	cd tests && ../venv-${*}/bin/py.test -q -r fEsxXw --strict
 
 coverage-%: devbuild-%
-	cd tests && ../venv-${*}/bin/py.test --cov-report term-missing --cov iktomi
+	cd tests && ../venv-${*}/bin/py.test --cov-report term-missing --cov ../venv-${*}/lib/${*}/site-packages/iktomi
+
+#   cd tests && ../venv-${*}/bin/py.test --cov-report term-missing --cov iktomi
 
 test: test-python2.7 test-python3.5
 coverage: coverage-python2.7

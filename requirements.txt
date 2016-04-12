@@ -13,3 +13,4 @@ sphinx
 lxml
 py
 six
+minimock
