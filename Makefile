@@ -14,7 +14,9 @@ test-%: devbuild-%
 coverage-%: devbuild-%
 	cd tests && ../venv-${*}/bin/py.test --cov iktomi
 
-test: test-python2.7 test-python3.5
+test2: test-python2.7
+test3: test-python3.5
+test: test2 test3
 coverage: coverage-python2.7
 
 #docs-%: devbuild
