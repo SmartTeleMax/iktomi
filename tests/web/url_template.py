@@ -2,7 +2,8 @@
 __all__ = ['UrlTemplateTests']
 
 import unittest
-from iktomi.web.url_templates import UrlTemplate
+from iktomi.web.url_templates import UrlTemplate, construct_re
+from iktomi.web.url_converters import Converter
 
 class UrlTemplateTests(unittest.TestCase):
 
@@ -95,3 +96,22 @@ class UrlTemplateTests(unittest.TestCase):
 
     def test_no_delimiter(self):
         self.assertRaises(ValueError, UrlTemplate, '<any(x,y)slug>')
+
+    def test_anonymous(self):
+
+        class SimpleConv(Converter):
+            regex = '.+'
+
+        convs = {'string': SimpleConv}
+
+        ut = UrlTemplate('/simple/<id>')
+
+        regexp = construct_re(ut.template,
+                              converters=convs,
+                              anonymous=True)[0]
+        self.assertEqual(regexp.pattern, r'^\/simple\/.+')
+
+        regexp = construct_re(ut.template,
+                              converters=convs,
+                              anonymous=False)[0]
+        self.assertEqual(regexp.pattern, r'^\/simple\/(?P<id>.+)')
