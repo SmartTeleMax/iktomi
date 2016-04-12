@@ -172,7 +172,7 @@ class Cli(object):
         elif hasattr(self, 'command_'+command_name):
             try:
                 getattr(self, 'command_'+command_name)(*args, **kwargs)
-            except ConverterError, e:
+            except ConverterError as e:
                 sys.stderr.write('One of the arguments for '
                                  'command "{}" is wrong:\n'.format(command_name))
                 sys.stderr.write(str(e))

@@ -23,7 +23,7 @@ class FileEventHandlers(object):
     def _remove_file(path):
         try:
             os.remove(path)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno==errno.ENOENT:
                 logger.warning("Can't remove file %r: doesn't exist", path)
                 #raise # XXX

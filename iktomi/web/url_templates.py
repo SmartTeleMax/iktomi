@@ -113,7 +113,7 @@ class UrlTemplate(object):
                 unicode_value = urllib.unquote(value_urlencoded).decode('utf-8', 'replace')
                 try:
                     kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
-                except ConvertError, err:
+                except ConvertError as err:
                     logger.debug('ConvertError in parameter "%s" '
                                  'by %r, value "%s"',
                                  url_arg_name,

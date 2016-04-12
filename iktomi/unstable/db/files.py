@@ -37,7 +37,7 @@ class BaseFile(object):
         # Return None for non-existing file.
         # There can be OSError or IOError (depending on Python version?), both
         # are derived from EnvironmentError having errno property.
-        except EnvironmentError, exc:
+        except EnvironmentError as exc:
             if exc.errno!=errno.ENOENT:
                 raise
 

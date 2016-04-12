@@ -8,7 +8,7 @@ def is_running(pid):
     have permission to access process information.'''
     try:
         os.kill(pid, 0)
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno == errno.ESRCH:
             return False
         raise
@@ -45,7 +45,7 @@ def doublefork(pidfile, logfile, cwd, umask):
     try:
         if os.fork():
             os._exit(os.EX_OK)
-    except OSError, e:
+    except OSError as e:
         sys.exit('fork #1 failed: ({}) {}'.format(e.errno, e.strerror))
     os.setsid()
     os.chdir(cwd)
@@ -53,7 +53,7 @@ def doublefork(pidfile, logfile, cwd, umask):
     try:
         if os.fork():
             os._exit(os.EX_OK)
-    except OSError, e:
+    except OSError as e:
         sys.exit('fork #2 failed: ({}) {}'.format(e.errno, e.strerror))
     if logfile is not None:
         si = open('/dev/null')
