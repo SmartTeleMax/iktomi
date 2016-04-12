@@ -6,6 +6,7 @@
 *.egg-info
 *.db
 *.orig
+*.bak
 dist
 venv
 venv-*

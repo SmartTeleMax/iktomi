@@ -10,7 +10,7 @@ setup(
               'iktomi.forms',
               'iktomi.web',
               'iktomi.templates',
-                    'iktomi.templates.mint', 'iktomi.templates.jinja2',
+                    'iktomi.templates.jinja2',
               'iktomi.db',
                     'iktomi.db.sqla',
               'iktomi.cli',
