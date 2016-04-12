@@ -22,7 +22,8 @@ def terminate(pid, sig, timeout):
     os.kill(pid, sig)
     start = time.time()
     while True:
-        if not is_running(pid):
+        _, status = os.waitpid(pid, os.WNOHANG)
+        if status:
             return True
         if time.time()-start>=timeout:
             return False
