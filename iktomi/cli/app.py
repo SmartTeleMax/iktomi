@@ -21,7 +21,7 @@ except: # pragma: no cover
     MAXFD = 256
 
 
-def close_fds(but=None):
+def close_fds(but=None):# pragma: no cover
     if but is None:
         os.closerange(3, MAXFD)
         return
@@ -29,15 +29,15 @@ def close_fds(but=None):
     os.closerange(but + 1, MAXFD)
 
 
-def flush_fds():
+def flush_fds():# pragma: no cover
     for fd in range(3, MAXFD + 1):
         try:
             os.fsync(fd)
-        except OSError: # pragma: no cover
+        except OSError:
             pass
 
 
-class App(Cli): # pragma: no cover
+class App(Cli):
     '''
     Development application
 
@@ -99,7 +99,7 @@ class App(Cli): # pragma: no cover
                  local=self.shell_namespace)
 
 
-class DevServerThread(threading.Thread): # pragma: no cover
+class DevServerThread(threading.Thread):
 
     def __init__(self, host, port, app):
         from wsgiref.simple_server import make_server, WSGIServer, \
