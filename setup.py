@@ -21,11 +21,9 @@ setup(
                         'iktomi.unstable.db.sqla'],
     package_dir={
         'iktomi.templates.jinja2': 'iktomi/templates/jinja2',
-        'iktomi.templates.mint': 'iktomi/templates/mint',
     },
     package_data={
         'iktomi.templates.jinja2': ['templates/*/*.html'],
-        'iktomi.templates.mint': ['templates/*/*.mint'],
     },
     requires=[
         'webob (>1.1b1)',

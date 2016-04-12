@@ -6,7 +6,9 @@ venv-%:
 	touch venv-${*}/bin/activate
 
 devbuild-%: venv-%
-	venv-${*}/bin/python setup.py install
+	#venv-${*}/bin/python setup.py install
+	#venv-${*}/bin/pip uninstall iktomi
+	venv-${*}/bin/pip install --upgrade .
 
 test-%: devbuild-%
 	cd tests && ../venv-${*}/bin/py.test -q -r fEsxXw --strict
