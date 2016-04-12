@@ -62,7 +62,7 @@ class CookieAuth(web.WebHandler):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
-            user_identity = self.storage.get(self._cookie_name + ':' + 
+            user_identity = self.storage.get(self._cookie_name + ':' +
                                                     key.encode('utf-8'))
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
@@ -81,10 +81,10 @@ class CookieAuth(web.WebHandler):
         response.set_cookie(self._cookie_name, key, path=path)
         if not self.storage.set(self._cookie_name+':'+key.encode('utf-8'),
                                 str(user_identity)):
+            logger.info('storage "%r" is unreachable', self.storage)
             if self.crash_without_storage:
                 raise Exception(
                         'Storage {!r} is gone or down'.format(self.storage))
-            logger.info('storage "%r" is unreachable', self.storage)
         return response
 
     def logout_user(self, request, response):

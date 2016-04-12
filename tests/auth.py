@@ -73,6 +73,10 @@ class CookieAuthTests(unittest.TestCase):
         self.assertEqual(response.headers['Location'], '/')
         self.assert_('Set-Cookie' in response.headers)
 
+    def test_try_login_on_storage_is_down(self):
+        '`Auth` login of valid user'
+        response = self.login('user name', '123')
+
     def test_protected_resource(self):
         '`Auth` requesting protected resource by logined user'
         response = self.login('user name', '123')
@@ -98,6 +102,50 @@ class CookieAuthTests(unittest.TestCase):
         self.assertEqual(response.status_int, 303)
         self.assertEqual(response.headers['Location'], '/')
         self.assert_(response.headers['Set-Cookie'].startswith('auth=; Max-Age=0; Path=/;'))
+
+
+class CookieAuthTestsOnStorageDown(unittest.TestCase):
+    def setUp(self):
+        class Storage(object):
+            def set(self, *args, **kwargs):
+                return False
+
+        auth = self.auth = CookieAuth(get_user_identity, identify_user,
+                                      storage=Storage())
+        def anonymouse(env, data):
+            self.assert_(hasattr(env, 'user'))
+            self.assertEqual(env.user, None)
+            return web.Response('ok')
+        def no_anonymouse(env, data):
+            self.assert_(hasattr(env, 'user'))
+            self.assertEqual(env.user, MockUser(name='user name'))
+            return web.Response('ok')
+        self.app = web.cases(
+            auth.login(),
+            auth.logout(),
+            auth | web.cases(
+                web.match('/a', 'a') | anonymouse,
+                web.match('/b', 'b') | auth_required | no_anonymouse,
+            ),
+        )
+
+    def login(self, login, password):
+        return web.ask(self.app, '/login', data={'login':login, 'password':password})
+
+    def test_login(self):
+        '`Auth` login of valid user'
+        with self.assertRaises(Exception):
+            self.login('user name', '123')
+
+    def test_anonymouse(self):
+        '`Auth` anonymouse access'
+        response = web.ask(self.app, '/a')
+        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.body, 'ok')
+
+        response = web.ask(self.app, '/b')
+        self.assertEqual(response.status_int, 303)
+        self.assertEqual(response.headers['Location'], '/login?next=/b')
 
 
 class SqlaModelAuthTests(unittest.TestCase):
