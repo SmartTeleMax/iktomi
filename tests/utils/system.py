@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import shutil
 import signal
 import tempfile
 import time
@@ -80,3 +81,6 @@ class SystemCases(unittest.TestCase):
         self.assertTrue(os.path.isdir(dir_path))
         # Must not fail when is alreay exists
         safe_makedirs(file_path)
+
+        # Cleaning up
+        shutil.rmtree(tmp)
