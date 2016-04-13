@@ -53,7 +53,7 @@ def drop_everything(engine):
         for custom_type in types:
             custom_type.drop(conn)
         trans.commit()
-    except:
+    except: # pragma: no cover
         trans.rollback()
         raise
 
@@ -170,7 +170,7 @@ class Sqla(Cli):
         meta_name = table_name = None
         if name:
             if isinstance(self.metadata, MetaData):
-                model_name = name
+                table_name = name
             elif '.' in name:
                 meta_name, table_name = name.split('.', 1)
             else:
@@ -208,7 +208,7 @@ class Sqla(Cli):
             ./manage.py sqla:gen docs:10
         '''
         if not names:
-            raise Exception('Please provide generator names')
+            sys.exit('Please provide generator names')
         for name in names:
             name, count = name, 0
             if ':' in name:
