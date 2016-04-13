@@ -39,7 +39,7 @@ class BaseFile(object):
         # are derived from EnvironmentError having errno property.
         except EnvironmentError as exc:
             if exc.errno!=errno.ENOENT:
-                raise
+                raise # pragma: no cover
 
     @property
     def file_name(self):
@@ -70,14 +70,6 @@ class PersistentFile(BaseFile):
     def url(self):
         return self.manager.get_persistent_url(self)
 
-
-class _AttrDict(object):
-
-    def __init__(self, inst):
-        self.__inst = inst
-
-    def __getitem__(self, key):
-        return getattr(self.__inst, key)
 
 def random_name(length=32):
     # altchars - do not use "-" and "_" in file names
