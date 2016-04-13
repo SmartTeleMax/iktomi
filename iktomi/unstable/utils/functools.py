@@ -10,7 +10,9 @@ def return_locals(func):
     def wrap(*args, **kwargs):
         frames = []
 
-        def tracer(frame, event, arg):
+        def tracer(frame, event, arg): # pragma: no cover
+            # coverage does not work in this function because the tracer
+            # is deactivated here
             frames.append(frame)
             sys.settrace(old_tracer)
             if old_tracer is not None:

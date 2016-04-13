@@ -50,7 +50,7 @@ class ModelFactories(object):
         all_langs = [x.lang for x in all_lang_modules]
         for name, constructor, base_names, langs in self.i18n_models:
             if model_names is not None and name not in model_names:
-                pass
+                continue
             if langs is None:
                 lang_modules = all_lang_modules
                 langs = list(all_langs)
@@ -59,7 +59,7 @@ class ModelFactories(object):
             for lang_module in lang_modules:
                 lang_name = lang_module._get_model_name(name)
                 if hasattr(module, lang_name):
-                    pass
+                    continue
                 cls = self.create_model(lang_module, lang_name,
                                         constructor, base_names)
                 # XXX proper name for this attribute?
@@ -120,15 +120,19 @@ class PseudoModel(str):
         return PseudoModel(name, self)
 
     def __eq__(self, other):
+        # deprecated
         return self._binary_op('==', other)
 
     def __ne__(self, other):
+        # deprecated
         return self._binary_op('!=', other)
 
     def __and__(self, other):
+        # deprecated
         return self._binary_op('&', other)
 
     def __or__(self, other):
+        # deprecated
         return self._binary_op('|', other)
 
     @deprecated('Use lambda to postpone operations on model attributes')
