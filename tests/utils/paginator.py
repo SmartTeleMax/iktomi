@@ -24,7 +24,7 @@ class PaginatorTests(unittest.TestCase):
         paginator = Paginator(limit=4,
                               count=0,
                               request=Request.blank('/news'))
-        assert bool(paginator.next) is False
+        self.assertFalse(bool(paginator.next))
         self.assertEqual(paginator.last.page, 1)
         self.assertEqual(paginator.last.url, '/news')
         self.assertIsInstance(paginator.last.url, URL)
@@ -232,17 +232,17 @@ class PaginatorTests(unittest.TestCase):
     def test_nonzero(self):
         paginator = Paginator(limit=4, count=1,
                               request=Request.blank('/news'))
-        assert bool(paginator) is False
+        self.assertFalse(bool(paginator))
 
         paginator = Paginator(limit=4, count=1,
                               request=Request.blank('/news?page=2'))
-        assert bool(paginator) is True
+        self.assertTrue(bool(paginator))
 
         paginator = Paginator(limit=4, count=10,
                               request=Request.blank('/news'))
-        assert bool(paginator) is True
+        self.assertTrue(bool(paginator))
 
         paginator = Paginator(count=1, request=Request.blank('/news'))
-        assert bool(paginator) is False
+        self.assertFalse(bool(paginator))
 
 

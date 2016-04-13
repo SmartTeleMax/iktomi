@@ -52,14 +52,14 @@ class SqlaFilesTests(unittest.TestCase):
         fl1 = TransientFile(self.transient_root, 'testfile1.html', self.file_manager)
         fl2 = TransientFile(self.transient_root, 'testfile2.html', self.file_manager)
 
-        assert os.path.isfile(fl1.path)
-        assert not os.path.isfile(fl2.path)
+        self.assertTrue(os.path.isfile(fl1.path))
+        self.assertFalse(os.path.isfile(fl2.path))
 
         self.file_manager.delete(fl1)
         self.file_manager.delete(fl2)
 
-        assert not os.path.isfile(fl1.path)
-        assert not os.path.isfile(fl2.path)
+        self.assertFalse(os.path.isfile(fl1.path))
+        self.assertFalse(os.path.isfile(fl2.path))
 
     def test_create_transient(self):
         req_fl = os.path.join(self.transient_root, 'xxxxx.html')
