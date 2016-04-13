@@ -4,18 +4,6 @@ import logging
 from importlib import import_module
 from sqlalchemy import orm, create_engine
 from sqlalchemy.orm.query import Query
-from iktomi.utils.deprecation import deprecated
-
-
-class DBSession(orm.session.Session):
-
-    @deprecated('Use Session.query(cls).filter_by(…).scalar() instead.')
-    def get(self, query, **kwargs):
-        if not isinstance(query, Query):
-            query = self.query(query)
-        if kwargs:
-            query = query.filter_by(**kwargs)
-        return query.first()
 
 
 def multidb_binds(databases, package=None, engine_params=None):
@@ -43,24 +31,3 @@ def multidb_binds(databases, package=None, engine_params=None):
         for table in metadata.sorted_tables:
             binds[table] = engine
     return binds
-
-
-@deprecated('Use sqlalchemy.orm.sessionmaker(binds=multidb_binds(…)) instead.')
-def session_maker(databases, query_cls=Query, models_location='models',
-                  engine_params=None, session_params=None,
-                  session_class=orm.session.Session):
-    '''
-    Session maker with multiple databases support. For each database there
-    should be corresponding submodule of `models_location` package with
-    `metadata` object for that database.
-    '''
-    engine_params = engine_params or {}
-    session_params = dict(session_params or {})
-    session_params.setdefault('autoflush', False)
-    if isinstance(databases, basestring):
-        engine = create_engine(databases, **engine_params)
-        return orm.sessionmaker(class_=session_class, query_cls=query_cls,
-                                bind=engine, **session_params)
-    binds = multidb_binds(databases, models_location, engine_params=engine_params)
-    return orm.sessionmaker(class_=session_class, query_cls=query_cls,
-                            binds=binds, **session_params)
