@@ -153,7 +153,7 @@ def iter_module_files():
                 yield filename
 
 
-def wait_for_code_change(extra_files=None, interval=1): # pragma: no cover
+def wait_for_code_change(extra_files=None, interval=1):
     mtimes = {}
     while 1:
         for filename in chain(iter_module_files(), extra_files or ()):

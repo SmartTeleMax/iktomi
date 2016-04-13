@@ -2,10 +2,14 @@ import os
 import unittest
 from iktomi import web
 from iktomi.cli import app
-from minimock import Mock
 from logging import Logger
 import signal
 from time import sleep
+
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
 
 
 class AppTest(unittest.TestCase):
@@ -17,12 +21,13 @@ class AppTest(unittest.TestCase):
                                      else app.__file__
         self.assertTrue(app_file in files_list)
 
+
 class WaitForChangeTest(unittest.TestCase):
 
     def setUp(self):
         os.mkdir('temp_dir')
         self.f = open('temp_dir/tempfile', 'w')
-    
+
     def tearDown(self):
         self.f.close()
         os.unlink('temp_dir/tempfile')
@@ -51,7 +56,6 @@ class WaitForChangeTest(unittest.TestCase):
                 w.write(message % filename)
                 w.close()
                 os._exit(0)
-            
-            Logger.info = Mock('info')
-            Logger.info.mock_returns_func = writeback_and_stop
+
+            Logger.info = Mock(side_effect= writeback_and_stop)
             app.wait_for_code_change(extra_files=('temp_dir/tempfile',))
