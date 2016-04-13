@@ -1,16 +1,23 @@
 import os
+import sys
 import unittest
 from iktomi import web
 from iktomi.cli import app
 from logging import Logger
+from cStringIO import StringIO
 import signal
 from time import sleep
 
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
 
+try:
+    from unittest.mock import Mock, patch, MagicMock
+except ImportError:
+    from mock import Mock, patch, MagicMock
+
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 
 class AppTest(unittest.TestCase):
 
@@ -28,7 +35,7 @@ class WaitForChangeTest(unittest.TestCase):
         os.mkdir('temp_dir')
         self.f = open('temp_dir/tempfile', 'w')
 
-    def tearDown(self):
+    def doCleanups(self):
         self.f.close()
         os.unlink('temp_dir/tempfile')
         os.rmdir('temp_dir')
@@ -59,3 +66,20 @@ class WaitForChangeTest(unittest.TestCase):
 
             Logger.info = Mock(side_effect= writeback_and_stop)
             app.wait_for_code_change(extra_files=('temp_dir/tempfile',))
+
+
+class CliAppTest(unittest.TestCase):
+
+    def setUp(self):
+        webapp = web.cases(
+            web.match('/', 'index') | (lambda e, d: 'hello')
+        )
+        self.app = app.App(webapp, shell_namespace={'hello':'world'})
+
+    def test_command_shell(self):
+        inp = StringIO('print hello')
+        out = StringIO()
+        with patch.object(sys, 'stdin', inp):
+            with patch.object(sys, 'stdout', out):
+                self.app.command_shell()
+        self.assertEqual(out.getvalue(), '>>> world\n>>> ')

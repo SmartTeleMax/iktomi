@@ -73,10 +73,6 @@ class CookieAuthTests(unittest.TestCase):
         self.assertEqual(response.headers['Location'], '/')
         self.assert_('Set-Cookie' in response.headers)
 
-    def test_try_login_on_storage_is_down(self):
-        '`Auth` login of valid user'
-        response = self.login('user name', '123')
-
     def test_protected_resource(self):
         '`Auth` requesting protected resource by logined user'
         response = self.login('user name', '123')

@@ -21,15 +21,7 @@ except: # pragma: no cover
     MAXFD = 256
 
 
-def close_fds(but=None):# pragma: no cover
-    if but is None:
-        os.closerange(3, MAXFD)
-        return
-    os.closerange(3, but)
-    os.closerange(but + 1, MAXFD)
-
-
-def flush_fds():# pragma: no cover
+def flush_fds():
     for fd in range(3, MAXFD + 1):
         try:
             os.fsync(fd)
@@ -78,7 +70,7 @@ class App(Cli):
             # Main goal is to reload all modules
             # NOTE: For exec syscall we need to flush and close all fds manually
             flush_fds()
-            close_fds()
+            os.closerange(3, MAXFD)
             os.execvp(sys.executable, [sys.executable] + sys.argv)
         except KeyboardInterrupt:
             logger.info('Stoping dev-server...')
@@ -143,7 +135,7 @@ def iter_module_files():
     for module in sys.modules.values():
         filename = getattr(module, '__file__', None)
         if filename:
-            while not os.path.isfile(filename): # pragma: no cover
+            while not os.path.isfile(filename):
                 filename = os.path.dirname(filename)
                 if not filename:
                     break
