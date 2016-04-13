@@ -10,9 +10,9 @@ from time import sleep
 
 
 try:
-    from unittest.mock import Mock, patch, MagicMock
+    from unittest.mock import Mock, patch
 except ImportError:
-    from mock import Mock, patch, MagicMock
+    from mock import Mock, patch
 
 try:
     from contextlib import ExitStack
@@ -24,7 +24,7 @@ class AppTest(unittest.TestCase):
     def test_iter_module_files(self):
         files_list = list(app.iter_module_files())
         self.assertTrue(__file__ in files_list)
-        app_file = app.__file__[:-1] if app.__file__[-1] in ('c', 'o')\
+        app_file = app.__file__[:-1] if app.__file__.endswith(('.pyc', '.pyo'))\
                                      else app.__file__
         self.assertTrue(app_file in files_list)
 

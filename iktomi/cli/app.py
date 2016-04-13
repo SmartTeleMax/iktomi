@@ -140,7 +140,7 @@ def iter_module_files():
                 if not filename:
                     break
             else:
-                if filename[-4:] in ('.pyc', '.pyo'):
+                if filename[-4:].endswith(('.pyc', '.pyo')):
                     filename = filename[:-1]
                 yield filename
 
