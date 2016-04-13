@@ -119,22 +119,3 @@ class PseudoModel(str):
     def __getattr__(self, name):
         return PseudoModel(name, self)
 
-    def __eq__(self, other):
-        # deprecated
-        return self._binary_op('==', other)
-
-    def __ne__(self, other):
-        # deprecated
-        return self._binary_op('!=', other)
-
-    def __and__(self, other):
-        # deprecated
-        return self._binary_op('&', other)
-
-    def __or__(self, other):
-        # deprecated
-        return self._binary_op('|', other)
-
-    @deprecated('Use lambda to postpone operations on model attributes')
-    def _binary_op(self, op, other):
-        return ' '.join([self, op, str(other)])
