@@ -11,5 +11,5 @@ webtest
 docutils
 sphinx
 lxml
-py
+mock
 six
