@@ -70,7 +70,8 @@ class ChunkedPageRange(object):
     def paginator_prev_chunk(paginator):
         chunk = (paginator.page-1)//paginator.chunk_size
         if chunk:
-            return paginator._page_url_pair((chunk-1)*paginator.chunk_size + 1)
+            chunk_size = paginator.chunk_size
+            return paginator._page_url_pair((chunk-1)*chunk_size + chunk_size)
         else:
             return paginator._page_url_pair()
     # Due to nature of cached_property we have to explicitly provide name.
@@ -136,7 +137,8 @@ class Paginator(object):
         return bool(self.limit) and (self.pages_count>1 or self.page>1)
 
     def invalid_page(self):
-        '''This method is called when invalid page is passed in request.
+        '''This method is called when invalid (not positive int)
+        page is passed in request.
         Use "pass" to ignore. Other options are raising exceptions for HTTP
         Not Found or redirects.'''
         pass
@@ -202,10 +204,14 @@ class Paginator(object):
 
     @cached_property
     def prev(self):
-        if self.page>1:
+        if self.page>self.pages_count:
+            # if we are on non-existing page which is higher
+            # than current page, return last page, so we can navigate
+            # to it
+            return self.last
+        elif self.page>1:
             return self._page_url_pair(self.page-1)
         else:
-            # XXX why?
             return self._page_url_pair()
 
     @cached_property
@@ -217,17 +223,11 @@ class Paginator(object):
 
     @cached_property
     def first(self):
-        if self.page>1:
-            return self._page_url_pair(1)
-        else:
-            return self._page_url_pair()
+        return self._page_url_pair(1)
 
     @cached_property
     def last(self):
-        if self.page<self.pages_count:
-            return self._page_url_pair(self.pages_count)
-        else:
-            return self._page_url_pair()
+        return self._page_url_pair(self.pages_count)
 
     @cached_property
     def pages(self):
@@ -247,7 +247,7 @@ class Paginator(object):
         # accessed in class.
         if hasattr(prop, '__get__'):
             return prop.__get__(self, type(self))
-        return prop
+        return prop # pragma: no cover
 
 
 class ModelPaginator(Paginator):
