@@ -28,7 +28,7 @@ class FileEventHandlers(object):
                 logger.warning("Can't remove file %r: doesn't exist", path)
                 #raise # XXX
             else:
-                raise
+                raise # pragma: no cover
 
     def _store_transient(self, target):
         transient = getattr(target, self.prop.key)

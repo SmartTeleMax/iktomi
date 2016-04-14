@@ -237,6 +237,12 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertTrue(os.path.exists(obj.file.path))
         self.assertEqual(pf1.path, obj.file.path)
 
+        # XXX for test coverage
+        #     have no idea what extra check can be performed
+        obj.file = obj.file
+        self.assertTrue(os.path.exists(obj.file.path))
+        self.assertEqual(pf1.path, obj.file.path)
+
     @unittest.expectedFailure
     def test_update_file2file_not_random(self):
         obj = self.Model()
@@ -336,6 +342,20 @@ class SqlaFilesTests(unittest.TestCase):
 
         del obj.file.size
         self.assertEqual(obj.file.size, None)
+
+    def test_file2none_lost(self):
+        obj = self.Model()
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test')
+        self.db.add(obj)
+        self.db.commit()
+
+        os.unlink(obj.file.path)
+        obj.file = None
+        self.db.commit()
+
+        self.assertEqual(obj.file_size, None)
 
 
 class SqlaFilesTestsSubclass(SqlaFilesTests):
