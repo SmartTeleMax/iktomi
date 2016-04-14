@@ -1,6 +1,6 @@
 import unittest, os, tempfile, shutil
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
-                                     FileManager
+                                     FileManager, ReadonlyFileManager
 from webob import Request
 
 
@@ -17,6 +17,9 @@ class SqlaFilesTests(unittest.TestCase):
                                         self.persistent_root,
                                         self.transient_url,
                                         self.persistent_url)
+
+        self.ro_file_manager = ReadonlyFileManager(self.persistent_root,
+                                                   self.persistent_url)
 
     def tearDown(self):
         shutil.rmtree(self.transient_root)
@@ -46,11 +49,11 @@ class SqlaFilesTests(unittest.TestCase):
 
     def test_delete(self):
         # XXX how to test lack of permissions?
-        with open(os.path.join(self.transient_root, 'testfile1.html'), 'w') as f:
+        with open(os.path.join(self.transient_root, 'delfile1.html'), 'w') as f:
             f.write('<html></html>')
 
-        fl1 = TransientFile(self.transient_root, 'testfile1.html', self.file_manager)
-        fl2 = TransientFile(self.transient_root, 'testfile2.html', self.file_manager)
+        fl1 = TransientFile(self.transient_root, 'delfile1.html', self.file_manager)
+        fl2 = TransientFile(self.transient_root, 'delfile2.html', self.file_manager)
 
         self.assertTrue(os.path.isfile(fl1.path))
         self.assertFalse(os.path.isfile(fl2.path))
@@ -60,6 +63,19 @@ class SqlaFilesTests(unittest.TestCase):
 
         self.assertFalse(os.path.isfile(fl1.path))
         self.assertFalse(os.path.isfile(fl2.path))
+
+    def test_readonly_file_manager(self):
+        get_persistent = self.ro_file_manager.get_persistent
+
+        fl = get_persistent('name.txt')
+        self.assertIsInstance(fl, PersistentFile)
+        self.assertEqual(self.ro_file_manager.get_persistent_url(fl), '/media/name.txt')
+
+
+        self.assertRaises(ValueError, get_persistent, 'something/../name.txt')
+        self.assertRaises(ValueError, get_persistent, '/something/name.txt')
+        self.assertRaises(ValueError, get_persistent, '~/something/name.txt')
+
 
     def test_create_transient(self):
         req_fl = os.path.join(self.transient_root, 'xxxxx.html')
@@ -90,3 +106,4 @@ class SqlaFilesTests(unittest.TestCase):
                                                     length=130000)
 
         self.assertEqual(fl.size, 130000)
+

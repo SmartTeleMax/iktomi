@@ -84,7 +84,8 @@ class BaseFileManager(object):
         self.persistent_url = persistent_url
 
     def get_persistent(self, name, cls=PersistentFile):
-        assert name and not ('..' in name or name[0] in '~/'), name
+        if not name or '..' in name or name[0] in '~/':
+            raise ValueError('Unsecure file path')
         persistent = cls(self.persistent_root, name, self)
         return persistent
 
