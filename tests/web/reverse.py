@@ -215,6 +215,16 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.docs.all.as_url, '/docs/')
         self.assertEqual(r.docs.news_index.as_url, '/docs/news/')
 
+    def test_subreverse(self):
+        chain = web.cases(
+                web.prefix('/docs', name='docs') | web.cases(
+                    web.match('/<int:id>', 'doc'),
+                    web.match('/list', 'docs')))
+
+        r = web.Reverse.from_handler(chain)
+        self.assertEqual(r.build_subreverse('docs.doc', id=1).as_url, '/docs/1')
+        self.assertEqual(r.build_subreverse('docs').doc(id=1).as_url, '/docs/1')
+
     def test_unicode(self):
         'Reverse with unicode'
         # various combinations of url parts containing unicode
@@ -231,6 +241,12 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.unicode2(slug=u'ю').as_url, 'http://xn--o1a/%D0%B7/%D1%8E')
         self.assertEqual(r.unicode3(slug=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
         self.assertEqual(r.unicode4(slug1=u'д', slug2=u'ю').as_url, 'http://xn--o1a/%D0%B4/%D1%8E')
+
+    def test_port(self):
+        chain = web.subdomain(u'example.com:8000') | web.match('/', name="index")
+        r = web.Reverse.from_handler(chain)
+        self.assertEqual(r.index.as_url.port, '8000')
+        self.assertEqual(r.index.as_url.host, 'example.com')
 
     def test_nested_prefixes(self):
         'Reverse with nested prefexes'
@@ -269,6 +285,18 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.news(sort="desc").as_url, '/news/desc')
         self.assertEqual(r.news.page(sort="desc", page=1).as_url, '/news/desc/page/1')
         self.assertEqual(r.news.feed.as_url, '/news/feed')
+
+    @unittest.expectedFailure
+    def test_endpoint_with_params2(self):
+        app = web.prefix('/news', name='news') | web.cases(
+                web.match('/<sort>'),
+                web.match('/<sort>/page/<int:page>', name='page'),
+                web.match('/feed', name='feed'),
+        )
+        r = web.Reverse.from_handler(app)
+
+        self.assertEqual(r.news(sort='desc').page(page=1).as_url, '/news/desc/page/1')
+        self.assertRaises(UrlBuildingError, lambda: r.news(sort='desc')()())
 
     def test_string_api(self):
         'String API for reverse (build_url)'

@@ -115,6 +115,7 @@ class Reverse(object):
                                   ready=self._is_endpoint,
                                   parent=self._parent,
                                   finalize_params=finalize_params)
+        # XXX is this code reachable?
         raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
     def __getattr__(self, name):
