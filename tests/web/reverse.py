@@ -278,16 +278,19 @@ class ReverseTests(unittest.TestCase):
         app = web.prefix('/news', name='news') | web.cases(
                 web.match('/<sort>'),
                 web.match('/<sort>/page/<int:page>', name='page'),
+                web.match('/<sort>/main-page', name='main_page'),
                 web.match('/feed', name='feed'),
         )
         r = web.Reverse.from_handler(app)
 
+        self.assertRaises(UrlBuildingError, lambda: r())
         self.assertEqual(r.news(sort="desc").as_url, '/news/desc')
         self.assertEqual(r.news.page(sort="desc", page=1).as_url, '/news/desc/page/1')
         self.assertEqual(r.news.feed.as_url, '/news/feed')
+        self.assertEqual(r.news(sort='desc').page(page=1).as_url, '/news/desc/page/1')
+        self.assertEqual(r.news(sort='desc').main_page.as_url, '/news/desc/main-page')
 
-    @unittest.expectedFailure
-    def test_endpoint_with_params2(self):
+    def test_double_call(self):
         app = web.prefix('/news', name='news') | web.cases(
                 web.match('/<sort>'),
                 web.match('/<sort>/page/<int:page>', name='page'),
@@ -295,8 +298,7 @@ class ReverseTests(unittest.TestCase):
         )
         r = web.Reverse.from_handler(app)
 
-        self.assertEqual(r.news(sort='desc').page(page=1).as_url, '/news/desc/page/1')
-        self.assertRaises(UrlBuildingError, lambda: r.news(sort='desc')()())
+        self.assertRaises(UrlBuildingError, lambda: r.news(sort='desc')())
 
     def test_string_api(self):
         'String API for reverse (build_url)'

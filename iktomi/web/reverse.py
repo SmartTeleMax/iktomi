@@ -62,7 +62,7 @@ class Reverse(object):
     '''
     def __init__(self, scope, location=None, path='', host='', ready=False, 
                  need_arguments=False, bound_env=None, parent=None,
-                 finalize_params=None):
+                 finalize_params=None, pending_args=None):
         # location is stuff containing builders for current reverse step
         # (builds url part for particular namespace or endpoint)
         self._location = location
@@ -86,6 +86,7 @@ class Reverse(object):
         self._bound_env = bound_env
         self._parent = parent
         self._finalize_params = finalize_params or {}
+        self._pending_args = pending_args or {}
 
     def _attach_subdomain(self, host, location):
         subdomain = location.build_subdomians(self)
@@ -102,10 +103,14 @@ class Reverse(object):
         '''
         if not self._callable:
             raise UrlBuildingError('Endpoint do not accept arguments')
+        if self._finalize_params:
+            raise UrlBuildingError('Calling a reverse object multiple times is not allowed')
+
         if self._is_endpoint or self._need_arguments:
             finalize_params = {}
             path, host = self._path, self._host
             if self._location and not self._ready:
+                kwargs.update(self._pending_args)
                 host = self._attach_subdomain(host, self._location)
                 path += self._location.build_path(self, **kwargs)
             if '' in self._scope:
@@ -135,10 +140,12 @@ class Reverse(object):
             if ready:
                 path += location.build_path(self)
                 host = self._attach_subdomain(host, location)
+            pending_args = dict(self._finalize_params)
             return self.__class__(scope, location, path, host, ready,
                                   bound_env=self._bound_env,
                                   parent=self,
-                                  need_arguments=location.need_arguments)
+                                  need_arguments=location.need_arguments,
+                                  pending_args=pending_args)
         raise UrlBuildingError('Namespace or endpoint "{}" does not exist'
                                ' in {!r}'.format(name, self))
 
@@ -156,7 +163,6 @@ class Reverse(object):
                               bound_env=self._bound_env, 
                               parent=self._parent,
                               ready=self._is_endpoint)
-
 
     @cached_property
     def url_arguments(self):
