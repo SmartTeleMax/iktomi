@@ -62,6 +62,7 @@ class FileEventHandlers(object):
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
         if not changes:
+            # XXX what is this for? Test case needed
             return
         self._store_transient(target)
 
