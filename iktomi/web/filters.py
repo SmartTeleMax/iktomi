@@ -6,7 +6,6 @@ __all__ = ['match', 'method', 'static_files', 'prefix',
 import logging
 import os
 from os import path
-import posixpath
 from urllib import unquote
 from webob.exc import HTTPMethodNotAllowed, HTTPNotFound
 from webob.static import FileApp
@@ -14,6 +13,7 @@ from .core import WebHandler, cases
 from . import Response
 from .url_templates import UrlTemplate
 from .reverse import Location
+from iktomi.utils.deprecation import deprecated
 
 
 logger = logging.getLogger(__name__)
@@ -262,7 +262,7 @@ class subdomain(WebHandler):
             # A shortcut for subdomain(..) | namespace(name)
             self._next_handler = namespace(name)
 
-        if kwargs:
+        if kwargs: # pragma: no cover
             raise TypeError("subdomain.__init__ got an unexpected keyword "
                             "arguments {}".format(",".join(kwargs)))
 
@@ -309,12 +309,14 @@ class static_files(WebHandler):
         self.location = location
         self.url = url
 
-    def construct_reverse(self):
-        def url_for_static(part):
-            while part.startswith('/'):
-                part = part[1:]
-            return path.join(self.url, part)
-        return url_for_static
+    def url_for_static(self, part):
+        while part.startswith('/'):
+            part = part[1:]
+        return path.join(self.url, part)
+
+    @deprecated("Use static.url_for_static instead")
+    def construct_reverse(self): # pragma: no cover
+        return self.url_for_static
 
     def translate_path(self, pth):
         """Translate a /-separated PATH to the local filename syntax."""

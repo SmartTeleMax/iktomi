@@ -3,7 +3,11 @@
 __all__ = ['Prefix', 'Match', 'Subdomain']
 
 import unittest
+import tempfile, shutil
+import os
 from iktomi import web
+from iktomi.web.app import Application
+from webtest import TestApp as TA
 from webob import Response
 
 
@@ -345,6 +349,15 @@ class Method(unittest.TestCase):
         self.assertEqual(web.ask(app, '/', method="DELETE").body, 'delete')
         self.assertEqual(web.ask(app, '/').status_int, 405)
 
+    def test_by_method_default(self):
+        app = web.match('/') | web.by_method({
+                'DELETE': lambda e,d: Response('delete'),
+            },
+            default_handler=lambda e,d: Response('default'))
+
+        self.assertEqual(web.ask(app, '/', method="DELETE").body, 'delete')
+        self.assertEqual(web.ask(app, '/').body, 'default')
+
 
 class Namespace(unittest.TestCase):
 
@@ -383,4 +396,56 @@ class Namespace(unittest.TestCase):
     def test_empty(self):
         self.assertRaises(TypeError, web.namespace, '')
 
-# XXX tests for static_files needed!
+
+class Static(unittest.TestCase):
+
+    def setUp(self):
+        self.xroot = tempfile.mkdtemp()
+        self.root = os.path.join(tempfile.mkdtemp(), 'static')
+        os.mkdir(self.root)
+        self.url = '/media/'
+
+    def tearDown(self):
+        shutil.rmtree(self.xroot)
+
+    def test_reverse(self):
+        static = web.static_files(self.root, self.url)
+        reverse = static.url_for_static
+
+        self.assertEqual(reverse('text.txt'), '/media/text.txt')
+        self.assertEqual(reverse('//text.txt'), '/media/text.txt')
+
+    def test_serve(self):
+        static = web.static_files(self.root, self.url)
+        app = TA(Application(static))
+
+        with open(os.path.join(self.root, 'x.html'), 'w') as f:
+            f.write('x')
+
+        self.assertEqual(app.get('/media/x.html').body, 'x')
+        self.assertEqual(app.get('/media/x.html').content_type, 'text/html')
+        app.get('/media/404.txt', status=404)
+        app.get('/nomedia/x.txt', status=404)
+
+    def test_secure(self):
+        static = web.static_files(self.root, self.url)
+        app = TA(Application(static))
+
+        with open(os.path.join(self.root, 'x.html'), 'w') as f:
+            f.write('x')
+
+        with open(os.path.join(self.xroot, 'x.html'), 'w') as f:
+            f.write('secret')
+
+        os.mkdir(os.path.join(self.root, 'x'))
+
+        with open(os.path.join(self.root, 'x/y.html'), 'w') as f:
+            f.write('y')
+
+        app.get('/media/x\\y.html', status=404)
+        app.get('/media/z/../x.html', status=404)
+        app.get('/media/../x.html', status=404)
+        app.get('/media/', status=404)
+        app.get('/media/x', status=404)
+        app.get('/media/x/', status=404)
+
