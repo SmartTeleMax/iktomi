@@ -1,12 +1,7 @@
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql import ClauseElement, Join
-try:
-    # sa 0.9
-    from sqlalchemy.sql.selectable import FromGrouping
-except ImportError:
-    # sa 0.8
-    FromGrouping = None
+from sqlalchemy.sql.selectable import FromGrouping
 from sqlalchemy import cast, Boolean
 from sqlalchemy.orm.util import _class_to_mapper
 
@@ -28,7 +23,7 @@ class PublicQuery(Query):
 
     def get(self, ident):
         prop = self.property_name
-        if self._criterion:
+        if self._criterion: # pragma: no cover
             mapper = self._only_full_mapper_zero("get")
             # Don't use getattr/hasattr to check public existence, since this
             # might misinterpret a bug (AttributeError raised by some code in
@@ -82,6 +77,7 @@ class PublicQuery(Query):
         #if hasattr(entity, "property"):
         #    entity = entity.property.mapper
         if hasattr(entity, 'parententity'):
+            # XXX is this used?
             entity = entity.parententity
         try:
             cls = _class_to_mapper(entity).class_
@@ -142,7 +138,7 @@ class PublicQuery(Query):
                 obj = obj._clone()
                 obj.right = right
                 return obj
-        if FromGrouping is not None and isinstance(obj, FromGrouping):
+        if isinstance(obj, FromGrouping):
             # XXX tests required!
             element = self._add_eager_onclause(obj.element, selectable, crit)
             if element is not None:
