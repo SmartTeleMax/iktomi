@@ -7,7 +7,7 @@ class Resizer(object):
         self.expand = expand
         self.filter = filter
 
-    def transformations(self, size, target_size):
+    def transformations(self, size, target_size): # pragma: no cover
         # should return a list of JSON-serializable commands
         # that are processed with transform method
         raise NotImplementedError
@@ -18,7 +18,7 @@ class Resizer(object):
             return img.crop(params)
         elif transformation == 'resize':
             return img.resize(params, self.filter)
-        else:
+        else: # pragma: no cover
             raise NotImplementedError(transformation)
 
     def get_target_size(self, size, target_size):
@@ -28,7 +28,7 @@ class Resizer(object):
                 size = params
             elif transformation == 'crop':
                 size = (params[2] - params[0], params[3] - params[1])
-            else:
+            else: # pragma: no cover
                 raise NotImplementedError(transformation)
         return size
 
@@ -40,6 +40,12 @@ class Resizer(object):
 
 
 class ResizeFit(Resizer):
+
+    '''
+    Resizes an image in a way it fits to a given rectangle.
+
+    :param expand: force expand image to the rectangle.
+    '''
 
     def transformations(self, size, target_size):
         sw, sh = size
@@ -56,6 +62,15 @@ class ResizeFit(Resizer):
 
 
 class ResizeCrop(Resizer):
+    '''
+    Crops image to the proportion of a given rectange and resizes it
+    to the size of the rectangle.
+
+    :param expand: force expand image to the rectangle.
+
+    :param force: force image's proportion to be equal to the rectangle's proportion
+    even if source image is smaller in any dimension than target size.
+    '''
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop('force', False)
@@ -100,6 +115,14 @@ class ResizeCrop(Resizer):
 
 class ResizeMixed(Resizer):
 
+    '''
+    Applies one of given rectangles depending on whether the image
+    is vertical or horizontal.
+
+    :param rate: multiplier to height to tune a proportion dividing
+    horisontal images from verticlals. Dy default is equal to 1 (1:1).
+    '''
+
     def __init__(self, hor_resize, vert_resize, rate=1):
         self.hor_resize = hor_resize
         self.vert_resize = vert_resize
@@ -126,6 +149,12 @@ class ResizeMixed(Resizer):
 
 class ResizeFixedWidth(Resizer):
 
+    '''
+    Resizes an image to a given width.
+
+    :param expand: force expand image to target size.
+    '''
+
     def transformations(self, size, target_size):
         sw, sh = size
         tw, th = target_size
@@ -136,6 +165,12 @@ class ResizeFixedWidth(Resizer):
 
 
 class ResizeFixedHeight(Resizer):
+
+    '''
+    Resizes an image to a given height.
+
+    :param expand: force expand image to target size.
+    '''
 
     def transformations(self, size, target_size):
         sw, sh = size
