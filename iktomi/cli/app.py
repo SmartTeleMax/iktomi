@@ -104,6 +104,7 @@ class DevServerThread(threading.Thread):
 
 
         class RequestHandler(WSGIRequestHandler):
+
             def address_string(slf):
                 # getfqdn sometimes is very slow
                 return '{}:{}'.format(host, port)
@@ -140,7 +141,7 @@ def iter_module_files():
                 if not filename:
                     break
             else:
-                if filename[-4:].endswith(('.pyc', '.pyo')):
+                if filename.endswith(('.pyc', '.pyo')):
                     filename = filename[:-1]
                 yield filename
 
