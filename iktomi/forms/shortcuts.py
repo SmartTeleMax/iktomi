@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from . import convs, widgets, fields
-from ..utils import N_
+from iktomi.utils.i18n import N_
 
 
 class PasswordConv(convs.Char):
