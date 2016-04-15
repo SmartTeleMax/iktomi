@@ -61,17 +61,33 @@ class App(Cli):
             server_thread.start()
 
             wait_for_code_change(extra_files=self.extra_files)
-
             server_thread.running = False
             server_thread.join()
             logger.info('Reloading...')
-
-            # Smart reload of current process.
-            # Main goal is to reload all modules
-            # NOTE: For exec syscall we need to flush and close all fds manually
             flush_fds()
-            os.closerange(3, MAXFD)
-            os.execvp(sys.executable, [sys.executable] + sys.argv)
+            pid = os.fork()
+            # We need to fork before `execvp` to perform code reload
+            # correctly, because we need to complete python destructors and
+            # `atexit`.
+            # This will save us from problems of incorrect exit, such as:
+            # - unsaved data in data storage, which does not write data
+            # on hard drive immediatly
+            # - uncovered code with coverage utility, which uses `atexit`
+            # handlers in its working
+            # NOTE: we using untipical fork-exec scheme with replacing
+            # the parent process, not the child
+            if pid:
+                # we need close our file descriptors in parent process, because
+                # `execvp` does not do this
+                os.closerange(3, MAXFD)
+                # waiting for child operations completion
+                os.waitpid(pid, 0)
+                # reloading the code in parent process
+                os.execvp(sys.executable, [sys.executable] + sys.argv)
+            else:
+                # we closing our recources, including file descriptors
+                # and performing `atexit`.
+                sys.exit()
         except KeyboardInterrupt:
             logger.info('Stoping dev-server...')
             server_thread.running = False
