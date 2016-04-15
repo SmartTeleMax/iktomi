@@ -4,7 +4,7 @@ from iktomi.forms.convs import *
 from iktomi.forms.convs import __all__ as _all1
 
 import re
-from iktomi.utils import N_
+from iktomi.utils.i18n import N_
 
 _all2 = locals().keys()
 
@@ -65,7 +65,7 @@ class ModelDictConv(Converter):
             # Return blank self.model instance as initial/default value 
             # if one does not exist
             return self.model()
-        return [] if self.multiple else None
+        return None
 
 
 class OptionLabel(unicode):
@@ -114,11 +114,6 @@ class ModelChoice(EnumChoice):
         except AttributeError:
             pass
         return label
-
-    def get_label(self, form_value):
-        obj = self._safe_to_python(form_value)
-        if obj is not None:
-            return self.get_object_label(obj)
 
     def options(self):
         for obj in self.query.all():
