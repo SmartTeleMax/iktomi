@@ -61,6 +61,7 @@ class ApplicationTests(unittest.TestCase):
 
         errors = []
         def handle_error(env):
+            wa.__class__.handle_error(wa, env)
             _, e, _ = sys.exc_info()
             errors.append(e)
         wa.handle_error = handle_error
@@ -103,6 +104,11 @@ class ApplicationTests(unittest.TestCase):
         class AppEnv(AppEnvironment): pass
         wa = Application(self.app, AppEnv)
         assert wa.env_class == AppEnv
+
+    def test_ivalid_hostname(self):
+        app = TA(self.wsgi_app)
+        self.assertEqual(app.get('http://example.com/').body, 'index')
+        app.get('http://.example.com/', status=404)
 
 
 class HostnameValidationTest(unittest.TestCase):
