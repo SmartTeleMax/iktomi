@@ -62,7 +62,8 @@ class WaitForChangeTest(unittest.TestCase):
                 w.close()
 
             Logger.info = Mock(side_effect=writeback_and_stop)
-            app.wait_for_code_change(extra_files=('temp_dir/tempfile',))
+            # should work well if some files are absent
+            app.wait_for_code_change(extra_files=('temp_dir/nonexistent', 'temp_dir/tempfile'))
             os._exit(0)
 
 
@@ -113,3 +114,33 @@ class WebAppServerTest(unittest.TestCase):
         response = urllib2.urlopen('http://localhost:11111')
         self.assertEqual("hello iktomi", response.read())
         response.close()
+        # test if bootstrap worked correctly
+        self.assertTrue(os.path.isfile('temp_dir/hello.log'))
+        with open('temp_dir/hello.log') as log:
+            'Devserver is running on port 11111' in log.read()
+
+
+class DevServerTest(unittest.TestCase):
+
+    def setUp(self):
+        webapp = web.cases(
+            web.match('/', 'index') | (lambda e, d: 'hello')
+        )
+        self.app = app.App(webapp)
+        self.thread = None
+
+    def doCleanups(self):
+        if self.thread and self.thread.running:
+            self.thread.running = False
+            self.thread.join()
+
+    def test_create_dev_server_thread_test(self):
+        self.thread = app.DevServerThread(host='localhost', port='11111', app=self.app)
+        self.thread.start()
+        self.assertEqual(self.thread.running, True)
+        self.assertEqual(self.thread.port, 11111)
+
+
+    def test_try_to_create_dev_server_with_wrong_params(self):
+        with self.assertRaises(ValueError):
+            self.thread = app.DevServerThread(host='localhost', port='port', app=self.app)

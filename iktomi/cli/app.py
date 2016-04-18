@@ -76,7 +76,9 @@ class App(Cli):
             # handlers in its working
             # NOTE: we using untipical fork-exec scheme with replacing
             # the parent process, not the child
-            if pid:
+            if pid: # pragma: no cover
+                # parent process cannot be covered with coverage, because it is
+                # ends with `execvp`
                 # we need close our file descriptors in parent process, because
                 # `execvp` does not do this
                 os.closerange(3, MAXFD)
@@ -132,7 +134,7 @@ class DevServerThread(threading.Thread):
                             format % args)
 
         try:
-            self.port = int(port)
+            self.port = port if type(port) is int else int(port)
         except ValueError:
             raise ValueError(
                 'Please provide valid port value insted of "{}"'.format(port))
@@ -152,7 +154,9 @@ def iter_module_files():
     for module in sys.modules.values():
         filename = getattr(module, '__file__', None)
         if filename:
-            while not os.path.isfile(filename):
+            while not os.path.isfile(filename): # XXX does this make sense?
+                                                # don't change because this
+                                                # code still present in werkzeug
                 filename = os.path.dirname(filename)
                 if not filename:
                     break
@@ -168,7 +172,10 @@ def wait_for_code_change(extra_files=None, interval=1):
         for filename in chain(iter_module_files(), extra_files or ()):
             try:
                 mtime = os.stat(filename).st_mtime
-            except OSError:
+            except OSError: # pragma: no cover
+                # this is cannot be guaranteed covered by coverage because of interpreter optimization
+                # see https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered#comment-4052311
+
                 continue
 
             old_time = mtimes.get(filename)
