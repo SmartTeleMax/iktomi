@@ -34,8 +34,11 @@ class IntConverter(unittest.TestCase):
 
     def test_to_url(self):
         conv = Integer()
-        value = conv.to_url(4)
-        self.assertEqual(value, '4')
+        self.assertEqual(conv.to_url(4), '4')
+
+    def test_placeholder(self):
+        conv = Integer()
+        self.assertEqual(conv.to_url('REPLACEME'), 'REPLACEME')
 
 
 class StringConverter(unittest.TestCase):
@@ -54,6 +57,11 @@ class StringConverter(unittest.TestCase):
     def test_to_url(self):
         self.assertEqual(String().to_url(u'a'), u'a')
 
+    def test_regex(self):
+        ut = UrlTemplate('/<string(regex="[a-z]+"):message>')
+        self.assertEqual(ut.match('/siga'), ('/siga', {'message': 'siga'}))
+        self.assertEqual(ut.match('/SIGA'), (None, {}))
+
 
 class DateConverter(unittest.TestCase):
 
@@ -71,6 +79,11 @@ class DateConverter(unittest.TestCase):
         self.assertEqual(Date().to_url(
                              date(year=2012, month=10, day=24)),
                          u'2012-10-24')
+
+    def test_placeholder(self):
+        conv = Date()
+        self.assertEqual(conv.to_url('REPLACEME'), 'REPLACEME')
+
 
 class AnyConverter(unittest.TestCase):
 

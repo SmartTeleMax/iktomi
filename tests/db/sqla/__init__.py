@@ -28,6 +28,13 @@ class MultidbTest(unittest.TestCase):
         engine_different2 = self.db.get_bind(db2.DifferentName2)
         self.assertIs(engine_common2, engine_different2)
 
+    def test_missing_metadata(self):
+        with self.assertRaises(ImportError):
+            multidb_binds({'db1': 'sqlite://',
+                           'db2': 'sqlite://',
+                           'db3': 'sqlite://'},
+                          package=multidb_models)
+
     def test_query_class(self):
         try:
             self.db.query(db1.SameName).all()

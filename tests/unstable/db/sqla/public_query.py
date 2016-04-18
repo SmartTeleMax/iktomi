@@ -390,6 +390,18 @@ class UserAddressesTest(unittest.TestCase):
         doc = self.dbp.query(Doc).filter_by(title='a1').scalar()
         self.assertEqual(doc.date_start, 'tomorrow')
 
+    def test_aliased(self):
+        U = aliased(User)
+        names = [u.name for u in self.dbp.query(U)]
+        self.assertEqual(names, ['u1', 'u2', 'u5', 'u6'])
+
+    @unittest.expectedFailure
+    def test_table(self):
+        names = [name for name, in self.dbp.query(User.__table__.c.name)]
+        self.assertEqual(names, ['u1', 'u2', 'u5', 'u6'])
+
+        names = [u[1] for u in self.dbp.query(User.__table__)]
+        self.assertEqual(names, ['u1', 'u2', 'u5', 'u6'])
 
 if __name__=='__main__':
     unittest.main()

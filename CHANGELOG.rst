@@ -1,3 +1,19 @@
+0.4.4
+-----
+
+**Minor features:**
+
+* `convs.length` validator is now a class, it is easier to extract minimal and
+  maximal lengths from `convs.length` object.
+* Force hide a null label for `Select` widget if it is set to `None`.
+
+**Minor bugfixes:**
+
+* Fixed a bug with null value in choices of `Select` widget.
+* Fixed a bug with `HTTP_HOST` variable containing a lieading dot (Opera Mobile sometimes
+  produces that weird requests).
+* Fixed `URL.from_url` handling unicode urls.
+
 0.4.3
 -----
 

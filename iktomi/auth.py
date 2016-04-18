@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 from iktomi import web
 from iktomi.forms import *
-from iktomi.utils import N_
+from iktomi.utils.i18n import N_
 from iktomi.storage import LocalMemStorage
 
 

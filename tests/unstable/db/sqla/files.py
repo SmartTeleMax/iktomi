@@ -1,4 +1,5 @@
 import unittest, os, tempfile, shutil
+import gc
 from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.schema import MetaData
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,18 +18,28 @@ class ObjWithFile(Base):
 
     id = Column(Integer, primary_key=True)
     file_name = Column(VARBINARY(250))
-    file = FileProperty(file_name, name_template='obj/{random}')
+    file_size = Column(Integer)
+    file = FileProperty(file_name,
+                        name_template='obj/{random}',
+                        cache_properties={'size': 'file_size'})
     file_by_id_name = Column(VARBINARY(250))
     file_by_id = FileProperty(file_by_id_name, name_template='obj/{item.id}')
 
+    something = Column(Integer, default=0)
 
-class CustomObjWithFile(CustomBase):
+
+class ModelLevelObj(CustomBase):
 
     id = Column(Integer, primary_key=True)
-    metadata_file_name = Column(VARBINARY(250))
-    metadata_file = FileProperty(metadata_file_name, name_template='obj/{random}')
-    model_file_name = Column(VARBINARY(250))
-    model_file = FileProperty(model_file_name, name_template='obj/{random}')
+    file_name = Column(VARBINARY(250))
+    file = FileProperty(file_name, name_template='obj/{random}')
+
+
+class MetadataLevelObj(CustomBase):
+
+    id = Column(Integer, primary_key=True)
+    file_name = Column(VARBINARY(250))
+    file = FileProperty(file_name, name_template='obj/{random}')
 
 
 class Subclass(ObjWithFile):
@@ -39,7 +50,6 @@ class Subclass(ObjWithFile):
 class SqlaFilesTests(unittest.TestCase):
 
     Model = ObjWithFile
-    CustomModel = CustomObjWithFile
 
     def setUp(self):
 
@@ -73,10 +83,11 @@ class SqlaFilesTests(unittest.TestCase):
                                               self.model_transient_url,
                                               self.model_persistent_url)
 
+
         Session = filesessionmaker(orm.sessionmaker(), self.file_manager,
             file_managers={
-                CustomObjWithFile.metadata:   self.metadata_file_manager,
-                CustomObjWithFile:            self.model_file_manager,
+                MetadataLevelObj.metadata: self.metadata_file_manager,
+                ModelLevelObj: self.model_file_manager,
             })
 
         engine = create_engine('sqlite://')
@@ -97,19 +108,16 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertIsInstance(self.db.file_manager, FileManager)
 
     def test_find_file_manager(self):
-        obj = self.Model()
-        custom_obj = self.CustomModel()
-
         self.assertTrue(hasattr(self.db, 'find_file_manager'))
 
         self.assertEqual(self.db.find_file_manager(self.Model.file),
                          self.file_manager)
 
-        self.assertEqual(self.db.find_file_manager(self.CustomModel.metadata_file),
+        self.assertEqual(self.db.find_file_manager(ModelLevelObj.file),
                          self.model_file_manager)
 
-        self.assertEqual(self.db.find_file_manager(self.CustomModel.model_file),
-                         self.model_file_manager)
+        self.assertEqual(self.db.find_file_manager(MetadataLevelObj.file),
+                         self.metadata_file_manager)
 
     def test_create(self):
         obj = self.Model()
@@ -126,42 +134,61 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(obj.file.path))
         self.assertEqual(open(obj.file.path).read(), 'test')
 
-    def test_create_custom(self):
-        obj = self.CustomModel()
+    def test_create_metadata_obj(self):
+        metadata_obj = MetadataLevelObj()
+        metadata_filemanager = self.db.find_file_manager(metadata_obj)
+        metadata_file = metadata_filemanager.new_transient()
+        with open(metadata_file.path, 'wb') as fp:
+            fp.write('test')
+        metadata_obj.file = metadata_file
 
-        def populate(field_name):
-            attr = getattr(obj.__class__, field_name)
-            f = self.db.find_file_manager(attr).new_transient()
-            with open(f.path, 'wb') as fp:
-                fp.write('test')
-            setattr(obj, field_name, f)
+        self.assertTrue(metadata_obj.file.path.startswith(self.metadata_transient_root))
 
-        populate('metadata_file')
-        populate('model_file')
-
-        self.assertTrue(obj.model_file.path.startswith(
-            self.model_transient_root))
-
-        self.db.add(obj)
+        self.db.add(metadata_obj)
         self.db.commit()
 
-        self.assertTrue(obj.model_file.path.startswith(
-            self.model_persistent_root))
+        self.assertTrue(metadata_obj.file.path.startswith(self.metadata_persistent_root))
+
+    def test_create_model_obj(self):
+        model_obj = ModelLevelObj()
+        model_filemanager = self.db.find_file_manager(model_obj)
+        model_file = model_filemanager.new_transient()
+        with open(model_file.path, 'wb') as fp:
+            fp.write('test')
+        model_obj.file = model_file
+
+        self.assertTrue(model_obj.file.path.startswith(self.model_transient_root))
+
+        self.db.add(model_obj)
+        self.db.commit()
+
+        self.assertTrue(model_obj.file.path.startswith(self.model_persistent_root))
 
     def test_update_none2file(self):
         obj = self.Model()
         self.db.add(obj)
         self.db.commit()
+
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
             fp.write('test')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.commit()
+
+        # cleanup self.Model.file._states.items() to get the result
+        # from scratch, not from cache
+        obj_id = obj.id
+        obj = None
+        gc.collect()
+        obj = self.db.query(self.Model).get(obj_id)
+
         self.assertIsInstance(obj.file, PersistentFile)
         self.assertFalse(os.path.exists(f.path))
         self.assertTrue(os.path.isfile(obj.file.path))
         self.assertEqual(open(obj.file.path).read(), 'test')
+        self.assertEqual(obj.file.size, 4)
+        self.assertEqual(obj.file_size, 4)
 
     def test_update_file2none(self):
         obj = self.Model()
@@ -170,13 +197,17 @@ class SqlaFilesTests(unittest.TestCase):
             fp.write('test')
         self.db.add(obj)
         self.db.commit()
+
         pf = obj.file
 
         obj.file = None
         self.assertIsNone(obj.file_name)
         self.assertTrue(os.path.exists(pf.path))
+        self.assertEqual(obj.file_size, 4)
         self.db.commit()
+
         self.assertFalse(os.path.exists(pf.path))
+        self.assertEqual(obj.file_size, None)
 
     def test_update_file2file(self):
         obj = self.Model()
@@ -187,9 +218,11 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.commit()
         pf1 = obj.file
 
+        self.assertEqual(obj.file_size, 5)
+
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test2')
+            fp.write('test22')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.commit()
@@ -198,7 +231,8 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertFalse(os.path.exists(f.path))
         self.assertFalse(os.path.exists(pf1.path))
         self.assertTrue(os.path.isfile(obj.file.path))
-        self.assertEqual(open(obj.file.path).read(), 'test2')
+        self.assertEqual(open(obj.file.path).read(), 'test22')
+        self.assertEqual(obj.file_size, 6)
 
     def test_update_file2self(self):
         obj = self.Model()
@@ -213,6 +247,12 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.commit()
 
         self.assertIsInstance(obj.file, PersistentFile)
+        self.assertTrue(os.path.exists(obj.file.path))
+        self.assertEqual(pf1.path, obj.file.path)
+
+        # XXX for test coverage
+        #     have no idea what extra check can be performed
+        obj.file = obj.file
         self.assertTrue(os.path.exists(obj.file.path))
         self.assertEqual(pf1.path, obj.file.path)
 
@@ -294,6 +334,54 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.delete(obj)
         self.db.commit()
         self.assertFalse(os.path.exists(pf.path))
+
+    def test_set_invalid(self):
+        obj = self.Model()
+        self.assertRaises(ValueError, lambda: setattr(obj, 'file', 'test'))
+
+    def test_cached_lost(self):
+        obj = self.Model()
+        self.db.add(obj)
+        self.db.commit()
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test')
+        self.db.commit()
+
+        os.unlink(obj.file.path)
+
+        self.assertEqual(obj.file.size, 4)
+        self.assertEqual(obj.file_size, 4)
+
+        del obj.file.size
+        self.assertEqual(obj.file.size, None)
+
+    def test_file2none_lost(self):
+        obj = self.Model()
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write('test')
+        self.db.add(obj)
+        self.db.commit()
+
+        os.unlink(obj.file.path)
+        obj.file = None
+        self.db.commit()
+
+        self.assertEqual(obj.file_size, None)
+
+    def test_file_manager_for_field(self):
+        def make():
+            file_manager = FileManager(self.transient_root,
+                                       self.persistent_root,
+                                       self.transient_url,
+                                       self.persistent_url)
+            filesessionmaker(orm.sessionmaker(), self.file_manager,
+                file_managers={
+                    ObjWithFile.file: file_manager,
+                })
+
+        self.assertRaises(NotImplementedError, make)
 
 
 class SqlaFilesTestsSubclass(SqlaFilesTests):

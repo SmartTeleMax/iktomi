@@ -101,11 +101,11 @@ class CookieAuthTests(unittest.TestCase):
 
 
 class SqlaModelAuthTests(unittest.TestCase):
+
     def setUp(self):
-        from sqlalchemy import Column, Integer, String
+        from sqlalchemy import Column, Integer, String, create_engine, orm
         from sqlalchemy.schema import MetaData
         from sqlalchemy.ext.declarative import declarative_base
-        from iktomi.db.sqla import session_maker
         metadata = MetaData()
         Model = declarative_base(metadata=metadata)
         class User(Model):
@@ -119,7 +119,7 @@ class SqlaModelAuthTests(unittest.TestCase):
 
             @cached_property
             def db(self):
-                return session_maker('sqlite:///:memory:')()
+                return orm.sessionmaker(bind=create_engine('sqlite://'))()
 
             @cached_property
             def template(self):

@@ -37,9 +37,9 @@ class BaseFile(object):
         # Return None for non-existing file.
         # There can be OSError or IOError (depending on Python version?), both
         # are derived from EnvironmentError having errno property.
-        except EnvironmentError, exc:
+        except EnvironmentError as exc:
             if exc.errno!=errno.ENOENT:
-                raise
+                raise # pragma: no cover
 
     @property
     def file_name(self):
@@ -71,14 +71,6 @@ class PersistentFile(BaseFile):
         return self.manager.get_persistent_url(self)
 
 
-class _AttrDict(object):
-
-    def __init__(self, inst):
-        self.__inst = inst
-
-    def __getitem__(self, key):
-        return getattr(self.__inst, key)
-
 def random_name(length=32):
     # altchars - do not use "-" and "_" in file names
     name = base64.b64encode(os.urandom(length), altchars="AA").rstrip('=')
@@ -92,7 +84,8 @@ class BaseFileManager(object):
         self.persistent_url = persistent_url
 
     def get_persistent(self, name, cls=PersistentFile):
-        assert name and not ('..' in name or name[0] in '~/'), name
+        if not name or '..' in name or name[0] in '~/':
+            raise ValueError('Unsecure file path')
         persistent = cls(self.persistent_root, name, self)
         return persistent
 

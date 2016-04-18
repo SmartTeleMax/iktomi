@@ -19,7 +19,8 @@ except ImportError:
     # functionality
     Cleaner = None
 
-from ..utils import N_, M_, cached_property
+from iktomi.utils import cached_property
+from iktomi.utils.i18n import N_, M_
 
 _all2 = locals().keys()
 
@@ -144,7 +145,7 @@ class Converter(object):
 
             if self.required and self._is_empty(value):
                 raise ValidationError(self.error_required)
-        except ValidationError, e:
+        except ValidationError as e:
             if not silent:
                 e.fill_errors(self.field)
             #NOTE: by default value for field is in python_data,
@@ -398,14 +399,6 @@ class EnumChoice(Converter):
         conv = self.conv
         for python_value, label in self.choices:
             yield conv.from_python(python_value), label
-
-    def get_label(self, value):
-        '''
-        Returns a label for given value
-        '''
-        # XXX comment needed
-        value = self.conv.accept(value, silent=True)
-        return dict(self.choices).get(value)
 
 
 class BaseDatetime(CharBased):

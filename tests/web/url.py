@@ -88,6 +88,14 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.query.items(), [('a' ,'1'), ('b', '2'), ('b', '3')])
         self.assertEqual(url.show_host, False)
 
+    def test_from_url_unicode(self):
+        url = URL.from_url(u'http://сайт.рф/', show_host=False)
+        self.assertEqual(url.schema, 'http')
+        self.assertEqual(url.host, u'сайт.рф')
+        self.assertEqual(url.port, '')
+        self.assertEqual(url.path, '/')
+        self.assertEqual(url.show_host, False)
+
     def test_from_url_path(self):
         url = URL.from_url('/url?a=1&b=2&b=3')
         self.assertEqual(url.schema, 'http')
@@ -96,7 +104,7 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.path, '/url')
         self.assertEqual(url.query.items(), [('a' ,'1'), ('b', '2'), ('b', '3')])
 
-    def test_from_url_unicode(self):
+    def test_from_url_idna(self):
         url = URL.from_url('http://xn--80aswg.xn--p1ai/%D1%83%D1%80%D0%BB/?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA')
         self.assertEqual(url.get_readable(),
                          u'http://сайт.рф/урл/?q=поиск')
@@ -105,6 +113,13 @@ class URLTests(unittest.TestCase):
         url = URL.from_url('/search?q=hello%E3%81')
         self.assertEqual(url.get_readable(),
                          u'/search?q=hello�')
+
+    def test_cyrillic_path(self):
+        url1 = URL.from_url('http://test.ru/тест') # encoded unicode
+        url2 = URL.from_url(u'http://test.ru/тест') # decoded unicode
+        # should work both without errors
+        self.assertEqual(url1.path, '/%D1%82%D0%B5%D1%81%D1%82')
+        self.assertEqual(url1.path, url2.path)
 
 class UrlTemplateTest(unittest.TestCase):
     def test_match(self):

@@ -1,0 +1,15 @@
+webob
+sqlalchemy==1.0.6
+pymysql
+python-memcached
+pytest
+pytest-cov
+git+git://github.com/ods/testalchemy
+jinja2
+pillow
+webtest
+docutils
+sphinx
+lxml
+mock
+six

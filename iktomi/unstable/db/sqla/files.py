@@ -23,12 +23,12 @@ class FileEventHandlers(object):
     def _remove_file(path):
         try:
             os.remove(path)
-        except OSError, exc:
+        except OSError as exc:
             if exc.errno==errno.ENOENT:
                 logger.warning("Can't remove file %r: doesn't exist", path)
                 #raise # XXX
             else:
-                raise
+                raise # pragma: no cover
 
     def _store_transient(self, target):
         transient = getattr(target, self.prop.key)
@@ -62,6 +62,7 @@ class FileEventHandlers(object):
     def before_insert(self, mapper, connection, target):
         changes = self._get_history(target)
         if not changes:
+            # XXX what is this for? Test case needed
             return
         self._store_transient(target)
 
@@ -219,6 +220,8 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
 
     if file_managers:
         for k, v in file_managers.iteritems():
+            if isinstance(k, FileAttribute):
+                raise NotImplementedError()
             registry[k] = v
 
     def find_file_manager(self, target):

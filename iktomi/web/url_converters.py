@@ -144,6 +144,10 @@ class Date(Converter):
 
     def to_url(self, value):
         if isinstance(value, basestring):
+            # sometimes it is useful to build fake urls with placeholders,
+            # to be replaced in JS to real values
+            # For example:
+            #     root.item(id="REPLACEME")
             return value
         return value.strftime(self.format)
 

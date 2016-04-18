@@ -30,7 +30,7 @@ _converter_pattern = re.compile(r'''^<
 _static_url_pattern = re.compile(r'^[^<]*?$')
 
 def construct_re(url_template, match_whole_str=False, converters=None,
-                 default_converter='string', _anonymous=False):
+                 default_converter='string', anonymous=False):
     '''
     url_template - str or unicode representing template
 
@@ -39,6 +39,9 @@ def construct_re(url_template, match_whole_str=False, converters=None,
     returns  (compiled re pattern, 
               dict {url param name: [converter name, converter args (str)]},
               list of (variable name, converter name, converter args name))
+
+    If anonymous=True is set, regexp will be compiled without names of variables.
+    This is handy for example, if you want to dump an url map to JSON.
     '''
     # needed for reverse url building (or not needed?)
     builder_params = []
@@ -66,7 +69,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             variable = groups['variable']
             builder_params.append((variable, conv_object))
             url_params[variable] = conv_object
-            if _anonymous:
+            if anonymous:
                 result += conv_object.regex
             else:
                 result += '(?P<{}>{})'.format(variable, conv_object.regex)
@@ -113,7 +116,7 @@ class UrlTemplate(object):
                 unicode_value = urllib.unquote(value_urlencoded).decode('utf-8', 'replace')
                 try:
                     kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
-                except ConvertError, err:
+                except ConvertError as err:
                     logger.debug('ConvertError in parameter "%s" '
                                  'by %r, value "%s"',
                                  url_arg_name,
