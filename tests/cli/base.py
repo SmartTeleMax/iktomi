@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import unittest
 import datetime
 from iktomi.cli.base import Cli, manage, argument
+from cStringIO import StringIO
 
 __all__ = ['CliTest']
+
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 
 class CliTest(unittest.TestCase):
@@ -74,3 +80,40 @@ class CliTest(unittest.TestCase):
                 pass
         argv = 'mage.py test'
         self.assertRaises(SystemExit, lambda: manage(dict(test=TestCommand()), argv.split()))
+
+    def test_digest_not_found(self):
+        class TestCommand(Cli):
+            def command_test(self, kwarg=None, kwarg2=False):
+                pass
+        argv = 'mage.py test1:test --kwarg --kwarg2'
+        
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            with self.assertRaises(SystemExit):
+                manage(dict(test=TestCommand()), argv.split())
+            self.assertEqual('Commands:\ntest\n', out.getvalue())
+
+    def test_no_command_provided(self):
+        class TestCommand(Cli):
+            def command_test(self, kwarg=None, kwarg2=False):
+                pass
+        argv = 'mage.py'
+        
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            with self.assertRaises(SystemExit):
+                manage(dict(test=TestCommand()), argv.split())
+            self.assertEqual('Commands:\ntest\n', out.getvalue())
+
+    def test_test_command_not_found(self):
+        class TestCommand(Cli):
+            def command_test(self, kwarg=None, kwarg2=False):
+                pass
+        argv = 'mage.py test:test1 --kwarg --kwarg2'
+        
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            with self.assertRaises(SystemExit):
+                manage(dict(test=TestCommand()), argv.split())
+            self.assertEqual('test\ntest\n\t./mage.py test:test [kwarg] [kwarg2]\n',
+                             out.getvalue())

@@ -77,8 +77,6 @@ def manage(commands, argv=None, delim=':'):
                     k,v = splited
                 elif len(splited) == 1:
                     k,v = splited[0], True
-                else:
-                    sys.exit('Error while parsing argument "{}"'.format(item))
                 kwargs[k] = v
             else:
                 args.append(item)
@@ -101,7 +99,6 @@ def manage(commands, argv=None, delim=':'):
                     sys.stdout.write(help_)
                     sys.exit('ERROR: "{}" command digest requires command name'\
                                 .format(digest_name))
-                    return
                 digest(*args, **kwargs)
             else:
                 digest(command, *args, **kwargs)
