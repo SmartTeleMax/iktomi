@@ -91,9 +91,7 @@ class WebAppServerTest(unittest.TestCase):
         self.manage = os.path.join('temp_dir', 'manage.py')
         shutil.copy(os.path.join(os.path.dirname(__file__), 'helloworld.py',),
                     'temp_dir/manage.py')
-        environ = os.environ.copy()
-        environ['COVERAGE_PROCESS_START'] = '/home/ilya/iktomi/current/iktomi/setup.cfg'
-        self.server = subprocess.Popen([sys.executable, self.manage], env=environ)
+        self.server = subprocess.Popen([sys.executable, self.manage])
         sleep(0.5)
 
     def doCleanups(self):
