@@ -220,6 +220,8 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
 
     if file_managers:
         for k, v in file_managers.iteritems():
+            if isinstance(k, FileAttribute):
+                raise NotImplementedError()
             registry[k] = v
 
     def find_file_manager(self, target):

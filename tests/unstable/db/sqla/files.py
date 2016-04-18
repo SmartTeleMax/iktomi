@@ -370,6 +370,19 @@ class SqlaFilesTests(unittest.TestCase):
 
         self.assertEqual(obj.file_size, None)
 
+    def test_file_manager_for_field(self):
+        def make():
+            file_manager = FileManager(self.transient_root,
+                                       self.persistent_root,
+                                       self.transient_url,
+                                       self.persistent_url)
+            filesessionmaker(orm.sessionmaker(), self.file_manager,
+                file_managers={
+                    ObjWithFile.file: file_manager,
+                })
+
+        self.assertRaises(NotImplementedError, make)
+
 
 class SqlaFilesTestsSubclass(SqlaFilesTests):
 
