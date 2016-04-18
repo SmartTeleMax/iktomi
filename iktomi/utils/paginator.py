@@ -124,7 +124,7 @@ class Paginator(object):
     #: to show in paginator.
     impl = staticmethod(full_page_range)
     #: The limit of items allowed on the last page. 
-    # I.e. if count=23 and orphans = 3,
+    # I.e. if count=23 and orphans=3 with 10 items per page,
     # there will be 2 pages with 10 and 13 items.
     orphans = 0
 
