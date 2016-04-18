@@ -123,7 +123,9 @@ class Paginator(object):
     #: Callable returning the list of pages
     #: to show in paginator.
     impl = staticmethod(full_page_range)
-    #: The minimum number of items allowed on the last page
+    #: The limit of items allowed on the last page. 
+    # I.e. if count=23 and orphans = 3,
+    # there will be 2 pages with 10 and 13 items.
     orphans = 0
 
     def __init__(self, request, **kwargs):
