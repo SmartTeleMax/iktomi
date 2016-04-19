@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import sys
 import unittest
 import datetime
@@ -160,7 +161,6 @@ class CliTest(unittest.TestCase):
                              'Cannot convert \'nodate\' to date, please provide '+\
                              'string in format "dd/mm/yyyy"', err.getvalue())
 
-
     def test_argument_call_error(self):
         class TestCommand(Cli):
             @argument(2, argument.to_int)
@@ -176,13 +176,12 @@ class CliTest(unittest.TestCase):
                              'Total positional args = 2, but you apply converter '+\
                              'for 2 argument (indexing starts from 0)', err.getvalue())
 
-
     def test_argument_required(self):
         class TestCommand(Cli):
             @argument('kwarg', argument.to_int, required=True)
             def command_test(self, kwarg=1, kwarg2=None):
                 pass
-        argv = 'mage.py test:test --kwargw=1'
+        argv = 'mage.py test:test --kwarg2=1'
         test_cmd = TestCommand()
         manage(dict(test=test_cmd), argv.split())
         err = StringIO()
@@ -190,3 +189,40 @@ class CliTest(unittest.TestCase):
             manage(dict(test=test_cmd), argv.split())
             self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
                              'Keyword argument "kwarg" is required', err.getvalue())
+
+    def test_autocomplete(self):
+        class TestCommand(Cli):
+            def command_process(self, kwarg):
+                pass
+        argv = 'mage.py te'
+        test_cmd = TestCommand()
+        with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
+                                       'COMP_WORDS':argv,
+                                       'COMP_CWORD':'2' }):
+            out = StringIO()
+            with patch.object(sys, 'stdout', out):
+                with self.assertRaises(SystemExit):
+                    manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('test test:', out.getvalue())
+
+        argv = 'mage.py test:'
+        test_cmd = TestCommand()
+        with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
+                                       'COMP_WORDS':argv.replace(":", " : "),
+                                       'COMP_CWORD':'2' }):
+            out = StringIO()
+            with patch.object(sys, 'stdout', out):
+                with self.assertRaises(SystemExit):
+                    manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('process', out.getvalue())
+        argv = 'mage.py test:pr'
+        test_cmd = TestCommand()
+
+        with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
+                                       'COMP_WORDS':argv.replace(":", " : "),
+                                       'COMP_CWORD':'3' }):
+            out = StringIO()
+            with patch.object(sys, 'stdout', out):
+                with self.assertRaises(SystemExit):
+                    manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('process', out.getvalue())
