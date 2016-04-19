@@ -86,7 +86,7 @@ class CliTest(unittest.TestCase):
             def command_test(self, kwarg=None, kwarg2=False):
                 pass
         argv = 'mage.py test1:test --kwarg --kwarg2'
-        
+
         out = StringIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit):
@@ -98,7 +98,7 @@ class CliTest(unittest.TestCase):
             def command_test(self, kwarg=None, kwarg2=False):
                 pass
         argv = 'mage.py'
-        
+
         out = StringIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit):
@@ -110,10 +110,83 @@ class CliTest(unittest.TestCase):
             def command_test(self, kwarg=None, kwarg2=False):
                 pass
         argv = 'mage.py test:test1 --kwarg --kwarg2'
-        
+
         out = StringIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit):
                 manage(dict(test=TestCommand()), argv.split())
             self.assertEqual('test\ntest\n\t./mage.py test:test [kwarg] [kwarg2]\n',
                              out.getvalue())
+
+    def test_documented_function_description(self):
+        class TestCommand(Cli):
+            def command_test(self, kwarg=None, kwarg2=False):
+                "Documentation goes here"
+                pass
+
+        cli_command = TestCommand()
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            cli_command('help')
+            expected_help = "testcommand\ntestcommand\n\t./manage.py "+\
+                            "testcommand:test [kwarg] [kwarg2]\n\t\t"+\
+                            "Documentation goes here\n"
+            self.assertEqual(expected_help, out.getvalue())
+
+    def test_converter_int_error(self):
+        class TestCommand(Cli):
+            @argument('kwarg', argument.to_int)
+            def command_test(self, kwarg):
+                pass
+        test_cmd = TestCommand()
+        argv = 'mage.py test:test --kwarg=noint'
+        err = StringIO()
+        with patch.object(sys, 'stderr', err):
+            manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
+                             'Cannot convert \'noint\' to int', err.getvalue())
+
+    def test_converter_date_error(self):
+        class TestCommand(Cli):
+            @argument('kwarg', argument.to_date)
+            def command_test(self, kwarg):
+                pass
+        test_cmd = TestCommand()
+        argv = 'mage.py test:test --kwarg=nodate'
+        err = StringIO()
+        with patch.object(sys, 'stderr', err):
+            manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
+                             'Cannot convert \'nodate\' to date, please provide '+\
+                             'string in format "dd/mm/yyyy"', err.getvalue())
+
+
+    def test_argument_call_error(self):
+        class TestCommand(Cli):
+            @argument(2, argument.to_int)
+            def command_test(self, arg, kwarg=None):
+                pass
+        argv = 'mage.py test:test --kwarg=test 1'
+        test_cmd = TestCommand()
+        manage(dict(test=test_cmd), argv.split())
+        err = StringIO()
+        with patch.object(sys, 'stderr', err):
+            manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
+                             'Total positional args = 2, but you apply converter '+\
+                             'for 2 argument (indexing starts from 0)', err.getvalue())
+
+
+    def test_argument_required(self):
+        class TestCommand(Cli):
+            @argument('kwarg', argument.to_int, required=True)
+            def command_test(self, kwarg=1, kwarg2=None):
+                pass
+        argv = 'mage.py test:test --kwargw=1'
+        test_cmd = TestCommand()
+        manage(dict(test=test_cmd), argv.split())
+        err = StringIO()
+        with patch.object(sys, 'stderr', err):
+            manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
+                             'Keyword argument "kwarg" is required', err.getvalue())
