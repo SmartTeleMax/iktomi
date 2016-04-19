@@ -22,8 +22,17 @@ def terminate(pid, sig, timeout):
     os.kill(pid, sig)
     start = time.time()
     while True:
-        _, status = os.waitpid(pid, os.WNOHANG)
-        if status:
+        try:
+            # This is requireed if it's our child to avoid zombie. Also
+            # is_running() returns True for zombie process.
+            _, status = os.waitpid(pid, os.WNOHANG)
+        except OSError as exc:
+            if exc.errno != errno.ECHILD: # pragma: nocover
+                raise
+        else:
+            if status:
+                return True
+        if not is_running(pid):
             return True
         if time.time()-start>=timeout:
             return False
@@ -37,7 +46,7 @@ def safe_makedirs(*files):
             os.makedirs(dirname)
 
 
-def doublefork(pidfile, logfile, cwd, umask):
+def doublefork(pidfile, logfile, cwd, umask): # pragma: nocover
     '''Daemonize current process.
     After first fork we return to the shell and removing our self from
     controling terminal via `setsid`.

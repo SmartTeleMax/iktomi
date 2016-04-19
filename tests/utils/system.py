@@ -7,7 +7,9 @@ import tempfile
 import time
 import unittest
 
-from iktomi.utils.system import is_running, safe_makedirs, terminate
+from iktomi.utils.system import (
+    is_running, safe_makedirs, terminate, doublefork,
+)
 
 
 class SystemCases(unittest.TestCase):
@@ -41,7 +43,7 @@ class SystemCases(unittest.TestCase):
         else:
             os._exit(0)
 
-    def test_terminate_true(self):
+    def test_terminate_child_true(self):
         pid = os.fork()
         if pid:
             started = time.time()
@@ -52,7 +54,26 @@ class SystemCases(unittest.TestCase):
             self.assertLess(finished-started, 1)
         else:
             time.sleep(3)
-            os._exit(0)
+            os._exit(os.EX_OK)
+
+    def test_terminate_alien_true(self):
+        _, pidfile = tempfile.mkstemp()
+        child_pid = os.fork()
+        if child_pid:
+            time.sleep(0.1)
+            with open(pidfile) as fp:
+                pid = int(fp.read())
+            self.assertTrue(is_running(pid))
+            started = time.time()
+            success = terminate(pid, signal.SIGKILL, 0.5)
+            finished = time.time()
+            self.assertTrue(success)
+            self.assertFalse(is_running(pid))
+            self.assertLess(finished-started, 1)
+        else:
+            doublefork(pidfile, '/dev/null', '.', 0)
+            time.sleep(3)
+            os._exit(os.EX_OK)
 
     def test_terminate_false(self):
         pid = os.fork()
@@ -71,7 +92,7 @@ class SystemCases(unittest.TestCase):
 
         else:
             time.sleep(3)
-            os._exit(0)
+            os._exit(os.EX_OK)
 
     def test_safe_makedirs(self):
         tmp = tempfile.mkdtemp()
