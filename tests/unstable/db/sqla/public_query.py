@@ -32,7 +32,7 @@ class Address(Base):
 
     id = Column(Integer, primary_key=True)
     email = Column(String(100))
-    user_id = Column(Integer, ForeignKey('user.id'))
+    user_id = Column(ForeignKey('user.id'))
     public = Column(Boolean, nullable=False)
 
 
@@ -60,11 +60,13 @@ class WithAttributeError(Base):
         # Mimic nested error
         raise AttributeError('some_attribute')
 
+
 class Doc(Base):
     __tablename__ = 'doc'
 
     NEWS = 1
     ANNOUNCE = 2
+    LINK = 3
 
     id = Column(Integer, primary_key=True)
     type = Column(Integer)
@@ -88,10 +90,22 @@ class News(Doc):
 class Announce(Doc):
     __tablename__ = 'announce'
 
-    id = Column(Integer, ForeignKey(Doc.id), nullable=False, primary_key=True)
+    id = Column(ForeignKey(Doc.id), nullable=False, primary_key=True)
     date_start = Column(String(100))
 
     __mapper_args__ = {'polymorphic_identity': Doc.ANNOUNCE}
+
+
+class Link(Doc):
+    __tablename__ = 'link'
+
+    id = Column(ForeignKey(Doc.id), nullable=False, primary_key=True)
+    ref_id = Column(ForeignKey(Announce.id))
+    ref = relationship(Announce, primaryjoin=(ref_id==Announce.id),
+                       lazy='joined')
+
+    __mapper_args__ = {'polymorphic_identity': Doc.LINK,
+                       'inherit_condition': (id==Doc.id)}
 
 
 class NotFiltered(Base):
@@ -100,7 +114,7 @@ class NotFiltered(Base):
     id = Column(Integer, nullable=False, primary_key=True)
 
 
-class UserAddressesTest(unittest.TestCase):
+class PublicQueryTest(unittest.TestCase):
     '''
     Simple set of tests with the same set of initial objects from original
     recipe at http://www.sqlalchemy.org/trac/wiki/UsageRecipes/PreFilteredQuery
@@ -148,12 +162,19 @@ class UserAddressesTest(unittest.TestCase):
                  photos=[Photo(photo='u6p1', public=False),
                          Photo(photo='u6p2', public=False)]),
             WithAttributeError(),
-            News(title='n1', public=True),
-            Announce(title='a1', public=True, date_start='tomorrow'),
             NotFiltered(id=1),
             NotFiltered(id=2),
             NotFiltered(id=3),
             NotFiltered(id=4),
+        ])
+        a1 = Announce(title='a1', public=True, date_start='tomorrow')
+        a2 = Announce(title='a2', public=False, date_start='today')
+        self.dba.add_all([
+            a1, a2,
+            News(title='n1', public=True),
+            News(title='n2', public=False),
+            Link(title='l1', public=True, ref=a1),
+            Link(title='l2', public=True, ref=a2),
         ])
         self.dba.commit()
         self.dbp = sessionmaker(bind=engine, query_cls=self.QUERY_CLS)()
@@ -387,8 +408,33 @@ class UserAddressesTest(unittest.TestCase):
         self.assertEqual(obj.id, 2)
 
     def test_subclass_lazy(self):
-        doc = self.dbp.query(Doc).filter_by(title='a1').scalar()
-        self.assertEqual(doc.date_start, 'tomorrow')
+        docs = self.dbp.query(Doc).all()
+        self.assertEqual(len(docs), 4) # 1 news, 1 announce, 2 links
+        announces = [doc for doc in docs if doc.type==Doc.ANNOUNCE]
+        self.assertEqual(len(announces), 1)
+        self.assertEqual(announces[0].title, 'a1')
+        self.assertEqual(announces[0].date_start, 'tomorrow')
+
+    def test_subclass_eager_leaf(self):
+        docs = self.dbp.query(Announce).all()
+        self.assertEqual(len(docs), 1)
+        self.assertEqual(docs[0].title, 'a1')
+
+    def test_subclass_eager_polymorphic(self):
+        docs = self.dbp.query(with_polymorphic(Doc, '*')).all()
+        self.assertEqual(len(docs), 4) # 1 news, 1 announce, 2 links
+        announces = [doc for doc in docs if doc.type==Doc.ANNOUNCE]
+        self.assertEqual(len(announces), 1)
+        self.assertEqual(announces[0].title, 'a1')
+        self.assertEqual(announces[0].date_start, 'tomorrow')
+
+    def test_eager_polymorphic_relationship(self):
+        query = self.dbp.query(Link)
+        l1 = query.filter_by(title='l1').one()
+        self.assertIsNotNone(l1.ref)
+        self.assertEqual(l1.ref.title, 'a1')
+        l2 = query.filter_by(title='l2').one()
+        self.assertIsNone(l2.ref)
 
     def test_aliased(self):
         U = aliased(User)
