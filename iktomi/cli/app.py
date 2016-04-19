@@ -72,15 +72,13 @@ class App(Cli):
             # This will save us from problems of incorrect exit, such as:
             # - unsaved data in data storage, which does not write data
             # on hard drive immediatly
-            # - uncovered code with coverage utility, which uses `atexit`
-            # handlers in its working
+            # - code, that can't be measured with coverage tool, because it uses
+            # `atexit` handler to save coverage data
             # NOTE: we using untipical fork-exec scheme with replacing
-            # the parent process, not the child
+            # the parent process(not the child) to preserve PID of proccess
+            # we use `pragma: no cover` here, because parent process cannot be
+            # measured with coverage since it is ends with `execvp`
             if pid: # pragma: no cover
-                # parent process cannot be covered with coverage, because it is
-                # ends with `execvp`
-                # we need close our file descriptors in parent process, because
-                # `execvp` does not do this
                 os.closerange(3, MAXFD)
                 # waiting for child operations completion
                 os.waitpid(pid, 0)
@@ -134,7 +132,7 @@ class DevServerThread(threading.Thread):
                             format % args)
 
         try:
-            self.port = port if type(port) is int else int(port)
+            self.port = int(port)
         except ValueError:
             raise ValueError(
                 'Please provide valid port value insted of "{}"'.format(port))
@@ -155,7 +153,7 @@ def iter_module_files():
         filename = getattr(module, '__file__', None)
         if filename:
             while not os.path.isfile(filename): # XXX does this make sense?
-                                                # don't change because this
+                                                # this wasn't changed because
                                                 # code still present in werkzeug
                 filename = os.path.dirname(filename)
                 if not filename:

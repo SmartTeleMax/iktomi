@@ -81,7 +81,7 @@ class CookieAuth(web.WebHandler):
         response.set_cookie(self._cookie_name, key, path=path)
         if not self.storage.set(self._cookie_name+':'+key.encode('utf-8'),
                                 str(user_identity)):
-            logger.info('storage "%r" is unreachable', self.storage)
+            logger.warning('storage "%r" is unreachable', self.storage)
             if self.crash_without_storage:
                 raise Exception(
                         'Storage {!r} is gone or down'.format(self.storage))
@@ -94,7 +94,7 @@ class CookieAuth(web.WebHandler):
             if key is not None:
                 if not self.storage.delete(self._cookie_name + ':' + \
                                                 key.encode('utf-8')):
-                    logger.info('storage "%r" is unreachable', self.storage)
+                    logger.warning('storage "%r" is unreachable', self.storage)
 
     def login(self, template='login'):
         '''
