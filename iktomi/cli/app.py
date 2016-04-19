@@ -80,7 +80,6 @@ class App(Cli):
             # measured with coverage since it is ends with `execvp`
             if pid: # pragma: no cover
                 os.closerange(3, MAXFD)
-                # waiting for child operations completion
                 os.waitpid(pid, 0)
                 # reloading the code in parent process
                 os.execvp(sys.executable, [sys.executable] + sys.argv)
