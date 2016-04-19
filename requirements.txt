@@ -1,5 +1,5 @@
 webob
-sqlalchemy==1.0.6
+sqlalchemy>=1.0.6
 pymysql
 python-memcached
 pytest
