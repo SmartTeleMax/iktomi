@@ -194,11 +194,23 @@ class CliTest(unittest.TestCase):
         class TestCommand(Cli):
             def command_process(self, kwarg):
                 pass
+
+        argv = 'mage.py'
+        test_cmd = TestCommand()
+        with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
+                                       'COMP_WORDS':argv,
+                                       'COMP_CWORD':'1' }):
+            out = StringIO()
+            with patch.object(sys, 'stdout', out):
+                with self.assertRaises(SystemExit):
+                    manage(dict(test=test_cmd), argv.split())
+            self.assertEqual('test test:', out.getvalue())
+
         argv = 'mage.py te'
         test_cmd = TestCommand()
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv,
-                                       'COMP_CWORD':'2' }):
+                                       'COMP_CWORD':'1' }):
             out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
