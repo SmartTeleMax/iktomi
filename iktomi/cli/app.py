@@ -151,9 +151,15 @@ def iter_module_files():
     for module in sys.modules.values():
         filename = getattr(module, '__file__', None)
         if filename:
-            while not os.path.isfile(filename): # XXX does this make sense?
-                                                # this wasn't changed because
-                                                # code still present in werkzeug
+            while not os.path.isfile(filename): # pragma: no cover
+                # NOTE: this code is needed for the cases of importing
+                # from archive or custom importers
+                # for example, if we importing from archive foo.zip
+                # module named zipped, then this zipped.__file__ will equal
+                # to foo.zip/zipped.py, and os.path.dirname will give us
+                # file, not directory.
+                # It is marked as pragma: no cover, because this code was taken
+                # from werkzeug and we believe that it is tested
                 filename = os.path.dirname(filename)
                 if not filename:
                     break
