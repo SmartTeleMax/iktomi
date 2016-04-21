@@ -39,7 +39,7 @@ class CliTest(unittest.TestCase):
             self.assertEquals(arg, 'arg')
             self.assertEquals(kwarg, 'kwarg')
             self.assertEquals(kwarg2, True)
-            self.assertEquals(kwarg3, True)
+            self.assertEquals(kwarg3, '')
             print("Completed")
 
         argv = 'manage.py fruit arg --kwarg=kwarg --kwarg2 --kwarg3='
@@ -114,7 +114,7 @@ class CliTest(unittest.TestCase):
         class TestCommand(Cli):
             def command_avocado(self, kwarg=None, kwarg2=False):
                 pass
-        argv = 'manage.py vegetables:avocado --kwarg --kwarg2'
+        argv = 'manage.py vegetable:avocado --kwarg --kwarg2'
 
         out = StringIO()
         with patch.object(sys, 'stdout', out):
@@ -178,7 +178,7 @@ class CliTest(unittest.TestCase):
             self.assertIn('One of the arguments for command "avocado" is wrong:',
                            err.getvalue())
             self.assertEqual('Cannot convert \'noint\' to int',
-                             exc.exception.code)
+                             exc.exception.code.message)
 
     def test_converter_date_error(self):
         class TestCommand(Cli):
@@ -195,8 +195,8 @@ class CliTest(unittest.TestCase):
             self.assertIn('One of the arguments for command "avocado" is wrong:',
                            err.getvalue())
             self.assertIn('Cannot convert \'nodate\' to date',
-                             exc.exception.code)
-            self.assertIn('dd/mm/yyyy', exc.exception.code)
+                             exc.exception.code.message)
+            self.assertIn('dd/mm/yyyy', exc.exception.code.message)
 
     def test_argument_call_error(self):
         class TestCommand(Cli):
@@ -214,7 +214,7 @@ class CliTest(unittest.TestCase):
                            err.getvalue())
             self.assertEqual('Total positional args = 2, but you apply converter '+\
                              'for 2 argument (indexing starts from 0)',
-                             exc.exception.code)
+                             exc.exception.code.message)
 
     def test_argument_required(self):
         class TestCommand(Cli):
@@ -231,7 +231,7 @@ class CliTest(unittest.TestCase):
             self.assertIn('One of the arguments for command "avocado" is wrong:',
                           err.getvalue())
             self.assertIn('Keyword argument "kwarg" is required',
-                          exc.exception.code)
+                          exc.exception.code.message)
 
     def test_autocomplete(self):
         class TestCommand(Cli):

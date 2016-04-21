@@ -75,8 +75,6 @@ def manage(commands, argv=None, delim=':'):
                 splited = item[2:].split('=', 1)
                 if len(splited) == 2:
                     k,v = splited
-                    if v in('', '""', "''"):
-                        v = True
                 elif len(splited) == 1:
                     k,v = splited[0], True
                 kwargs[k] = v
@@ -171,7 +169,7 @@ class Cli(object):
             except ConverterError as e:
                 sys.stderr.write('One of the arguments for '
                                  'command "{}" is wrong:\n'.format(command_name))
-                sys.exit(str(e))
+                sys.exit(e)
         else:
             raise CommandNotFound()
 
