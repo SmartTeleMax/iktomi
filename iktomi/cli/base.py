@@ -75,6 +75,8 @@ def manage(commands, argv=None, delim=':'):
                 splited = item[2:].split('=', 1)
                 if len(splited) == 2:
                     k,v = splited
+                    if v in('', '""', "''"):
+                        v = True
                 elif len(splited) == 1:
                     k,v = splited[0], True
                 kwargs[k] = v
@@ -91,7 +93,7 @@ def manage(commands, argv=None, delim=':'):
             digest = commands[digest_name]
         except KeyError:
             _command_list(commands)
-            sys.exit('Command "{}" not found'.format(digest_name))
+            sys.exit('ERROR: Command "{}" not found'.format(digest_name))
         try:
             if command is None:
                 if isinstance(digest, Cli):
@@ -105,7 +107,7 @@ def manage(commands, argv=None, delim=':'):
         except CommandNotFound:
             help_ = digest.description(argv[0], digest_name)
             sys.stdout.write(help_)
-            sys.exit('Command "{}:{}" not found'.format(digest_name, command))
+            sys.exit('ERROR: Command "{}:{}" not found'.format(digest_name, command))
     else:
         _command_list(commands)
         sys.exit('Please provide any command')
@@ -136,9 +138,6 @@ class Cli(object):
     def description(self, argv0='manage.py', command=None):
         '''Description outputed to console'''
         command = command or self.__class__.__name__.lower()
-        if not argv0.startswith('./') and not argv0.startswith('/'):
-            argv0 = './' + argv0
-
         import inspect
         _help = ''
         _help += '{}\n'.format(command)
@@ -172,7 +171,7 @@ class Cli(object):
             except ConverterError as e:
                 sys.stderr.write('One of the arguments for '
                                  'command "{}" is wrong:\n'.format(command_name))
-                sys.stderr.write(str(e))
+                sys.exit(str(e))
         else:
             raise CommandNotFound()
 

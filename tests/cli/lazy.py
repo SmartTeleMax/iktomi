@@ -54,12 +54,12 @@ class LazyTests(unittest.TestCase):
         def cli():
             return MyCli()
 
-        argv = 'mage.py test:'
+        argv = 'manage.py fruit:'
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv.replace(":", " : "),
                                        'COMP_CWORD':'2' }):
             out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
-                    manage(dict(test=cli), argv.split())
+                    manage(dict(fruit=cli), argv.split())
             self.assertEqual('run', out.getvalue())

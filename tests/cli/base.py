@@ -20,22 +20,33 @@ class CliTest(unittest.TestCase):
         '`cli` manage'
         assrt = self.assertEquals
         class TestCommand(Cli):
-            def command_test(self, arg, kwarg=None, kwarg2=False):
+            def command_avocado(self, arg, kwarg=None, kwarg2=False):
                 assrt(arg, 'arg1')
                 assrt(kwarg, 'kwarg3')
                 assrt(kwarg2, False)
+                print("Completed")
+
         test_cmd = TestCommand()
-        argv = 'mage.py test:test arg1 --kwarg=kwarg3'
-        manage(dict(test=test_cmd), argv.split())
+        argv = 'manage.py fruit:avocado arg1 --kwarg=kwarg3'
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            manage(dict(fruit=test_cmd), argv.split())
+        self.assertEqual("Completed\n", out.getvalue())
 
     def test_function_as_command(self):
         '`cli` function as a command'
-        def cmd(arg, kwarg=None, kwarg2=False):
+        def cmd(arg, kwarg=None, kwarg2=False, kwarg3=False):
             self.assertEquals(arg, 'arg')
             self.assertEquals(kwarg, 'kwarg')
             self.assertEquals(kwarg2, True)
-        argv = 'mage.py test arg --kwarg=kwarg --kwarg2'
-        manage(dict(test=cmd), argv.split())
+            self.assertEquals(kwarg3, True)
+            print("Completed")
+
+        argv = 'manage.py fruit arg --kwarg=kwarg --kwarg2 --kwarg3='
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            manage(dict(fruit=cmd), argv.split())
+        self.assertEqual("Completed\n", out.getvalue())
 
     def test_function_with_convs_as_command(self):
         '`cli` function with converters as a command'
@@ -45,8 +56,12 @@ class CliTest(unittest.TestCase):
             self.assertEquals(arg, 1)
             self.assertEquals(kwarg, datetime.date(2010, 6, 9))
             self.assertEquals(kwarg2, True)
-        argv = 'mage.py test 1 --kwarg=9/6/2010 --kwarg2'
-        manage(dict(test=cmd), argv.split())
+            print("Completed")
+        argv = 'manage.py fruit 1 --kwarg=9/6/2010 --kwarg2'
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            manage(dict(fruit=cmd), argv.split())
+        self.assertEqual("Completed\n", out.getvalue())
 
     def test_convs(self):
         '`cli` converter'
@@ -54,13 +69,18 @@ class CliTest(unittest.TestCase):
         class TestCommand(Cli):
             @argument(1, argument.to_int)
             @argument('kwarg', argument.to_date)
-            def command_test(self, arg, kwarg=None, kwarg2=False):
+            def command_avocado(self, arg, kwarg=None, kwarg2=False):
                 assrt(arg, 1)
                 assrt(kwarg, datetime.date(2010, 6, 9))
                 assrt(kwarg2, True)
+                print("Completed")
+
         test_cmd = TestCommand()
-        argv = 'mage.py test:test 1 --kwarg=9/6/2010 --kwarg2'
-        manage(dict(test=test_cmd), argv.split())
+        argv = 'manage.py fruit:avocado 1 --kwarg=9/6/2010 --kwarg2'
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            manage(dict(fruit=test_cmd), argv.split())
+        self.assertEqual("Completed\n", out.getvalue())
 
     def test_convs_errors(self):
         '`cli` converter error'
@@ -68,7 +88,7 @@ class CliTest(unittest.TestCase):
             class TestCommand(Cli):
                 @argument(1, argument.to_int)
                 @argument(u'kwarg', argument.to_date)
-                def command_test(self, arg, kwarg=None, kwarg2=False):
+                def command_avocado(self, arg, kwarg=None, kwarg2=False):
                     pass
             return TestCommand
         self.assertRaises(AssertionError, init_cmd)
@@ -77,51 +97,61 @@ class CliTest(unittest.TestCase):
         '`cli` incorrect call'
         assrt = self.assertEquals
         class TestCommand(Cli):
-            def command_test(self, arg, kwarg=None, kwarg2=False):
+            def command_avocado(self, arg, kwarg=None, kwarg2=False):
                 pass
-        argv = 'mage.py test'
-        self.assertRaises(SystemExit, lambda: manage(dict(test=TestCommand()), argv.split()))
+        argv = 'manage.py fruit'
+        out = StringIO()
+        with patch.object(sys, 'stdout', out):
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=TestCommand()), argv.split())
+            self.assertEqual(exc.exception.code,
+                             'ERROR: "fruit" command digest requires command name')
+        self.assertIn("fruit:avocado", out.getvalue())
+        self.assertIn("manage.py", out.getvalue())
+        self.assertNotIn("./manage.py", out.getvalue())
 
     def test_digest_not_found(self):
         class TestCommand(Cli):
-            def command_test(self, kwarg=None, kwarg2=False):
+            def command_avocado(self, kwarg=None, kwarg2=False):
                 pass
-        argv = 'mage.py test1:test --kwarg --kwarg2'
+        argv = 'manage.py vegetables:avocado --kwarg --kwarg2'
 
         out = StringIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit):
-                manage(dict(test=TestCommand()), argv.split())
-            self.assertEqual('Commands:\ntest\n', out.getvalue())
+                manage(dict(fruit=TestCommand()), argv.split())
+            self.assertEqual('Commands:\nfruit\n', out.getvalue())
 
     def test_no_command_provided(self):
         class TestCommand(Cli):
-            def command_test(self, kwarg=None, kwarg2=False):
+            def command_avocado(self, kwarg=None, kwarg2=False):
                 pass
-        argv = 'mage.py'
+        argv = 'manage.py'
 
         out = StringIO()
         with patch.object(sys, 'stdout', out):
-            with self.assertRaises(SystemExit):
-                manage(dict(test=TestCommand()), argv.split())
-            self.assertEqual('Commands:\ntest\n', out.getvalue())
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=TestCommand()), argv.split())
+            self.assertEqual('Commands:\nfruit\n', out.getvalue())
 
-    def test_test_command_not_found(self):
+    def test_command_not_found(self):
         class TestCommand(Cli):
-            def command_test(self, kwarg=None, kwarg2=False):
+            def command_avocado(self, kwarg=None, kwarg2=False):
                 pass
-        argv = 'mage.py test:test1 --kwarg --kwarg2'
+        argv = 'manage.py fruit:orange --kwarg --kwarg2'
 
         out = StringIO()
         with patch.object(sys, 'stdout', out):
-            with self.assertRaises(SystemExit):
-                manage(dict(test=TestCommand()), argv.split())
-            self.assertEqual('test\ntest\n\t./mage.py test:test [kwarg] [kwarg2]\n',
-                             out.getvalue())
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=TestCommand()), argv.split())
+            self.assertEqual(exc.exception.code,
+                             'ERROR: Command "fruit:orange" not found')
+        self.assertIn('manage.py', out.getvalue())
+        self.assertIn('fruit:avocado [kwarg] [kwarg2]', out.getvalue())
 
     def test_documented_function_description(self):
         class TestCommand(Cli):
-            def command_test(self, kwarg=None, kwarg2=False):
+            def command_avocado(self, kwarg=None, kwarg2=False):
                 "Documentation goes here"
                 pass
 
@@ -129,73 +159,86 @@ class CliTest(unittest.TestCase):
         out = StringIO()
         with patch.object(sys, 'stdout', out):
             cli_command('help')
-            expected_help = "testcommand\ntestcommand\n\t./manage.py "+\
-                            "testcommand:test [kwarg] [kwarg2]\n\t\t"+\
-                            "Documentation goes here\n"
-            self.assertEqual(expected_help, out.getvalue())
+            self.assertIn("manage.py", out.getvalue())
+            self.assertNotIn("./manage.py", out.getvalue())
+            self.assertIn("testcommand:avocado [kwarg] [kwarg2]", out.getvalue())
+            self.assertIn("Documentation goes here", out.getvalue())
 
     def test_converter_int_error(self):
         class TestCommand(Cli):
             @argument('kwarg', argument.to_int)
-            def command_test(self, kwarg):
+            def command_avocado(self, kwarg):
                 pass
         test_cmd = TestCommand()
-        argv = 'mage.py test:test --kwarg=noint'
+        argv = 'manage.py fruit:avocado --kwarg=noint'
         err = StringIO()
         with patch.object(sys, 'stderr', err):
-            manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
-                             'Cannot convert \'noint\' to int', err.getvalue())
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=test_cmd), argv.split())
+            self.assertIn('One of the arguments for command "avocado" is wrong:',
+                           err.getvalue())
+            self.assertEqual('Cannot convert \'noint\' to int',
+                             exc.exception.code)
 
     def test_converter_date_error(self):
         class TestCommand(Cli):
             @argument('kwarg', argument.to_date)
-            def command_test(self, kwarg):
+            def command_avocado(self, kwarg):
                 pass
         test_cmd = TestCommand()
-        argv = 'mage.py test:test --kwarg=nodate'
+        argv = 'manage.py fruit:avocado --kwarg=nodate'
         err = StringIO()
         with patch.object(sys, 'stderr', err):
-            manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
-                             'Cannot convert \'nodate\' to date, please provide '+\
-                             'string in format "dd/mm/yyyy"', err.getvalue())
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=test_cmd), argv.split())
+
+            self.assertIn('One of the arguments for command "avocado" is wrong:',
+                           err.getvalue())
+            self.assertIn('Cannot convert \'nodate\' to date',
+                             exc.exception.code)
+            self.assertIn('dd/mm/yyyy', exc.exception.code)
 
     def test_argument_call_error(self):
         class TestCommand(Cli):
             @argument(2, argument.to_int)
-            def command_test(self, arg, kwarg=None):
+            def command_avocado(self, arg, kwarg=None):
                 pass
-        argv = 'mage.py test:test --kwarg=test 1'
+        argv = 'manage.py fruit:avocado --kwarg=test 1'
         test_cmd = TestCommand()
-        manage(dict(test=test_cmd), argv.split())
+
         err = StringIO()
         with patch.object(sys, 'stderr', err):
-            manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
-                             'Total positional args = 2, but you apply converter '+\
-                             'for 2 argument (indexing starts from 0)', err.getvalue())
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=test_cmd), argv.split())
+            self.assertIn('One of the arguments for command "avocado" is wrong:',
+                           err.getvalue())
+            self.assertEqual('Total positional args = 2, but you apply converter '+\
+                             'for 2 argument (indexing starts from 0)',
+                             exc.exception.code)
 
     def test_argument_required(self):
         class TestCommand(Cli):
             @argument('kwarg', argument.to_int, required=True)
-            def command_test(self, kwarg=1, kwarg2=None):
+            def command_avocado(self, kwarg=1, kwarg2=None):
                 pass
-        argv = 'mage.py test:test --kwarg2=1'
+        argv = 'manage.py fruit:avocado --kwarg2=1'
         test_cmd = TestCommand()
-        manage(dict(test=test_cmd), argv.split())
+
         err = StringIO()
         with patch.object(sys, 'stderr', err):
-            manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('One of the arguments for command "test" is wrong:\n'+\
-                             'Keyword argument "kwarg" is required', err.getvalue())
+            with self.assertRaises(SystemExit) as exc:
+                manage(dict(fruit=test_cmd), argv.split())
+            self.assertIn('One of the arguments for command "avocado" is wrong:',
+                          err.getvalue())
+            self.assertIn('Keyword argument "kwarg" is required',
+                          exc.exception.code)
 
     def test_autocomplete(self):
         class TestCommand(Cli):
-            def command_process(self, kwarg):
+            def command_avocado(self, kwarg):
                 pass
 
-        argv = 'mage.py'
+        argv = 'manage.py'
         test_cmd = TestCommand()
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv,
@@ -203,10 +246,10 @@ class CliTest(unittest.TestCase):
             out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
-                    manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('test test:', out.getvalue())
+                    manage(dict(fruit=test_cmd), argv.split())
+            self.assertEqual('fruit fruit:', out.getvalue())
 
-        argv = 'mage.py te'
+        argv = 'manage.py fr'
         test_cmd = TestCommand()
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv,
@@ -214,10 +257,10 @@ class CliTest(unittest.TestCase):
             out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
-                    manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('test test:', out.getvalue())
+                    manage(dict(fruit=test_cmd), argv.split())
+            self.assertEqual('fruit fruit:', out.getvalue())
 
-        argv = 'mage.py test:'
+        argv = 'manage.py fruit:'
         test_cmd = TestCommand()
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv.replace(":", " : "),
@@ -225,9 +268,9 @@ class CliTest(unittest.TestCase):
             out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
-                    manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('process', out.getvalue())
-        argv = 'mage.py test:pr'
+                    manage(dict(fruit=test_cmd), argv.split())
+            self.assertEqual('avocado', out.getvalue())
+        argv = 'manage.py fruit:av'
         test_cmd = TestCommand()
 
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
@@ -236,5 +279,5 @@ class CliTest(unittest.TestCase):
             out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
-                    manage(dict(test=test_cmd), argv.split())
-            self.assertEqual('process', out.getvalue())
+                    manage(dict(fruit=test_cmd), argv.split())
+            self.assertEqual('avocado', out.getvalue())
