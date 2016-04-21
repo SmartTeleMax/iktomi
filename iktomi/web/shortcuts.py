@@ -5,19 +5,15 @@ from webob import Response
 from .core import cases
 from . import filters
 
-__all__ = ['redirect_to', 'to_json', 'Rule']
+__all__ = ['redirect_to', 'Rule']
 
 def redirect_to(endpoint, _code=303, qs=None, **kwargs):
     def handle(env, data):
         url = env.root.build_url(endpoint, **kwargs)
         if qs is not None:
             url = url.qs_set(qs)
-        raise status_map[_code](location=str(url))
+        raise status_map[_code](location=str(url.with_host()))
     return handle
-
-
-def to_json(data):
-    return Response(json.dumps(data))
 
 
 def Rule(path, handler, method=None, name=None, convs=None):
