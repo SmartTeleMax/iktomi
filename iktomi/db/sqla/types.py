@@ -29,7 +29,7 @@ class IntegerList(TypeDecorator):
 
 try:
     from jinja2 import Markup
-except ImportError:
+except ImportError: # pragma: no cover
     Markup = None
 
 

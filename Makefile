@@ -10,6 +10,9 @@ devbuild-%: venv-%
 	#venv-${*}/bin/pip uninstall iktomi
 	venv-${*}/bin/pip install --upgrade .
 
+testone-%: devbuild-%
+	venv-${*}/bin/py.test $(name) -q -r fEsxXw --strict
+
 test-%: devbuild-%
 	venv-${*}/bin/py.test tests -q -r fEsxXw --strict
 
@@ -18,6 +21,10 @@ coverage-%: devbuild-%
 
 test2: test-python2.7
 test3: test-python3.5
+
+testone2: testone-python2.7
+testone3: testone-python3.5
+
 test: test2 test3
 coverage: coverage-python2.7
 
