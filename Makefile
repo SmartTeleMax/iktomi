@@ -1,5 +1,4 @@
 PYTHONS    ?= "python2.7 pypy"
-name       ?= "tests"
 
 venv-%:
 	test -d venv-${*} || virtualenv -p ${*} venv-${*}
@@ -12,6 +11,7 @@ devbuild-%: venv-%
 	venv-${*}/bin/pip install --upgrade .
 
 
+test-%: name ?= "tests"
 test-%: devbuild-%
 	venv-${*}/bin/py.test $(name) -q -r fEsxXw --strict
 
