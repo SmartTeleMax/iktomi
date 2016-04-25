@@ -6,27 +6,39 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.session import Session
 from jinja2 import Markup
+import re
 
 
 Base = declarative_base()
 
 
+class CustomMarkup(Markup):
+
+    def __init__(self, value):
+        # removing multiple spaces for test purposes
+        self.markup = Markup(re.sub("\s+", " ", value))
+
+    def __eq__(self, other):
+        return self.markup == other
+
+
 class TypesObject(Base):
     __tablename__ = 'TypesObject'
-    
+
     id = Column(Integer, primary_key=True)
     words = Column(StringList(100))
     numbers = Column(IntegerList(100))
     html_string1 = Column(Html(String(100)))
     html_string2 = Column(HtmlString(100))
     html_text = Column(HtmlText)
+    html_custom = Column(Html(String, markup_class=CustomMarkup))
 
 
 class Markupable(object):
 
     def __init__(self, value):
         self.value = value
-    
+
     def __html__(self):
         return self.value
 
@@ -88,7 +100,7 @@ class TypeDecoratorsTest(unittest.TestCase):
         self.db.add(obj)
         self.db.commit()
         self.db.close()
-        
+
         self.db = Session(bind=self.engine)
         obj = self.db.query(TypesObject).first()
         self.assertIsInstance(obj.html_string2, Markup)
@@ -107,12 +119,15 @@ class TypeDecoratorsTest(unittest.TestCase):
         self.assertIsInstance(obj.html_text, Markup)
         self.assertEqual(text, obj.html_text)
 
-    def test_html_impl_assignable(self):
-        class CustomMarkup: pass
-        col_type = Html(lambda: String(100), markup_class=CustomMarkup)
-        self.assertIsInstance(col_type.impl, String)
-        self.assertEqual(col_type.markup_class, CustomMarkup)
+    def test_html_custom_markup(self):
+        obj = TypesObject()
+        obj.html_custom = Markupable('<html>   value   </html>')
+        self.db.add(obj)
+        self.db.commit()
+        self.db.close()
 
-
-
+        self.db = Session(bind=self.engine)
+        obj = self.db.query(TypesObject).first()
+        self.assertIsInstance(obj.html_custom, CustomMarkup)
+        self.assertEqual('<html> value </html>', obj.html_custom)
 

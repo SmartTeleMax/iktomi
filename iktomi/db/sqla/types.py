@@ -56,6 +56,8 @@ class Html(HtmlBase):
     '''
 
     def __init__(self, _impl, markup_class=None):
+        # callable is need to be able assign parametrized classes, for example
+        # Html(String) or Html(String(100))
         if callable(_impl):
             _impl = _impl()
         self.impl = _impl
