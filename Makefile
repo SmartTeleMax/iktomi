@@ -1,4 +1,5 @@
 PYTHONS    ?= "python2.7 pypy"
+name       ?= "tests"
 
 venv-%:
 	test -d venv-${*} || virtualenv -p ${*} venv-${*}
@@ -10,11 +11,9 @@ devbuild-%: venv-%
 	#venv-${*}/bin/pip uninstall iktomi
 	venv-${*}/bin/pip install --upgrade .
 
-testone-%: devbuild-%
-	venv-${*}/bin/py.test $(name) -q -r fEsxXw --strict
 
 test-%: devbuild-%
-	venv-${*}/bin/py.test tests -q -r fEsxXw --strict
+	venv-${*}/bin/py.test $(name) -q -r fEsxXw --strict
 
 coverage-%: devbuild-%
 	venv-${*}/bin/py.test tests --cov-report=term-missing --cov=venv-${*}/lib/${*}/site-packages/iktomi | sed -e "s/^venv-${*}\\/lib\\/${*}\\/site-packages\\///"
