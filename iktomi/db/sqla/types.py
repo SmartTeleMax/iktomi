@@ -29,7 +29,7 @@ class IntegerList(TypeDecorator):
 
 try:
     from jinja2 import Markup
-except ImportError:
+except ImportError: # pragma: no cover
     Markup = None
 
 
@@ -56,6 +56,8 @@ class Html(HtmlBase):
     '''
 
     def __init__(self, _impl, markup_class=None):
+        # Callable is useful to be able to pass type classes as well as
+        # type objects, for example Html(String) and Html(String(100))
         if callable(_impl):
             _impl = _impl()
         self.impl = _impl
