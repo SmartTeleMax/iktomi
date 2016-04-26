@@ -21,9 +21,6 @@ coverage-%: devbuild-%
 test2: test-python2.7
 test3: test-python3.5
 
-testone2: testone-python2.7
-testone3: testone-python3.5
-
 test: test2 test3
 coverage: coverage-python2.7
 
