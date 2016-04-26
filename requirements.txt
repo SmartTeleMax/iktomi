@@ -13,4 +13,3 @@ sphinx
 lxml
 mock
 six
-mock
