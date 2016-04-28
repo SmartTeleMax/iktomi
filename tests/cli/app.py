@@ -99,7 +99,8 @@ class WebAppServerTest(unittest.TestCase):
         self.manage = os.path.join('temp_dir', 'manage.py')
         shutil.copy(os.path.join(os.path.dirname(__file__), 'helloworld.py',),
                     'temp_dir/manage.py')
-        self.server = subprocess.Popen([sys.executable, self.manage])
+        self.server = subprocess.Popen([sys.executable, self.manage,
+                                        'dev:serve', '--port=11111'])
         sleep(0.5)
 
     def doCleanups(self):

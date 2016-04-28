@@ -61,6 +61,7 @@ class Flup(Cli):
         if ':' in bind:
             host, port = bind.split(':')
             port = int(port)
+            bind = (host, port)
         else:
             bind = os.path.abspath(bind or os.path.join(self.cwd, 'fcgi.sock'))
             safe_makedirs(bind)
@@ -97,7 +98,9 @@ class Flup(Cli):
                 try:
                     if terminate(pid, sig, 3):
                         os.remove(self.pidfile)
-                        sys.exit()
+                        # NOTE: we are not performing sys.exit here,
+                        # otherwise restart command will not work
+                        return
                 except OSError as exc:
                     if exc.errno != errno.ESRCH:
                         raise
@@ -107,4 +110,5 @@ class Flup(Cli):
 
     def command_restart(self):
         self.command_stop()
-        self.command_start()
+        # restart is useless for non-daemon programs
+        self.command_start(daemonize=True)
