@@ -14,7 +14,7 @@ try:
     from ..utils.html import Cleaner
     from lxml import html
     from lxml.etree import XMLSyntaxError
-except ImportError:
+except ImportError: # pragma: no cover
     # lxml is required for Html conv, therefore you can use forms without this
     # functionality
     Cleaner = None
@@ -621,7 +621,9 @@ class Html(Char):
         value = Char.clean_value(self, value)
         try:
             doc = html.fragment_fromstring(value, create_parent=True)
-        except XMLSyntaxError:
+        except XMLSyntaxError: # pragma: no cover. XXX: seems like this exception is
+                               # unreachable with create_parent=True,
+                               # maybe it should be removed?
             raise ValidationError(N_(u'Error parsing HTML'))
         self.cleaner(doc)
         clean = html.tostring(doc, encoding='utf-8').decode('utf-8')
