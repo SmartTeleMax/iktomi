@@ -35,7 +35,8 @@ class ConverterTests(unittest.TestCase):
         conv = init_conv(convs.Converter(kwarg1="kwargvalue"))
         represented = repr(conv)
         self.assertIn("Converter", represented)
-        self.assertIn("field=Field(name='name'), kwarg1='kwargvalue'", represented)
+        self.assertIn("field=Field(name='name')", represented)
+        self.assertIn("kwarg1='kwargvalue'", represented)
 
     def test_to_python(self):
         'Converter to_python method'
@@ -324,6 +325,8 @@ class CharConverterTests(unittest.TestCase):
         self.assertIsNone(conv.max_length, None)
         conv = convs.Char(convs.length(0, 100), convs.length(10, 25))
         self.assertEqual(conv.max_length, 25)
+        conv = convs.Char(convs.length(10, 25), convs.length(0, 100))
+        self.assertEqual(conv.max_length, 25)
 
 
 class BoolConverterTests(unittest.TestCase):
@@ -610,12 +613,13 @@ class HtmlTests(unittest.TestCase):
 
     def test_clean_value(self):
         class MyHtml(convs.Html):
+            wrap_inline_tags = False
             allowed_elements = ['p', 'strong']
 
         conv = MyHtml()
         html = '<p>first</p><div>second</div><strong>third</strong>'
         self.assertEqual(conv.clean_value(html),
-                         '<p>first</p><p>second<strong>third</strong></p>')
+                         '<p>first</p>second<strong>third</strong>')
 
     #def test_tune_basic(self):
     #    'tune property not set in convs.Html'
