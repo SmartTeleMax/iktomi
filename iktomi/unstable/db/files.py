@@ -10,6 +10,9 @@ import errno
 import mimetypes
 from shutil import copyfileobj
 from ...utils import cached_property
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseFile(object):
@@ -115,14 +118,16 @@ class FileManager(BaseFileManager):
         self.persistent_length = persistent_length or self.persistent_length
 
     def delete(self, file_obj):
-        # XXX Is this right place again?
-        #     BC "delete file if exist and ignore errors" would be used in many
-        #     places, I think...
         if os.path.isfile(file_obj.path):
             try:
                 os.unlink(file_obj.path)
-            except OSError:
-                pass
+            except OSError as exc:
+                msg = 'ERROR: {} while deleting file {}'.format(str(exc), file_obj.path)
+                logger.error(msg)
+                raise
+        else:
+            msg = 'file {} was not found while deleting'.format(file_obj.path)
+            logger.warning(msg)
 
     def _copy_file(self, inp, path, length=None):
         # works for ajax file upload
@@ -197,7 +202,7 @@ class FileManager(BaseFileManager):
             # XXX Must differ from old value[s].
             if name != old_name or not '{random}' in name_template:
                 return name
-        raise Exception('Unable to find new file name')
+        raise Exception('Unable to find new file name') # pragma: no cover, very rare case
 
     def create_symlink(self, source_file, target_file):
         source_path = os.path.normpath(source_file.path)
