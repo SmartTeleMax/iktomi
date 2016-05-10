@@ -1,4 +1,3 @@
-import sys
 import unittest, os, tempfile, shutil
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
                                      FileManager, ReadonlyFileManager
