@@ -4,6 +4,8 @@ import os
 import re
 from iktomi.utils import html
 from lxml.html import Element
+from lxml import etree
+import lxml.html as h
 
 class TestSanitizer(unittest.TestCase):
     '''Tests for sanitizer based on lxml'''
@@ -11,7 +13,7 @@ class TestSanitizer(unittest.TestCase):
     def setUp(self):
         self.attrs = {
             'allow_tags': ['a', 'p', 'br', 'li', 'ul', 'ol', 'hr', 'u', 'i', 'b',
-                          'blockquote', 'sub', 'sup', 'span'],
+                          'blockquote', 'sub', 'sup', 'span', 'img'],
             'safe_attrs': ['href', 'src', 'alt', 'title', 'class', 'rel'],
             'drop_empty_tags': ['p', 'a', 'u', 'i', 'b', 'sub', 'sup'],
             'allow_classes': {},
@@ -29,6 +31,23 @@ class TestSanitizer(unittest.TestCase):
     def test_safe_attrs(self):
         self.assertSanitize('<p notsafeattr="s" abbr="1" alt="Alt">Safe p</p>',
                             '<p alt="Alt">Safe p</p>')
+
+    def test_allowed_protocols(self):
+        self.attrs['allowed_protocols'] = set(['http'])
+        self.attrs['allow_external_src'] = True
+        self.attrs['safe_attrs'].append('cite')
+        self.assertSanitize('<a href="http://iktomi.com">sample text</a>',
+                            '<a href="http://iktomi.com">sample text</a>')
+        self.assertSanitize('<a href="iktomi://http.com">sample text</a>',
+                            'sample text')
+        self.assertSanitize('<img src="http://iktomi.com">',
+                            '<img src="http://iktomi.com">')
+        self.assertSanitize('<img src="iktomi://http.com">', '')
+
+        self.assertSanitize('<blockquote cite="http://iktomi.com">sample text</blockquote>',
+                            '<blockquote cite="http://iktomi.com">sample text</blockquote>')
+        self.assertSanitize('<blockquote cite="iktomi://http.com">sample text</blockquote>',
+                            '<blockquote>sample text</blockquote>')
 
     def test_safe_tags(self):
         self.assertSanitize('<p alt="Alt">Safe p <script>bad_script()</script></p> <accept>acc</accept>',
@@ -158,6 +177,40 @@ class TestSanitizer(unittest.TestCase):
         res = self.sanitize('a<p>p</p><script>alert()</script>')
         self.assertEqual(res, 'a<p>p</p>&lt;script&gt;alert()&lt;/script&gt;')
 
+    def test_get_wrapper_tag(self):
+        c = html.Cleaner(allow_tags=None, wrap_inline_tags='div')
+        self.assertEqual(c.get_wrapper_tag(), None)
+        c = html.Cleaner(allow_tags=['p', 'div'], wrap_inline_tags=False)
+        self.assertEqual(c.get_wrapper_tag(), None)
+        c = html.Cleaner(allow_tags=['p', 'div'], wrap_inline_tags=None)
+        self.assertEqual(c.get_wrapper_tag().tag, 'p')
+        c = html.Cleaner(allow_tags=['div'], wrap_inline_tags=None)
+        self.assertEqual(c.get_wrapper_tag().tag, 'div')
+        c = html.Cleaner(allow_tags=['b'], wrap_inline_tags=None)
+        self.assertEqual(c.get_wrapper_tag(), None)
+        c = html.Cleaner(allow_tags=['p', 'div'], wrap_inline_tags='div')
+        self.assertEqual(c.get_wrapper_tag().tag, 'div')
+        c = html.Cleaner(allow_tags=['p', 'div', 'span'],
+                        wrap_inline_tags=(lambda:Element('span')))
+        self.assertEqual(c.get_wrapper_tag().tag, 'span')
+        c = html.Cleaner(allow_tags=['p', 'div'],
+                        wrap_inline_tags=(lambda:Element('span')))
+        self.assertEqual(c.get_wrapper_tag(), None)
+
+    def test_is_element_empty(self):
+        c = html.Cleaner(allow_tags=['p', 'div', 'span', 'br', 'pre'],
+                                    drop_empty_tags=['p', 'span'])
+        doc = h.fragment_fromstring('<p></p><span>asd</span><br><pre></pre>',
+                                    create_parent=True)
+        p = doc.xpath('.//p')[0]
+        self.assertTrue(c.is_element_empty(p))
+        span = doc.xpath('.//span')[0]
+        self.assertFalse(c.is_element_empty(span))
+        br = doc.xpath('.//br')[0]
+        self.assertTrue(c.is_element_empty(br))
+        pre = doc.xpath('.//pre')[0]
+        self.assertFalse(c.is_element_empty(pre))
+
     def test_tags_to_wrap(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
@@ -183,6 +236,18 @@ class TestSanitizer(unittest.TestCase):
         self.assertSanitize('<p>first</p>tail<br>second<p>third</p>',
                              '<p>first</p><p>tail</p><p>second</p><p>third</p>')
 
+    def test_dom_callback(self):
+        def fix_link_domain(dom):
+            # sample callback
+            for el in dom.xpath('.//a'):
+                if el.attrib['href']:
+                    el.attrib['href'] = el.attrib['href'].replace('example', 'iktomi')
+        self.attrs['dom_callbacks'] = [fix_link_domain]
+
+        self.assertSanitize('<a href="http://example.com">sample text</a>',
+                            '<a href="http://iktomi.com">sample text</a>')
+
+
     def test_tags_to_wrap_trailing_br(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
@@ -201,7 +266,6 @@ class TestSanitizer(unittest.TestCase):
 
         self.assertSanitize("<br><br><br><br>", "")
 
-    
     def test_split_paragraphs_by_br(self):
         self.attrs['tags_to_wrap'] = ['b', 'i', 'br']
         self.attrs['wrap_inline_tags'] = True
