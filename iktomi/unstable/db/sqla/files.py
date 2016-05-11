@@ -1,3 +1,4 @@
+import six
 import os, errno, logging, inspect
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.interfaces import MapperProperty
@@ -219,7 +220,7 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
     registry = WeakKeyDictionary()
 
     if file_managers:
-        for k, v in file_managers.iteritems():
+        for k, v in six.iteritems(file_managers):
             if isinstance(k, FileAttribute):
                 raise NotImplementedError()
             registry[k] = v
@@ -248,11 +249,9 @@ def filesessionmaker(sessionmaker, file_manager, file_managers=None):
         #session.file_manager = \
         #        kwargs.get('file_manager', file_manager)
         session.file_manager = file_manager
-
-        from types import MethodType
-
-        session.find_file_manager = MethodType(find_file_manager,
-                                               session, session.__class__)
+        session.find_file_manager = six.create_bound_method(
+                                            find_file_manager,
+                                            session)
 
         return session
     return session_maker

@@ -2,16 +2,19 @@
 
 __all__ = ['URL']
 
-import urllib
 import six
-from urlparse import urlparse, parse_qs
+import urllib
+if six.PY2:
+    from urlparse import urlparse, parse_qs
+else:
+    from urllib.parse import urlparse, parse_qs
 from webob.multidict import MultiDict
 from .url_templates import urlquote
 
 
 def construct_url(path, query, host, port, schema):
     query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
-                            for k, v in query.iteritems())
+                            for k, v in six.iteritems(query))
              if query else '')
 
     path = path
@@ -124,7 +127,7 @@ class URL(str):
     def get_readable(self):
         '''Gets human-readable representation of the url (as unicode string)'''
         query = (u'?' + u'&'.join(u'{}={}'.format(k, v)
-                                  for k, v in self.query.iteritems())
+                                  for k, v in six.iteritems(self.query))
                  if self.query else '')
 
         path = urllib.unquote(self.path).decode('utf-8')

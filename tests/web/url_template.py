@@ -68,7 +68,7 @@ class UrlTemplateTests(unittest.TestCase):
             def to_python(self, value, env=None):
                 return Integer.to_python(self, value, env) * 2
             def to_url(self, value):
-                return str(value / 2)
+                return str(value // 2)
 
         ut = UrlTemplate('/simple/<int:id>',
                          converters={'int': DoubleInt})

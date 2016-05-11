@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import six
+if six.PY2:
+    from urllib import quote, unquote
+else:
+    from urllib.parse import quote, unquote
 
-import urllib
 import re
 import logging
 from .url_converters import default_converters, ConvertError
@@ -12,7 +15,7 @@ logger = logging.getLogger(__name__)
 def urlquote(value):
     if isinstance(value, int):
         value = six.text_type(value)
-    return urllib.quote(value.encode('utf-8'))
+    return quote(value.encode('utf-8'))
 
 
 class UrlBuildingError(Exception): pass
@@ -80,6 +83,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
         raise ValueError('Incorrect url template {!r}'.format(url_template))
     if match_whole_str:
         result += '$'
+    print(url_template, url_params, builder_params, result)
     return re.compile(result), url_params, builder_params
 
 
@@ -116,7 +120,7 @@ class UrlTemplate(object):
             # convert params
             for url_arg_name, value_urlencoded in kwargs.items():
                 conv_obj = self._url_params[url_arg_name]
-                unicode_value = urllib.unquote(value_urlencoded)
+                unicode_value = unquote(value_urlencoded)
                 if isinstance(unicode_value, six.binary_type):
                     # XXX ??
                     unicode_value = unicode_value.decode('utf-8', 'replace')

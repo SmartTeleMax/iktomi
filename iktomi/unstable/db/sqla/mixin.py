@@ -1,3 +1,4 @@
+import six
 import inspect, weakref
 from sqlalchemy.ext.declarative import declared_attr
 from iktomi.unstable.utils.functools import return_locals
@@ -44,7 +45,7 @@ def declared_mixin(*bases):
             get_attr.__name__ = name
             return declared_attr(get_attr)
         dict_ = {name: create_descriptor(name)
-                 for name in func.func_code.co_varnames}
+                 for name in six.get_function_code(func).co_varnames}
         dict_['__doc__'] = func.__doc__
         return type(func.__name__, bases, dict_)
 

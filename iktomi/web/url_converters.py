@@ -169,7 +169,7 @@ default_converters = {'string': String,
                       'date': Date}
 
 # assert all defined converters are registered
-for item in globals().values():
+for item in list(globals().values()):
     if isclass(item) and \
        issubclass(item, Converter) and \
        not item is Converter:

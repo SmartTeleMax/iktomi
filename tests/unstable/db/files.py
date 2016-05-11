@@ -2,7 +2,11 @@ import unittest, os, tempfile, shutil
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
                                      FileManager, ReadonlyFileManager
 from webob import Request
-from cStringIO import StringIO
+import six
+if six.PY2:
+    from cStringIO import StringIO as BytesIO
+else:
+    from io import BytesIO
 import logging
 
 try:
@@ -167,8 +171,8 @@ class SqlaFilesTests(unittest.TestCase):
         self.assertEqual(fl.size, 130000)
 
     def test_create_symlink(self):
-        stream1 = StringIO('hello')
-        stream2 = StringIO('world')
+        stream1 = BytesIO(b'hello')
+        stream2 = BytesIO(b'world')
 
         source1 = self.file_manager.create_transient(stream1, 'hello.txt')
         source2 = self.file_manager.create_transient(stream2, 'world.txt')

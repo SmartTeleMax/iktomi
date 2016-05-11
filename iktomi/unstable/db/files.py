@@ -76,8 +76,8 @@ class PersistentFile(BaseFile):
 
 def random_name(length=32):
     # altchars - do not use "-" and "_" in file names
-    name = base64.b64encode(os.urandom(length), altchars="AA").rstrip('=')
-    return name[:length]
+    name = base64.b64encode(os.urandom(length), altchars=b"AA").rstrip(b'=')
+    return name[:length].decode('utf-8')
 
 
 class BaseFileManager(object):
@@ -176,7 +176,7 @@ class FileManager(BaseFileManager):
 
     def store(self, transient_file, persistent_file):
         '''Makes PersistentFile from TransientFile'''
-        #for i in xrange(5):
+        #for i in range(5):
         #    persistent_file = PersistentFile(self.persistent_root,
         #                                     persistent_name, self)
         #    if not os.path.exists(persistent_file.path):
@@ -195,7 +195,7 @@ class FileManager(BaseFileManager):
     def new_file_name(self, name_template, inst, ext, old_name):
         assert '{random}' in name_template, \
                'Non-random name templates are not supported yet'
-        for i in xrange(5):
+        for i in range(5):
             name = name_template.format(item=inst,
                     random=random_name(self.persistent_length))
             name = name + ext
