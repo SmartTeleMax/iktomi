@@ -124,7 +124,7 @@ class PublicQuery(Query):
         # be careful! should return anything only if the criterion has been
         # applied already
         if isinstance(obj, Join):
-            if obj.right == selectable:
+            if obj is selectable or obj.right == selectable:
                 obj = obj._clone()
                 obj.onclause = obj.onclause & crit
                 return obj
