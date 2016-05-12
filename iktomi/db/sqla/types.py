@@ -12,7 +12,7 @@ class StringList(TypeDecorator):
 
     def process_result_value(self, value, dialect):
         if value is not None:
-            return filter(None, value.split(','))
+            return [x for x in value.split(',') if x]
 
 
 class IntegerList(TypeDecorator):
