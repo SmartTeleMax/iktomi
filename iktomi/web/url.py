@@ -28,6 +28,7 @@ def construct_url(path, query, host, port, schema):
 
 if six.PY2:
     def _parse_qs(query):
+        query = query.encode('utf-8')
         return sum([[(k.decode('utf-8', errors="replace"),
                       v.decode('utf-8', errors="replace"))
                      for v in values]
@@ -47,7 +48,7 @@ class URL(str):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        if not isinstance(path, six.text_type):
+        if isinstance(path, six.binary_type):
             path = path.decode('utf-8') # XXX
         if set(path) - _path_symbols:
             path = urlquote(path)
@@ -69,14 +70,25 @@ class URL(str):
     def from_url(cls, url, show_host=True):
         '''Parse string and get URL instance'''
         # url must be idna-encoded and url-quotted
-        url = urlparse(url)
+
+        if six.PY2:
+            if isinstance(url, six.text_type):
+                url = url.encode('utf-8')
+            url = urlparse(url)
+            netloc = url.netloc.decode('utf-8') # XXX HACK
+        else:
+            if isinstance(url, six.binary_type):
+                url = url.decode('utf-8') # XXX
+            url = urlparse(url)
+            netloc = url.netloc
+
         query = _parse_qs(url.query)
-        host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
+        host = netloc.split(':', 1)[0] if ':' in netloc else netloc
 
         # force decode idna from both encoded and decoded input
         host = host.encode('idna').decode('idna')
 
-        port = url.netloc.split(':')[1] if ':' in url.netloc else ''
+        port = netloc.split(':')[1] if ':' in netloc else ''
         path = unquote(url.path)
         return cls(path,
                    query, host,
