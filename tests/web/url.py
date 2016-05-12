@@ -99,7 +99,7 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.host, 'example.com')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
-        self.assertEqual(url.query.items(), [('a' ,'1'), ('b', '2'), ('b', '3')])
+        self.assertEqual(set(url.query.items()), {('a' ,'1'), ('b', '2'), ('b', '3')})
         self.assertEqual(url.show_host, False)
 
     def test_from_url_unicode(self):
@@ -116,7 +116,7 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.host, '')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
-        self.assertEqual(url.query.items(), [('a' ,'1'), ('b', '2'), ('b', '3')])
+        self.assertEqual(set(url.query.items()), {('a' ,'1'), ('b', '2'), ('b', '3')})
 
     def test_from_url_idna(self):
         url = URL.from_url(b'http://xn--80aswg.xn--p1ai/%D1%83%D1%80%D0%BB/?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA')

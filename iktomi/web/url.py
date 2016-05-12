@@ -26,6 +26,19 @@ def construct_url(path, query, host, port, schema):
     else:
         return path + query
 
+if six.PY2:
+    def _parse_qs(query):
+        return sum([[(k.decode('utf-8', errors="replace"),
+                      v.decode('utf-8', errors="replace"))
+                     for v in values]
+                    for k, values in parse_qs(query).items()], [])
+else:
+    def _parse_qs(query):
+        return sum([[(k, v) for v in values]
+                     for k, values in parse_qs(query).items()], [])
+
+
+
 
 class URL(str):
 
@@ -51,15 +64,13 @@ class URL(str):
         self.show_host = show_host
         return self
 
+
     @classmethod
     def from_url(cls, url, show_host=True):
         '''Parse string and get URL instance'''
         # url must be idna-encoded and url-quotted
         url = urlparse(url)
-        query = sum([[(k.decode('utf-8', errors="replace"),
-                       v.decode('utf-8', errors="replace"))
-                      for v in values]
-                     for k, values in parse_qs(url.query).items()], [])
+        query = _parse_qs(url.query)
         host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
 
         # force decode idna from both encoded and decoded input
