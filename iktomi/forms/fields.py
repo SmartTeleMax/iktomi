@@ -450,8 +450,8 @@ class FileField(Field):
         if not self.multiple:
             values = [values]
         for value in values:
-            if value and \
-               not isinstance(value, cgi.FieldStorage) and \
+            if not isinstance(value, cgi.FieldStorage) and \
+               value and \
                not hasattr(value, 'read'): # XXX is this right?
                 self.form.errors[self.input_name] = 'Given value is not file'
                 return False

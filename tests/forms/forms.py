@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import six
 import unittest
 
 from iktomi.forms import *
@@ -178,6 +179,9 @@ class FormErrorsTests(unittest.TestCase):
                 def clean__first(self, value):
                     pass
         self.assertRaises(TypeError, get_form)
+
+    if six.PY3:
+        test_form__clean = unittest.skip('This is deprecation check for old code')(test_form__clean)
 
 
 class FormClassAcceptTests(unittest.TestCase):

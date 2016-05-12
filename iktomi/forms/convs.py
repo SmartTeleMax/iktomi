@@ -65,7 +65,7 @@ class ValidationError(Exception):
         for name, message in self.by_field.items():
             if name.startswith('.'):
                 nm, f = name.lstrip('.'), field
-                for i in xrange(len(name) - len(nm) - 1):
+                for i in range(len(name) - len(nm) - 1):
                     f = f.parent
                 rel_field = f.get_field(nm)
                 name = rel_field.input_name
@@ -665,7 +665,7 @@ class List(Converter):
         return result
 
     def to_python(self, value):
-        return value.values()
+        return list(value.values())
 
 
 class ListOf(Converter):
