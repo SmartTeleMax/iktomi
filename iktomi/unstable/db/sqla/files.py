@@ -49,7 +49,7 @@ class FileEventHandlers(object):
 
     def _2persistent(self, target, transient):
         session = object_session(target)
-        persistent_name = getattr(target, self.prop.attribute_name)
+        persistent_name = getattr(target, self.prop.attribute_name).decode('utf-8')
         attr = getattr(type(target), self.prop.key)
         file_manager = session.find_file_manager(attr)
         persistent = file_manager.get_persistent(persistent_name,
@@ -86,13 +86,16 @@ class FileEventHandlers(object):
 
     def _get_file_name_to_delete(self, target, changes):
         if changes and changes.deleted:
-            return changes.deleted[0]
+            filename = changes.deleted[0]
+            if filename is not None:
+                return filename.decode('utf-8')
 
     def after_delete(self, mapper, connection, target):
         changes = self._get_history(target)
         old_name = self._get_file_name_to_delete(target, changes)
         old_name = old_name or getattr(target, self.prop.attribute_name)
         if old_name is not None:
+            old_name = old_name.decode('utf-8')
             session = object_session(target)
 
             file_attr = getattr(target.__class__, self.prop.key)
@@ -131,7 +134,7 @@ class FileAttribute(object):
                     raise RuntimeError(
                             "Session doesn't support file management")
                 file_manager = session.find_file_manager(self)
-                value = file_manager.get_persistent(value,
+                value = file_manager.get_persistent(value.decode('utf-8'),
                                                     self.persistent_cls)
 
                 for file_attr, target_attr in self.cache_properties.items():
@@ -159,9 +162,9 @@ class FileAttribute(object):
             #     looks like a hack
             name = value.manager.new_file_name(
                     self.name_template, inst, ext, old_name)
-            setattr(inst, self.attribute_name, name)
+            setattr(inst, self.attribute_name, name.encode('utf-8'))
         elif isinstance(value, PersistentFile):
-            setattr(inst, self.attribute_name, value.name)
+            setattr(inst, self.attribute_name, value.name.encode('utf-8'))
 
             for file_attr, target_attr in self.cache_properties.items():
                 setattr(inst, target_attr, getattr(value, file_attr))
