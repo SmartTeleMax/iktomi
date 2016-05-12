@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 
 import urllib
 import re
@@ -9,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 def urlquote(value):
-    return urllib.quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
+    if isinstance(value, int):
+        value = six.text_type(value)
+    return urllib.quote(value.encode('utf-8'))
 
 
 class UrlBuildingError(Exception): pass
@@ -56,7 +59,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             #      - make part str if it was unicode
             #      - urlquote part
             #      - escape all specific for re chars in part
-            part = urlquote(unicode(part).encode('utf-8'))
+            part = urlquote(part)
             result += re.escape(part)
             builder_params.append(part)
             continue

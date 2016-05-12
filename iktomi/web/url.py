@@ -3,6 +3,7 @@
 __all__ = ['URL']
 
 import urllib
+import six
 from urlparse import urlparse, parse_qs
 from webob.multidict import MultiDict
 from .url_templates import urlquote
@@ -29,7 +30,8 @@ class URL(str):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        path = path if isinstance(path, str) else urlquote(path)
+        path = path if isinstance(path, six.binary_type) else urlquote(path)
+        assert isinstance(path, six.binary_type) # XXX temporary
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
@@ -53,8 +55,8 @@ class URL(str):
                       for v in values]
                      for k, values in parse_qs(url.query).items()], [])
         host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
-        if isinstance(host, unicode):
-            host = host.encode('idna')
+        host = host.encode('idna')
+        assert isinstance(host, six.binary_type)
 
         port = url.netloc.split(':')[1] if ':' in url.netloc else ''
         path = urllib.unquote(url.path)

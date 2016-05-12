@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 
 from inspect import isclass
 from datetime import datetime
@@ -69,7 +70,9 @@ class String(Converter):
         return value
 
     def to_url(self, value):
-        return unicode(value)
+        if type(value).__name__ == 'bytes':
+            raise TypeError() # pragma: no cover, safety check
+        return six.text_type(value)
 
     def check_len(self, value):
         length = len(value)
@@ -119,7 +122,9 @@ class Any(Converter):
         raise ConvertError(self, value)
 
     def to_url(self, value):
-        return unicode(value)
+        if type(value).__name__ == 'bytes':
+            raise TypeError() # pragma: no cover, safety check
+        return six.text_type(value)
 
 
 class Date(Converter):

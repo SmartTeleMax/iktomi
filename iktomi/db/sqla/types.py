@@ -1,3 +1,4 @@
+import six
 from sqlalchemy.types import TypeDecorator, String, Text
 
 
@@ -44,7 +45,7 @@ class HtmlBase(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            return unicode(value)
+            return six.text_type(value)
 
 
 class Html(HtmlBase):

@@ -4,6 +4,7 @@ Module containing some predefined form converters - objects designed to
 convert and validate form field's data.
 '''
 
+import six
 import re
 from ..utils import weakproxy, replace_nontext
 from datetime import datetime
@@ -48,8 +49,8 @@ class ValidationError(Exception):
     def translate(self, env, message):
         format_args = self.format_args
         if isinstance(message, M_):
-            trans = env.ngettext(unicode(message.single),
-                                 unicode(message.plural),
+            trans = env.ngettext(message.single,
+                                 message.plural,
                                  message.count)
             format_args = dict(format_args,
                                **message.format_args)
@@ -325,7 +326,9 @@ class Char(CharBased):
     def from_python(self, value):
         if value is None:
             return ''
-        return unicode(value)
+        if type(value).__name__ == 'bytes':
+            raise TypeError() # pragma: no cover, safety check
+        return six.text_type(value)
 
 
 class Int(Converter):
@@ -348,7 +351,7 @@ class Int(Converter):
     def from_python(self, value):
         if value is None:
             return ''
-        return unicode(value)
+        return six.text_type(value)
 
 
 class Bool(Converter):

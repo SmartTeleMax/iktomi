@@ -249,9 +249,7 @@ class subdomain(WebHandler):
     '''
 
     def __init__(self, *subdomains, **kwargs):
-        # XXX is this convert to unicode actually needed?
-        self.subdomains = [unicode(x) if x is not None else None
-                           for x in subdomains]
+        self.subdomains = subdomains
 
         # this attribute is used for ducktyping in Location, be careful
         self.primary = kwargs.pop('primary', self.subdomains[0])
