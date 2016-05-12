@@ -160,7 +160,7 @@ class TestSanitizer(unittest.TestCase):
                     res = self.sanitize(in_).strip()
                     if res != out:
                         if skips < 10:
-                            print in_, '\n----------\n', res + '---\n!=\n' +  out + '---\n\n\n'
+                            print(in_, '\n----------\n', res + '---\n!=\n' +  out + '---\n\n\n')
                         skips -= 1
                         if not skips:
                             return

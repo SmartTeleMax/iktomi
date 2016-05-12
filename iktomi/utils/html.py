@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import six
 
-from urlparse import urlsplit
+if six.PY2:
+    from urlparse import urlsplit
+else:
+    from urllib.parse import urlsplit
 from lxml import html
 from lxml.html import clean
 # XXX move to iktomi.cms?

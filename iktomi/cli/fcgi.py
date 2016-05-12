@@ -55,7 +55,7 @@ class Flup(Cli):
     '''
 
     def __init__(self, app, bind='', logfile=None, pidfile=None,
-                 cwd='.', umask=002, fastcgi_params=None):
+                 cwd='.', umask=2, fastcgi_params=None):
         self.app = app
         self.cwd = os.path.abspath(cwd)
         if ':' in bind:

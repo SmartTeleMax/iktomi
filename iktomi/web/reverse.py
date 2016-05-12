@@ -2,6 +2,7 @@
 
 __all__ = ['Reverse', 'UrlBuildingError']
 
+import six
 from .url import URL
 from .url_templates import UrlBuildingError
 from ..utils import cached_property
@@ -37,7 +38,7 @@ class Location(object):
 
     @property
     def url_arguments(self):
-        return reduce(lambda x,y: x|set(y._url_params), self.builders, set())
+        return six.moves.reduce(lambda x,y: x|set(y._url_params), self.builders, set())
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \

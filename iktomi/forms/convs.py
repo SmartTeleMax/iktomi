@@ -23,7 +23,7 @@ except ImportError: # pragma: no cover
 from iktomi.utils import cached_property
 from iktomi.utils.i18n import N_, M_
 
-_all2 = locals().keys()
+_all2 = set(locals().keys()) | set(globals().keys())
 
 
 
@@ -734,7 +734,7 @@ class SimpleFile(Converter):
 
 # Expose all variables defined after imports
 __all__ = [x for x
-           in set(locals().keys()) - set(_all2)
+           in set(locals().keys()) | set(globals().keys()) - _all2
            if not x.startswith('_')]
 del _all2
 

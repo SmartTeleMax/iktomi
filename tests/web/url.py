@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from urllib import quote
+import six
+if six.PY2:
+    from urllib import quote
+else:
+    from urllib.parse import quote
+
 from iktomi.web.reverse import URL
 from iktomi.web.url_templates import UrlTemplate
 from iktomi.web.url_converters import Converter, ConvertError

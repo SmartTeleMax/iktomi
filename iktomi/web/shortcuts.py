@@ -19,7 +19,7 @@ def redirect_to(endpoint, _code=303, qs=None, **kwargs):
 def Rule(path, handler, method=None, name=None, convs=None):
     # werkzeug-style Rule
     if name is None:
-        name = handler.func_name
+        name = getattr(handler, '__name__', None) or handler.func_name
     h = filters.match(path, name, convs=convs)
     if method is not None:
         h = h | cases(filters.method(method),

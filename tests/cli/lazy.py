@@ -1,11 +1,14 @@
 # coding: utf-8
-
-import os
 import sys
 import unittest
 from iktomi.cli.lazy import LazyCli
 from iktomi.cli.base import Cli, manage
-from cStringIO import StringIO
+import six
+
+if six.PY2:
+    from cStringIO import StringIO as BytesIO
+else:
+    from io import BytesIO
 
 try:
     from unittest.mock import patch
@@ -32,7 +35,7 @@ class LazyTests(unittest.TestCase):
 
         self.assertIsInstance(cli.digest, MyCli)
 
-        print cli.description()
+        print(cli.description())
         self.assertEqual(cli.description().splitlines()[0],
                          'mycli')
         self.assertEqual(cli.description().splitlines()[1],
@@ -58,7 +61,7 @@ class LazyTests(unittest.TestCase):
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv.replace(":", " : "),
                                        'COMP_CWORD':'2' }):
-            out = StringIO()
+            out = BytesIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=cli), argv.split())

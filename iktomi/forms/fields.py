@@ -5,8 +5,7 @@ import logging
 import six
 import cgi
 import re
-import widgets
-from . import convs
+from . import convs, widgets
 from ..utils import cached_property
 from collections import OrderedDict
 from .perms import FieldPerm

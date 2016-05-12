@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-import os
 import sys
 import unittest
 import datetime
 from iktomi.cli.base import Cli, manage, argument
-from cStringIO import StringIO
+import six
+
+if six.PY2:
+    from cStringIO import StringIO as BytesIO
+else:
+    from io import BytesIO
 
 __all__ = ['CliTest']
 
@@ -28,7 +32,7 @@ class CliTest(unittest.TestCase):
 
         test_cmd = TestCommand()
         argv = 'manage.py fruit:avocado arg1 --kwarg=kwarg3'
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             manage(dict(fruit=test_cmd), argv.split())
         self.assertEqual("Completed\n", out.getvalue())
@@ -43,7 +47,7 @@ class CliTest(unittest.TestCase):
             print("Completed")
 
         argv = 'manage.py fruit arg --kwarg=kwarg --kwarg2 --kwarg3='
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             manage(dict(fruit=cmd), argv.split())
         self.assertEqual("Completed\n", out.getvalue())
@@ -58,7 +62,7 @@ class CliTest(unittest.TestCase):
             self.assertEquals(kwarg2, True)
             print("Completed")
         argv = 'manage.py fruit 1 --kwarg=9/6/2010 --kwarg2'
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             manage(dict(fruit=cmd), argv.split())
         self.assertEqual("Completed\n", out.getvalue())
@@ -77,7 +81,7 @@ class CliTest(unittest.TestCase):
 
         test_cmd = TestCommand()
         argv = 'manage.py fruit:avocado 1 --kwarg=9/6/2010 --kwarg2'
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             manage(dict(fruit=test_cmd), argv.split())
         self.assertEqual("Completed\n", out.getvalue())
@@ -95,12 +99,11 @@ class CliTest(unittest.TestCase):
 
     def test_incorrect_call(self):
         '`cli` incorrect call'
-        assrt = self.assertEquals
         class TestCommand(Cli):
             def command_avocado(self, arg, kwarg=None, kwarg2=False):
                 pass
         argv = 'manage.py fruit'
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=TestCommand()), argv.split())
@@ -116,7 +119,7 @@ class CliTest(unittest.TestCase):
                 pass
         argv = 'manage.py vegetable:avocado --kwarg --kwarg2'
 
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit):
                 manage(dict(fruit=TestCommand()), argv.split())
@@ -128,7 +131,7 @@ class CliTest(unittest.TestCase):
                 pass
         argv = 'manage.py'
 
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=TestCommand()), argv.split())
@@ -140,7 +143,7 @@ class CliTest(unittest.TestCase):
                 pass
         argv = 'manage.py fruit:orange --kwarg --kwarg2'
 
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=TestCommand()), argv.split())
@@ -156,7 +159,7 @@ class CliTest(unittest.TestCase):
                 pass
 
         cli_command = TestCommand()
-        out = StringIO()
+        out = BytesIO()
         with patch.object(sys, 'stdout', out):
             cli_command('help')
             self.assertIn("manage.py", out.getvalue())
@@ -171,7 +174,7 @@ class CliTest(unittest.TestCase):
                 pass
         test_cmd = TestCommand()
         argv = 'manage.py fruit:avocado --kwarg=noint'
-        err = StringIO()
+        err = BytesIO()
         with patch.object(sys, 'stderr', err):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=test_cmd), argv.split())
@@ -187,7 +190,7 @@ class CliTest(unittest.TestCase):
                 pass
         test_cmd = TestCommand()
         argv = 'manage.py fruit:avocado --kwarg=nodate'
-        err = StringIO()
+        err = BytesIO()
         with patch.object(sys, 'stderr', err):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=test_cmd), argv.split())
@@ -206,7 +209,7 @@ class CliTest(unittest.TestCase):
         argv = 'manage.py fruit:avocado --kwarg=test 1'
         test_cmd = TestCommand()
 
-        err = StringIO()
+        err = BytesIO()
         with patch.object(sys, 'stderr', err):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=test_cmd), argv.split())
@@ -224,7 +227,7 @@ class CliTest(unittest.TestCase):
         argv = 'manage.py fruit:avocado --kwarg2=1'
         test_cmd = TestCommand()
 
-        err = StringIO()
+        err = BytesIO()
         with patch.object(sys, 'stderr', err):
             with self.assertRaises(SystemExit) as exc:
                 manage(dict(fruit=test_cmd), argv.split())
@@ -243,7 +246,7 @@ class CliTest(unittest.TestCase):
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv,
                                        'COMP_CWORD':'1' }):
-            out = StringIO()
+            out = BytesIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=test_cmd), argv.split())
@@ -254,7 +257,7 @@ class CliTest(unittest.TestCase):
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv,
                                        'COMP_CWORD':'1' }):
-            out = StringIO()
+            out = BytesIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=test_cmd), argv.split())
@@ -265,7 +268,7 @@ class CliTest(unittest.TestCase):
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv.replace(":", " : "),
                                        'COMP_CWORD':'2' }):
-            out = StringIO()
+            out = BytesIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=test_cmd), argv.split())
@@ -276,7 +279,7 @@ class CliTest(unittest.TestCase):
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv.replace(":", " : "),
                                        'COMP_CWORD':'3' }):
-            out = StringIO()
+            out = BytesIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=test_cmd), argv.split())
