@@ -3,13 +3,15 @@
 __all__ = ['URL']
 
 import six
-import urllib
 if six.PY2:
-    from urlparse import urlparse, parse_qs
+    from urlparse import urlparse, parse_qs, unquote
 else:
-    from urllib.parse import urlparse, parse_qs
+    from urllib.parse import urlparse, parse_qs, unquote
 from webob.multidict import MultiDict
 from .url_templates import urlquote
+
+_path_symbols = set(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                    u"0123456789._~!$&'()*+,;=:@%-/")
 
 
 def construct_url(path, query, host, port, schema):
@@ -17,9 +19,9 @@ def construct_url(path, query, host, port, schema):
                             for k, v in six.iteritems(query))
              if query else '')
 
-    path = path
+    path = path.decode('utf-8')
     if host:
-        host = host.encode('idna')
+        host = host.encode('idna').decode('utf-8')
         port = ':' + port if port else ''
         return ''.join((schema, '://', host, port, path,  query))
     else:
@@ -33,7 +35,11 @@ class URL(str):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        path = path if isinstance(path, six.binary_type) else urlquote(path)
+        if not isinstance(path, six.binary_type):
+            # XXX
+            if set(path) - _path_symbols:
+                path = urlquote(path)
+            path = path.encode('utf-8')
         assert isinstance(path, six.binary_type) # XXX temporary
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
@@ -62,8 +68,8 @@ class URL(str):
         assert isinstance(host, six.binary_type)
 
         port = url.netloc.split(':')[1] if ':' in url.netloc else ''
-        path = urllib.unquote(url.path)
-        if isinstance(url.path, str):
+        path = unquote(url.path)
+        if isinstance(url.path, six.binary_type): # XXX
             path = path.decode('utf-8')
 
         return cls(path,
@@ -130,7 +136,7 @@ class URL(str):
                                   for k, v in six.iteritems(self.query))
                  if self.query else '')
 
-        path = urllib.unquote(self.path).decode('utf-8')
+        path = unquote(self.path).decode('utf-8')
         if self.host:
             port = u':' + self.port if self.port else u''
             return u''.join((self.schema, '://', self.host, port, path,  query))
