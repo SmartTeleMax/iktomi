@@ -1,3 +1,4 @@
+import six
 from iktomi.utils import cached_property
 from iktomi.utils.deprecation import deprecated
 from iktomi.unstable.utils.functools import return_locals
@@ -32,7 +33,11 @@ class ModelFactories(object):
         return self.make_class(module, name, base_names, values)
 
     def make_class(self, module, name, base_names, values):
-        bases = tuple(getattr(module, x) if isinstance(x, basestring) else x
+
+        # unicode or py3.str or py2.str, not bytes!
+        is_string = lambda x: isinstance(x, six.text_type) or isinstance(x, str)
+
+        bases = tuple(getattr(module, x) if is_string(x) else x
                       for x in base_names)
         cls = type(name, bases, values)
         cls.__module__ = module.__name__

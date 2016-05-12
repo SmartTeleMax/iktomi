@@ -5,6 +5,7 @@ __all__ = ['match', 'method', 'static_files', 'prefix',
 
 import logging
 import os
+import six
 from os import path
 from urllib import unquote
 from webob.exc import HTTPMethodNotAllowed, HTTPNotFound
@@ -213,7 +214,9 @@ class by_method(cases):
     def __init__(self, handlers_dict, default_handler=None):
         handlers = []
         for methods, handler in handlers_dict.items():
-            if isinstance(methods, basestring):
+            if isinstance(methods, six.text_type) \
+                    or isinstance(methods, str):
+                # unicode or py3.str or py2.str, not bytes!
                 methods = (methods,)
             handlers.append(method(*methods, strict=False) | handler)
         if default_handler is not None:

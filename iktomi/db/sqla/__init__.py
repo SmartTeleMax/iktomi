@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import six
 import logging
 from importlib import import_module
 from sqlalchemy import orm, create_engine
@@ -13,7 +13,8 @@ def multidb_binds(databases, package=None, engine_params=None):
     have `metadata` attribute. `package` when set must be a package or package
     name for all models modules.'''
     engine_params = engine_params or {}
-    if not (package is None or isinstance(package, basestring)):
+    if not (package is None or isinstance(package, six.text_type) \
+                or isinstance(package, str)):
         package = getattr(package, '__package__', None) or package.__name__
     binds = {}
     for ref, uri in databases.items():

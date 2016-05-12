@@ -2,6 +2,7 @@
 
 import logging
 
+import six
 import cgi
 import re
 import widgets
@@ -188,7 +189,9 @@ class Field(BaseField):
         if not self.multiple:
             values = [values]
         for value in values:
-            if not isinstance(value, basestring):
+            if not (isinstance(value, six.text_type) \
+                    or isinstance(value, str)):
+                # unicode or py3.str or py2.str, not bytes!
                 self.form.errors[self.input_name] = 'Given value has incompatible type'
                 return False
         return True
