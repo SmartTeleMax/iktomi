@@ -116,7 +116,10 @@ class UrlTemplate(object):
             # convert params
             for url_arg_name, value_urlencoded in kwargs.items():
                 conv_obj = self._url_params[url_arg_name]
-                unicode_value = urllib.unquote(value_urlencoded).decode('utf-8', 'replace')
+                unicode_value = urllib.unquote(value_urlencoded)
+                if isinstance(unicode_value, six.binary_type):
+                    # XXX ??
+                    unicode_value = unicode_value.decode('utf-8', 'replace')
                 try:
                     kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
                 except ConvertError as err:
