@@ -19,7 +19,6 @@ def construct_url(path, query, host, port, schema):
                             for k, v in six.iteritems(query))
              if query else '')
 
-    path = path.decode('utf-8')
     if host:
         host = host.encode('idna').decode('utf-8')
         port = ':' + port if port else ''
@@ -35,12 +34,10 @@ class URL(str):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        if not isinstance(path, six.binary_type):
-            # XXX
-            if set(path) - _path_symbols:
-                path = urlquote(path)
-            path = path.encode('utf-8')
-        assert isinstance(path, six.binary_type) # XXX temporary
+        if not isinstance(path, six.text_type):
+            path = path.decode('utf-8') # XXX
+        if set(path) - _path_symbols:
+            path = urlquote(path)
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
@@ -64,16 +61,14 @@ class URL(str):
                       for v in values]
                      for k, values in parse_qs(url.query).items()], [])
         host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
-        host = host.encode('idna')
-        assert isinstance(host, six.binary_type)
+
+        # force decode idna from both encoded and decoded input
+        host = host.encode('idna').decode('idna')
 
         port = url.netloc.split(':')[1] if ':' in url.netloc else ''
         path = unquote(url.path)
-        if isinstance(url.path, six.binary_type): # XXX
-            path = path.decode('utf-8')
-
         return cls(path,
-                   query, host.decode('idna'),
+                   query, host,
                    port, url.scheme, show_host)
 
     def _copy(self, **kwargs):
@@ -136,7 +131,12 @@ class URL(str):
                                   for k, v in six.iteritems(self.query))
                  if self.query else '')
 
-        path = unquote(self.path).decode('utf-8')
+        if six.PY2:
+            # in PY2 unquote returns encoded value of the type it has accepted
+            path = unquote(self.path.encode('utf-8')).decode('utf-8')
+        else:
+            # in PY3 is accepts and returns decoded str
+            path = unquote(self.path)
         if self.host:
             port = u':' + self.port if self.port else u''
             return u''.join((self.schema, '://', self.host, port, path,  query))
