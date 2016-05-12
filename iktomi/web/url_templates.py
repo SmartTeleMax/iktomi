@@ -83,7 +83,6 @@ def construct_re(url_template, match_whole_str=False, converters=None,
         raise ValueError('Incorrect url template {!r}'.format(url_template))
     if match_whole_str:
         result += '$'
-    print(url_template, url_params, builder_params, result)
     return re.compile(result), url_params, builder_params
 
 
@@ -168,5 +167,5 @@ class UrlTemplate(object):
 
     def __repr__(self):
         return '{}({!r}, match_whole_str={!r})'.format(
-                self.__class__.__name__, self.template.encode('utf-8'),
+                self.__class__.__name__, self.template,
                 self.match_whole_str)

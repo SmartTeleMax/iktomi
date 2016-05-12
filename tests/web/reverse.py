@@ -12,6 +12,9 @@ from iktomi.web.reverse import Location, UrlBuildingError
 def locations(handler):
     return handler._locations()
 
+def location_keys(handler):
+    return list(handler._locations().keys())
+
 
 class LocationsTests(unittest.TestCase):
 
@@ -21,7 +24,7 @@ class LocationsTests(unittest.TestCase):
 
     def test_match(self):
         'Locations of web.match'
-        self.assert_(locations(web.match('/', 'name')).keys(), ['name'])
+        self.assert_(location_keys(web.match('/', 'name')), ['name'])
 
     def test_match_dublication(self):
         'Raise error on same url names'
@@ -35,7 +38,7 @@ class LocationsTests(unittest.TestCase):
         chain = web.cases(
                 web.match('/', 'index'),
                 web.match('/docs', 'docs'))
-        self.assert_(locations(chain).keys(), ['index', 'docs'])
+        self.assert_(location_keys(chain), ['index', 'docs'])
 
     def test_nested_cases(self):
         'Locations of nested web.cases'
@@ -43,12 +46,12 @@ class LocationsTests(unittest.TestCase):
                 web.match('/', 'index'),
                 web.cases(
                     web.match('/docs', 'docs')))
-        self.assert_(locations(chain).keys(), ['index', 'docs'])
+        self.assert_(location_keys(chain), ['index', 'docs'])
 
     def test_prefix(self):
         'Locations of web.match with prefix'
         chain = web.prefix('/news') | web.match('/', 'index')
-        self.assert_(locations(chain).keys(), ['index'])
+        self.assert_(location_keys(chain), ['index'])
         self.assert_(locations(chain)['index'][0].builders)
         self.assertEqual(len(locations(chain)['index'][0].builders), 2)
 
@@ -58,22 +61,22 @@ class LocationsTests(unittest.TestCase):
                 web.match('/', 'index'),
                 web.match('/docs', 'docs'))
         for k in ('index', 'docs'):
-            self.assert_(locations(chain).keys(), [k])
+            self.assert_(location_keys(chain), [k])
             self.assert_(locations(chain)[k][0].builders)
             self.assertEqual(len(locations(chain)[k][0].builders), 2)
 
     def test_namespace(self):
         'Locations namespace'
         chain = web.namespace('news') | web.match('/', 'index')
-        self.assert_(locations(chain).keys(), ['news.index'])
+        self.assert_(location_keys(chain), ['news.index'])
 
     def test_namespace_and_cases(self):
         'Locations namespace with web.cases'
         chain = web.namespace('news') | web.cases(
                 web.match('/', 'index'),
                 web.match('/docs', 'docs'))
-        self.assertEqual(locations(chain).keys(), ['news'])
-        self.assertEqual(locations(chain)['news'][1].keys(), ['index', 'docs'])
+        self.assertEqual(location_keys(chain), ['news'])
+        self.assertEqual(list(locations(chain)['news'][1].keys()), ['index', 'docs'])
 
     def test_mix(self):
         'Loactions mix'
@@ -86,7 +89,7 @@ class LocationsTests(unittest.TestCase):
                     web.match('/'),
                     web.match('/<int:id>', 'item'))))
         locs = locations(chain)
-        self.assertEqual(locs.keys(), ['', 'news'])
+        self.assertEqual(list(locs.keys()), ['', 'news'])
         self.assertEqual(locs[''][0], 
                          Location(*(UrlTemplate('/items', match_whole_str=False), UrlTemplate('/'))))
         self.assertEqual(locs['news'][0], 
@@ -101,12 +104,12 @@ class LocationsTests(unittest.TestCase):
     def test_namespace_with_empty_name(self):
         'Namespaces with empty url name'
         chain = web.namespace('news') | web.match('/')
-        self.assert_(locations(chain).keys(), ['news'])
+        self.assert_(location_keys(chain), ['news'])
 
     def test_subdomain(self):
         'Locations and subdomains'
         chain = web.subdomain('news') | web.match('/', 'index')
-        self.assert_(locations(chain).keys(), ['index'])
+        self.assert_(location_keys(chain), ['index'])
         self.assert_(locations(chain)['index'][0].subdomains)
 
         subdomains = [x.primary 
@@ -119,7 +122,7 @@ class LocationsTests(unittest.TestCase):
                 web.match('/', 'index'),
                 web.match('/docs', 'docs'))
         for k in ('index', 'docs'):
-            self.assert_(locations(chain).keys(), [k])
+            self.assert_(location_keys(chain), [k])
             self.assert_(locations(chain)[k][0].subdomains)
             subdomains = [x.primary 
                       for x in locations(chain)[k][0].subdomains]
@@ -132,7 +135,7 @@ class LocationsTests(unittest.TestCase):
             web.prefix('/xx') | (lambda e, d: None),
             (lambda e, d: None),
         )
-        self.assertEqual(locations(app).keys(), ['index'])
+        self.assertEqual(location_keys(app), ['index'])
 
 
 class ReverseTests(unittest.TestCase):

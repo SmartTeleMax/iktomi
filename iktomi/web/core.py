@@ -109,7 +109,7 @@ class cases(WebHandler):
         )'''
 
     def __init__(self, *handlers):
-        self.handlers = map(prepare_handler, handlers)
+        self.handlers = [prepare_handler(x) for x in handlers]
 
     def __or__(self, next_handler):
         #cases needs to set next handler for each handler it keeps
