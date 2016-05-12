@@ -3,11 +3,15 @@
 __all__ = ['match', 'method', 'static_files', 'prefix', 
            'subdomain', 'namespace', 'by_method']
 
+import six
 import logging
 import os
 import six
 from os import path
-from urllib import unquote
+if six.PY2:
+    from urllib import unquote
+else:
+    from urllib.parse import unquote
 from webob.exc import HTTPMethodNotAllowed, HTTPNotFound
 from webob.static import FileApp
 from .core import WebHandler, cases
