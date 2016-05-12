@@ -76,7 +76,7 @@ class LocationsTests(unittest.TestCase):
                 web.match('/', 'index'),
                 web.match('/docs', 'docs'))
         self.assertEqual(location_keys(chain), ['news'])
-        self.assertEqual(list(locations(chain)['news'][1].keys()), ['index', 'docs'])
+        self.assertEqual(set(locations(chain)['news'][1].keys()), {'index', 'docs'})
 
     def test_mix(self):
         'Loactions mix'
