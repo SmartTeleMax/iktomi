@@ -33,7 +33,7 @@ class FormFilesTests(unittest.TestCase):
     def _create_persistent(self):
         f = self.file_manager.get_persistent('test.txt')
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         return f
 
     def _create_transient(self, content, original_name='test.txt'):
@@ -61,7 +61,7 @@ class FormFilesTests(unittest.TestCase):
         self.assertEqual(data['file'], None)
 
     def test_transient2empty(self):
-        transient = self._create_transient('transient1')
+        transient = self._create_transient(b'transient1')
         form = FormWithFile(self.env)
         form.accept(MultiDict({'file.file': None,
                                'file.original_name': 'test.txt',
@@ -129,7 +129,7 @@ class FormFilesTests(unittest.TestCase):
 
     def test_transient2persistent(self):
         persistent = self._create_persistent()
-        transient = self._create_transient('transient1')
+        transient = self._create_transient(b'transient1')
         form = FormWithFile(self.env, initial={'file': persistent})
         form.accept(MultiDict({'file.file': None,
                                'file.original_name': 'test.txt',

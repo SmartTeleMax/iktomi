@@ -3,6 +3,7 @@
 import os
 import hashlib
 import logging
+import binascii
 from webob.exc import HTTPSeeOther
 
 logger = logging.getLogger(__name__)
@@ -20,11 +21,13 @@ def encrypt_password(raw_password, algorithm='sha1', salt=None):
     using the given algorithm ('md5', 'sha1' or other supported by hashlib).
     """
     if salt is None:
-        salt = os.urandom(3).encode('hex')[:5]
+        salt = binascii.hexlify(os.urandom(3))[:5]
+    else:
+        salt = salt.encode('utf-8')
+
     raw_password = raw_password.encode('utf-8')
-    salt = salt.encode('utf-8')
     hash = hashlib.new(algorithm, salt+raw_password).hexdigest()
-    return '{}${}${}'.format(algorithm, salt, hash)
+    return '{}${}${}'.format(algorithm, salt.decode('utf-8'), hash)
 
 
 def check_password(raw_password, enc_password):
@@ -63,7 +66,7 @@ class CookieAuth(web.WebHandler):
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
             user_identity = self.storage.get(self._cookie_name + ':' +
-                                                    key.encode('utf-8'))
+                                                    key)
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
         logger.debug('Authenticated: %r', user)
@@ -76,10 +79,10 @@ class CookieAuth(web.WebHandler):
     __call__ = cookie_auth
 
     def login_identity(self, user_identity, response=None, path='/'):
-        key = os.urandom(10).encode('hex')
+        key = binascii.hexlify(os.urandom(10)).decode('utf-8')
         response = web.Response() if response is None else response
         response.set_cookie(self._cookie_name, key, path=path)
-        if not self.storage.set(self._cookie_name+':'+key.encode('utf-8'),
+        if not self.storage.set(self._cookie_name+':'+key,
                                 str(user_identity)):
             logger.warning('storage "%r" is unreachable', self.storage)
             if self.crash_without_storage:

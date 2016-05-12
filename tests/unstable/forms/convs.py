@@ -53,7 +53,7 @@ class EmailConvTests(unittest.TestCase):
             conv = init_conv(convs.Email)
             value = conv.accept(u'name@example.com'+c)
             self.assertEqual(value, None)
-            self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+            self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
 
     def test_invalid(self):
         for email in ['name@com',
@@ -68,7 +68,7 @@ class EmailConvTests(unittest.TestCase):
             conv = init_conv(convs.Email)
             value = conv.accept('name@com')
             self.assertEqual(value, None)
-            self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+            self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
 
 
 class M(object):

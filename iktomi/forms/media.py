@@ -39,6 +39,8 @@ class FormMedia(object):
     def __nonzero__(self):
         return bool(self._media)
 
+    __bool__ = __nonzero__
+
     def __eq__(self, other):
         return self._media == other._media
 
