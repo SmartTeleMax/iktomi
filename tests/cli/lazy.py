@@ -65,4 +65,4 @@ class LazyTests(unittest.TestCase):
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=cli), argv.split())
-            self.assertEqual('run', out.getvalue())
+            self.assertEqual(b'run', out.getvalue())

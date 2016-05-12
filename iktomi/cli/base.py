@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import six
 import sys
 import os
 import datetime
@@ -32,7 +32,7 @@ def manage(commands, argv=None, delim=':'):
     # We use the same name for this script and it seems to be ok
     # to implement the same interface
     def perform_auto_complete(commands):
-        from lazy import LazyCli
+        from .lazy import LazyCli
         cwords = os.environ['COMP_WORDS'].split()[1:]
         cword = int(os.environ['COMP_CWORD'])
 
@@ -53,10 +53,10 @@ def manage(commands, argv=None, delim=':'):
             if curr == ":":
                 curr = ''
         else:
-            suggest += commands.keys() + [x+":" for x in commands.keys()]
+            suggest += list(commands.keys()) + [x+":" for x in commands.keys()]
         suggest.sort()
         output = " ".join(filter(lambda x: x.startswith(curr), suggest))
-        sys.stdout.write(output)
+        sys.stdout.write(output.encode('utf-8'))
 
     auto_complete = 'IKTOMI_AUTO_COMPLETE' in os.environ or \
                     'DJANGO_AUTO_COMPLETE' in os.environ
@@ -96,7 +96,7 @@ def manage(commands, argv=None, delim=':'):
             if command is None:
                 if isinstance(digest, Cli):
                     help_ = digest.description(argv[0], digest_name)
-                    sys.stdout.write(help_)
+                    sys.stdout.write(help_.encode('utf-8'))
                     sys.exit('ERROR: "{}" command digest requires command name'\
                                 .format(digest_name))
                 digest(*args, **kwargs)
@@ -104,17 +104,17 @@ def manage(commands, argv=None, delim=':'):
                 digest(command, *args, **kwargs)
         except CommandNotFound:
             help_ = digest.description(argv[0], digest_name)
-            sys.stdout.write(help_)
+            sys.stdout.write(help_.encode('utf-8'))
             sys.exit('ERROR: Command "{}:{}" not found'.format(digest_name, command))
     else:
         _command_list(commands)
         sys.exit('Please provide any command')
 
 def _command_list(commands):
-    sys.stdout.write('Commands:\n')
+    sys.stdout.write(b'Commands:\n')
     for k in commands.keys():
-        sys.stdout.write(str(k))
-        sys.stdout.write('\n')
+        sys.stdout.write(str(k).encode('utf-8'))
+        sys.stdout.write(b'\n')
 
 
 class Cli(object):
@@ -145,7 +145,7 @@ class Cli(object):
             _help += '{}\n'.format(command)
 
         funcs = self.get_funcs()
-        funcs.sort(key=lambda x: x[1].func_code.co_firstlineno)
+        funcs.sort(key=lambda x: six.get_function_code(x[1]).co_firstlineno)
 
         for attr, func in funcs:
             func = getattr(self, attr)
@@ -162,13 +162,14 @@ class Cli(object):
 
     def __call__(self, command_name, *args, **kwargs):
         if command_name == 'help':
-            sys.stdout.write(self.description())
+            sys.stdout.write(self.description().encode('utf-8'))
         elif hasattr(self, 'command_'+command_name):
             try:
                 getattr(self, 'command_'+command_name)(*args, **kwargs)
             except ConverterError as e:
                 sys.stderr.write('One of the arguments for '
-                                 'command "{}" is wrong:\n'.format(command_name))
+                                 'command "{}" is wrong:\n'.format(command_name)
+                                                           .encode('utf-8'))
                 sys.exit(e)
         else:
             raise CommandNotFound()
