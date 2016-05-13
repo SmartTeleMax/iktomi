@@ -18,6 +18,8 @@ if six.PY2:
     from urllib2 import urlopen
 else:
     from urllib.request import urlopen
+import urllib2
+import tempfile
 
 
 try:
@@ -38,13 +40,13 @@ class AppTest(unittest.TestCase):
 class WaitForChangeTest(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('temp_dir')
-        self.f = open('temp_dir/tempfile', 'w')
+        self.temp_dir = tempfile.mkdtemp()
+        self.f = open(os.path.join(self.temp_dir, 'tempfile'), 'w')
 
     def doCleanups(self):
         self.f.close()
-        if os.path.isdir('temp_dir'):
-            shutil.rmtree('temp_dir')
+        if os.path.isdir(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
 
     def test_wait_for_code_changes(self):
         result = []
@@ -59,7 +61,10 @@ class WaitForChangeTest(unittest.TestCase):
             self.f.flush()
             sleep(1)
             r = os.fdopen(r)
-            self.assertEqual('Changes in file "temp_dir/tempfile"', r.read())
+            message = r.read()
+            self.assertIn('Changes in file', message)
+            self.assertIn(self.temp_dir, message)
+            self.assertIn('tempfile', message)
             os.kill(pid, signal.SIGKILL)
             os.waitpid(pid, 0)
         else:
@@ -71,7 +76,9 @@ class WaitForChangeTest(unittest.TestCase):
 
             Logger.info = Mock(side_effect=writeback_and_stop)
             # should work well if some files are absent
-            app.wait_for_code_change(extra_files=('temp_dir/nonexistent', 'temp_dir/tempfile'))
+            nonexistent = os.path.join(self.temp_dir, 'nonexistent')
+            tempfile = os.path.join(self.temp_dir, 'tempfile')
+            app.wait_for_code_change(extra_files=(nonexistent, tempfile))
             os._exit(0)
 
 
@@ -95,16 +102,18 @@ class CliAppTest(unittest.TestCase):
 class WebAppServerTest(unittest.TestCase):
 
     def setUp(self):
-        os.mkdir('temp_dir')
-        self.manage = os.path.join('temp_dir', 'manage.py')
-        shutil.copy(os.path.join(os.path.dirname(__file__), 'helloworld.py',),
-                    'temp_dir/manage.py')
+        self.temp_dir = tempfile.mkdtemp()
+        
+        self.manage = os.path.join(self.temp_dir, 'manage.py')
+        shutil.copy(os.path.join(os.path.dirname(__file__), 
+                                 '../../examples/helloworld/helloworld.py',),
+                    self.manage)
         self.server = subprocess.Popen([sys.executable, self.manage,
                                         'dev:serve', '--port=11111'])
         sleep(0.5)
 
     def doCleanups(self):
-        shutil.rmtree('temp_dir')
+        shutil.rmtree(self.temp_dir)
         self.server.send_signal(signal.SIGINT) # we MUST exit from subprocess
                                                # normal way to perform coverage correctly
         self.server.wait()
@@ -122,8 +131,9 @@ class WebAppServerTest(unittest.TestCase):
         self.assertEqual(b"hello iktomi", response.read())
         response.close()
         # test if bootstrap worked correctly
-        self.assertTrue(os.path.isfile('temp_dir/hello.log'))
-        with open('temp_dir/hello.log') as log:
+        logfile = os.path.join(self.temp_dir, 'hello.log')
+        self.assertTrue(os.path.isfile(logfile))
+        with open(logfile) as log:
             'Devserver is running on port 11111' in log.read()
 
 

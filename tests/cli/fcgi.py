@@ -3,22 +3,15 @@ import os
 import sys
 import unittest
 from iktomi.cli.fcgi import Flup
-from .helloworld import webapp
 from .fcgi_client import FastCGIClient
 import shutil
 import signal
 from time import sleep
 import subprocess
+import tempfile
 
 
 class FlupTests(unittest.TestCase):
-
-    def setUp(self):
-        os.mkdir('temp_dir')
-
-    def doCleanups(self):
-        if os.path.isdir('temp_dir'):
-            shutil.rmtree('temp_dir')
 
     def test_default_init(self):
         flup = Flup("app")
@@ -34,15 +27,17 @@ class FlupDaemonTest(unittest.TestCase):
 
     def setUp(self):
         self.pid = None
-        os.mkdir('temp_dir')
-        self.manage = os.path.join('temp_dir', 'manage.py')
-        shutil.copy(os.path.join(os.path.dirname(__file__), 'helloworld.py',),
-                    'temp_dir/manage.py')
+        self.temp_dir = tempfile.mkdtemp()
+        
+        self.manage = os.path.join(self.temp_dir, 'manage.py')
+        shutil.copy(os.path.join(os.path.dirname(__file__), 
+                                 '../../examples/helloworld/helloworld.py',),
+                    self.manage)
         subprocess.Popen([sys.executable, self.manage,
                           'fcgi:start', '--daemonize'])
         sleep(0.5)
         try:
-            with open('temp_dir/fcgi.pid') as f:
+            with open(os.path.join(self.temp_dir, 'fcgi.pid')) as f:
                 self.pid = int(f.read().strip())
         except IOError:
             self.fail('Cannot to start the fcgi server')
@@ -54,10 +49,11 @@ class FlupDaemonTest(unittest.TestCase):
                 os.kill(self.pid, signal.SIGKILL)
             except OSError:
                 pass
-        shutil.rmtree('temp_dir')
+        shutil.rmtree(self.temp_dir)
 
     def test_daemon(self):
-        result, errors = FastCGIClient('temp_dir/fcgi.sock').make_request()
+        sock_path = os.path.join(self.temp_dir, 'fcgi.sock')
+        result, errors = FastCGIClient(sock_path).make_request()
         self.assertEqual(['hello world'], result)
         self.assertEqual(errors, '')
 
@@ -71,11 +67,11 @@ class FlupDaemonTest(unittest.TestCase):
         sleep(0.5)
         try:
 
-            with open('temp_dir/fcgi.pid') as f:
+            with open(os.path.join(self.temp_dir, 'fcgi.pid')) as f:
                 self.pid = int(f.read().strip())
         except IOError:
             self.fail('Cannot to start the fcgi server')
 
-        result, errors = FastCGIClient('temp_dir/fcgi.sock').make_request()
+        result, errors = FastCGIClient(sock_path).make_request()
         self.assertEqual(['hello iktomi'], result)
         self.assertEqual(errors, '')
