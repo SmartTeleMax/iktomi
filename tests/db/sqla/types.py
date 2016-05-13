@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 import unittest
 from iktomi.db.sqla.types import StringList, IntegerList,\
     Html, HtmlString, HtmlText
@@ -44,6 +45,9 @@ class Markupable(object):
 
     def __unicode__(self):
         return self.value
+
+    if six.PY3:
+        __str__ = __unicode__
 
 
 class TypeDecoratorsTest(unittest.TestCase):

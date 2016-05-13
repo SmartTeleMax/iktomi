@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import unittest, json
+import unittest
 from iktomi.utils import (
     quoteattr, quoteattrs, quote_js, weakproxy,
     cached_property, cached_class_property,
@@ -16,9 +16,11 @@ class Tests(unittest.TestCase):
             self.assertEqual(quoteattr(src), dst)
 
     def test_quoteattrs(self):
-        for src, dst in [({}, ''),
-                         ({'a': u'abc', 'b': u'bcd'}, u'a="abc" b="bcd"')]:
-            self.assertEqual(quoteattrs(src), dst)
+        self.assertEqual(quoteattrs({}), '')
+        self.assertIn(quoteattrs({'a': u'abc', 'b': u'bcd'}), [
+                                    u'a="abc" b="bcd"',
+                                    u'b="bcd" a="abc"',
+                                    ])
 
     def test_quote_js(self):
         # Any idea for better test? json.loads() can't be used since the result
