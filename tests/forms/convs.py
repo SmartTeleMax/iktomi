@@ -6,6 +6,7 @@ from datetime import datetime, date, time
 from iktomi.forms import *
 from iktomi.web.app import AppEnvironment
 from webob.multidict import MultiDict
+from collections import OrderedDict
 
 
 def init_conv(conv, name='name'):
@@ -23,6 +24,19 @@ class ConverterTests(unittest.TestCase):
         value = conv.accept('value')
         self.assertEqual(value, 'value')
         self.assertEqual(conv.field.form.errors, {})
+
+    def test_accept_emtpy_string(self):
+        conv = init_conv(convs.Converter)
+        value = conv.accept('')
+        self.assertEqual(value, None)
+        self.assertEqual(conv.field.form.errors, {})
+
+    def test_repr(self):
+        conv = init_conv(convs.Converter(kwarg1="kwargvalue"))
+        represented = repr(conv)
+        self.assertIn("Converter", represented)
+        self.assertIn("field=Field(name='name')", represented)
+        self.assertIn("kwarg1='kwargvalue'", represented)
 
     def test_to_python(self):
         'Converter to_python method'
@@ -106,6 +120,28 @@ class ConverterTests(unittest.TestCase):
         conv = convs.Converter(v3, validators=[v2])
         self.assertEqual(conv.validators, (v2, v3))
 
+    def test_list_converter(self):
+        conv = convs.List()
+        dct = OrderedDict()
+        dct['1'] = 'one'
+        dct['2'] = 'two'
+        dct['3'] = 'three'
+        self.assertEqual(conv.from_python(['one', 'two', 'three'],), dct)
+        self.assertEqual(conv.to_python(dct), ['one', 'two', 'three'])
+        self.assertEqual(conv.from_python(None), OrderedDict([]))
+        self.assertEqual(conv.to_python({}), [])
+
+    def test_field_block_existing_value(self):
+        class f(Form):
+            fields = [FieldBlock('block', fields=[Field('number', conv=convs.Int)])]
+        env = AppEnvironment.create()
+        form = f(env)
+        field = form.fields[0]
+        conv = field.conv
+        form.accept({'number':'123'})
+        self.assertEqual(conv._existing_value,  {'number':123})
+        conv.field = None
+        self.assertEqual(conv._existing_value,  {})
 
 class IntConverterTests(unittest.TestCase):
 
@@ -283,6 +319,14 @@ class CharConverterTests(unittest.TestCase):
         # XXX not all nontext characters are tested
         value = conv.to_python(u'\x00-\x09-\x19-\ud800-\ufffe')
         self.assertEqual(value, '?-\x09-?-?-?')
+
+    def test_max_length(self):
+        conv = convs.Char()
+        self.assertIsNone(conv.max_length, None)
+        conv = convs.Char(convs.length(0, 100), convs.length(10, 25))
+        self.assertEqual(conv.max_length, 25)
+        conv = convs.Char(convs.length(10, 25), convs.length(0, 100))
+        self.assertEqual(conv.max_length, 25)
 
 
 class BoolConverterTests(unittest.TestCase):
@@ -549,6 +593,15 @@ class HtmlTests(unittest.TestCase):
         self.assertEqual(set(conv.cleaner.allow_tags),
                          set(['a', 'b', 'span']))
 
+        class MyHtml4(convs.Html):
+            allowed_elements = convs.Html.Nothing
+
+        class MyHtml5(MyHtml4):
+            add_allowed_elements = ['span']
+        conv = MyHtml5()
+        self.assertEqual(set(conv.cleaner.allow_tags),
+                         set(['span']))
+
     def test_tune_class(self):
         class MyHtml(convs.Html):
             allowed_elements = ['p', 'strong']
@@ -557,6 +610,16 @@ class HtmlTests(unittest.TestCase):
         conv = MyHtml(add_allowed_elements=['span'])
         self.assertEqual(set(conv.cleaner.allow_tags),
                          set(['p', 'strong', 'em', 'span']))
+
+    def test_clean_value(self):
+        class MyHtml(convs.Html):
+            wrap_inline_tags = False
+            allowed_elements = ['p', 'strong']
+
+        conv = MyHtml()
+        html = '<p>first</p><div>second</div><strong>third</strong>'
+        self.assertEqual(conv.clean_value(html),
+                         '<p>first</p>second<strong>third</strong>')
 
     #def test_tune_basic(self):
     #    'tune property not set in convs.Html'
