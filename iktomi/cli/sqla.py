@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 import sys
-from sqlalchemy import create_engine
+import six
 from sqlalchemy.types import SchemaType
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import (
@@ -118,12 +118,17 @@ class Sqla(Cli):
 
             ./manage.py sqla:drop_tables [meta_name]
         '''
-        answer = raw_input('All data will lost. Are you sure? [y/N] ')
+        if six.PY2:
+            # XXX
+            answer = raw_input('All data will lost. Are you sure? [y/N] ')
+        else:
+            answer = input('All data will lost. Are you sure? [y/N] ')
+
         if answer.strip().lower()!='y':
             sys.exit('Interrupted')
 
         def _drop_metadata_tables(metadata):
-            table = next(metadata.tables.itervalues(), None)
+            table = next(six.itervalues(metadata.tables), None)
             if table is None:
                 print('Failed to find engine')
             else:

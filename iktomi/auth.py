@@ -95,8 +95,7 @@ class CookieAuth(web.WebHandler):
             response.delete_cookie(self._cookie_name)
             key = request.cookies[self._cookie_name]
             if key is not None:
-                if not self.storage.delete(self._cookie_name + ':' + \
-                                                key.encode('utf-8')):
+                if not self.storage.delete(self._cookie_name + ':' + key):
                     logger.warning('storage "%r" is unreachable', self.storage)
 
     def login(self, template='login'):
@@ -114,10 +113,8 @@ class CookieAuth(web.WebHandler):
                     user_identity = self.get_user_identity(
                                                 env, **form.python_data)
                     if user_identity is not None:
-                        response = self.login_identity(user_identity)
-                        response.status = 303
-                        response.headers['Location'] = next.encode('utf-8')
-                        return response
+                        response = HTTPSeeOther(location=next)
+                        return self.login_identity(user_identity, response)
                     login_failed = True
             data.form = form
             data.login_failed = login_failed

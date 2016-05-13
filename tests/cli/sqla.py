@@ -6,9 +6,9 @@ import unittest
 import six
 
 if six.PY2:
-    from cStringIO import StringIO as BytesIO
+    from StringIO import StringIO
 else:
-    from io import BytesIO
+    from io import StringIO
 from iktomi.cli.sqla import Sqla, drop_everything
 from sqlalchemy import (
     create_engine, orm, MetaData, Column, Integer, ForeignKey,
@@ -192,7 +192,7 @@ class SqlaTests(unittest.TestCase):
         engine = create_engine('sqlite://')
         cli = Sqla(orm.sessionmaker(bind=engine), metadata=Base.metadata)
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             cli.command_schema()
         created = self._created_tables(output.getvalue())
@@ -200,13 +200,13 @@ class SqlaTests(unittest.TestCase):
         self.assertEqual(created.count('A'), 1)
         self.assertEqual(created.count('B'), 1)
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             cli.command_schema('A')
         created = self._created_tables(output.getvalue())
         self.assertEqual(created, ['A'])
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             try:
                 cli.command_schema('C')
@@ -246,7 +246,7 @@ class SqlaTests(unittest.TestCase):
         }
         cli = Sqla(orm.sessionmaker(binds=binds), metadata=meta)
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             cli.command_schema()
         created = self._created_tables(output.getvalue())
@@ -254,7 +254,7 @@ class SqlaTests(unittest.TestCase):
         self.assertEqual(created.count('A'), 2)
         self.assertEqual(created.count('B'), 1)
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             cli.command_schema('m1')
         created = self._created_tables(output.getvalue())
@@ -262,13 +262,13 @@ class SqlaTests(unittest.TestCase):
         self.assertEqual(created.count('A'), 1)
         self.assertEqual(created.count('B'), 1)
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             cli.command_schema('m1.B')
         created = self._created_tables(output.getvalue())
         self.assertEqual(created, ['B'])
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             try:
                 cli.command_schema('m2.B')
@@ -277,7 +277,7 @@ class SqlaTests(unittest.TestCase):
         created = self._created_tables(output.getvalue())
         self.assertEqual(created, [])
 
-        output = BytesIO()
+        output = StringIO()
         with mock.patch.object(sys, 'stdout', output):
             try:
                 cli.command_schema('m3.A')

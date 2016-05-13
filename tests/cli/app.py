@@ -8,9 +8,9 @@ from logging import Logger
 import six
 
 if six.PY2:
-    from cStringIO import StringIO as BytesIO
+    from StringIO import StringIO
 else:
-    from io import BytesIO
+    from io import StringIO
 import signal
 from time import sleep
 import subprocess
@@ -84,8 +84,8 @@ class CliAppTest(unittest.TestCase):
         self.app = app.App(webapp, shell_namespace={'hello':'world'})
 
     def test_command_shell(self):
-        inp = BytesIO(b'print hello')
-        out = BytesIO()
+        inp = StringIO('print(hello)')
+        out = StringIO()
         with patch.object(sys, 'stdin', inp):
             with patch.object(sys, 'stdout', out):
                 self.app.command_shell()
@@ -110,7 +110,7 @@ class WebAppServerTest(unittest.TestCase):
 
     def test_web_app_server(self):
         response = urlopen('http://localhost:11111')
-        self.assertEqual("hello world", response.read())
+        self.assertEqual(b"hello world", response.read())
         response.close()
         with open(self.manage) as f:
             new_code = f.read().replace('world', 'iktomi')
@@ -118,7 +118,7 @@ class WebAppServerTest(unittest.TestCase):
             f.write(new_code)
         sleep(2) # wait until code changes
         response = urlopen('http://localhost:11111')
-        self.assertEqual("hello iktomi", response.read())
+        self.assertEqual(b"hello iktomi", response.read())
         response.close()
         # test if bootstrap worked correctly
         self.assertTrue(os.path.isfile('temp_dir/hello.log'))
