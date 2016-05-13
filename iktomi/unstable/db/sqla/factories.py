@@ -1,6 +1,5 @@
 import six
 from iktomi.utils import cached_property
-from iktomi.utils.deprecation import deprecated
 from iktomi.unstable.utils.functools import return_locals
 
 
@@ -18,7 +17,7 @@ class ModelFactories(object):
         langs = kwargs.pop('langs', None)
         assert not kwargs
         def decor(func):
-            name = func.func_name
+            name = func.__name__
             constructor = self.get_constructor(func)
             if lang:
                 self.i18n_models.append((name, constructor, base_names, langs))
