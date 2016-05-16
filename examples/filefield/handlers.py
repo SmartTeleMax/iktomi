@@ -37,7 +37,6 @@ def post_file(env, data):
             os.rename(tmp_file.path, new_path)
 
         raise HTTPSeeOther(location=env.request.url)
-    print(form.errors)
     return env.template.render_to_response('index', {
         'files':files, 
         'url':'/media/stored/', 
