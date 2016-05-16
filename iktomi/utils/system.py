@@ -67,7 +67,7 @@ def doublefork(pidfile, logfile, cwd, umask): # pragma: nocover
         sys.exit('fork #2 failed: ({}) {}'.format(e.errno, e.strerror))
     if logfile is not None:
         si = open('/dev/null')
-        so = open(logfile, 'a+', 0)
+        so = open(logfile, 'ab+', 0)
         os.dup2(si.fileno(), 0)
         os.dup2(so.fileno(), 1)
         os.dup2(so.fileno(), 2)
