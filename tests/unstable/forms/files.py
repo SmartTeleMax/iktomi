@@ -4,7 +4,6 @@ from iktomi.unstable.forms.files import FileFieldSet
 from iktomi.forms import Form
 from iktomi.web.app import AppEnvironment
 from webob.multidict import MultiDict
-from email.message import Message
 from io import BytesIO
 
 
@@ -46,12 +45,12 @@ class FormFilesTests(unittest.TestCase):
 
     def _create_fs(self, mimetype, content, filename='uploaded.txt', name="file"):
         # http://stackoverflow.com/questions/12032807/how-to-create-cgi-fieldstorage-for-testing-purposes
+        content = content.encode('utf-8')
         m = {u'content-disposition': u'form-data; name="{}"; filename="{}"'.format(name, filename),
              u'content-length': len(content),
              u'content-type': mimetype}
         environ = {'REQUEST_METHOD': 'POST'}
-        fp = BytesIO(content.encode('utf-8'))
-        fp.seek(0)
+        fp = BytesIO(content)
         return cgi.FieldStorage(fp=fp, headers=m, environ=environ)
 
     def test_none2empty(self):
