@@ -3,13 +3,16 @@ import sys
 import unittest
 from iktomi.cli.lazy import LazyCli
 from iktomi.cli.base import Cli, manage
-from io import BytesIO
+from io import StringIO
 
 try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
 
+
+def get_io():
+    return StringIO()
 
 class MyCli(Cli):
 
@@ -56,8 +59,8 @@ class LazyTests(unittest.TestCase):
         with patch.dict('os.environ', {'IKTOMI_AUTO_COMPLETE':'1',
                                        'COMP_WORDS':argv.replace(":", " : "),
                                        'COMP_CWORD':'2' }):
-            out = BytesIO()
+            out = StringIO()
             with patch.object(sys, 'stdout', out):
                 with self.assertRaises(SystemExit):
                     manage(dict(fruit=cli), argv.split())
-            self.assertEqual(b'run', out.getvalue())
+            self.assertEqual('run', out.getvalue())
