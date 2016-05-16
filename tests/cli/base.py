@@ -5,7 +5,7 @@ import datetime
 from iktomi.cli.base import Cli, manage, argument
 import six
 
-from io import BytesIO, TextIOWrapper, StringIO
+from io import StringIO
 
 __all__ = ['CliTest']
 
