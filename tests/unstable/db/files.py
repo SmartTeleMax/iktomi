@@ -2,12 +2,7 @@ import unittest, os, tempfile, shutil
 from iktomi.unstable.db.files import TransientFile, PersistentFile, \
                                      FileManager, ReadonlyFileManager
 from webob import Request
-import six
-if six.PY2:
-    from cStringIO import StringIO as BytesIO
-else:
-    from io import BytesIO
-import logging
+from io import BytesIO
 
 try:
     from uniitest.mock import patch

@@ -3,12 +3,7 @@ import sys
 import unittest
 from iktomi.cli.lazy import LazyCli
 from iktomi.cli.base import Cli, manage
-import six
-
-if six.PY2:
-    from cStringIO import StringIO as BytesIO
-else:
-    from io import BytesIO
+from io import BytesIO
 
 try:
     from unittest.mock import patch

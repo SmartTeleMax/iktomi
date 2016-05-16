@@ -5,10 +5,7 @@ import datetime
 from iktomi.cli.base import Cli, manage, argument
 import six
 
-if six.PY2:
-    from cStringIO import StringIO as BytesIO
-else:
-    from io import BytesIO
+from io import BytesIO
 
 __all__ = ['CliTest']
 
