@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-import os
+#import os
 
-from iktomi.forms import *
-from iktomi.forms import widgets
-from iktomi.ext.filefields import FileFieldSet, FileFieldSetConv, \
-                                      TempUploadedFile
+from iktomi.forms import Form, convs, widgets
+from iktomi.forms.fields import Field
+from iktomi.unstable.forms.files import FileFieldSet, FileFieldSetConv#, \
+        #                                      TempUploadedFile
 
-import cfg
+#import cfg
 
 
-class MyUploadedFile(TempUploadedFile):
+#class MyUploadedFile(TempUploadedFile):
+#
+#    temp_path = os.path.join(cfg.MEDIA, 'temp')
+#    temp_url = '/media/temp/'
 
-    temp_path = os.path.join(cfg.MEDIA, 'temp')
-    temp_url = '/media/temp/'
 
 def check_terms(conv, value):
     if not value:
@@ -27,7 +28,7 @@ class FileForm(Form):
               conv=convs.Bool(check_terms),
               widget=widgets.CheckBox()),
         FileFieldSet('file', label='File',
-                     file_cls=MyUploadedFile,
+                     #file_cls=MyUploadedFile,
                      conv=FileFieldSetConv(required=True),
                      widget=FileFieldSet.widget(template='fileinput.html')),
     ]
@@ -45,12 +46,12 @@ class FileForm(Form):
 #    ]
 
 
-class SimpleFileForm(Form):
-    #template='forms/paragraph.html'
-
-    fields = [
-        FileField('file', label='File',
-                  conv=convs.SimpleFile(),
-                  widget=widgets.Widget(template='widgets/file.html')),
-    ]
-
+#class SimpleFileForm(Form):
+#    #template='forms/paragraph.html'
+#
+#    fields = [
+#        FileField('file', label='File',
+#                  conv=convs.SimpleFile(),
+#                  widget=widgets.Widget(template='widgets/file.html')),
+#    ]
+#

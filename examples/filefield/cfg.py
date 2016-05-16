@@ -8,6 +8,7 @@ RUN_DIR = path.join(cur_dir, 'run')
 LOG_DIR = path.join(cur_dir, 'log')
 IKTOMI_FORMS_DIR = path.dirname(path.abspath(jnj2.__file__))
 
+
 def rel(*args):
     args = [cur_dir] + list(args)
     return path.join(*args)
@@ -17,7 +18,10 @@ TEMPLATES = [rel('templates'),
              path.join(IKTOMI_FORMS_DIR, 'templates')]
 
 STATIC = rel('static')
-MEDIA = rel('media')
+MEDIA_DIR = rel('media')
+FORM_TEMP = rel('form-temp')
+FORM_TEMP_URL = '/form-temp/'
+MEDIA_URL = '/media/'
 
 # Do not change defaults, overwrite params in FASTCGI_PARAMS instead
 FASTCGI_PREFORKED_DEFAULTS = dict(
