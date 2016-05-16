@@ -110,12 +110,3 @@ class BoundTemplate(object):
         resp = self.render(template_name, __data)
         return Response(resp,
                         content_type=content_type)
-
-
-def render_to(self, template_name):
-    @request_filter
-    def render_to(env, data, next_handler):
-        data.env = env
-        return Response(env.template.render(template_name, **data))
-    return render_to
-
