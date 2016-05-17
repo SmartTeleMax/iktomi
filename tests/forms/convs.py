@@ -555,6 +555,14 @@ class PasswordConvTests(unittest.TestCase):
                                'pass.conf': ''}))
         self.assertEqual(list(form.errors.keys()), ['pass'])
 
+    def test_get_initial(self):
+        Form = self.get_form(required=True)
+
+        env = AppEnvironment.create()
+        form = Form(env)
+        conv = form.get_field('pass').conv
+        self.assertEqual(conv.get_initial(), '')
+
 
 class HtmlTests(unittest.TestCase):
 

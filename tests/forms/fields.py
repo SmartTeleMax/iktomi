@@ -3,6 +3,7 @@ import unittest
 from webob import Request
 from iktomi.forms import Form, FieldSet, FieldList, FieldBlock, Field, \
             FileField, convs
+from iktomi.forms.shortcuts import PasswordSet
 from iktomi.web.app import AppEnvironment
 
 from webob.multidict import MultiDict
@@ -56,6 +57,8 @@ class FieldTests(unittest.TestCase):
                          '%s is not instance of %s' % (nm, cls))
             self.assertEqual(form.get_field(nm).input_name, nm)
 
+        self.assertEqual(None, form.get_field('fieldset.fieldlist.asd'))
+
         nm, cls = ('block.blocksubfield', Field)
         self.assert_(isinstance(form.get_field(nm), cls),
                      '%s is not instance of %s' % (nm, cls))
@@ -108,7 +111,8 @@ class FieldTests(unittest.TestCase):
                 return value
 
         class F(Form):
-            fields = [FieldBlock('', fields=[
+            fields = [Field('top', conv=convs.Int(), initial=246),
+                      FieldBlock('', fields=[
                           Field('num',
                                 conv=convs.Int()),
                           Field('f2',
@@ -117,6 +121,7 @@ class FieldTests(unittest.TestCase):
 
         env = AppEnvironment.create()
         form = F(env)
+        self.assertEqual(form.get_field('top').clean_value, 246)
         self.assertEqual(form.get_field('num').clean_value, None)
 
         form = F(env, initial={'num': 2})
@@ -244,6 +249,19 @@ class FieldBlockTests(unittest.TestCase):
         self.assertEqual(form.get_field('title').raw_value, '')
         self.assertEqual(form.errors, {})
 
+
+class PasswordSetTest(unittest.TestCase):
+
+    def test_mismatch(self):
+        class _Form(Form):
+            fields=[PasswordSet()]
+        env = AppEnvironment.create()
+        form = _Form(env)
+        accept = form.accept({'password.pass':'first', 'password.conf':'second'})
+
+        self.assertEqual([('password', 'password and confirm mismatch')],
+                         form.errors.items())
+        self.assertFalse(accept)
 
 
 class FileFieldTests(unittest.TestCase):

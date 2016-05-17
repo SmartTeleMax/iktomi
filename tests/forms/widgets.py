@@ -63,6 +63,10 @@ class TestTextInput(TestFormClass):
             fields = [
                 Field('name',
                       conv=convs.Char(),
+                      widget=self.widget(classname="cls")),
+                Field('unreadable',
+                      permissions="w",
+                      conv=convs.Char(),
                       widget=self.widget(classname="cls"))
             ]
 
@@ -75,6 +79,8 @@ class TestTextInput(TestFormClass):
         self.assertEqual(value, '<p>Paragraph</p>')
         self.assertEqual(html.xpath('.//'+self.tag+'/@readonly'), [])
         self.assertEqual(html.xpath('.//'+self.tag+'/@class'), ['cls'])
+        render = form.get_field('unreadable').widget.render()
+        self.assertEqual(render, '')
 
     def test_escape(self):
         class F(Form):

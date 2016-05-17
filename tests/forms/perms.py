@@ -26,3 +26,26 @@ class PermissionsTests(unittest.TestCase):
         self.assertEqual(form.get_field('second').permissions, set('r'))
         self.assertEqual(form.get_field('first').permissions, set('r'))
 
+    def test_get_perms(self):
+        class F(Form):
+            fields=[
+                Field('first', permissions='rw'),
+                Field('second'),
+            ]
+        env = AppEnvironment.create()
+        form = F(env, permissions='rwx')
+        first = form.get_field('first')
+        second = form.get_field('second')
+        self.assertEqual(first.perm_getter.get_perms(first), set(['r', 'w']))
+        self.assertEqual(second.perm_getter.get_perms(second), set(['r', 'w', 'x']))
+
+    def test_perm_getter_repr(self):
+        class F(Form):
+            fields=[
+                Field('first', permissions='rw'),
+                Field('second'),
+            ]
+        env = AppEnvironment.create()
+        form = F(env, permissions='rwx')
+        field = form.get_field('first')
+        self.assertEqual(repr(field.perm_getter), "FieldPerm(set(['r', 'w']))")
