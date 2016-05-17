@@ -180,9 +180,6 @@ class FormErrorsTests(unittest.TestCase):
                     pass
         self.assertRaises(TypeError, get_form)
 
-    if six.PY3:
-        test_form__clean = unittest.skip('This is deprecation check for old code')(test_form__clean)
-
 
 class FormClassAcceptTests(unittest.TestCase):
     def test_accept(self):
