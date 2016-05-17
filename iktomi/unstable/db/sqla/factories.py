@@ -32,9 +32,7 @@ class ModelFactories(object):
         return self.make_class(module, name, base_names, values)
 
     def make_class(self, module, name, base_names, values):
-
-        # unicode or py3.str or py2.str, not bytes!
-        is_string = lambda x: isinstance(x, six.text_type) or isinstance(x, str)
+        is_string = lambda x: isinstance(x, six.string_types)
 
         bases = tuple(getattr(module, x) if is_string(x) else x
                       for x in base_names)

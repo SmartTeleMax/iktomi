@@ -79,7 +79,7 @@ class CookieAuth(web.WebHandler):
     __call__ = cookie_auth
 
     def login_identity(self, user_identity, response=None, path='/'):
-        key = binascii.hexlify(os.urandom(10)).decode('utf-8')
+        key = binascii.hexlify(os.urandom(10)).decode('ascii')
         response = web.Response() if response is None else response
         response.set_cookie(self._cookie_name, key, path=path)
         if not self.storage.set(self._cookie_name+':'+key,

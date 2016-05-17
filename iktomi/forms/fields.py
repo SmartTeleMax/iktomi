@@ -188,9 +188,7 @@ class Field(BaseField):
         if not self.multiple:
             values = [values]
         for value in values:
-            if not (isinstance(value, six.text_type) \
-                    or isinstance(value, str)):
-                # unicode or py3.str or py2.str, not bytes!
+            if not isinstance(value, six.string_types):
                 self.form.errors[self.input_name] = 'Given value has incompatible type'
                 return False
         return True

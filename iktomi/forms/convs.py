@@ -316,10 +316,7 @@ class Char(CharBased):
         value = self.clean_value(value)
         if value and self.regex:
             regex = self.regex
-            if isinstance(regex, six.text_type) \
-                    or isinstance(regex, str):
-                # unicode or py3.str or py2.str, not bytes!
-
+            if isinstance(regex, six.string_types):
                 regex = re.compile(self.regex, re.U)
             if not regex.match(value):
                 error = self.error_regex % {'regex': self.regex}

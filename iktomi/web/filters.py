@@ -218,9 +218,7 @@ class by_method(cases):
     def __init__(self, handlers_dict, default_handler=None):
         handlers = []
         for methods, handler in handlers_dict.items():
-            if isinstance(methods, six.text_type) \
-                    or isinstance(methods, str):
-                # unicode or py3.str or py2.str, not bytes!
+            if isinstance(methods, six.string_types):
                 methods = (methods,)
             handlers.append(method(*methods, strict=False) | handler)
         if default_handler is not None:

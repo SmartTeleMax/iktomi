@@ -96,10 +96,7 @@ class Integer(Converter):
             return value
 
     def to_url(self, value):
-        if isinstance(value, six.text_type) \
-                or isinstance(value, str):
-            # unicode or py3.str or py2.str, not bytes!
-
+        if isinstance(value, six.string_types):
             # sometimes it is useful to build fake urls with placeholders,
             # to be replaced in JS to real values
             # For example:
@@ -151,10 +148,7 @@ class Date(Converter):
             raise ConvertError(self, value)
 
     def to_url(self, value):
-        if isinstance(value, six.text_type) \
-                or isinstance(value, str):
-            # unicode or py3.str or py2.str, not bytes!
-
+        if isinstance(value, six.string_types):
             # sometimes it is useful to build fake urls with placeholders,
             # to be replaced in JS to real values
             # For example:
