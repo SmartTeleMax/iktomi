@@ -1,5 +1,5 @@
 {{ field.get_field('mode').widget.render()|safe }}
-{{ field.get_field('temp_name').widget.render()|safe }}
+{{ field.get_field('transient_name').widget.render()|safe }}
 {{ field.get_field('original_name').widget.render()|safe }}
 
 {% set value = field.clean_value %}
@@ -12,11 +12,6 @@
             uploaded temporary file
         {% endif %}
     </a><br/>
-    {% if not required %}
-        {{ field.get_field('delete').widget.render()|safe }}
-        <label for="{{ field.get_field('delete').id }}">delete</label>
-        <br/>
-    {% endif %}
 {% endif %}
 
 {{ field.get_field('file').widget.render()|safe }}

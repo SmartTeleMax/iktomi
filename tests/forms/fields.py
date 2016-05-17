@@ -96,7 +96,7 @@ class FieldTests(unittest.TestCase):
         env = AppEnvironment.create()
         form = F(env)
         self.assertEqual(form.accept(request.POST), False)
-        self.assertEqual(form.errors.keys(), ['inp'])
+        self.assertEqual(list(form.errors.keys()), ['inp'])
 
     def test_clean_value(self):
         class AssertConv(convs.Int):
@@ -256,7 +256,7 @@ class FileFieldTests(unittest.TestCase):
         request = Request.blank('/', POST=dict(inp=('file.txt', 'ggg')))
         self.assert_(form.accept(request.POST),
                      form.errors)
-        self.assertEqual(form.python_data['inp'].file.read(), 'ggg')
+        self.assertEqual(form.python_data['inp'].file.read(), b'ggg')
 
     def test_check_value_type(self):
         '''Pass string value to FileField'''
@@ -265,4 +265,4 @@ class FileFieldTests(unittest.TestCase):
         request = Request.blank('/', POST=dict(inp='ggg'))
         form = F()
         self.assertEqual(form.accept(request.POST), False)
-        self.assertEqual(form.errors.keys(), ['inp'])
+        self.assertEqual(list(form.errors.keys()), ['inp'])

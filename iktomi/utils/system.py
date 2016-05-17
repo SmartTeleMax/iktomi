@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, sys, time, errno
+import os, sys, time, errno, six, io
 
 
 def is_running(pid):
@@ -67,7 +67,12 @@ def doublefork(pidfile, logfile, cwd, umask): # pragma: nocover
         sys.exit('fork #2 failed: ({}) {}'.format(e.errno, e.strerror))
     if logfile is not None:
         si = open('/dev/null')
-        so = open(logfile, 'a+', 0)
+        if six.PY2:
+            so = open(logfile, 'a+', 0)
+        else:
+            so = io.open(logfile, 'ab+', 0)
+            so = io.TextIOWrapper(so, write_through=True, encoding="utf-8")
+
         os.dup2(si.fileno(), 0)
         os.dup2(so.fileno(), 1)
         os.dup2(so.fileno(), 2)

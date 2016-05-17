@@ -1,4 +1,5 @@
 import os, logging
+import six
 from PIL import Image
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.util import identity_key
@@ -41,6 +42,8 @@ class ImageEventHandlers(FileEventHandlers):
         if self.prop.image_sizes:
             session = object_session(target)
             persistent_name = getattr(target, self.prop.attribute_name)
+            if isinstance(persistent_name, six.binary_type):
+                persistent_name = persistent_name.decode('utf-8')
             pn, ext = os.path.splitext(persistent_name)
 
             image_crop = self.prop.resize(image, self.prop.image_sizes)
@@ -65,7 +68,7 @@ class ImageEventHandlers(FileEventHandlers):
             if pn + ext != persistent_name:
                 persistent_name = pn + ext
                 # XXX hack?
-                setattr(target, self.prop.attribute_name, persistent_name)
+                setattr(target, self.prop.attribute_name, persistent_name.encode('utf-8'))
 
             image_attr = getattr(target.__class__, self.prop.key)
             file_manager = persistent = session.find_file_manager(image_attr)

@@ -197,7 +197,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.accept('unknown')
         self.assertEqual(value, None)
-        self.assertEqual(conv.field.form.errors.keys(), [])
+        self.assertEqual(list(conv.field.form.errors.keys()), [])
 
     def test_accept_missing_value(self):
         'Accept method of EnumChoice converter for None value'
@@ -217,7 +217,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
 
         value = conv.accept('')
         self.assertEqual(value, None)
-        self.assertEqual(conv.field.form.errors.keys(),
+        self.assertEqual(list(conv.field.form.errors.keys()),
                          [conv.field.name])
 
     def test_decline_invalid_value(self):
@@ -227,7 +227,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
         ], conv=convs.Int(), required=True))
         value = conv.accept('invalid')
         self.assertEqual(value, None)
-        self.assertEqual(conv.field.form.errors.keys(),
+        self.assertEqual(list(conv.field.form.errors.keys()),
                          [conv.field.name])
 
     def test_decline_missing_value(self):
@@ -237,7 +237,7 @@ class EnumChoiceConverterTests(unittest.TestCase):
         ], conv=convs.Int(), required=True))
         value = conv.accept('2')
         self.assertEqual(value, None)
-        self.assertEqual(conv.field.form.errors.keys(),
+        self.assertEqual(list(conv.field.form.errors.keys()),
                          [conv.field.name])
 
     def test_from_python(self):
@@ -283,7 +283,7 @@ class CharConverterTests(unittest.TestCase):
         conv.accept('AAA')
         field_name = conv.field.name
         errors = conv.field.form.errors
-        self.assertEqual(conv.field.form.errors.keys(), [field_name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [field_name])
         self.assert_(conv.regex in errors[field_name])
 
     def test_from_python(self):
@@ -311,7 +311,7 @@ class CharConverterTests(unittest.TestCase):
         value = conv.accept(' ')
         self.assertEqual(value, None) # XXX
         field_name = conv.field.name
-        self.assertEqual(conv.field.form.errors.keys(), [field_name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [field_name])
 
     def test_replace_nontext(self):
         'convs.Char.strip tests for required'
@@ -500,12 +500,12 @@ class SplitDateTimeTests(unittest.TestCase):
         form = Form(env)
         form.accept(MultiDict({'dt.date': '',
                                'dt.time': '13:32'}))
-        self.assertEqual(form.errors.keys(), ['dt'])
+        self.assertEqual(list(form.errors.keys()), ['dt'])
 
         form = Form(env)
         form.accept(MultiDict({'dt.date': '24.03.2013',
                                'dt.time': ''}))
-        self.assertEqual(form.errors.keys(), ['dt'])
+        self.assertEqual(list(form.errors.keys()), ['dt'])
 
     def test_back(self):
         conv = init_conv(convs.SplitDateTime)
@@ -544,7 +544,7 @@ class PasswordConvTests(unittest.TestCase):
         form.accept(MultiDict({'pass.pass': '123123',
                                'pass.conf': '123'}))
         self.assertEqual(form.python_data, {'pass': None})
-        self.assertEqual(form.errors.keys(), ['pass'])
+        self.assertEqual(list(form.errors.keys()), ['pass'])
 
     def test_required(self):
         Form = self.get_form(required=True)
@@ -553,7 +553,7 @@ class PasswordConvTests(unittest.TestCase):
         form = Form(env)
         form.accept(MultiDict({'pass.pass': '',
                                'pass.conf': ''}))
-        self.assertEqual(form.errors.keys(), ['pass'])
+        self.assertEqual(list(form.errors.keys()), ['pass'])
 
 
 class HtmlTests(unittest.TestCase):
@@ -636,7 +636,7 @@ class HtmlTests(unittest.TestCase):
         conv = init_conv(convs.Html(convs.length(100, 1000)))
 
         self.assertEqual(conv.accept('<p>Hello!</p>'), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
 
     def test_tag_wrapping(self):
         conv = init_conv(convs.Html(wrap_inline_tags=True,
@@ -660,11 +660,11 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual(conv.field.form.errors, {})
 
         self.assertEqual(conv.accept('1'), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
         conv.field.form.errors = {}
 
         self.assertEqual(conv.accept('1'*5), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
         conv.field.form.errors = {}
 
         conv = init_conv(convs.Char(convs.length(2, 2)))
@@ -685,11 +685,11 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual(conv.field.form.errors, {})
 
         self.assertEqual(conv.accept('0'), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
         conv.field.form.errors = {}
 
         self.assertEqual(conv.accept('5'), None)
-        self.assertEqual(conv.field.form.errors.keys(), [conv.field.name])
+        self.assertEqual(list(conv.field.form.errors.keys()), [conv.field.name])
         conv.field.form.errors = {}
 
 

@@ -4,6 +4,7 @@ from iktomi.unstable.forms.files import FileFieldSet
 from iktomi.forms import Form
 from iktomi.web.app import AppEnvironment
 from webob.multidict import MultiDict
+from io import BytesIO
 
 
 class FormWithFile(Form):
@@ -33,7 +34,7 @@ class FormFilesTests(unittest.TestCase):
     def _create_persistent(self):
         f = self.file_manager.get_persistent('test.txt')
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         return f
 
     def _create_transient(self, content, original_name='test.txt'):
@@ -42,14 +43,15 @@ class FormFilesTests(unittest.TestCase):
             fp.write(content)
         return f
 
-    def _create_fs(self, mimetype, content, filename='uploaded.txt'):
-        fs = cgi.FieldStorage()
-        fs.file = fs.make_file()
-        fs.type = mimetype
-        fs.file.write(content)
-        fs.file.seek(0)
-        fs.filename = filename
-        return fs
+    def _create_fs(self, mimetype, content, filename='uploaded.txt', name="file"):
+        # http://stackoverflow.com/questions/12032807/how-to-create-cgi-fieldstorage-for-testing-purposes
+        content = content.encode('utf-8')
+        m = {u'content-disposition': u'form-data; name="{}"; filename="{}"'.format(name, filename),
+             u'content-length': len(content),
+             u'content-type': mimetype}
+        environ = {'REQUEST_METHOD': 'POST'}
+        fp = BytesIO(content)
+        return cgi.FieldStorage(fp=fp, headers=m, environ=environ)
 
     def test_none2empty(self):
         form = FormWithFile(self.env)
@@ -61,7 +63,7 @@ class FormFilesTests(unittest.TestCase):
         self.assertEqual(data['file'], None)
 
     def test_transient2empty(self):
-        transient = self._create_transient('transient1')
+        transient = self._create_transient(b'transient1')
         form = FormWithFile(self.env)
         form.accept(MultiDict({'file.file': None,
                                'file.original_name': 'test.txt',
@@ -129,7 +131,7 @@ class FormFilesTests(unittest.TestCase):
 
     def test_transient2persistent(self):
         persistent = self._create_persistent()
-        transient = self._create_transient('transient1')
+        transient = self._create_transient(b'transient1')
         form = FormWithFile(self.env, initial={'file': persistent})
         form.accept(MultiDict({'file.file': None,
                                'file.original_name': 'test.txt',

@@ -2,6 +2,7 @@
 
 import logging
 from iktomi import web
+from iktomi.unstable.db.files import FileManager
 from iktomi.templates import Template, BoundTemplate as BaseBoundTemplate
 from iktomi.templates.jinja2 import TemplateEngine
 from iktomi.utils.storage import storage_cached_property
@@ -17,9 +18,12 @@ static = web.static_files('static')
 jinja_loader = TemplateEngine(cfg.TEMPLATES)
 template_loader = Template(engines={'html': jinja_loader},
                            *cfg.TEMPLATES)
+file_manager = FileManager(cfg.FORM_TEMP, cfg.MEDIA_DIR,
+                           cfg.FORM_TEMP_URL, cfg.MEDIA_URL)
 
 class Environment(web.AppEnvironment):
     cfg = cfg
+    file_manager = file_manager
 
     @cached_property
     def url_for(self):

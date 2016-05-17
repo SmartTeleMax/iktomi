@@ -46,7 +46,7 @@ class ApplicationTests(unittest.TestCase):
         response = wa.handle(env, data)
         assert isinstance(response, Response)
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'index')
+        self.assertEqual(response.body, b'index')
 
     def test_returned_none(self):
         wa = self.wsgi_app
@@ -98,7 +98,7 @@ class ApplicationTests(unittest.TestCase):
 
     def test_wsgi(self):
         testapp = TA(self.wsgi_app)
-        self.assertEqual(testapp.get('/').body, 'index')
+        self.assertEqual(testapp.get('/').body, b'index')
 
     def test_env_class(self):
         class AppEnv(AppEnvironment): pass
@@ -107,7 +107,7 @@ class ApplicationTests(unittest.TestCase):
 
     def test_ivalid_hostname(self):
         app = TA(self.wsgi_app)
-        self.assertEqual(app.get('http://example.com/').body, 'index')
+        self.assertEqual(app.get('http://example.com/').body, b'index')
         app.get('http://.example.com/', status=404)
 
 

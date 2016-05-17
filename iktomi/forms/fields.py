@@ -2,10 +2,10 @@
 
 import logging
 
+import six
 import cgi
 import re
-import widgets
-from . import convs
+from . import convs, widgets
 from ..utils import cached_property
 from collections import OrderedDict
 from .perms import FieldPerm
@@ -188,7 +188,7 @@ class Field(BaseField):
         if not self.multiple:
             values = [values]
         for value in values:
-            if not isinstance(value, basestring):
+            if not isinstance(value, six.string_types):
                 self.form.errors[self.input_name] = 'Given value has incompatible type'
                 return False
         return True
@@ -448,8 +448,8 @@ class FileField(Field):
         if not self.multiple:
             values = [values]
         for value in values:
-            if value and \
-               not isinstance(value, cgi.FieldStorage) and \
+            if not isinstance(value, cgi.FieldStorage) and \
+               value and \
                not hasattr(value, 'read'): # XXX is this right?
                 self.form.errors[self.input_name] = 'Given value is not file'
                 return False

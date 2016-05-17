@@ -37,7 +37,10 @@ class Location(object):
 
     @property
     def url_arguments(self):
-        return reduce(lambda x,y: x|set(y._url_params), self.builders, set())
+        result = set()
+        for builder in self.builders:
+            result |= set(builder._url_params)
+        return result
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \

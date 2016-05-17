@@ -12,7 +12,7 @@ class RouteState(object):
         self.primary_subdomains = () # tuple to be sure it's readonly
         self.primary_domain = ''
         # remaining subdomain part for match
-        self._domain = request.host.split(':', 1)[0].decode('idna')
+        self._domain = request.host.split(':', 1)[0].encode('utf-8').decode('idna')
         self.subdomain = self._domain
         self.request = request
 

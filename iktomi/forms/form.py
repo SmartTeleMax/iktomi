@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from webob.multidict import MultiDict
+import six
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
@@ -19,13 +20,12 @@ class FormValidationMetaClass(type):
         return type.__new__(mcs, name, bases, dict_)
 
 
-class Form(object):
+class Form(six.with_metaclass(FormValidationMetaClass, object)):
 
     template = 'forms/default'
     media = FormMedia()
     permissions = DEFAULT_PERMISSIONS
     id = ''
-    __metaclass__ = FormValidationMetaClass
 
     def __init__(self, env=None, initial=None, name=None, permissions=None):
         initial = initial or {}

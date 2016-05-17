@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from urllib import quote
+import six
+if six.PY2:
+    from urllib import quote
+else:
+    from urllib.parse import quote
+
 from iktomi.web.reverse import URL
 from iktomi.web.url_templates import UrlTemplate
 from iktomi.web.url_converters import Converter, ConvertError
@@ -18,16 +23,22 @@ class URLTests(unittest.TestCase):
     def test_rendering_with_params(self):
         'Url with params'
         u = URL('/path/to/something', query=dict(id=3, page=5, title='title'))
-        self.assertEqual(u, '/path/to/something?title=title&id=3&page=5')
+        self.assertIn(u, ['/path/to/something?title=title&id=3&page=5',
+                          '/path/to/something?title=title&page=5&id=3',
+                          '/path/to/something?id=3&page=5&title=title',
+                          '/path/to/something?id=3&title=title&page=5',
+                          '/path/to/something?page=5&id=3&title=title',
+                          '/path/to/something?page=5&title=title&id=3',])
 
     def test_param_set(self):
         'Set new param in url'
-        u = URL('/path/to/something', query=dict(id=3, page=5, title='title'))
+        u = URL('/path/to/something', query=[('title', 'title'), ('id', 3), ('page', 5)])
         self.assertEqual(u, '/path/to/something?title=title&id=3&page=5')
         u = u.qs_set(page=6)
         self.assertEqual(u, '/path/to/something?title=title&id=3&page=6')
         u = u.qs_set(page=7, title='land')
-        self.assertEqual(u, '/path/to/something?id=3&page=7&title=land')
+        self.assertIn(u, ['/path/to/something?id=3&page=7&title=land',
+                          '/path/to/something?id=3&title=land&page=7'])
 
     def test_param_delete(self):
         'Set new param in url'
@@ -41,7 +52,8 @@ class URLTests(unittest.TestCase):
     def test_params_set_args(self):
         'Use multidict to set params in url'
         url = URL('/')
-        self.assertEqual(url.qs_set(a=1, b=2), '/?a=1&b=2')
+        self.assertIn(url.qs_set(a=1, b=2), ['/?a=1&b=2',
+                                             '/?b=2&a=1'])
         url = url.qs_set([('a', '1'), ('a', '2'), ('b', '3')])
         self.assertEqual(url, '/?a=1&a=2&b=3')
         self.assertEqual(url.qs_set([('a', '1'), ('c', '2')]), '/?b=3&a=1&c=2')
@@ -50,7 +62,9 @@ class URLTests(unittest.TestCase):
     def test_param_add_args(self):
         'Add param to url'
         url = URL('/')
-        self.assertEqual(url.qs_add([('a', 1), ('c', 3)], a=2, b=2), '/?a=1&c=3&a=2&b=2')
+        self.assertIn(url.qs_add([('a', 1), ('c', 3)], a=2, b=2),
+                        ['/?a=1&c=3&a=2&b=2',
+                         '/?a=1&c=3&b=2&a=2'])
 
     def test_param_get(self):
         'Get param from url'
@@ -85,7 +99,7 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.host, 'example.com')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
-        self.assertEqual(url.query.items(), [('a' ,'1'), ('b', '2'), ('b', '3')])
+        self.assertEqual(set(url.query.items()), {('a' ,'1'), ('b', '2'), ('b', '3')})
         self.assertEqual(url.show_host, False)
 
     def test_from_url_unicode(self):
@@ -102,7 +116,7 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.host, '')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
-        self.assertEqual(url.query.items(), [('a' ,'1'), ('b', '2'), ('b', '3')])
+        self.assertEqual(set(url.query.items()), {('a' ,'1'), ('b', '2'), ('b', '3')})
 
     def test_from_url_idna(self):
         url = URL.from_url(b'http://xn--80aswg.xn--p1ai/%D1%83%D1%80%D0%BB/?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA')
@@ -118,7 +132,7 @@ class URLTests(unittest.TestCase):
                          u'/search?q=hello�')
 
     def test_cyrillic_path(self):
-        url1 = URL.from_url('http://test.ru/тест') # encoded unicode
+        url1 = URL.from_url(u'http://test.ru/тест'.encode('utf-8')) # encoded unicode
         url2 = URL.from_url(u'http://test.ru/тест') # decoded unicode
         # should work both without errors
         self.assertEqual(url1.path, '/%D1%82%D0%B5%D1%81%D1%82')

@@ -60,7 +60,7 @@ class CookieAuthTests(unittest.TestCase):
         '`Auth` anonymouse access'
         response = web.ask(self.app, '/a')
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'ok')
+        self.assertEqual(response.body, b'ok')
 
         response = web.ask(self.app, '/b')
         self.assertEqual(response.status_int, 303)
@@ -78,7 +78,7 @@ class CookieAuthTests(unittest.TestCase):
         response = self.login('user name', '123')
         response = web.ask(self.app, '/b', headers={'Cookie': response.headers['Set-Cookie']})
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'ok')
+        self.assertEqual(response.body, b'ok')
 
     def test_logout_anonymouse(self):
         '`Auth` logout of anonymouse'
@@ -137,7 +137,7 @@ class CookieAuthTestsOnStorageDown(unittest.TestCase):
         '`Auth` anonymouse access'
         response = web.ask(self.app, '/a')
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'ok')
+        self.assertEqual(response.body, b'ok')
 
         response = web.ask(self.app, '/b')
         self.assertEqual(response.status_int, 303)
@@ -213,7 +213,7 @@ class SqlaModelAuthTests(unittest.TestCase):
         cookie = response.headers['Set-Cookie']
         response = web.ask(self.app, '/b', headers={'Cookie': cookie})
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'ok')
+        self.assertEqual(response.body, b'ok')
 
         response = web.ask(self.app, '/logout', data={}, headers={'Cookie': cookie})
         self.assertEqual(response.status_int, 303)
@@ -224,10 +224,10 @@ class SqlaModelAuthTests(unittest.TestCase):
         '`SqlaModelAuth` login fail: wrong pass'
         response = self.login('user name', '12')
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'please login')
+        self.assertEqual(response.body, b'please login')
 
     def test_login_fail_no_user(self):
         '`SqlaModelAuth` login fail: no user registered'
         response = self.login('user', '12')
         self.assertEqual(response.status_int, 200)
-        self.assertEqual(response.body, 'please login')
+        self.assertEqual(response.body, b'please login')

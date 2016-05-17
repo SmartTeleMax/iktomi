@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 import unittest
 from os import path
 from webob.multidict import MultiDict
@@ -90,7 +91,7 @@ class TestTextInput(TestFormClass):
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '<p>Paragraph</p>')
-        self.assert_('&lt;p&gt;Paragraph&lt;/p&gt;' in unicode(render), render)
+        self.assert_('&lt;p&gt;Paragraph&lt;/p&gt;' in six.text_type(render), render)
 
 
     def test_render_readonly(self):
@@ -136,7 +137,7 @@ class TestTextarea(TestTextInput):
         html = self.parse(render)
         value = self.get_value(html)
         self.assertEqual(value, '</textarea>')
-        self.assert_('&lt;/textarea&gt;' in unicode(render), render)
+        self.assert_('&lt;/textarea&gt;' in six.text_type(render), render)
 
 
 class TestCheckBox(TestFormClass):

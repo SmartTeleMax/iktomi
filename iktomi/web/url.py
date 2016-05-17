@@ -2,24 +2,43 @@
 
 __all__ = ['URL']
 
-import urllib
-from urlparse import urlparse, parse_qs
+import six
+if six.PY2:
+    from urlparse import urlparse, parse_qs, unquote
+else:
+    from urllib.parse import urlparse, parse_qs, unquote
 from webob.multidict import MultiDict
 from .url_templates import urlquote
+
+_path_symbols = set(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                    u"0123456789._~!$&'()*+,;=:@%-/")
 
 
 def construct_url(path, query, host, port, schema):
     query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
-                            for k, v in query.iteritems())
+                            for k, v in six.iteritems(query))
              if query else '')
 
-    path = path
     if host:
-        host = host.encode('idna')
+        host = host.encode('idna').decode('utf-8')
         port = ':' + port if port else ''
         return ''.join((schema, '://', host, port, path,  query))
     else:
         return path + query
+
+if six.PY2:
+    def _parse_qs(query):
+        query = query.encode('utf-8')
+        return sum([[(k.decode('utf-8', errors="replace"),
+                      v.decode('utf-8', errors="replace"))
+                     for v in values]
+                    for k, values in parse_qs(query).items()], [])
+else:
+    def _parse_qs(query):
+        return sum([[(k, v) for v in values]
+                     for k, values in parse_qs(query).items()], [])
+
+
 
 
 class URL(str):
@@ -29,7 +48,10 @@ class URL(str):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        path = path if isinstance(path, str) else urlquote(path)
+        if isinstance(path, six.binary_type):
+            path = path.decode('utf-8') # XXX
+        if set(path) - _path_symbols:
+            path = urlquote(path)
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
@@ -43,26 +65,33 @@ class URL(str):
         self.show_host = show_host
         return self
 
+
     @classmethod
     def from_url(cls, url, show_host=True):
         '''Parse string and get URL instance'''
         # url must be idna-encoded and url-quotted
-        url = urlparse(url)
-        query = sum([[(k.decode('utf-8', errors="replace"),
-                       v.decode('utf-8', errors="replace"))
-                      for v in values]
-                     for k, values in parse_qs(url.query).items()], [])
-        host = url.netloc.split(':', 1)[0] if ':' in url.netloc else url.netloc
-        if isinstance(host, unicode):
-            host = host.encode('idna')
 
-        port = url.netloc.split(':')[1] if ':' in url.netloc else ''
-        path = urllib.unquote(url.path)
-        if isinstance(url.path, str):
-            path = path.decode('utf-8')
+        if six.PY2:
+            if isinstance(url, six.text_type):
+                url = url.encode('utf-8')
+            url = urlparse(url)
+            netloc = url.netloc.decode('utf-8') # XXX HACK
+        else:
+            if isinstance(url, six.binary_type):
+                url = url.decode('utf-8') # XXX
+            url = urlparse(url)
+            netloc = url.netloc
 
+        query = _parse_qs(url.query)
+        host = netloc.split(':', 1)[0] if ':' in netloc else netloc
+
+        # force decode idna from both encoded and decoded input
+        host = host.encode('idna').decode('idna')
+
+        port = netloc.split(':')[1] if ':' in netloc else ''
+        path = unquote(url.path)
         return cls(path,
-                   query, host.decode('idna'),
+                   query, host,
                    port, url.scheme, show_host)
 
     def _copy(self, **kwargs):
@@ -122,10 +151,15 @@ class URL(str):
     def get_readable(self):
         '''Gets human-readable representation of the url (as unicode string)'''
         query = (u'?' + u'&'.join(u'{}={}'.format(k, v)
-                                  for k, v in self.query.iteritems())
+                                  for k, v in six.iteritems(self.query))
                  if self.query else '')
 
-        path = urllib.unquote(self.path).decode('utf-8')
+        if six.PY2:
+            # in PY2 unquote returns encoded value of the type it has accepted
+            path = unquote(self.path.encode('utf-8')).decode('utf-8')
+        else:
+            # in PY3 is accepts and returns decoded str
+            path = unquote(self.path)
         if self.host:
             port = u':' + self.port if self.port else u''
             return u''.join((self.schema, '://', self.host, port, path,  query))

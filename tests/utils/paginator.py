@@ -48,7 +48,7 @@ class PaginatorTests(unittest.TestCase):
             return [x.page for x in paginator.pages]
         paginator = Paginator(count=10,
                               request=Request.blank('/news'))
-        paginator.items = paginator.slice(range(8))
+        paginator.items = paginator.slice(list(range(8)))
 
         self.assertEqual(paginator.count, 10)
         self.assertEqual(paginator.page, 1)
@@ -64,7 +64,7 @@ class PaginatorTests(unittest.TestCase):
         paginator = Paginator(limit=4,
                               count=8,
                               request=Request.blank('/news?page=3'))
-        paginator.items = paginator.slice(range(8))
+        paginator.items = paginator.slice(list(range(8)))
 
         self.assertEqual(paginator.count, 8)
         self.assertEqual(paginator.page, 3)
@@ -86,7 +86,7 @@ class PaginatorTests(unittest.TestCase):
         paginator = Paginator(limit=4,
                               count=5,
                               request=Request.blank('/news?page=2'))
-        paginator.items = paginator.slice(range(5))
+        paginator.items = paginator.slice(list(range(5)))
 
         self.assertEqual(paginator.count, 5)
         self.assertEqual(paginator.page, 2)
@@ -264,8 +264,9 @@ class PaginatorTests(unittest.TestCase):
         self.assertEqual(paginator.slice(range(105)), range(90, 105))
 
         paginator.items = paginator.slice(range(105))
+        # XXX write a list of items
         self.assertEqual(list(paginator.enumerate()),
-                         zip(range(91, 106), range(90, 105)))
+                         list(zip(range(91, 106), range(90, 105))))
         # using orphans, count=106, orphans = 5, should be 11 pages
         paginator = Paginator(request=request,
                               count=106,
@@ -277,4 +278,4 @@ class PaginatorTests(unittest.TestCase):
 
         paginator.items = paginator.slice(range(106))
         self.assertEqual(list(paginator.enumerate()),
-                         zip(range(91, 101), range(90, 100)))
+                         list(zip(range(91, 101), range(90, 100))))

@@ -136,7 +136,7 @@ class SqlaImagesTests(unittest.TestCase):
         obj = ObjWithImage()
         obj.image = f = self.file_manager.new_transient('.gif')
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.db.add(obj)
         with self.assertRaises(IOError):
             self.db.commit()

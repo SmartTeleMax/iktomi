@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from . import cached_property
-import math, itertools
+import math
+import six
+import itertools
+from six.moves import zip
+if six.PY3:
+    range = lambda *x: list(six.moves.range(*x)) # XXX
 from ..web.reverse import URL
 
 
@@ -104,6 +109,8 @@ class _PageURL(tuple):
     def __nonzero__(self):
         return self.page is not None
 
+    __bool__ = __nonzero__
+
 
 class Paginator(object):
     '''
@@ -139,6 +146,8 @@ class Paginator(object):
         # We have to check current page too in case the list of items just
         # shrunk to fit into one page.
         return bool(self.limit) and (self.pages_count>1 or self.page>1)
+
+    __bool__ = __nonzero__
 
     def invalid_page(self):
         '''This method is called when invalid (not positive int)
@@ -208,7 +217,7 @@ class Paginator(object):
 
     def enumerate(self):
         skipped = (self.page-1)*self.limit
-        return itertools.izip(itertools.count(skipped+1), self.items)
+        return zip(itertools.count(skipped+1), self.items)
 
     @cached_property
     def prev(self):

@@ -214,20 +214,20 @@ class Subdomain(unittest.TestCase):
         #     It is easy to change the behaviour, but which behaviour is
         #     correct?
         self.assertEqual(web.ask(app, 'http://ru.example.com/').body,
-                'domain1 / http://example.com/ '
-                'http://en.example.com/ http://en.example.com/')
+                b'domain1 / http://example.com/ '
+                b'http://en.example.com/ http://en.example.com/')
 
         self.assertEqual(web.ask(app, 'http://www.ru.example.ru/').body,
-                'domain1 / http://example.com/ '
-                'http://en.example.com/ http://en.example.com/')
+                b'domain1 / http://example.com/ '
+                b'http://en.example.com/ http://en.example.com/')
 
         self.assertEqual(web.ask(app, 'http://www.example.ru/').body,
-                'domain1 / http://example.com/ '
-                'http://en.example.com/ http://en.example.com/')
+                b'domain1 / http://example.com/ '
+                b'http://en.example.com/ http://en.example.com/')
 
         self.assertEqual(web.ask(app, 'http://moscow.example.ru/').body,
-                'domain3 http://example.com/ http://example.com/ '
-                'http://en.example.com/ http://en.example.com/')
+                b'domain3 http://example.com/ http://example.com/ '
+                b'http://en.example.com/ http://en.example.com/')
 
 
 class Match(unittest.TestCase):
@@ -345,8 +345,8 @@ class Method(unittest.TestCase):
             ('POST', 'PUT'): lambda e,d: Response('post'),
         })
 
-        self.assertEqual(web.ask(app, '/', method="PUT").body, 'post')
-        self.assertEqual(web.ask(app, '/', method="DELETE").body, 'delete')
+        self.assertEqual(web.ask(app, '/', method="PUT").body, b'post')
+        self.assertEqual(web.ask(app, '/', method="DELETE").body, b'delete')
         self.assertEqual(web.ask(app, '/').status_int, 405)
 
     def test_by_method_default(self):
@@ -355,8 +355,8 @@ class Method(unittest.TestCase):
             },
             default_handler=lambda e,d: Response('default'))
 
-        self.assertEqual(web.ask(app, '/', method="DELETE").body, 'delete')
-        self.assertEqual(web.ask(app, '/').body, 'default')
+        self.assertEqual(web.ask(app, '/', method="DELETE").body, b'delete')
+        self.assertEqual(web.ask(app, '/').body, b'default')
 
 
 class Namespace(unittest.TestCase):
@@ -422,7 +422,7 @@ class Static(unittest.TestCase):
         with open(os.path.join(self.root, 'x.html'), 'w') as f:
             f.write('x')
 
-        self.assertEqual(app.get('/media/x.html').body, 'x')
+        self.assertEqual(app.get('/media/x.html').body, b'x')
         self.assertEqual(app.get('/media/x.html').content_type, 'text/html')
         app.get('/media/404.txt', status=404)
         app.get('/nomedia/x.txt', status=404)

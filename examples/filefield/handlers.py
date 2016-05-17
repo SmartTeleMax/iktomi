@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import datetime, os
+import os
 from webob.exc import HTTPSeeOther
 
 from forms import FileForm as FileForm
-from webob.exc import HTTPSeeOther
 
-#from iktomi.ext.filefields import time_uid
 
 def prepair_dir(env):
-    dir_ = os.path.join(env.cfg.MEDIA, 'stored')
+    dir_ = os.path.join(env.cfg.MEDIA_DIR, 'stored')
     if not os.path.isdir(dir_):
         os.makedirs(dir_)
     return dir_
@@ -33,9 +31,9 @@ def post_file(env, data):
 
     if form.accept(env.request.POST):
         tmp_file = form.python_data['file']
-        if tmp_file and tmp_file.mode == 'temp':
-            new_path = os.path.join(dir_, tmp_file.uid + tmp_file.ext)
-            os.rename(tmp_file.full_path, new_path)
+        if tmp_file is not None:
+            new_path = os.path.join(dir_, tmp_file.file_name)
+            os.rename(tmp_file.path, new_path)
 
         raise HTTPSeeOther(location=env.request.url)
     return env.template.render_to_response('index', {
@@ -46,7 +44,7 @@ def post_file(env, data):
 
 
 def delete_files(env, data):
-    dir_ = os.path.join(env.cfg.MEDIA, 'stored')
+    dir_ = os.path.join(env.cfg.MEDIA_DIR, 'stored')
     f = env.request.GET.get('filename', '')
     filepath = os.path.join(dir_, f)
     if '/' not in f and os.path.isfile(filepath):

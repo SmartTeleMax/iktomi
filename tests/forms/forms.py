@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import six
 import unittest
 
 from iktomi.forms import *
@@ -169,7 +170,7 @@ class FormErrorsTests(unittest.TestCase):
 
     def test_form__clean(self):
         'Assert clean__ method existance causes errors'
-        def get_form():
+        with self.assertRaises(TypeError):
             class _Form(Form):
                 fields=[
                     Field('first', convs.Int()),
@@ -177,7 +178,6 @@ class FormErrorsTests(unittest.TestCase):
 
                 def clean__first(self, value):
                     pass
-        self.assertRaises(TypeError, get_form)
 
 
 class FormClassAcceptTests(unittest.TestCase):

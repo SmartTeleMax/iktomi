@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 
 from inspect import isclass
 from datetime import datetime
@@ -69,7 +70,9 @@ class String(Converter):
         return value
 
     def to_url(self, value):
-        return unicode(value)
+        if six.PY3 and isinstance(value, bytes):
+            raise TypeError() # pragma: no cover, safety check
+        return six.text_type(value)
 
     def check_len(self, value):
         length = len(value)
@@ -93,7 +96,7 @@ class Integer(Converter):
             return value
 
     def to_url(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             # sometimes it is useful to build fake urls with placeholders,
             # to be replaced in JS to real values
             # For example:
@@ -119,7 +122,9 @@ class Any(Converter):
         raise ConvertError(self, value)
 
     def to_url(self, value):
-        return unicode(value)
+        if six.PY3 and isinstance(value, bytes):
+            raise TypeError() # pragma: no cover, safety check
+        return six.text_type(value)
 
 
 class Date(Converter):
@@ -143,7 +148,7 @@ class Date(Converter):
             raise ConvertError(self, value)
 
     def to_url(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             # sometimes it is useful to build fake urls with placeholders,
             # to be replaced in JS to real values
             # For example:
@@ -158,7 +163,7 @@ default_converters = {'string': String,
                       'date': Date}
 
 # assert all defined converters are registered
-for item in globals().values():
+for item in list(globals().values()):
     if isclass(item) and \
        issubclass(item, Converter) and \
        not item is Converter:

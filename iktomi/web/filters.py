@@ -3,10 +3,11 @@
 __all__ = ['match', 'method', 'static_files', 'prefix', 
            'subdomain', 'namespace', 'by_method']
 
+import six
 import logging
 import os
 from os import path
-from urllib import unquote
+from six.moves.urllib.parse import unquote
 from webob.exc import HTTPMethodNotAllowed, HTTPNotFound
 from webob.static import FileApp
 from .core import WebHandler, cases
@@ -213,7 +214,7 @@ class by_method(cases):
     def __init__(self, handlers_dict, default_handler=None):
         handlers = []
         for methods, handler in handlers_dict.items():
-            if isinstance(methods, basestring):
+            if isinstance(methods, six.string_types):
                 methods = (methods,)
             handlers.append(method(*methods, strict=False) | handler)
         if default_handler is not None:
@@ -249,9 +250,7 @@ class subdomain(WebHandler):
     '''
 
     def __init__(self, *subdomains, **kwargs):
-        # XXX is this convert to unicode actually needed?
-        self.subdomains = [unicode(x) if x is not None else None
-                           for x in subdomains]
+        self.subdomains = subdomains
 
         # this attribute is used for ducktyping in Location, be careful
         self.primary = kwargs.pop('primary', self.subdomains[0])

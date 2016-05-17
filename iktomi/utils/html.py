@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-from urlparse import urlsplit
+from six.moves.urllib.parse import urlsplit
 from lxml import html
 from lxml.html import clean
 # XXX move to iktomi.cms?

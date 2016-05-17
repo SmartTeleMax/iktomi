@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import six
 
 from xml.sax import saxutils
 import weakref, re, sys
@@ -10,7 +11,7 @@ def quoteattr(value):
     but is safe for HTML'''
     if value == '':
         return '""'
-    return '"{}"'.format(saxutils.escape(unicode(value), {'"': '&quot;'}))
+    return '"{}"'.format(saxutils.escape(value, {'"': '&quot;'}))
 
 def quoteattrs(data):
     '''Takes dict of attributes and returns their HTML representation'''
@@ -22,7 +23,9 @@ def quoteattrs(data):
 def quote_js(text):
     '''Quotes text to be used as JavaScript string in HTML templates. The
     result doesn't contain surrounding quotes.'''
-    text = unicode(text) # for Jinja2 Markup
+    if isinstance(text, six.binary_type):
+        # XXX test?
+        text = text.decode('utf-8') # for Jinja2 Markup
     text = text.replace('\\', '\\\\');
     text = text.replace('\n', '\\n');
     text = text.replace('\r', '');
@@ -76,10 +79,10 @@ class cached_class_property(object):
 # (any Unicode character, excluding the surrogate blocks, FFFE, and FFFF)
 _char_tail = ''
 if sys.maxunicode > 0x10000:
-    _char_tail = u'{}-{}'.format(unichr(0x10000),
-                                 unichr(min(sys.maxunicode, 0x10FFFF)))
+    _char_tail = u'{}-{}'.format(six.unichr(0x10000),
+                                 six.unichr(min(sys.maxunicode, 0x10FFFF)))
 _nontext_sub = re.compile(
-            ur'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD{}]'.format(_char_tail),
+            u'[^\\x09\\x0A\\x0D\\x20-\uD7FF\uE000-\uFFFD{}]'.format(_char_tail),
             re.U).sub
 def replace_nontext(text, replacement=u'\uFFFD'):
     return _nontext_sub(replacement, text)

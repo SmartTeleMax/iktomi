@@ -124,7 +124,7 @@ class SqlaFilesTests(unittest.TestCase):
 
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.add(obj)
@@ -139,7 +139,7 @@ class SqlaFilesTests(unittest.TestCase):
         metadata_filemanager = self.db.find_file_manager(metadata_obj)
         metadata_file = metadata_filemanager.new_transient()
         with open(metadata_file.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         metadata_obj.file = metadata_file
 
         self.assertTrue(metadata_obj.file.path.startswith(self.metadata_transient_root))
@@ -154,7 +154,7 @@ class SqlaFilesTests(unittest.TestCase):
         model_filemanager = self.db.find_file_manager(model_obj)
         model_file = model_filemanager.new_transient()
         with open(model_file.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         model_obj.file = model_file
 
         self.assertTrue(model_obj.file.path.startswith(self.model_transient_root))
@@ -171,7 +171,7 @@ class SqlaFilesTests(unittest.TestCase):
 
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.commit()
@@ -194,7 +194,7 @@ class SqlaFilesTests(unittest.TestCase):
         obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.db.add(obj)
         self.db.commit()
 
@@ -213,7 +213,7 @@ class SqlaFilesTests(unittest.TestCase):
         obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test1')
+            fp.write(b'test1')
         self.db.add(obj)
         self.db.commit()
         pf1 = obj.file
@@ -222,7 +222,7 @@ class SqlaFilesTests(unittest.TestCase):
 
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test22')
+            fp.write(b'test22')
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
         self.db.commit()
@@ -238,7 +238,7 @@ class SqlaFilesTests(unittest.TestCase):
         obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test1')
+            fp.write(b'test1')
         self.db.add(obj)
         self.db.commit()
         pf1 = obj.file
@@ -262,7 +262,7 @@ class SqlaFilesTests(unittest.TestCase):
 
         obj.file_by_id = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test1')
+            fp.write(b'test1')
         self.db.add(obj)
         self.db.commit()
         self.assertEqual(obj.file_by_id_name, 
@@ -271,7 +271,7 @@ class SqlaFilesTests(unittest.TestCase):
 
         obj.file_by_id = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test2')
+            fp.write(b'test2')
         self.assertIsInstance(obj.file_by_id, TransientFile)
         self.assertIsNotNone(obj.file_by_id_name)
         self.db.commit()
@@ -290,14 +290,14 @@ class SqlaFilesTests(unittest.TestCase):
 
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
 
         persistent = self.file_manager.get_persistent(obj.file_name)
         dirname = os.path.dirname(persistent.path)
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
         with open(persistent.path, 'wb') as fp:
-            fp.write('taken')
+            fp.write(b'taken')
 
         self.assertIsInstance(obj.file, TransientFile)
         self.assertIsNotNone(obj.file_name)
@@ -312,7 +312,7 @@ class SqlaFilesTests(unittest.TestCase):
     def test_update_none2persistent(self):
         f = self.file_manager.get_persistent('persistent.txt')
         with open(f.path, 'wb') as fp:
-            fp.write('test1')
+            fp.write(b'test1')
 
         obj = self.Model()
         obj.file = f
@@ -327,7 +327,7 @@ class SqlaFilesTests(unittest.TestCase):
         obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.db.add(obj)
         self.db.commit()
         pf = obj.file
@@ -345,7 +345,7 @@ class SqlaFilesTests(unittest.TestCase):
         self.db.commit()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.db.commit()
 
         os.unlink(obj.file.path)
@@ -360,7 +360,7 @@ class SqlaFilesTests(unittest.TestCase):
         obj = self.Model()
         obj.file = f = self.file_manager.new_transient()
         with open(f.path, 'wb') as fp:
-            fp.write('test')
+            fp.write(b'test')
         self.db.add(obj)
         self.db.commit()
 

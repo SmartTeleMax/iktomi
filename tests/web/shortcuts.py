@@ -42,9 +42,9 @@ class WebShortcutsTest(unittest.TestCase):
         env, data = self.env_data(wa, '/rule1')
         response = wa.handle(env, data)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.body, 'rule1')
+        self.assertEqual(response.body, b'rule1')
 
         env, data = self.env_data(wa, '/rule2')
         response = wa.handle(env, data)
         self.assertEqual(response.status_code, 405)
-        self.assertEqual(response.body, '')
+        self.assertEqual(response.body, b'')

@@ -28,8 +28,8 @@ class M_(object):
                      u'max length is %(max)d symbols',
                      count_field="max")
         m = message % {'max': 10}
-        trans = env.ngettext(unicode(m.single),
-                             unicode(m.plural),
+        trans = env.ngettext(m.single,
+                             m.plural,
                              m.count
                              ) % m.format_args
     '''

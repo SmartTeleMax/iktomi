@@ -1,17 +1,18 @@
 # coding: utf-8
-
-import os
 import sys
 import unittest
 from iktomi.cli.lazy import LazyCli
 from iktomi.cli.base import Cli, manage
-from cStringIO import StringIO
+from io import StringIO
 
 try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
 
+
+def get_io():
+    return StringIO()
 
 class MyCli(Cli):
 
@@ -32,7 +33,7 @@ class LazyTests(unittest.TestCase):
 
         self.assertIsInstance(cli.digest, MyCli)
 
-        print cli.description()
+        print(cli.description())
         self.assertEqual(cli.description().splitlines()[0],
                          'mycli')
         self.assertEqual(cli.description().splitlines()[1],

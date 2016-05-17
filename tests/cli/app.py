@@ -5,11 +5,19 @@ import shutil
 from iktomi import web
 from iktomi.cli import app
 from logging import Logger
-from cStringIO import StringIO
+import six
+
+if six.PY2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 import signal
 from time import sleep
 import subprocess
-import urllib2
+if six.PY2:
+    from urllib2 import urlopen
+else:
+    from urllib.request import urlopen
 
 
 try:
@@ -76,7 +84,7 @@ class CliAppTest(unittest.TestCase):
         self.app = app.App(webapp, shell_namespace={'hello':'world'})
 
     def test_command_shell(self):
-        inp = StringIO('print hello')
+        inp = StringIO('print(hello)')
         out = StringIO()
         with patch.object(sys, 'stdin', inp):
             with patch.object(sys, 'stdout', out):
@@ -101,16 +109,16 @@ class WebAppServerTest(unittest.TestCase):
         self.server.wait()
 
     def test_web_app_server(self):
-        response = urllib2.urlopen('http://localhost:11111')
-        self.assertEqual("hello world", response.read())
+        response = urlopen('http://localhost:11111')
+        self.assertEqual(b"hello world", response.read())
         response.close()
         with open(self.manage) as f:
             new_code = f.read().replace('world', 'iktomi')
         with open(self.manage, "w") as f:
             f.write(new_code)
         sleep(2) # wait until code changes
-        response = urllib2.urlopen('http://localhost:11111')
-        self.assertEqual("hello iktomi", response.read())
+        response = urlopen('http://localhost:11111')
+        self.assertEqual(b"hello iktomi", response.read())
         response.close()
         # test if bootstrap worked correctly
         self.assertTrue(os.path.isfile('temp_dir/hello.log'))

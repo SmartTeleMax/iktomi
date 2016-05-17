@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
 from webob.exc import status_map, HTTPMethodNotAllowed
-from webob import Response
 from .core import cases
 from . import filters
 
@@ -19,7 +17,7 @@ def redirect_to(endpoint, _code=303, qs=None, **kwargs):
 def Rule(path, handler, method=None, name=None, convs=None):
     # werkzeug-style Rule
     if name is None:
-        name = handler.func_name
+        name = handler.__name__
     h = filters.match(path, name, convs=convs)
     if method is not None:
         h = h | cases(filters.method(method),

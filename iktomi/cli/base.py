@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import six
 import sys
 import os
 import datetime
@@ -28,11 +28,14 @@ def manage(commands, argv=None, delim=':'):
     :class:`Cli<iktomi.management.commands.Cli>` docs.
     '''
 
+    commands = {(k.decode('utf-8') if isinstance(k, six.binary_type) else k): v
+                for k, v in commands.items()}
+
     # Default django autocompletion script is registered to manage.py
     # We use the same name for this script and it seems to be ok
     # to implement the same interface
     def perform_auto_complete(commands):
-        from lazy import LazyCli
+        from .lazy import LazyCli
         cwords = os.environ['COMP_WORDS'].split()[1:]
         cword = int(os.environ['COMP_CWORD'])
 
@@ -53,9 +56,9 @@ def manage(commands, argv=None, delim=':'):
             if curr == ":":
                 curr = ''
         else:
-            suggest += commands.keys() + [x+":" for x in commands.keys()]
+            suggest += list(commands.keys()) + [x+":" for x in commands.keys()]
         suggest.sort()
-        output = " ".join(filter(lambda x: x.startswith(curr), suggest))
+        output = u" ".join(filter(lambda x: x.startswith(curr), suggest))
         sys.stdout.write(output)
 
     auto_complete = 'IKTOMI_AUTO_COMPLETE' in os.environ or \
@@ -111,10 +114,10 @@ def manage(commands, argv=None, delim=':'):
         sys.exit('Please provide any command')
 
 def _command_list(commands):
-    sys.stdout.write('Commands:\n')
+    sys.stdout.write(u'Commands:\n')
     for k in commands.keys():
-        sys.stdout.write(str(k))
-        sys.stdout.write('\n')
+        sys.stdout.write(k)
+        sys.stdout.write(u'\n')
 
 
 class Cli(object):
@@ -137,15 +140,15 @@ class Cli(object):
         '''Description outputed to console'''
         command = command or self.__class__.__name__.lower()
         import inspect
-        _help = ''
-        _help += '{}\n'.format(command)
+        _help = u''
+        _help += u'{}\n'.format(command)
         if self.__doc__:
             _help += self._fix_docstring(self.__doc__) +'\n'
         else:
-            _help += '{}\n'.format(command)
+            _help += u'{}\n'.format(command)
 
         funcs = self.get_funcs()
-        funcs.sort(key=lambda x: x[1].func_code.co_firstlineno)
+        funcs.sort(key=lambda x: six.get_function_code(x[1]).co_firstlineno)
 
         for attr, func in funcs:
             func = getattr(self, attr)
@@ -167,8 +170,8 @@ class Cli(object):
             try:
                 getattr(self, 'command_'+command_name)(*args, **kwargs)
             except ConverterError as e:
-                sys.stderr.write('One of the arguments for '
-                                 'command "{}" is wrong:\n'.format(command_name))
+                sys.stderr.write(u'One of the arguments for '
+                                 u'command "{}" is wrong:\n'.format(command_name))
                 sys.exit(e)
         else:
             raise CommandNotFound()

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import six
+if six.PY2:
+    from urllib import quote, unquote
+else:
+    from urllib.parse import quote, unquote
 
-import urllib
 import re
 import logging
 from .url_converters import default_converters, ConvertError
@@ -9,7 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def urlquote(value):
-    return urllib.quote(value.encode('utf-8') if isinstance(value, unicode) else str(value))
+    if isinstance(value, int):
+        value = six.text_type(value)
+    return quote(value.encode('utf-8'))
 
 
 class UrlBuildingError(Exception): pass
@@ -56,7 +62,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             #      - make part str if it was unicode
             #      - urlquote part
             #      - escape all specific for re chars in part
-            part = urlquote(unicode(part).encode('utf-8'))
+            part = urlquote(part)
             result += re.escape(part)
             builder_params.append(part)
             continue
@@ -113,7 +119,10 @@ class UrlTemplate(object):
             # convert params
             for url_arg_name, value_urlencoded in kwargs.items():
                 conv_obj = self._url_params[url_arg_name]
-                unicode_value = urllib.unquote(value_urlencoded).decode('utf-8', 'replace')
+                unicode_value = unquote(value_urlencoded)
+                if isinstance(unicode_value, six.binary_type):
+                    # XXX ??
+                    unicode_value = unicode_value.decode('utf-8', 'replace')
                 try:
                     kwargs[url_arg_name] = conv_obj.to_python(unicode_value, **kw)
                 except ConvertError as err:
@@ -158,5 +167,5 @@ class UrlTemplate(object):
 
     def __repr__(self):
         return '{}({!r}, match_whole_str={!r})'.format(
-                self.__class__.__name__, self.template.encode('utf-8'),
+                self.__class__.__name__, self.template,
                 self.match_whole_str)

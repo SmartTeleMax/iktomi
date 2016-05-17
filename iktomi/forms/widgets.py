@@ -136,9 +136,7 @@ class Select(Widget):
         has_null_value = False
 
         values = value if self.multiple else [value]
-        values = map(unicode, values)
         for choice, label in choice_conv.options():
-            choice = unicode(choice)
             has_null_value = has_null_value or choice == ''
             options.append(dict(value=choice,
                                 title=label,
