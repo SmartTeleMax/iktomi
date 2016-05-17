@@ -98,10 +98,17 @@ class TestSanitizer(unittest.TestCase):
         self.assertEqual(res, '<p>a</p> <p>b</p>')
         res = self.sanitize('<b>a</b> <b>b</b>')
         self.assertEqual(res, '<b>a</b> <b>b</b>')
-        res = self.sanitize('<brbr>a</brbr> <p>b</p>')
+
+        res = self.sanitize('<aside>a</aside> <p>b</p>')
         self.assertEqual(res, 'a <p>b</p>')
-        res = self.sanitize('<p><brbr>a</brbr> <brbr>b</brbr></p>')
+        res = self.sanitize('<p><aside>a</aside> <aside>b</aside></p>')
         self.assertEqual(res, '<p>a b</p>')
+
+        # lxml parser eats the space on some environments
+        #res = self.sanitize('<brbr>a</brbr> <p>b</p>')
+        #self.assertEqual(res, 'a <p>b</p>')
+        #res = self.sanitize('<p><brbr>a</brbr> <brbr>b</brbr></p>')
+        #self.assertEqual(res, '<p>a b</p>')
 
     @unittest.skip('not supported')
     def test_autoclosing_attrs_xhtml(self):
