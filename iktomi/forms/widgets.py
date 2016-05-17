@@ -2,7 +2,6 @@
 
 from ..utils import weakproxy
 from . import convs
-from .media import FormMedia
 
 
 class Widget(object):
@@ -12,9 +11,6 @@ class Widget(object):
 
     #: Template to render widget
     template = None
-    #: List of :class:`FormMediaAtom<iktomi.forms.media.FormMediaAtom>`
-    #: objects associated with the widget
-    media = []
     #: Value of HTML element's *class* attribute
     classname = ''
     #: describes how the widget is rendered.
@@ -52,9 +48,6 @@ class Widget(object):
     @property
     def env(self):
         return self.field.env
-
-    def get_media(self):
-        return FormMedia(self.media)
 
     def prepare_data(self):
         '''

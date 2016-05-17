@@ -10,7 +10,7 @@ from iktomi.templates.jinja2 import TemplateEngine
 import jinja2
 from lxml import html
 
-from iktomi.forms import fields, convs, widgets, media, perms, \
+from iktomi.forms import fields, convs, widgets, perms, \
                          Form, Field, FieldList, FieldSet
 
 
