@@ -7,7 +7,7 @@ import six
 import re
 from iktomi.utils.i18n import N_
 
-_all2 = set(locals().keys()) | set(globals().keys())
+_all2 = set(vars())
 
 
 class Email(Char):
@@ -124,6 +124,6 @@ class ModelChoice(EnumChoice):
 # Expose all variables defined after imports and all variables imported from
 # parent module
 __all__ = [x for x
-           in set(locals().keys()) | set(globals().keys()) - (_all2 - set(_all1))
+           in set(vars()) - (_all2 - set(_all1))
            if not x.startswith('_')]
 del _all1, _all2

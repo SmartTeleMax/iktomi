@@ -70,7 +70,7 @@ class String(Converter):
         return value
 
     def to_url(self, value):
-        if type(value).__name__ == 'bytes':
+        if six.PY3 and isinstance(value, bytes):
             raise TypeError() # pragma: no cover, safety check
         return six.text_type(value)
 
@@ -122,7 +122,7 @@ class Any(Converter):
         raise ConvertError(self, value)
 
     def to_url(self, value):
-        if type(value).__name__ == 'bytes':
+        if six.PY3 and isinstance(value, bytes):
             raise TypeError() # pragma: no cover, safety check
         return six.text_type(value)
 

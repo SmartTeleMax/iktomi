@@ -23,7 +23,8 @@ except ImportError: # pragma: no cover
 from iktomi.utils import cached_property
 from iktomi.utils.i18n import N_, M_
 
-_all2 = set(locals().keys()) | set(globals().keys())
+
+_all2 = set(vars())
 
 
 
@@ -326,7 +327,7 @@ class Char(CharBased):
     def from_python(self, value):
         if value is None:
             return ''
-        if type(value).__name__ == 'bytes':
+        if six.PY3 and isinstance(value, bytes):
             raise TypeError() # pragma: no cover, safety check
         return six.text_type(value)
 
@@ -731,7 +732,7 @@ class SimpleFile(Converter):
 
 # Expose all variables defined after imports
 __all__ = [x for x
-           in set(locals().keys()) | set(globals().keys()) - _all2
+           in set(vars()) - _all2
            if not x.startswith('_')]
 del _all2
 

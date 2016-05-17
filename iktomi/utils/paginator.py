@@ -4,11 +4,9 @@ from . import cached_property
 import math
 import six
 import itertools
-if six.PY2:
-    from itertools import izip
-else:
+from six.moves import zip
+if six.PY3:
     range = lambda *x: list(six.moves.range(*x)) # XXX
-    izip = zip
 from ..web.reverse import URL
 
 
@@ -219,7 +217,7 @@ class Paginator(object):
 
     def enumerate(self):
         skipped = (self.page-1)*self.limit
-        return izip(itertools.count(skipped+1), self.items)
+        return zip(itertools.count(skipped+1), self.items)
 
     @cached_property
     def prev(self):

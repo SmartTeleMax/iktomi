@@ -118,11 +118,7 @@ class Sqla(Cli):
 
             ./manage.py sqla:drop_tables [meta_name]
         '''
-        if six.PY2:
-            # XXX
-            answer = raw_input('All data will lost. Are you sure? [y/N] ')
-        else:
-            answer = input('All data will lost. Are you sure? [y/N] ')
+        answer = six.moves.input(u'All data will lost. Are you sure? [y/N] ')
 
         if answer.strip().lower()!='y':
             sys.exit('Interrupted')
