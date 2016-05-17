@@ -81,7 +81,7 @@ class Sqla(Cli):
     def _schema(self, table):
         from sqlalchemy.schema import CreateTable
         engine = self.session.get_bind(clause=table)
-        return str(CreateTable(table, bind=engine))
+        return six.text_type(CreateTable(table, bind=engine))
 
     def command_create_tables(self, meta_name=None, verbose=False):
         '''

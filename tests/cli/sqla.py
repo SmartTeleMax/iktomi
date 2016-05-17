@@ -3,12 +3,8 @@
 import re
 import sys
 import unittest
-import six
 
-if six.PY2:
-    from StringIO import StringIO
-else:
-    from io import StringIO
+from io import StringIO
 from iktomi.cli.sqla import Sqla, drop_everything
 from sqlalchemy import (
     create_engine, orm, MetaData, Column, Integer, ForeignKey,

@@ -35,6 +35,7 @@ class TypesObject(Base):
     html_custom = Column(Html(String, markup_class=CustomMarkup))
 
 
+@six.python_2_unicode_compatible
 class Markupable(object):
 
     def __init__(self, value):
@@ -43,11 +44,8 @@ class Markupable(object):
     def __html__(self):
         return self.value
 
-    def __unicode__(self):
+    def __str__(self):
         return self.value
-
-    if six.PY3:
-        __str__ = __unicode__
 
 
 class TypeDecoratorsTest(unittest.TestCase):
