@@ -11,9 +11,6 @@ def quoteattr(value):
     but is safe for HTML'''
     if value == '':
         return '""'
-    #if isinstance(value, six.binary_type):
-    #    value = value
-
     return '"{}"'.format(saxutils.escape(value, {'"': '&quot;'}))
 
 def quoteattrs(data):

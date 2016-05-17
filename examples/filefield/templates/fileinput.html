@@ -12,11 +12,6 @@
             uploaded temporary file
         {% endif %}
     </a><br/>
-    {#{% if not required %}
-    {#    {{ field.get_field('delete').widget.render()|safe }}
-    {#    <label for="{{ field.get_field('delete').id }}">delete</label>
-    {#    <br/>
-    {#{% endif %}#}
 {% endif %}
 
 {{ field.get_field('file').widget.render()|safe }}
