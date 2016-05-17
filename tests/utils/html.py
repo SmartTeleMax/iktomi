@@ -94,14 +94,15 @@ class TestSanitizer(unittest.TestCase):
                             '<b class="has_b">a</b>')
 
     def test_tags_sticking(self):
+        self.attrs['allow_tags'].remove('span')
         res = self.sanitize('<p>a</p> <p>b</p>')
         self.assertEqual(res, '<p>a</p> <p>b</p>')
         res = self.sanitize('<b>a</b> <b>b</b>')
         self.assertEqual(res, '<b>a</b> <b>b</b>')
 
-        res = self.sanitize('<aside>a</aside> <p>b</p>')
+        res = self.sanitize('<span>a</span> <p>b</p>')
         self.assertEqual(res, 'a <p>b</p>')
-        res = self.sanitize('<p><aside>a</aside> <aside>b</aside></p>')
+        res = self.sanitize('<p><span>a</span> <span>b</span></p>')
         self.assertEqual(res, '<p>a b</p>')
 
         # lxml parser eats the space on some environments

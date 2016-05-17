@@ -4,6 +4,12 @@ __all__ = ['LocalMemStorageTest', 'MemcachedStorageTest']
 
 import unittest
 from iktomi.storage import LocalMemStorage, MemcachedStorage
+import memcache
+from mockcache import Client
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class LocalMemStorageTest(unittest.TestCase):
@@ -39,9 +45,10 @@ class LocalMemStorageTest(unittest.TestCase):
 
 class MemcachedStorageTest(unittest.TestCase):
     def setUp(self):
-        self.storage = MemcachedStorage('localhost:11211')
-        if not self.storage.storage.set('test', 'test'):
-            raise Exception('memcached is down')
+        with mock.patch.object(memcache, 'Client', Client):
+            self.storage = MemcachedStorage('localhost:11211')
+            if not self.storage.storage.set('test', 'test'):
+                raise Exception('memcached is down')
 
     def tearDown(self):
         memcached = self.storage.storage
@@ -64,6 +71,9 @@ class MemcachedStorageTest(unittest.TestCase):
     def test_delete(self):
         '`MemcachedStorage` delete method'
         self.assertEqual(self.storage.delete('key'), True)
+        self.storage.delete('key')
         self.storage.set('key', 'value')
+        self.assertEqual(self.storage.delete('key'), True)
+        # mockcache does not support this
         self.assertEqual(self.storage.delete('key'), True)
         self.assertEqual(self.storage.get('key'), None)
