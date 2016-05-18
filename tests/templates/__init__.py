@@ -4,11 +4,10 @@ from iktomi import web
 from iktomi.templates import Template, TemplateError, BoundTemplate
 from iktomi.templates.jinja2 import TemplateEngine
 
-
-# class for mocking any objects with any properties
-class MockClass(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
 
 
 class TemplateTest(unittest.TestCase):
@@ -20,9 +19,9 @@ class TemplateTest(unittest.TestCase):
         self.template = Template(templates_dir, engines={'html':self.engine})
 
     def test_render_textarea(self):
-        widget = MockClass(id=101,
-                           classname="big",
-                           input_name="big_input")
+        widget = Mock(id=101,
+                      classname="big",
+                      input_name="big_input")
         rendered = self.template.render('widgets/textarea',
                                         widget=widget,
                                         readonly=True,
@@ -58,8 +57,7 @@ class BoundTemplateTest(unittest.TestCase):
         self.bound = TestingBoundTemplate(env, template)
 
     def test_engines(self):
-        self.assertEqual(self.bound.engines.keys(), ['html'])
-        self.assertEqual(self.bound.engines.values(), [self.engine])
+        self.assertEqual(self.bound.engines, dict(html=self.engine))
 
     def test_vars(self):
         self.assertEqual(self.bound._vars(None), {'readonly':True})
@@ -71,8 +69,8 @@ class BoundTemplateTest(unittest.TestCase):
                          {'readonly':True, 'foo':'bar', 'request':None, 'root':None})
 
     def test_render(self):
-        widget = MockClass(id=111,
-                           classname="big",)
+        widget = Mock(id=111,
+                      classname="big",)
         rendered = self.bound.render('widgets/textarea',
                                         widget=widget,
                                         value="Sample text")
@@ -83,14 +81,14 @@ class BoundTemplateTest(unittest.TestCase):
         self.assertIn('>Sample text<', rendered)
 
     def test_render_to_response(self):
-        widget = MockClass(id=111,
-                           classname="big",)
+        widget = Mock(id=111,
+                      classname="big",)
         response = self.bound.render_to_response('widgets/textarea',
                                                  {'widget':widget,
                                                   'value':"Sample text"})
         self.assertIn('text/html', response.headers['Content-Type'])
 
-        rendered = response.body
+        rendered = str(response.body)
         self.assertIn('<textarea', rendered)
         self.assertIn('id="111"', rendered)
         self.assertIn('class="big"', rendered)
