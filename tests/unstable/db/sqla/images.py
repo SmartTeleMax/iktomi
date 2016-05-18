@@ -13,6 +13,7 @@ from iktomi.unstable.db.files import TransientFile, PersistentFile, \
                                      FileManager
 from iktomi.unstable.db.sqla.files import filesessionmaker
 from iktomi.unstable.db.sqla.images import ImageProperty
+import logging
 
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
@@ -134,6 +135,25 @@ class SqlaImagesTests(unittest.TestCase):
 
             self.assertLessEqual(os.stat(obj.thumb_optimize.path).st_size,
                                  os.stat(obj.thumb.path).st_size)
+
+    def test_no_original_image(self):
+        obj = ObjWithImage()
+        obj.image = f = self.file_manager.new_transient()
+        _create_image(f.path, format='PNG')
+
+        warn = []
+        with mock.patch('os.path.isfile', return_value=False):
+            with mock.patch('logging.Logger.warn',
+                            side_effect=lambda m, *args: warn.append(m % args)):
+                self.db.add(obj)
+                self.db.commit()
+
+        self.assertEqual(len(warn), 3)
+        self.assertEqual(warn[0], warn[1])
+        self.assertEqual(warn[1], warn[2])
+        self.assertIn("Original file is absent", warn[0])
+        self.assertIn(obj.image.path, warn[0])
+
     def test_no_ext(self):
         # test for extraction image extension from image instead of file path
         obj = ObjWithImage()
