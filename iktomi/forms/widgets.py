@@ -29,7 +29,7 @@ class Widget(object):
     renders_hint = False
 
     def __init__(self, field=None, **kwargs):
-        if self._obsolete & set(kwargs):# pragma: no cover
+        if self._obsolete & set(kwargs):
             raise TypeError(
                     'Obsolete parameters are used: {}'.format(
                                 list(self._obsolete & set(kwargs))))

@@ -49,6 +49,14 @@ class TestWidget(TestFormClass):
         for key, value in kwargs.items():
             self.assertEqual(value, getattr(widget, key))
 
+    def test_obsolete(self):
+        kwargs = dict(template='checkbox', multiple=True)
+        with self.assertRaises(TypeError) as exc:
+            widgets.Widget(**kwargs)
+        exc = exc.exception
+        self.assertIn('Obsolete parameters are used', str(exc))
+        self.assertIn('multiple', str(exc))
+
 
 class TestTextInput(TestFormClass):
 
