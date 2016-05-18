@@ -50,9 +50,8 @@ class TestWidget(TestFormClass):
             self.assertEqual(value, getattr(widget, key))
 
     def test_obsolete(self):
-        kwargs = dict(template='checkbox', multiple=True)
         with self.assertRaises(TypeError) as exc:
-            widgets.Widget(**kwargs)
+            widgets.Widget(template='checkbox', multiple=True)
         exc = exc.exception
         self.assertIn('Obsolete parameters are used', str(exc))
         self.assertIn('multiple', str(exc))
