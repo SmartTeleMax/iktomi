@@ -4,6 +4,7 @@ import os
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageEnhance
+from PIL import ImageFilter
 
 from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -15,6 +16,11 @@ from iktomi.unstable.db.sqla.images import ImageProperty
 
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class ObjWithImage(Base):
@@ -31,6 +37,22 @@ class ObjWithImage(Base):
                           image_sizes=(100, 100),
                           enhancements=[(ImageEnhance.Brightness, 1.5)],
                           fill_from='image')
+
+    thumb_filter_name = Column(VARBINARY(250))
+    thumb_filter = ImageProperty(thumb_filter_name,
+                                 name_template='thumb_filter/{random}',
+                                 image_sizes=(100, 100),
+                                 filter=ImageFilter.BLUR,
+                                 enhancements=[(ImageEnhance.Brightness, 1.5)],
+                                 fill_from='image')
+
+    thumb_optimize_name = Column(VARBINARY(250))
+    thumb_optimize = ImageProperty(thumb_optimize_name,
+                                  name_template='thumb_optimize/{random}',
+                                  image_sizes=(100, 100),
+                                  optimize=True,
+                                  enhancements=[(ImageEnhance.Brightness, 1.5)],
+                                  fill_from='image')
 
     icon_name = Column(VARBINARY(250))
     icon = ImageProperty(icon_name,
@@ -81,24 +103,37 @@ class SqlaImagesTests(unittest.TestCase):
         obj = ObjWithImage()
         obj.image = f = self.file_manager.new_transient('.gif')
         _create_image(f.path)
-        self.db.add(obj)
-        self.db.commit()
 
-        self.assertIsInstance(obj.image, PersistentFile)
-        self.assertIsInstance(obj.thumb, PersistentFile)
+        def return_image(image, filter):
+            # asserting that filter was called
+            self.assertEqual(filter, ImageFilter.BLUR)
+            return image
 
-        img = Image.open(obj.image.path)
-        self.assertEqual(img.size, (200, 200))
-        self.assertEqual(obj.image.width, img.width)
-        self.assertEqual(obj.image.height, img.height)
+        with mock.patch('PIL.Image.Image.filter',
+                        side_effect=return_image,
+                        autospec=True):
+            self.db.add(obj)
+            self.db.commit()
 
-        thumb = Image.open(obj.thumb.path)
-        self.assertEqual(thumb.size, (100, 100))
-        self.assertEqual(obj.thumb.height, thumb.height)
-        self.assertEqual(obj.thumb.width, thumb.width)
-        pixels = thumb.load()
-        self.assertEqual(pixels[50, 50], (186, 186, 186))
+            self.assertIsInstance(obj.image, PersistentFile)
+            self.assertIsInstance(obj.thumb, PersistentFile)
+            self.assertIsInstance(obj.thumb_filter, PersistentFile)
+            self.assertIsInstance(obj.thumb_optimize, PersistentFile)
 
+            img = Image.open(obj.image.path)
+            self.assertEqual(img.size, (200, 200))
+            self.assertEqual(obj.image.width, img.width)
+            self.assertEqual(obj.image.height, img.height)
+
+            thumb = Image.open(obj.thumb.path)
+            self.assertEqual(thumb.size, (100, 100))
+            self.assertEqual(obj.thumb.height, thumb.height)
+            self.assertEqual(obj.thumb.width, thumb.width)
+            pixels = thumb.load()
+            self.assertEqual(pixels[50, 50], (186, 186, 186))
+
+            self.assertLessEqual(os.stat(obj.thumb_optimize.path).st_size,
+                                 os.stat(obj.thumb.path).st_size)
     def test_no_ext(self):
         # test for extraction image extension from image instead of file path
         obj = ObjWithImage()
