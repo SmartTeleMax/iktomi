@@ -36,8 +36,8 @@ class PermissionsTests(unittest.TestCase):
         form = F(env, permissions='rwx')
         first = form.get_field('first')
         second = form.get_field('second')
-        self.assertEqual(first.perm_getter.get_perms(first), set(['r', 'w']))
-        self.assertEqual(second.perm_getter.get_perms(second), set(['r', 'w', 'x']))
+        self.assertEqual(first.perm_getter.get_perms(first), set('rw'))
+        self.assertEqual(second.perm_getter.get_perms(second), set('rwx'))
 
     def test_perm_getter_repr(self):
         class F(Form):
@@ -48,4 +48,7 @@ class PermissionsTests(unittest.TestCase):
         env = AppEnvironment.create()
         form = F(env, permissions='rwx')
         field = form.get_field('first')
-        self.assertEqual(repr(field.perm_getter), "FieldPerm(set(['r', 'w']))")
+        represent = repr(field.perm_getter)
+        self.assertIn("FieldPerm", represent)
+        self.assertIn("'r'", represent)
+        self.assertIn("'w'", represent)

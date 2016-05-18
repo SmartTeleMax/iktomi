@@ -258,8 +258,7 @@ class PasswordSetTest(unittest.TestCase):
         env = AppEnvironment.create()
         form = _Form(env)
         accept = form.accept({'password.pass':'first', 'password.conf':'second'})
-
-        self.assertEqual([('password', 'password and confirm mismatch')],
+        self.assertEqual(dict(password='password and confirm mismatch').items(),
                          form.errors.items())
         self.assertFalse(accept)
 
