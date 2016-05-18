@@ -1,13 +1,9 @@
 import unittest, tempfile, shutil
 import os
-try:
-    import Image
-    import ImageDraw
-    import ImageEnhance
-except ImportError:
-    from PIL import Image
-    from PIL import ImageDraw
-    from PIL import ImageEnhance
+
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageEnhance
 
 from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.ext.declarative import declarative_base

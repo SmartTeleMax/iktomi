@@ -6,10 +6,8 @@ __all__ = ['ReverseTests', 'LocationsTests']
 import unittest
 from iktomi.unstable.utils.image_resizers import ResizeFit, ResizeCrop, \
         ResizeMixed, ResizeFixedHeight, ResizeFixedWidth
-try:
-    from PIL import Image
-except ImportError:
-    import Image
+
+from PIL import Image
 
 
 def img(width, height):
