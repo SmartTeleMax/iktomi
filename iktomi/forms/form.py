@@ -4,7 +4,6 @@ import six
 
 from . import convs
 from .perms import DEFAULT_PERMISSIONS
-from .media import FormMedia
 from .fields import FieldBlock
 
 
@@ -23,7 +22,6 @@ class FormValidationMetaClass(type):
 class Form(six.with_metaclass(FormValidationMetaClass, object)):
 
     template = 'forms/default'
-    media = FormMedia()
     permissions = DEFAULT_PERMISSIONS
     id = ''
 
@@ -71,16 +69,6 @@ class Form(six.with_metaclass(FormValidationMetaClass, object)):
     def is_valid(self):
         '''Is true if validated form as no errors'''
         return not self.errors
-
-    def get_media(self):
-        '''
-        Returns a list of FormMedia objects related to the form and
-        all of it's fields
-        '''
-        media = FormMedia(self.media, env=self.env)
-        for field in self.fields:
-            media += field.widget.get_media()
-        return media
 
     def accept(self, data):
         '''

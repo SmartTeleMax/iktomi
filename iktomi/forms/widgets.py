@@ -2,7 +2,6 @@
 
 from ..utils import weakproxy
 from . import convs
-from .media import FormMedia
 
 
 class Widget(object):
@@ -12,9 +11,6 @@ class Widget(object):
 
     #: Template to render widget
     template = None
-    #: List of :class:`FormMediaAtom<iktomi.forms.media.FormMediaAtom>`
-    #: objects associated with the widget
-    media = []
     #: Value of HTML element's *class* attribute
     classname = ''
     #: describes how the widget is rendered.
@@ -52,9 +48,6 @@ class Widget(object):
     @property
     def env(self):
         return self.field.env
-
-    def get_media(self):
-        return FormMedia(self.media)
 
     def prepare_data(self):
         '''
@@ -173,7 +166,7 @@ class CharDisplay(Widget):
 
     template = 'widgets/span'
     classname = 'chardisplay'
-    #: If is True, value is escaped while rendering. 
+    #: If is True, value is escaped while rendering.
     #: Passed to template as :obj:`should_escape` variable.
     escape = True
     #: Function converting the value to string.
@@ -199,11 +192,6 @@ class FieldListWidget(AggregateWidget):
 
     template = 'widgets/fieldlist'
 
-    def get_media(self):
-        media = Widget.get_media(self)
-        media += self.field.field.widget.get_media()
-        return media
-
     def render_template_field(self):
         # used in iktomi.cms: templates/widgets/fieldlist.html
         field = self.field.field(name='%'+self.field.input_name+'-index%')
@@ -216,12 +204,6 @@ class FieldListWidget(AggregateWidget):
 class FieldSetWidget(AggregateWidget):
 
     template = 'widgets/fieldset'
-
-    def get_media(self):
-        media = Widget.get_media(self)
-        for field in self.field.fields:
-            media += field.widget.get_media()
-        return media
 
 
 class FieldBlockWidget(FieldSetWidget):

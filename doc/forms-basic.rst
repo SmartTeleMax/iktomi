@@ -215,13 +215,6 @@ in user roles, etc.).
 
 :ref:`See more<forms-perms>`.
 
-Media Dependencies
-------------------
-
-For oldschool projects without js/css packing you can also use 
-`iktomi.forms.media` layer to collect static files required for all form
-widgets.
-
 .. _form-copy:
 
 Copy Interface
