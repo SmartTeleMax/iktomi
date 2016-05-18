@@ -14,4 +14,4 @@ lxml
 mock
 six
 git+git://github.com/lunant/mockcache
-flup
+flup6

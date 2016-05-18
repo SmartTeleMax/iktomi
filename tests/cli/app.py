@@ -18,7 +18,6 @@ if six.PY2:
     from urllib2 import urlopen
 else:
     from urllib.request import urlopen
-import urllib2
 import tempfile
 
 

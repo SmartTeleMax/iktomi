@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from cStringIO import StringIO
+from io import StringIO
 from flup.client.fcgi_app import FCGIApp
 
 
@@ -9,7 +9,7 @@ class FastCGIClient(object):
         self.app = FCGIApp(connect=connection)
         self.start_response = start_response
 
-    def make_request(self, method='GET', path='/', data='', **kwargs):
+    def make_request(self, method='GET', path='/', data=None, **kwargs):
         errors = StringIO()
         env = {'HTTP_HOST':'localhost',
                'SERVER_PORT':'80',

@@ -75,3 +75,6 @@ class FlupDaemonTest(unittest.TestCase):
         result, errors = FastCGIClient(sock_path).make_request()
         self.assertEqual(['hello iktomi'], result)
         self.assertEqual(errors, '')
+
+if sys.version_info[0] >= 3:
+    FlupDaemonTest.test_daemon = unittest.skip(FlupDaemonTest.test_daemon)
