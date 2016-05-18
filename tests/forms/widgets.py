@@ -49,6 +49,13 @@ class TestWidget(TestFormClass):
         for key, value in kwargs.items():
             self.assertEqual(value, getattr(widget, key))
 
+    def test_obsolete(self):
+        with self.assertRaises(TypeError) as exc:
+            widgets.Widget(template='checkbox', multiple=True)
+        exc = exc.exception
+        self.assertIn('Obsolete parameters are used', str(exc))
+        self.assertIn('multiple', str(exc))
+
 
 class TestTextInput(TestFormClass):
 
@@ -63,6 +70,10 @@ class TestTextInput(TestFormClass):
             fields = [
                 Field('name',
                       conv=convs.Char(),
+                      widget=self.widget(classname="cls")),
+                Field('unreadable',
+                      permissions="w",
+                      conv=convs.Char(),
                       widget=self.widget(classname="cls"))
             ]
 
@@ -75,6 +86,8 @@ class TestTextInput(TestFormClass):
         self.assertEqual(value, '<p>Paragraph</p>')
         self.assertEqual(html.xpath('.//'+self.tag+'/@readonly'), [])
         self.assertEqual(html.xpath('.//'+self.tag+'/@class'), ['cls'])
+        render = form.get_field('unreadable').widget.render()
+        self.assertEqual(render, '')
 
     def test_escape(self):
         class F(Form):
@@ -397,32 +410,32 @@ class TestCheckBoxSelect(TestSelect):
 
 class TestFieldList(TestFormClass):
 
-    tag = 'input'
-
-    def get_value(self, html):
-        return html.xpath('.//'+self.tag+'/@value')[0]
-
     def test_render(self):
         class F(Form):
             fields = [
                 FieldList('list',
                           field=FieldSet(None, fields=[
                               Field('name',
-                                      conv=convs.Char(),
-                                      widget=widgets.TextInput)]))
+                                     conv=convs.Char(),
+                                     widget=widgets.TextInput)]))
             ]
 
         form = F(self.env)
+        form.accept(MultiDict((('list-indices','1'),
+                               ('list-indices', '2'),
+                               ('list.1.name', 'First' ),
+                               ('list.2.name', 'Second' )))
+                    )
 
-        #form.raw_data = MultiDict({'name': '<p>Paragraph</p>'})
         render = form.get_field('list').widget.render()
-        #html = self.parse(render)
-        #value = self.get_value(html)
-        #self.assertEqual(value, '<p>Paragraph</p>')
-        #self.assertEqual(xpath.findvalue('.//*:%s/@readonly'%self.tag, html), None)
-        #self.assertEqual(xpath.findvalue('.//*:%s/@class'%self.tag, html), 'cls')
+        self.assertIn('<table class="fieldlist" id="list">', render)
+        self.assertIn('<input', render)
+        self.assertIn('value="1"', render)
+        self.assertIn('value="2"', render)
+        self.assertIn('First', render)
+        self.assertIn('Second', render)
 
-
-
-if __name__ == '__main__':
-    unittest.main()
+        template = form.get_field('list').widget.render_template_field()
+        self.assertIn('id="list.%list-index%.name"', template)
+        self.assertNotIn('First', template)
+        self.assertNotIn('Second', template)
