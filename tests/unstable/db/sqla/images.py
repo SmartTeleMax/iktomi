@@ -1,10 +1,10 @@
 import unittest, tempfile, shutil
-try:
-    import Image
-    import ImageDraw
-except ImportError:
-    from PIL import Image
-    from PIL import ImageDraw
+import os
+
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageEnhance
+
 from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
@@ -29,6 +29,7 @@ class ObjWithImage(Base):
     thumb = ImageProperty(thumb_name,
                           name_template='thumb/{random}',
                           image_sizes=(100, 100),
+                          enhancements=[(ImageEnhance.Brightness, 1.5)],
                           fill_from='image')
 
     icon_name = Column(VARBINARY(250))
@@ -37,7 +38,7 @@ class ObjWithImage(Base):
 
 
 
-def _create_image(path, width=400, height=400):
+def _create_image(path, width=400, height=400, format=None):
     image = Image.new('RGB', (width, height), (124,
                                                124,
                                                124, 1))
@@ -52,7 +53,8 @@ def _create_image(path, width=400, height=400):
     #    draw.polygon(points, fill=(randint(150, 255),
     #                               randint(150, 255),
     #                               randint(150, 255), 1))
-    image.save(path)
+    image.save(path, format=format)
+
 
 
 class SqlaImagesTests(unittest.TestCase):
@@ -87,9 +89,25 @@ class SqlaImagesTests(unittest.TestCase):
 
         img = Image.open(obj.image.path)
         self.assertEqual(img.size, (200, 200))
+        self.assertEqual(obj.image.width, img.width)
+        self.assertEqual(obj.image.height, img.height)
 
         thumb = Image.open(obj.thumb.path)
         self.assertEqual(thumb.size, (100, 100))
+        self.assertEqual(obj.thumb.height, thumb.height)
+        self.assertEqual(obj.thumb.width, thumb.width)
+        pixels = thumb.load()
+        self.assertEqual(pixels[50, 50], (186, 186, 186))
+
+    def test_no_ext(self):
+        # test for extraction image extension from image instead of file path
+        obj = ObjWithImage()
+        obj.image = f = self.file_manager.new_transient()
+        _create_image(f.path, format='PNG')
+        self.db.add(obj)
+        self.db.commit()
+        self.assertIsInstance(obj.image, PersistentFile)
+        self.assertTrue(obj.image.path.endswith('.png'))
 
     def test_no_size(self):
         obj = ObjWithImage()

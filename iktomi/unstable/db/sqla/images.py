@@ -104,7 +104,8 @@ class ImageEventHandlers(FileEventHandlers):
                 base = getattr(target, self.prop.fill_from)
                 if base is None:
                     return
-                if not os.path.isfile(base.path):
+                if not os.path.isfile(base.path): # pragma: no cover, failure case,
+                                                  # don't know how to test it
                     logger.warn('Original file is absent %s %s %s',
                                 identity_key(instance=target),
                                 self.prop.fill_from,
