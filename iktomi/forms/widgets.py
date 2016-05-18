@@ -166,7 +166,7 @@ class CharDisplay(Widget):
 
     template = 'widgets/span'
     classname = 'chardisplay'
-    #: If is True, value is escaped while rendering. 
+    #: If is True, value is escaped while rendering.
     #: Passed to template as :obj:`should_escape` variable.
     escape = True
     #: Function converting the value to string.
@@ -191,6 +191,14 @@ class FieldListWidget(AggregateWidget):
     allow_delete = True
 
     template = 'widgets/fieldlist'
+
+    def render_template_field(self):
+        # used in iktomi.cms: templates/widgets/fieldlist.html
+        field = self.field.field(name='%'+self.field.input_name+'-index%')
+        # XXX looks like a HACK
+        field.set_raw_value(self.field.form.raw_data,
+                            field.from_python(field.get_initial()))
+        return field.widget.render()
 
 
 class FieldSetWidget(AggregateWidget):
