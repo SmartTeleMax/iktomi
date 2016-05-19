@@ -1,5 +1,5 @@
 from iktomi import web
-from iktomi.cli import app
+from iktomi.cli import app, fcgi, manage
 import os
 import sys
 import logging
@@ -15,7 +15,11 @@ def bootstrap():
     hellolog = logging.FileHandler(logpath)
     logging.root.handlers.append(hellolog)
 
-app = app.App(webapp, bootstrap=bootstrap)
+devapp = app.App(webapp, bootstrap=bootstrap)
+fcgi_sock_path = os.path.join(os.path.dirname(__file__), 'fcgi.sock')
+fcgi_app = fcgi.Flup(webapp, bind=fcgi_sock_path, cwd=os.path.dirname(__file__))
+
 
 if __name__=='__main__':
-    app.command_serve(port='11111')
+    manage(dict(dev=devapp,
+                fcgi=fcgi_app))
