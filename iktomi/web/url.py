@@ -28,7 +28,6 @@ def construct_url(path, query, host, port, schema):
 
 if six.PY2:
     def _parse_qs(query):
-        query = query.encode('utf-8')
         return sum([[(k.decode('utf-8', errors="replace"),
                       v.decode('utf-8', errors="replace"))
                      for v in values]
@@ -78,7 +77,7 @@ class URL(str):
             netloc = url.netloc.decode('utf-8') # XXX HACK
         else:
             if isinstance(url, six.binary_type):
-                url = url.decode('utf-8') # XXX
+                url = url.decode('utf-8', errors='replace') # XXX
             url = urlparse(url)
             netloc = url.netloc
 
