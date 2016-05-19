@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def urlquote(value):
-    if isinstance(value, int):
+    if isinstance(value, six.integer_types):
         value = six.text_type(value)
     return quote(value.encode('utf-8'))
 

@@ -34,6 +34,9 @@ class URLTests(unittest.TestCase):
         'Set new param in url'
         u = URL('/path/to/something', query=[('title', 'title'), ('id', 3), ('page', 5)])
         self.assertEqual(u, '/path/to/something?title=title&id=3&page=5')
+        if six.PY2:
+            u = u.qs_set(page=long(2))
+            self.assertEqual(u, '/path/to/something?title=title&id=3&page=2')
         u = u.qs_set(page=6)
         self.assertEqual(u, '/path/to/something?title=title&id=3&page=6')
         u = u.qs_set(page=7, title='land')
