@@ -223,3 +223,9 @@ class UrlTemplateTest(unittest.TestCase):
         'Unknown converter'
         self.assertRaises(KeyError, lambda: UrlTemplate('/<baba:name>/'))
         self.assertRaises(KeyError, lambda: UrlTemplate('/<baba:name></'))
+
+    def test_parse_cp_1251(self):
+        url_string = u"http://test.com/?query=привет".encode('cp1251')
+        url = URL.from_url(url_string)
+        self.assertEqual(url.host, 'test.com')
+        self.assertEqual(url.query['query'], u'�'*6)
