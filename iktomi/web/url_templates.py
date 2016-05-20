@@ -2,7 +2,7 @@
 import six
 if six.PY2:
     from urllib import quote, unquote
-else:
+else:# pragma: no cover
     from urllib.parse import quote, unquote
 
 import re

@@ -30,6 +30,9 @@ class Tests(unittest.TestCase):
         quoted = quote_js(u'\\\n\r\'"<>&')
         for char in bad_chars:
             self.assertNotIn(char, quoted)
+        quoted = quote_js('\\\n\r\'"<>&')
+        for char in bad_chars:
+            self.assertNotIn(char, quoted)
 
     def test_weakproxy(self):
         # Immutable objects that can't be weakly referenced

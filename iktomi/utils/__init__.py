@@ -24,7 +24,6 @@ def quote_js(text):
     '''Quotes text to be used as JavaScript string in HTML templates. The
     result doesn't contain surrounding quotes.'''
     if isinstance(text, six.binary_type):
-        # XXX test?
         text = text.decode('utf-8') # for Jinja2 Markup
     text = text.replace('\\', '\\\\');
     text = text.replace('\n', '\\n');

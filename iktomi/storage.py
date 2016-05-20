@@ -2,11 +2,11 @@
 
 
 class Storage(object):
-    def set(self, key, value, time=0):
+    def set(self, key, value, time=0):# pragma: no cover
         raise NotImplementedError()
-    def get(self, key, default=None):
+    def get(self, key, default=None):# pragma: no cover
         raise NotImplementedError()
-    def delete(self, key):
+    def delete(self, key):# pragma: no cover
         raise NotImplementedError()
 
 

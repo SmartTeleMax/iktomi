@@ -5,7 +5,7 @@ __all__ = ['URL']
 import six
 if six.PY2:
     from urlparse import urlparse, parse_qs, unquote
-else:
+else:# pragma: no cover; we checking coverage only in python2 part
     from urllib.parse import urlparse, parse_qs, unquote
 from webob.multidict import MultiDict
 from .url_templates import urlquote
@@ -32,7 +32,7 @@ if six.PY2:
                       v.decode('utf-8', errors="replace"))
                      for v in values]
                     for k, values in parse_qs(query).items()], [])
-else:
+else:# pragma: no cover
     def _parse_qs(query):
         return sum([[(k, v) for v in values]
                      for k, values in parse_qs(query).items()], [])
@@ -75,7 +75,7 @@ class URL(str):
                 url = url.encode('utf-8')
             url = urlparse(url)
             netloc = url.netloc.decode('utf-8') # XXX HACK
-        else:
+        else:# pragma: no cover
             if isinstance(url, six.binary_type):
                 url = url.decode('utf-8', errors='replace') # XXX
             url = urlparse(url)
@@ -156,7 +156,7 @@ class URL(str):
         if six.PY2:
             # in PY2 unquote returns encoded value of the type it has accepted
             path = unquote(self.path.encode('utf-8')).decode('utf-8')
-        else:
+        else:# pragma: no cover
             # in PY3 is accepts and returns decoded str
             path = unquote(self.path)
         if self.host:

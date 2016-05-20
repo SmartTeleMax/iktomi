@@ -127,3 +127,4 @@ class HostnameValidationTest(unittest.TestCase):
         self.assertTrue(is_host_valid('test-test.ru'))
         self.assertFalse(is_host_valid('-test-test.ru'))
         self.assertFalse(is_host_valid('test-test.ru-'))
+        self.assertTrue(is_host_valid('hello128'))
