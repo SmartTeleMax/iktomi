@@ -105,13 +105,19 @@ class Cleaner(clean.Cleaner):
                     continue
                 par = None
 
+    def _tail_is_empty(self, el):
+        return not el.tail and el.tail.strip(u'  \t\r\n\v\f\u00a0')
+
     def is_element_empty(self, el):
         if el.tag == 'br':
             return True
         if el.tag not in self.drop_empty_tags:
             return False
         children = el.getchildren()
-        empty_children = all(map(self.is_element_empty, children))
+        empty_children = all(
+            [self.is_element_empty(child) and self._tail_is_empty(child)
+             for child in children]
+        )
         text = el.text and el.text.strip(u'  \t\r\n\v\f\u00a0')
         return not text and empty_children
 
