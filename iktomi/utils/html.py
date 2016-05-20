@@ -106,7 +106,7 @@ class Cleaner(clean.Cleaner):
                 par = None
 
     def _tail_is_empty(self, el):
-        return not el.tail and el.tail.strip(u'  \t\r\n\v\f\u00a0')
+        return not (el.tail and el.tail.strip(u'  \t\r\n\v\f\u00a0'))
 
     def is_element_empty(self, el):
         if el.tag == 'br':
