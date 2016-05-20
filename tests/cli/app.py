@@ -121,6 +121,7 @@ class WebAppServerTest(unittest.TestCase):
         response = urlopen('http://localhost:11111')
         self.assertEqual(b"hello world", response.read())
         response.close()
+        sleep(.6)  # Test can fail in OSX without this wait.
         with open(self.manage) as f:
             new_code = f.read().replace('world', 'iktomi')
         with open(self.manage, "w") as f:
