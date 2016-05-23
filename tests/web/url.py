@@ -89,19 +89,46 @@ class URLTests(unittest.TestCase):
     def test_iri(self):
         u = URL('/', host=u'example.com')
         self.assertEqual(u, u'http://example.com/')
-        u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'})
-        self.assertEqual(u, u'http://xn--80aswg.xn--p1ai/%D1%83%D1%80%D0%BB/?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA')
+        u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'}, fragment=u"якорь")
+        self.assertEqual(u, u'http://xn--80aswg.xn--p1ai'
+                                    u'/%D1%83%D1%80%D0%BB/'
+                                    u'?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'
+                                    u'#%D1%8F%D0%BA%D0%BE%D1%80%D1%8C')
+        # Note: you should probably not use unicode in fragment part of URL.
+        #       We encode it according to RFC, but different client handle
+        #       it in different ways: Chrome allows unicode and does not 
+        #       encode/decode it at all, while Firefox handles it according RFC
 
     def test_no_quote(self):
-        u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'})
-        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск')
+        u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'}, fragment=u"якорь")
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=п#якорь')
+
+        u = URL(u'/%D1%83%D1%80%D0%BB/',
+                host=u'xn--80aswg.xn--p1ai',
+                query={'q': u'%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'},
+                fragment=u"%D1%8F%D0%BA%D0%BE%D1%80%D1%8C")
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
+
+        # XXX what is right way to handle this?
+        u = URL(b'/%D1%83%D1%80%D0%BB/',
+                host=b'xn--80aswg.xn--p1ai',
+                query={'q': b'%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'},
+                fragment=b"%D1%8F%D0%BA%D0%BE%D1%80%D1%8C")
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
+
+        u = URL(u'/%D1%83%D1%80%D0%BB/',
+                host=u'xn--80aswg.xn--p1ai',
+                query={'q': u'%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'},
+                fragment=u"%D1%8F%D0%BA%D0%BE%D1%80%D1%8C")
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
 
     def test_from_url(self):
-        url = URL.from_url('http://example.com/url?a=1&b=2&b=3', show_host=False)
+        url = URL.from_url('http://example.com/url?a=1&b=2&b=3#anchor', show_host=False)
         self.assertEqual(url.schema, 'http')
         self.assertEqual(url.host, 'example.com')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
+        self.assertEqual(url.fragment, 'anchor')
         self.assertEqual(set(url.query.items()), {('a' ,'1'), ('b', '2'), ('b', '3')})
         self.assertEqual(url.show_host, False)
 
@@ -122,17 +149,23 @@ class URLTests(unittest.TestCase):
         self.assertEqual(set(url.query.items()), {('a' ,'1'), ('b', '2'), ('b', '3')})
 
     def test_from_url_idna(self):
-        url = URL.from_url(b'http://xn--80aswg.xn--p1ai/%D1%83%D1%80%D0%BB/?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA')
+        src = (u'http://xn--80aswg.xn--p1ai'
+                                u'/%D1%83%D1%80%D0%BB/'
+                                u'?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'
+                                u'#%D1%8F%D0%BA%D0%BE%D1%80%D1%8C')
+
+        url = URL.from_url(src.encode('utf-8'))
         self.assertEqual(url.get_readable(),
-                         u'http://сайт.рф/урл/?q=поиск')
-        url = URL.from_url(u'http://xn--80aswg.xn--p1ai/%D1%83%D1%80%D0%BB/?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA')
+                         u'http://сайт.рф/урл/?q=поиск#якорь')
+
+        url = URL.from_url(src)
         self.assertEqual(url.get_readable(),
-                         u'http://сайт.рф/урл/?q=поиск')
+                         u'http://сайт.рф/урл/?q=поиск#якорь')
 
     def test_from_url_broken_unicode(self):
-        url = URL.from_url('/search?q=hello%E3%81')
+        url = URL.from_url('/search%E3%81?q=hello%E3%81#hash%E3%81')
         self.assertEqual(url.get_readable(),
-                         u'/search?q=hello�')
+                         u'/search�?q=hello�#hash�')
 
     def test_cyrillic_path(self):
         url1 = URL.from_url(u'http://test.ru/тест'.encode('utf-8')) # encoded unicode
@@ -140,6 +173,15 @@ class URLTests(unittest.TestCase):
         # should work both without errors
         self.assertEqual(url1.path, '/%D1%82%D0%B5%D1%81%D1%82')
         self.assertEqual(url1.path, url2.path)
+
+    def test_empty_fragment(self):
+        # XXX is this a good interface?
+        self.assertEqual(URL.from_url('/').fragment, None)
+        self.assertEqual(URL.from_url('/#').fragment, '')
+
+        self.assertEqual(URL('/', fragment=None), '/')
+        self.assertEqual(URL('/', fragment='') ,'/#')
+
 
 class UrlTemplateTest(unittest.TestCase):
     def test_match(self):
@@ -229,3 +271,4 @@ class UrlTemplateTest(unittest.TestCase):
         url = URL.from_url(url_string)
         self.assertEqual(url.host, 'test.com')
         self.assertEqual(url.query['query'], u'�'*6)
+

@@ -46,6 +46,18 @@ else:# pragma: no cover
     # in PY3 is accepts and returns decoded str
     _unquote = unquote
 
+# Note: you should probably not use unicode in fragment part of URL.
+#       We encode it according to RFC, but different client handle
+#       it in different ways: Chrome allows unicode and does not 
+#       encode/decode it at all, while Firefox handles it according RFC
+def _decode_path(path):
+    if path is None:
+        return None
+    if isinstance(path, six.binary_type):
+        path = path.decode('utf-8', errors="replace") # XXX
+    if set(path) - _path_symbols:
+        path = urlquote(path)
+    return path
 
 
 class URL(str):
@@ -55,10 +67,8 @@ class URL(str):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        if isinstance(path, six.binary_type):
-            path = path.decode('utf-8') # XXX
-        if set(path) - _path_symbols:
-            path = urlquote(path)
+        path = _decode_path(path)
+        fragment = _decode_path(fragment)
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
@@ -68,7 +78,9 @@ class URL(str):
         self = str.__new__(cls, _self)
         self.path = path
         self.query = query
-        self.host = host
+
+        # force decode idna from both encoded and decoded input
+        self.host = host.encode('idna').decode('idna')
         self.port = port
         self.schema = schema
         self.fragment = fragment
@@ -94,9 +106,6 @@ class URL(str):
 
         query = _parse_qs(parsed.query)
         host = netloc.split(':', 1)[0] if ':' in netloc else netloc
-
-        # force decode idna from both encoded and decoded input
-        host = host.encode('idna').decode('idna')
 
         port = netloc.split(':')[1] if ':' in netloc else ''
         path = unquote(parsed.path)
