@@ -175,6 +175,5 @@ class PublicQuery(Query):
 
     def _compound_eager_statement(self, context):
         # fixing joined load
-        # XXX not tested! What is condition when this method is called
         statement = Query._compound_eager_statement(self, context)
         return self._add_eager_criterion(context, statement)
