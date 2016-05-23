@@ -5,7 +5,7 @@ __all__ = ['URL']
 import six
 if six.PY2:
     from urlparse import urlparse, parse_qs, unquote
-else:# pragma: no cover; we checking coverage only in python2 part
+else:# pragma: no cover; we check coverage only in python2 part
     from urllib.parse import urlparse, parse_qs, unquote
 from webob.multidict import MultiDict
 from .url_templates import urlquote
