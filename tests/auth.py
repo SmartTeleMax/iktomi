@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-
 import unittest
+import logging
 from iktomi import web
 from iktomi.auth import CookieAuth, SqlaModelAuth, auth_required, encrypt_password
 from iktomi.utils import cached_property
 
 __all__ = ['CookieAuthTests', 'SqlaModelAuthTests']
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class MockUser(object):
@@ -34,19 +39,20 @@ def identify_user(env, user_identity):
 
 
 class CookieAuthTests(unittest.TestCase):
+
     def setUp(self):
         auth = self.auth = CookieAuth(get_user_identity, identify_user)
         def anonymouse(env, data):
-            self.assert_(hasattr(env, 'user'))
+            self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user, None)
             return web.Response('ok')
         def no_anonymouse(env, data):
-            self.assert_(hasattr(env, 'user'))
+            self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user, MockUser(name='user name'))
             return web.Response('ok')
         self.app = web.cases(
             auth.login(),
-            auth.logout(),
+            auth.logout(redirect_to=None),
             auth | web.cases(
                 web.match('/a', 'a') | anonymouse,
                 web.match('/b', 'b') | auth_required | no_anonymouse,
@@ -54,7 +60,8 @@ class CookieAuthTests(unittest.TestCase):
         )
 
     def login(self, login, password):
-        return web.ask(self.app, '/login', data={'login':login, 'password':password})
+        return web.ask(self.app, '/login',
+                       data={'login':login, 'password':password})
 
     def test_anonymouse(self):
         '`Auth` anonymouse access'
@@ -71,12 +78,13 @@ class CookieAuthTests(unittest.TestCase):
         response = self.login('user name', '123')
         self.assertEqual(response.status_int, 303)
         self.assertEqual(response.headers['Location'], '/')
-        self.assert_('Set-Cookie' in response.headers)
+        self.assertTrue('Set-Cookie' in response.headers)
 
     def test_protected_resource(self):
         '`Auth` requesting protected resource by logined user'
         response = self.login('user name', '123')
-        response = web.ask(self.app, '/b', headers={'Cookie': response.headers['Set-Cookie']})
+        response = web.ask(self.app, '/b',
+                           headers={'Cookie': response.headers['Set-Cookie']})
         self.assertEqual(response.status_int, 200)
         self.assertEqual(response.body, b'ok')
 
@@ -97,23 +105,38 @@ class CookieAuthTests(unittest.TestCase):
                            headers={'Cookie': response.headers['Set-Cookie']})
         self.assertEqual(response.status_int, 303)
         self.assertEqual(response.headers['Location'], '/')
-        self.assert_(response.headers['Set-Cookie'].startswith('auth=; Max-Age=0; Path=/;'))
+        self.assertTrue(response.headers['Set-Cookie']\
+                        .startswith('auth=; Max-Age=0; Path=/;'))
+
+    def test_logout_referer(self):
+        '`Auth` logout of logined user'
+        response = self.login('user name', '123')
+        response = web.ask(self.app, '/logout', data={},
+                           headers={'Cookie': response.headers['Set-Cookie'],
+                                    'Referer': '/somepage'})
+        self.assertEqual(response.status_int, 303)
+        self.assertEqual(response.headers['Location'], '/somepage')
+        self.assertTrue(response.headers['Set-Cookie']\
+                        .startswith('auth=; Max-Age=0; Path=/;'))
 
 
 class CookieAuthTestsOnStorageDown(unittest.TestCase):
+
     def setUp(self):
         class Storage(object):
             def set(self, *args, **kwargs):
+                return False
+            def delete(self, *args, **kwargs):
                 return False
 
         auth = self.auth = CookieAuth(get_user_identity, identify_user,
                                       storage=Storage())
         def anonymouse(env, data):
-            self.assert_(hasattr(env, 'user'))
+            self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user, None)
             return web.Response('ok')
         def no_anonymouse(env, data):
-            self.assert_(hasattr(env, 'user'))
+            self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user, MockUser(name='user name'))
             return web.Response('ok')
         self.app = web.cases(
@@ -126,12 +149,21 @@ class CookieAuthTestsOnStorageDown(unittest.TestCase):
         )
 
     def login(self, login, password):
-        return web.ask(self.app, '/login', data={'login':login, 'password':password})
+        return web.ask(self.app, '/login',
+                       data={'login':login, 'password':password})
 
     def test_login(self):
         '`Auth` login of valid user'
-        with self.assertRaises(Exception):
-            self.login('user name', '123')
+        warnings = []
+        with mock.patch('logging.Logger.warning',
+                        side_effect=lambda m, *args:warnings.append(m % args)):
+            with self.assertRaises(Exception) as exc:
+                self.login('user name', '123')
+        self.assertIn('Storage', str(exc.exception))
+        self.assertIn('is gone or down', str(exc.exception))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('storage', warnings[0])
+        self.assertIn('is unreachable', warnings[0])
 
     def test_anonymouse(self):
         '`Auth` anonymouse access'
@@ -142,6 +174,24 @@ class CookieAuthTestsOnStorageDown(unittest.TestCase):
         response = web.ask(self.app, '/b')
         self.assertEqual(response.status_int, 303)
         self.assertEqual(response.headers['Location'], '/login?next=/b')
+
+    def test_logout(self):
+        '`Auth` logout of logined user'
+        self.auth.crash_without_storage = False
+
+        warnings = []
+        response = self.login('user name', '123')
+        with mock.patch('logging.Logger.warning',
+                        side_effect=lambda m, *args:warnings.append(m % args)):
+            response = web.ask(self.app, '/logout', data={},
+                               headers={'Cookie': response.headers['Set-Cookie']})
+        self.assertEqual(response.status_int, 303)
+        self.assertEqual(response.headers['Location'], '/')
+        self.assertTrue(response.headers['Set-Cookie']\
+                        .startswith('auth=; Max-Age=0; Path=/;'))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('storage', warnings[0])
+        self.assertIn('is unreachable', warnings[0])
 
 
 class SqlaModelAuthTests(unittest.TestCase):
@@ -181,12 +231,12 @@ class SqlaModelAuthTests(unittest.TestCase):
                 env.db.close()
 
         def anonymouse(env, data):
-            self.assert_(hasattr(env, 'user'))
+            self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user, None)
             return web.Response('ok')
 
         def no_anonymouse(env, data):
-            self.assert_(hasattr(env, 'user'))
+            self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user.login, 'user name')
             return web.Response('ok')
 
@@ -201,24 +251,27 @@ class SqlaModelAuthTests(unittest.TestCase):
         self.app = web.Application(app, Env)
 
     def login(self, login, password):
-        return web.ask(self.app, '/login', data={'login':login, 'password':password})
+        return web.ask(self.app, '/login',
+                       data={'login':login, 'password':password})
 
     def test_login(self):
         '`SqlaModelAuth` login of valid user'
         response = self.login('user name', '123')
         self.assertEqual(response.status_int, 303)
         self.assertEqual(response.headers['Location'], '/')
-        self.assert_('Set-Cookie' in response.headers)
+        self.assertTrue('Set-Cookie' in response.headers)
 
         cookie = response.headers['Set-Cookie']
         response = web.ask(self.app, '/b', headers={'Cookie': cookie})
         self.assertEqual(response.status_int, 200)
         self.assertEqual(response.body, b'ok')
 
-        response = web.ask(self.app, '/logout', data={}, headers={'Cookie': cookie})
+        response = web.ask(self.app, '/logout', data={},
+                           headers={'Cookie': cookie})
         self.assertEqual(response.status_int, 303)
         self.assertEqual(response.headers['Location'], '/')
-        self.assert_(response.headers['Set-Cookie'].startswith('auth=; Max-Age=0; Path=/;'))
+        self.assertTrue(response.headers['Set-Cookie']\
+                        .startswith('auth=; Max-Age=0; Path=/;'))
 
     def test_login_fail_wrong_pass(self):
         '`SqlaModelAuth` login fail: wrong pass'

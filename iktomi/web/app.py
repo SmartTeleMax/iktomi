@@ -16,15 +16,17 @@ logger = logging.getLogger(__name__)
 ip_number = '(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])'
 dns_letter = '[a-z\d]([a-z\d\-]*[a-z\d])?'
 port = '(?::\d+)'
-HOSTNAME_REGEX = re.compile("^({letter}\.)*{letter}[a-z]{port}?$".format(letter=dns_letter, 
+HOSTNAME_REGEX = re.compile("^({letter}\.)*{letter}{port}?$".format(letter=dns_letter,
                                                                          port=port), re.I)
-IP_REGEX = re.compile("^({number}\.){times}{number}{port}?$".format(number=ip_number, 
-                                                                    times="{3}", 
+IP_REGEX = re.compile("^({number}\.){times}{number}{port}?$".format(number=ip_number,
+                                                                    times='{3}',
                                                                     port=port), re.I)
 
 def is_host_valid(host):
-    return (re.match(HOSTNAME_REGEX, host) and not re.match(IP_REGEX, host)) or\
-            re.match(IP_REGEX, host)
+    is_hostname = re.match(HOSTNAME_REGEX, host)
+    is_ip = re.match(IP_REGEX, host)
+    digit_top_domain = re.search("\.\d+$".format(ip_number), host)
+    return (is_ip or is_hostname and not digit_top_domain)
 
 
 class AppEnvironment(StorageFrame):
@@ -113,7 +115,7 @@ class Application(object):
 
     def __call__(self, environ, start_response):
         '''
-        WSGI interface method. 
+        WSGI interface method.
         Creates webob and iktomi wrappers and calls `handle` method.
         '''
         # validating Host header to prevent problems with url parsing

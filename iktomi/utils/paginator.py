@@ -5,7 +5,7 @@ import math
 import six
 import itertools
 from six.moves import zip
-if six.PY3:
+if six.PY3:# pragma: no cover
     range = lambda *x: list(six.moves.range(*x)) # XXX
 from ..web.reverse import URL
 
