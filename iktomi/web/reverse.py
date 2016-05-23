@@ -12,6 +12,9 @@ class Location(object):
     '''
     Class representing an endpoint in the reverse url map.
     '''
+
+    fragment = None # XXX init
+
     def __init__(self, *builders, **kwargs):
         self.builders = list(builders)
         self.subdomains = kwargs.get('subdomains', [])
@@ -44,9 +47,12 @@ class Location(object):
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and \
-               self.builders == other.builders and self.subdomains == other.subdomains
+               self.builders == other.builders and \
+               self.subdomains == other.subdomains and \
+               self.fragment == other.fragment
 
     def __repr__(self):
+        # XXX fragment
         if self.subdomains:
             return '{}(*{!r}, subdomains={!r})'.format(
                         self.__class__.__name__, self.builders,
@@ -63,9 +69,9 @@ class Reverse(object):
 
     Usually an instance of `Reverse` can be found in `env.root`.
     '''
-    def __init__(self, scope, location=None, path='', host='', ready=False, 
-                 need_arguments=False, bound_env=None, parent=None,
-                 finalize_params=None, pending_args=None):
+    def __init__(self, scope, location=None, path='', host='',
+                 ready=False, need_arguments=False, bound_env=None, parent=None,
+                 finalize_params=None, pending_args=None, fragment=None):
         # location is stuff containing builders for current reverse step
         # (builds url part for particular namespace or endpoint)
         self._location = location
@@ -74,6 +80,8 @@ class Reverse(object):
         self._scope = scope
         self._path = path
         self._host = host
+        self._fragment = fragment
+        assert fragment is None or isinstance(fragment, basestring)
         # ready means that self._location path and subdomain have been already
         # added to self._path and self._host
         self._ready = ready
@@ -112,13 +120,17 @@ class Reverse(object):
         if self._is_endpoint or self._need_arguments:
             finalize_params = {}
             path, host = self._path, self._host
-            if self._location and not self._ready:
+            location = self._location
+            fragment = self._fragment
+            if location and not self._ready:
                 kwargs.update(self._pending_args)
-                host = self._attach_subdomain(host, self._location)
-                path += self._location.build_path(self, **kwargs)
+                host = self._attach_subdomain(host, location)
+                path += location.build_path(self, **kwargs)
+                fragment = fragment if location.fragment is None else location.fragment
             if '' in self._scope:
                 finalize_params = kwargs
-            return self.__class__(self._scope, self._location, path=path, host=host,
+            return self.__class__(self._scope, location, path=path, host=host,
+                                  fragment=fragment,
                                   bound_env=self._bound_env, 
                                   ready=self._is_endpoint,
                                   parent=self._parent,
@@ -139,12 +151,15 @@ class Reverse(object):
             location, scope = self._scope[name]
             path = self._path
             host = self._host
+            fragment = self._fragment
             ready = not location.need_arguments
             if ready:
                 path += location.build_path(self)
+                fragment = fragment if location.fragment is None else location.fragment
                 host = self._attach_subdomain(host, location)
             pending_args = dict(self._finalize_params)
             return self.__class__(scope, location, path, host, ready,
+                                  fragment=fragment,
                                   bound_env=self._bound_env,
                                   parent=self,
                                   need_arguments=location.need_arguments,
@@ -162,7 +177,9 @@ class Reverse(object):
         location = self._scope[''][0]
         host = self._attach_subdomain(host, location)
         path += location.build_path(self, **self._finalize_params)
+        fragment = self._fragment if location.fragment is None else location.fragment
         return self.__class__({}, self._location, path=path, host=host,
+                              fragment=fragment,
                               bound_env=self._bound_env, 
                               parent=self._parent,
                               ready=self._is_endpoint)
@@ -235,7 +252,6 @@ class Reverse(object):
             path, host = self._path, self._host
         else:
             return self().as_url
-            #raise UrlBuildingError('Not an endpoint {}'.format(repr(self)))
 
         # XXX there is a little mess with `domain` and `host` terms
         if ':' in host:
@@ -262,7 +278,7 @@ class Reverse(object):
 
             return URL(path, host=domain or request_domain,
                        port=port if port != scheme_port else None,
-                       schema=request.scheme,
+                       schema=request.scheme, fragment=self._fragment,
                        show_host=host and (domain != primary_domain \
                                            or port != request_port))
         return URL(path, host=domain, port=port, show_host=True)
@@ -291,6 +307,7 @@ class Reverse(object):
         '''
         return self.__class__(self._scope, self._location,
                               path=self._path, host=self._host,
+                              fragment=self._fragment,
                               ready=self._ready,
                               need_arguments=self._need_arguments,
                               finalize_params=self._finalize_params,
