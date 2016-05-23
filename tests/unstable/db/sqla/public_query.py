@@ -341,6 +341,8 @@ class PublicQueryTest(unittest.TestCase):
             if photos is not None:
                 self.assertEqual(set(p.photo for p in user.photos),
                                  set(photos))
+            # adding limit constraint leads to use of
+            # _compound_eager_statement instead of _simple_statement
             users = query.limit(1).all()
             if user is not None:
                 self.assertEqual(len(users), 1)
