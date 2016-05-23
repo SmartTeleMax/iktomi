@@ -101,26 +101,17 @@ class URLTests(unittest.TestCase):
 
     def test_no_quote(self):
         u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'}, fragment=u"якорь")
-        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=п#якорь')
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
 
-        u = URL(u'/%D1%83%D1%80%D0%BB/',
+    def test_quotted_path_to_constructor(self):
+        u = URL(u'/%D1%83/',
                 host=u'xn--80aswg.xn--p1ai',
-                query={'q': u'%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'},
-                fragment=u"%D1%8F%D0%BA%D0%BE%D1%80%D1%8C")
-        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
-
-        # XXX what is right way to handle this?
-        u = URL(b'/%D1%83%D1%80%D0%BB/',
-                host=b'xn--80aswg.xn--p1ai',
-                query={'q': b'%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'},
-                fragment=b"%D1%8F%D0%BA%D0%BE%D1%80%D1%8C")
-        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
-
-        u = URL(u'/%D1%83%D1%80%D0%BB/',
-                host=u'xn--80aswg.xn--p1ai',
-                query={'q': u'%D0%BF%D0%BE%D0%B8%D1%81%D0%BA'},
-                fragment=u"%D1%8F%D0%BA%D0%BE%D1%80%D1%8C")
-        self.assertEqual(u.get_readable(), u'http://сайт.рф/урл/?q=поиск#якорь')
+                query={'q': u'%D0%BF'},
+                fragment=u"%D1%8F")
+        # We shold not try to unquote the urlqouted values!
+        # Otherwise it is impossible to build a consistent interface
+        self.assertEqual(u, u'http://сайт.рф/%25D1%2583/?q=%25D0%25BF#%25D1%258F')
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/%D1%83/?q=%D0%BF#%D1%8F')
 
     def test_from_url(self):
         url = URL.from_url('http://example.com/url?a=1&b=2&b=3#anchor', show_host=False)
