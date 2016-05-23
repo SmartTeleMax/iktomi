@@ -10,9 +10,6 @@ else:# pragma: no cover; we check coverage only in python2 part
 from webob.multidict import MultiDict
 from .url_templates import urlquote
 
-_path_symbols = set(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                    u"0123456789._~!$&'()*+,;=:@%-/")
-
 
 def construct_url(path, query, host, port, schema, fragment=None):
     query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
@@ -55,8 +52,7 @@ def _decode_path(path):
         return None
     if isinstance(path, six.binary_type):
         path = path.decode('utf-8', errors="replace") # XXX
-    if set(path) - _path_symbols:
-        path = urlquote(path)
+    path = urlquote(path)
     return path
 
 

@@ -80,11 +80,15 @@ class URLTests(unittest.TestCase):
         not_here = u.qs_get('not_here')
         self.assertEqual(not_here, None)
 
-    def test_quote(self):
-        u = URL(quote('/path/to/+'))
-        self.assertEqual(u, '/path/to/%2B')
-        u = u.qs_set(page=7)
-        self.assertEqual(u, '/path/to/%2B?page=7')
+    #def test_quote(self):
+    #    # XXX this is WRONG!
+    #    # We shold not try to unquote the urlqouted values!
+    #    # Otherwise it is impossible to build a consistent interface
+    #    # If you want magic - use URL.from_url method!
+    #    u = URL(quote('/path/to/+'))
+    #    self.assertEqual(u, '/path/to/%2B')
+    #    u = u.qs_set(page=7)
+    #    self.assertEqual(u, '/path/to/%2B?page=7')
 
     def test_iri(self):
         u = URL('/', host=u'example.com')
@@ -110,7 +114,7 @@ class URLTests(unittest.TestCase):
                 fragment=u"%D1%8F")
         # We shold not try to unquote the urlqouted values!
         # Otherwise it is impossible to build a consistent interface
-        self.assertEqual(u, u'http://сайт.рф/%25D1%2583/?q=%25D0%25BF#%25D1%258F')
+        self.assertEqual(u, u'http://xn--80aswg.xn--p1ai/%25D1%2583/?q=%25D0%25BF#%25D1%258F')
         self.assertEqual(u.get_readable(), u'http://сайт.рф/%D1%83/?q=%D0%BF#%D1%8F')
 
     def test_from_url(self):
