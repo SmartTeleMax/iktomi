@@ -170,7 +170,6 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url1.path, url2.path)
 
     def test_empty_fragment(self):
-        # XXX is this a good interface?
         self.assertEqual(URL.from_url('/').fragment, None)
         self.assertEqual(URL.from_url('/#').fragment, '')
 

@@ -66,7 +66,6 @@ class Location(object):
                self.fragment_builder == other.fragment_builder
 
     def __repr__(self):
-        # XXX fragment
         args = '*{!r}'.format(self.builders)
         if self.subdomains:
             args += ', subdomains={!r}'.format(self.subdomains)
