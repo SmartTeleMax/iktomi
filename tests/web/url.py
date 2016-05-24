@@ -115,7 +115,7 @@ class URLTests(unittest.TestCase):
         # We shold not try to unquote the urlqouted values!
         # Otherwise it is impossible to build a consistent interface
         self.assertEqual(u, u'http://xn--80aswg.xn--p1ai/%25D1%2583/?q=%25D0%25BF#%25D1%258F')
-        self.assertEqual(u.get_readable(), u'http://сайт.рф/%D1%83/?q=%D0%BF#%D1%8F')
+        self.assertEqual(u.get_readable(), u'http://сайт.рф/%25D1%2583/?q=%25D0%25BF#%25D1%258F')
 
     def test_from_url(self):
         url = URL.from_url('http://example.com/url?a=1&b=2&b=3#anchor', show_host=False)

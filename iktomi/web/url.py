@@ -9,6 +9,7 @@ else:# pragma: no cover; we check coverage only in python2 part
     from urllib.parse import urlparse, parse_qs, unquote
 from webob.multidict import MultiDict
 from .url_templates import urlquote
+from iktomi.utils.url import uri_to_iri_parts
 
 
 def construct_url(path, query, host, port, schema, fragment=None):
@@ -57,6 +58,13 @@ def _decode_path(path):
 
 
 class URL(str):
+
+    # as for now:
+    #     path - urlencoded string of text_type (not bytes)
+    #     host - unicode idna-decoded
+    #     query - dict of unicode keys and unicode or implementing
+    #             string convertion values
+    #     fragment - None or urlencoded string of text_type
 
     def __new__(cls, path, query=None, host=None, port=None, schema=None,
                 fragment=None, show_host=True):
@@ -169,13 +177,12 @@ class URL(str):
 
     def get_readable(self):
         '''Gets human-readable representation of the url (as unicode string)'''
-        query = (u'?' + u'&'.join(u'{}={}'.format(k, v)
+        query = (u'?' + u'&'.join(u'{}={}'.format(urlquote(k), urlquote(v))
                                   for k, v in six.iteritems(self.query))
                  if self.query else '')
+        hash_part = (u'#' + self.fragment) if self.fragment is not None else u''
 
-
-        path = _unquote(self.path)
-        hash_part = (u'#' + _unquote(self.fragment)) if self.fragment is not None else u''
+        path, query, hash_part = uri_to_iri_parts(self.path, query, hash_part)
 
         if self.host:
             port = u':' + self.port if self.port else u''
