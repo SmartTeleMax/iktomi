@@ -550,7 +550,6 @@ class ReverseTests(unittest.TestCase):
             )
 
         r = web.Reverse.from_handler(app)
-        print web.Reverse.from_handler(web.match('/', 'index', fragment='index')).index.as_url
         self.assertEqual(r.index.as_url, '/x/#index')
         self.assertEqual(r.cyrillic.as_url, '/x/#%D1%8F')
         self.assertEqual(r.page(page=1).as_url, '/x/#page1')

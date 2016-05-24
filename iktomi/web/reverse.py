@@ -94,7 +94,6 @@ class Reverse(object):
         self._path = path
         self._host = host
         self._fragment = fragment
-        assert fragment is None or isinstance(fragment, basestring)
         # ready means that self._location path and subdomain have been already
         # added to self._path and self._host
         self._ready = ready
