@@ -9,22 +9,22 @@ else:# pragma: no cover; we check coverage only in python2 part
     from urllib.parse import urlparse, parse_qs, unquote
 from webob.multidict import MultiDict
 from .url_templates import urlquote
-
-_path_symbols = set(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                    u"0123456789._~!$&'()*+,;=:@%-/")
+from iktomi.utils.url import uri_to_iri_parts
 
 
-def construct_url(path, query, host, port, schema):
+def construct_url(path, query, host, port, schema, fragment=None):
     query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
                             for k, v in six.iteritems(query))
              if query else '')
 
+    hash_part = ('#' + fragment) if fragment is not None else ''
+
     if host:
         host = host.encode('idna').decode('utf-8')
         port = ':' + port if port else ''
-        return ''.join((schema, '://', host, port, path,  query))
+        return ''.join((schema, '://', host, port, path,  query, hash_part))
     else:
-        return path + query
+        return path + query + hash_part
 
 if six.PY2:
     def _parse_qs(query):
@@ -32,35 +32,62 @@ if six.PY2:
                       v.decode('utf-8', errors="replace"))
                      for v in values]
                     for k, values in parse_qs(query).items()], [])
+
+    def _unquote(path):
+        # in PY2 unquote returns encoded value of the type it has accepted
+        return unquote(path.encode('utf-8')).decode('utf-8')
 else:# pragma: no cover
     def _parse_qs(query):
         return sum([[(k, v) for v in values]
                      for k, values in parse_qs(query).items()], [])
 
+    # in PY3 is accepts and returns decoded str
+    _unquote = unquote
 
+# Note: you should probably not use unicode in fragment part of URL.
+#       We encode it according to RFC, but different client handle
+#       it in different ways: Chrome allows unicode and does not 
+#       encode/decode it at all, while Firefox handles it according RFC
+def _decode_path(path):
+    if path is None:
+        return None
+    if isinstance(path, six.binary_type):
+        path = path.decode('utf-8', errors="replace") # XXX
+    path = urlquote(path)
+    return path
 
 
 class URL(str):
 
+    # as for now:
+    #     path - urlencoded string of text_type (not bytes)
+    #     host - unicode idna-decoded
+    #     query - dict of unicode keys and unicode or implementing
+    #             string convertion values
+    #     fragment - None or urlencoded string of text_type
+
     def __new__(cls, path, query=None, host=None, port=None, schema=None,
-                show_host=True):
+                fragment=None, show_host=True):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        if isinstance(path, six.binary_type):
-            path = path.decode('utf-8') # XXX
-        if set(path) - _path_symbols:
-            path = urlquote(path)
+        path = _decode_path(path)
+        fragment = _decode_path(fragment)
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
         schema = schema or 'http'
-        self = str.__new__(cls, construct_url(path, query, host if show_host else '', port,schema))
+        _self = construct_url(path, query, host if show_host else '',
+                              port, schema, fragment)
+        self = str.__new__(cls, _self)
         self.path = path
         self.query = query
-        self.host = host
+
+        # force decode idna from both encoded and decoded input
+        self.host = host.encode('idna').decode('idna')
         self.port = port
         self.schema = schema
+        self.fragment = fragment
         self.show_host = show_host
         return self
 
@@ -73,30 +100,31 @@ class URL(str):
         if six.PY2:
             if isinstance(url, six.text_type):
                 url = url.encode('utf-8')
-            url = urlparse(url)
-            netloc = url.netloc.decode('utf-8') # XXX HACK
+            parsed = urlparse(url)
+            netloc = parsed.netloc.decode('utf-8') # XXX HACK
         else:# pragma: no cover
             if isinstance(url, six.binary_type):
                 url = url.decode('utf-8', errors='replace') # XXX
-            url = urlparse(url)
-            netloc = url.netloc
+            parsed = urlparse(url)
+            netloc = parsed.netloc
 
-        query = _parse_qs(url.query)
+        query = _parse_qs(parsed.query)
         host = netloc.split(':', 1)[0] if ':' in netloc else netloc
 
-        # force decode idna from both encoded and decoded input
-        host = host.encode('idna').decode('idna')
-
         port = netloc.split(':')[1] if ':' in netloc else ''
-        path = unquote(url.path)
+        path = unquote(parsed.path)
+        fragment = unquote(parsed.fragment)
+        if not fragment and not url.endswith('#'):
+            fragment = None
         return cls(path,
                    query, host,
-                   port, url.scheme, show_host)
+                   port, parsed.scheme, fragment, show_host)
 
     def _copy(self, **kwargs):
         path = kwargs.pop('path', self.path)
         kw = dict(query=self.query, host=self.host,
                   port=self.port, schema=self.schema,
+                  fragment=self.fragment,
                   show_host=self.show_host)
         kw.update(kwargs)
         return self.__class__(path, **kw)
@@ -148,22 +176,22 @@ class URL(str):
         return self.query.get(key, default=default)
 
     def get_readable(self):
-        '''Gets human-readable representation of the url (as unicode string)'''
-        query = (u'?' + u'&'.join(u'{}={}'.format(k, v)
+        '''
+        Gets human-readable representation of the url (as unicode string,
+        IRI according RFC3987)
+        '''
+        query = (u'?' + u'&'.join(u'{}={}'.format(urlquote(k), urlquote(v))
                                   for k, v in six.iteritems(self.query))
                  if self.query else '')
+        hash_part = (u'#' + self.fragment) if self.fragment is not None else u''
 
-        if six.PY2:
-            # in PY2 unquote returns encoded value of the type it has accepted
-            path = unquote(self.path.encode('utf-8')).decode('utf-8')
-        else:# pragma: no cover
-            # in PY3 is accepts and returns decoded str
-            path = unquote(self.path)
+        path, query, hash_part = uri_to_iri_parts(self.path, query, hash_part)
+
         if self.host:
             port = u':' + self.port if self.port else u''
-            return u''.join((self.schema, '://', self.host, port, path,  query))
+            return u''.join((self.schema, '://', self.host, port, path,  query, hash_part))
         else:
-            return path + query
+            return path + query + hash_part
 
     def __repr__(self):
         return '<URL {!r}>'.format(str(self))

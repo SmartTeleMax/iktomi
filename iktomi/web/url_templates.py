@@ -62,8 +62,7 @@ def construct_re(url_template, match_whole_str=False, converters=None,
             #      - make part str if it was unicode
             #      - urlquote part
             #      - escape all specific for re chars in part
-            part = urlquote(part)
-            result += re.escape(part)
+            result += re.escape(urlquote(part))
             builder_params.append(part)
             continue
         is_converter = _converter_pattern.match(part)
@@ -149,10 +148,10 @@ class UrlTemplate(object):
                     else:
                         raise UrlBuildingError('Missing argument for '
                                                'URL builder: {}'.format(var))
-                result += urlquote(conv_obj.to_url(value))
+                result += conv_obj.to_url(value)
             else:
                 result += part
-        # result - urlencoded str
+        # result - unicode not quotted string
         return result
 
     def _init_converters(self, converters):

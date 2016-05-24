@@ -20,7 +20,9 @@ class LocationsTests(unittest.TestCase):
 
     def test_repr(self):
         # for coverage
-        "%r" % Location(UrlTemplate('/docs', match_whole_str=False))
+        "%r" % Location(UrlTemplate('/docs', match_whole_str=False),
+                        subdomains=['www'],
+                        fragment_builder=UrlTemplate('hash'),)
 
     def test_match(self):
         'Locations of web.match'
@@ -536,4 +538,20 @@ class ReverseTests(unittest.TestCase):
         self.assertEqual(r.ns(id1=1).nested(id2=2).as_url, '/1/n/2')
         self.assertEqual(r.build_url('ns.nested'), '/0/n/0')
         self.assertEqual(r.build_url('ns.nested', id1=1, id2=2), '/1/n/2')
+
+    def test_match_fragment(self):
+        app = web.prefix('/x') | web.cases(
+            web.match('/', 'index', fragment='index'),
+            web.match('/', 'cyrillic', fragment=u'я'),
+            web.match('/', 'page', fragment='page<int:page>'),
+            web.prefix('/z', name="z") | web.cases(
+                web.match('', name="", fragment="z")
+                )
+            )
+
+        r = web.Reverse.from_handler(app)
+        self.assertEqual(r.index.as_url, '/x/#index')
+        self.assertEqual(r.cyrillic.as_url, '/x/#%D1%8F')
+        self.assertEqual(r.page(page=1).as_url, '/x/#page1')
+        self.assertEqual(r.z.as_url, '/x/z#z')
 

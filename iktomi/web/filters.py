@@ -40,10 +40,18 @@ class match(WebHandler):
                   convs={'date': MyDateUrlConv}) | by_date,
     '''
 
-    def __init__(self, url='', name='', convs=None):
+
+    def __init__(self, url='', name='', fragment=None, convs=None):
         self.url = url
         self.url_name = name
+        self.fragment = fragment
         self.builder = UrlTemplate(url, converters=convs)
+
+        self.fragment = fragment
+        if self.fragment is not None:
+            self.fragment_builder = UrlTemplate(self.fragment, converters=convs)
+        else:
+            self.fragment_builder = None
 
     def match(self, env, data):
         matched, kwargs = self.builder.match(env._route_state.path, env=env)
@@ -55,7 +63,9 @@ class match(WebHandler):
     __call__ = match # for beautiful tracebacks
 
     def _locations(self):
-        return {self.url_name: (Location(self.builder), {})}
+        location = Location(self.builder,
+                            fragment_builder=self.fragment_builder)
+        return {self.url_name: (location, {})}
 
     def __repr__(self):
         return '{}({!r}, {!r})'.format(self.__class__.__name__,
