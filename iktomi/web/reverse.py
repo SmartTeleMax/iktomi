@@ -12,16 +12,25 @@ class Location(object):
     '''
     Class representing an endpoint in the reverse url map.
     '''
-
-    fragment = None # XXX init
+    # XXX For backward compatibility, some subclasses override constructor
+    fragment_builder = None
 
     def __init__(self, *builders, **kwargs):
         self.builders = list(builders)
         self.subdomains = kwargs.get('subdomains', [])
+        self.fragment_builder = kwargs.get('fragment_builder', None)
+
+    @property
+    def all_builders(self):
+        builders = self.builders
+        if self.fragment_builder is not None:
+            # attention! not +=
+            builders = builders + [self.fragment_builder]
+        return builders
 
     @property
     def need_arguments(self):
-        for b in self.builders:
+        for b in self.all_builders:
             if b._url_params:
                 return True
         return False
@@ -38,10 +47,15 @@ class Location(object):
                       if getattr(x, 'primary', x)]
         return u'.'.join(subdomains)
 
+    def build_fragment(self, reverse, **kwargs):
+        if self.fragment_builder is None:
+            return None
+        return self.fragment_builder(**kwargs)
+
     @property
     def url_arguments(self):
         result = set()
-        for builder in self.builders:
+        for builder in self.all_builders:
             result |= set(builder._url_params)
         return result
 
@@ -49,16 +63,16 @@ class Location(object):
         return isinstance(other, self.__class__) and \
                self.builders == other.builders and \
                self.subdomains == other.subdomains and \
-               self.fragment == other.fragment
+               self.fragment_builder == other.fragment_builder
 
     def __repr__(self):
         # XXX fragment
+        args = '*{!r}'.format(self.builders)
         if self.subdomains:
-            return '{}(*{!r}, subdomains={!r})'.format(
-                        self.__class__.__name__, self.builders,
-                        self.subdomains)
-        return '{}(*{!r})'.format(
-                    self.__class__.__name__, self.builders)
+            args += ', subdomains={!r}'.format(self.subdomains)
+        if self.fragment_builder:
+            args += ', fragment={!r}'.format(self.fragment_builder)
+        return '{}({})'.format(self.__class__.__name__, args)
 
 
 
@@ -126,7 +140,10 @@ class Reverse(object):
                 kwargs.update(self._pending_args)
                 host = self._attach_subdomain(host, location)
                 path += location.build_path(self, **kwargs)
-                fragment = fragment if location.fragment is None else location.fragment
+                # a little bit verbose to ease test coverage usage
+                loc_fragment = location.build_fragment(self, **kwargs)
+                if loc_fragment is not None:
+                    fragment = loc_fragment
             if '' in self._scope:
                 finalize_params = kwargs
             return self.__class__(self._scope, location, path=path, host=host,
@@ -155,7 +172,9 @@ class Reverse(object):
             ready = not location.need_arguments
             if ready:
                 path += location.build_path(self)
-                fragment = fragment if location.fragment is None else location.fragment
+                loc_fragment = location.build_fragment(self)
+                if loc_fragment is not None:
+                    fragment = loc_fragment
                 host = self._attach_subdomain(host, location)
             pending_args = dict(self._finalize_params)
             return self.__class__(scope, location, path, host, ready,
@@ -177,10 +196,14 @@ class Reverse(object):
         location = self._scope[''][0]
         host = self._attach_subdomain(host, location)
         path += location.build_path(self, **self._finalize_params)
-        fragment = self._fragment if location.fragment is None else location.fragment
+        loc_fragment = location.build_fragment(self, **self._finalize_params)
+        if loc_fragment is not None:
+            fragment = loc_fragment
+        else:
+            fragment = self._fragment
         return self.__class__({}, self._location, path=path, host=host,
                               fragment=fragment,
-                              bound_env=self._bound_env, 
+                              bound_env=self._bound_env,
                               parent=self._parent,
                               ready=self._is_endpoint)
 
@@ -281,7 +304,8 @@ class Reverse(object):
                        schema=request.scheme, fragment=self._fragment,
                        show_host=host and (domain != primary_domain \
                                            or port != request_port))
-        return URL(path, host=domain, port=port, show_host=True)
+        return URL(path, host=domain, port=port,
+                   fragment=self._fragment, show_host=True)
 
     def __str__(self):
         '''URLencoded representation of the URL'''
