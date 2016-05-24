@@ -176,7 +176,10 @@ class URL(str):
         return self.query.get(key, default=default)
 
     def get_readable(self):
-        '''Gets human-readable representation of the url (as unicode string)'''
+        '''
+        Gets human-readable representation of the url (as unicode string,
+        IRI according RFC3987)
+        '''
         query = (u'?' + u'&'.join(u'{}={}'.format(urlquote(k), urlquote(v))
                                   for k, v in six.iteritems(self.query))
                  if self.query else '')

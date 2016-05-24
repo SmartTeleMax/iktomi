@@ -160,7 +160,9 @@ class URLTests(unittest.TestCase):
     def test_from_url_broken_unicode(self):
         url = URL.from_url('/search%E3%81?q=hello%E3%81#hash%E3%81')
         self.assertEqual(url.get_readable(),
-                         u'/search�?q=hello�#hash�')
+                         u'/search\N{REPLACEMENT CHARACTER}'
+                                u'?q=hello\N{REPLACEMENT CHARACTER}'
+                                 u'#hash\N{REPLACEMENT CHARACTER}')
 
     def test_cyrillic_path(self):
         url1 = URL.from_url(u'http://test.ru/тест'.encode('utf-8')) # encoded unicode
@@ -264,5 +266,5 @@ class UrlTemplateTest(unittest.TestCase):
         url_string = u"http://test.com/?query=привет".encode('cp1251')
         url = URL.from_url(url_string)
         self.assertEqual(url.host, 'test.com')
-        self.assertEqual(url.query['query'], u'�'*6)
+        self.assertEqual(url.query['query'], u'\N{REPLACEMENT CHARACTER}'*6)
 
