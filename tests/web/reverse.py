@@ -424,12 +424,13 @@ class ReverseTests(unittest.TestCase):
         assert web.ask(app, 'http://example.com:8000/url2')
         assert web.ask(app, 'https://example.com:80/url3')
         assert called_urls == [1,2,3]
-        
+
     def test_url_building_errors(self):
         'UrlBuildingError'
         app = web.namespace('news') | web.cases(
                 web.match('/', 'index'),
                 web.match('/<int:id>', 'item'),
+                web.match('/', 'anchor', fragment='<int:id>'),
                 )
 
         r = web.Reverse.from_handler(app)
@@ -442,11 +443,21 @@ class ReverseTests(unittest.TestCase):
         self.assertRaises(UrlBuildingError, r.build_url, 'news.item')
         self.assertRaises(UrlBuildingError, lambda: r.news.item.as_url)
 
-        self.assertRaises(UrlBuildingError, r.build_url, 'news.item', section='x')
-        self.assertRaises(UrlBuildingError, lambda: r.news.item(section='x'))
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.item', uid=3)
+        self.assertRaises(UrlBuildingError, lambda: r.news.item(uid=3))
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.item', id=3, uid=3)
 
         self.assertRaises(UrlBuildingError, r.build_url, 'news')
         self.assertRaises(UrlBuildingError, lambda: r.news.as_url)
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.hash')
+        self.assertRaises(UrlBuildingError, lambda: r.news.anchor.as_url)
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.hash', uid=3)
+        self.assertRaises(UrlBuildingError, lambda: r.news.anchor(uid=3).as_url)
+
+        self.assertRaises(UrlBuildingError, r.build_url, 'news.hash', id=3, uid=3)
 
     def test_multiple_params(self):
         app = web.prefix('/persons/<int:person_id>') | web.namespace('persons') |\

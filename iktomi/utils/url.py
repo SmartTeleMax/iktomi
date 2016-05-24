@@ -3,7 +3,7 @@
     Originally from werkzeug.urls
 
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
-    :license: BSD, see LICENSE for more details.
+    :license: BSD
 """
 from six import text_type
 from six.moves.urllib.parse import quote
@@ -19,14 +19,10 @@ def url_unquote(string, unsafe=''):
     is set to `None` no unicode decoding is performed and raw bytes
     are returned.
 
-    :param s: the string to unquote.
-    :param charset: the charset of the query string.  If set to `None`
-                    no unicode decoding will take place.
-    :param errors: the error handling for the charset decoding.
+    :param string: the string to unquote.
     """
     rv = _unquote_to_bytes(string, unsafe)
-    rv = repercent_broken_unicode(rv)
-    return rv
+    return repercent_broken_unicode(rv)
 
 
 def _unquote_to_bytes(string, unsafe=''):
@@ -65,7 +61,7 @@ def repercent_broken_unicode(path):
             path = path[:e.start] + repercent.encode('ascii') + path[e.end:]
 
 
-def uri_to_iri_parts(path, query, fragment=None):
+def uri_to_iri_parts(path, query, fragment):
     r"""
     Converts a URI parts to corresponding IRI parts in a given charset.
 
@@ -74,8 +70,6 @@ def uri_to_iri_parts(path, query, fragment=None):
     :param path: The path of URI to convert.
     :param query: The query string of URI to convert.
     :param fragment: The fragment of URI to convert.
-    :param charset: The charset of the URI.
-    :param errors: The error handling on decode.
     """
     path = url_unquote(path, '%/;?')
     query = url_unquote(query, '%;/?:@&=+,$#')
