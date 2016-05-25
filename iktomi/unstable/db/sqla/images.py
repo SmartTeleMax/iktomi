@@ -5,7 +5,7 @@ from sqlalchemy.orm.session import object_session
 from sqlalchemy.orm.util import identity_key
 from iktomi.unstable.utils.image_resizers import ResizeFit
 from iktomi.utils import cached_property
-from ..files import TransientFile, PersistentFile
+from iktomi.db.files import TransientFile, PersistentFile
 from .files import FileEventHandlers, FileProperty
 
 logger = logging.getLogger(__name__)

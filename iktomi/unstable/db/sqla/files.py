@@ -7,7 +7,7 @@ from sqlalchemy.orm.util import class_mapper
 from sqlalchemy import event
 from sqlalchemy.util import set_creation_order
 from weakref import WeakKeyDictionary
-from ..files import TransientFile, PersistentFile
+from iktomi.db.files import TransientFile, PersistentFile
 
 logger = logging.getLogger(__name__)
 

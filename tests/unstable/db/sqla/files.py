@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.schema import MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
-from iktomi.unstable.db.files import TransientFile, PersistentFile, \
+from iktomi.db.files import TransientFile, PersistentFile, \
                                      FileManager
 from iktomi.unstable.db.sqla.files import FileProperty, filesessionmaker
 
