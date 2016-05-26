@@ -12,7 +12,7 @@ from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.db.files import TransientFile, PersistentFile, \
                                      FileManager
 from iktomi.db.sqla.files import filesessionmaker
-from iktomi.unstable.db.sqla.images import ImageProperty
+from iktomi.db.sqla.images import ImageProperty
 import logging
 
 
