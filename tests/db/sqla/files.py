@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
 from iktomi.db.files import TransientFile, PersistentFile, \
                                      FileManager
-from iktomi.unstable.db.sqla.files import FileProperty, filesessionmaker
+from iktomi.db.sqla.files import FileProperty, filesessionmaker
 
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
