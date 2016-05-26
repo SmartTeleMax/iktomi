@@ -1,6 +1,6 @@
 import unittest, os, tempfile, shutil, cgi
 from iktomi.db.files import TransientFile, FileManager
-from iktomi.unstable.forms.files import FileFieldSet
+from iktomi.forms.files import FileFieldSet
 from iktomi.forms import Form
 from iktomi.web.app import AppEnvironment
 from webob.multidict import MultiDict
