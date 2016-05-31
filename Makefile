@@ -1,7 +1,7 @@
 
 venv-%:
 	test -d venv-${*} || virtualenv -p ${*} venv-${*}
-	venv-${*}/bin/pip install -Ur requirements.txt
+	venv-${*}/bin/pip install -e .[tests] .[web] .[fcgi] .[sqla] .[memcached] .[cleanhtml] .[renderhtml] .[images] --process-dependency-links
 	touch venv-${*}/bin/activate
 
 devbuild-%: venv-%
