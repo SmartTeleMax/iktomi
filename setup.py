@@ -11,7 +11,7 @@ extras_requires = {
     'memcached': ['python-memcached'],
     'cleanhtml': ['lxml'],
     'renderhtml': ['jinja2'],
-    'images': ['pillow']
+    'images': ['pillow'],
     'docs': ['docutils', 'sphinx']
 }
 
