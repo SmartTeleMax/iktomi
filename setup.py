@@ -12,6 +12,7 @@ extras_requires = {
     'cleanhtml': ['lxml'],
     'renderhtml': ['jinja2'],
     'images': ['pillow']
+    'docs': ['docutils', 'sphinx']
 }
 
 tests_requires = [
@@ -29,6 +30,7 @@ dependency_links = [
     'https://github.com/ods/testalchemy/tarball/master#egg=testalchemy-0.4',
     'https://github.com/lunant/mockcache/tarball/master#egg=mockcache-1.0.3_alpha',
 ]
+
 extras_requires['tests'] = tests_requires
 
 setup(
