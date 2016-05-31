@@ -12,7 +12,6 @@ extras_requires = {
     'cleanhtml': ['lxml'],
     'renderhtml': ['jinja2'],
     'images': ['pillow'],
-    'docs': ['docutils', 'sphinx']
 }
 
 tests_requires = [
