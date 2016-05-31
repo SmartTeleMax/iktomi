@@ -24,7 +24,7 @@ tests_requires = [
 ]
 if sys.version_info[0] < 3:
     tests_requires.append('mock')
-print(tests_requires)
+
 dependency_links = [
     'https://github.com/ods/testalchemy/tarball/master#egg=testalchemy-0.4',
     'https://github.com/lunant/mockcache/tarball/master#egg=mockcache-1.0.3_alpha',
