@@ -5,7 +5,7 @@ from webob import Request
 from io import BytesIO
 
 try:
-    from uniitest.mock import patch
+    from unittest.mock import patch
 except ImportError:
     from mock import patch
 
