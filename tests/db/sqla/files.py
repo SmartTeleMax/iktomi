@@ -4,14 +4,20 @@ from sqlalchemy import Column, Integer, VARBINARY, orm, create_engine
 from sqlalchemy.schema import MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from iktomi.db.sqla.declarative import AutoTableNameMeta
-from iktomi.unstable.db.files import TransientFile, PersistentFile, \
+from iktomi.db.files import TransientFile, PersistentFile, \
                                      FileManager
-from iktomi.unstable.db.sqla.files import FileProperty, filesessionmaker
+import iktomi.db.sqla.files
+from iktomi.db.sqla.files import FileProperty, filesessionmaker
 
 
 Base = declarative_base(metaclass=AutoTableNameMeta)
 
 CustomBase = declarative_base(metaclass=AutoTableNameMeta)
+
+try:
+    from unittest import mock
+except:
+    import mock
 
 
 class ObjWithFile(Base):
@@ -265,7 +271,7 @@ class SqlaFilesTests(unittest.TestCase):
             fp.write(b'test1')
         self.db.add(obj)
         self.db.commit()
-        self.assertEqual(obj.file_by_id_name, 
+        self.assertEqual(obj.file_by_id_name,
                          self.Model.file_by_id.name_template.format(item=obj))
         pf1 = obj.file_by_id
 
@@ -383,6 +389,46 @@ class SqlaFilesTests(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, make)
 
+    def test_detached_object(self):
+        obj = self.Model()
+        self.db.add(obj)
+        self.db.commit()
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write(b'test')
+        self.db.commit()
+        # cleanup self.Model.file._states.items() to get the result
+        # from scratch, not from cache
+        obj_id = obj.id
+        obj = None
+        gc.collect()
+        obj = self.db.query(self.Model).get(obj_id)
+
+        with mock.patch.object(iktomi.db.sqla.files,
+                               'object_session', return_value=None):
+            with self.assertRaises(RuntimeError) as exc:
+                obj.file
+            self.assertEqual('Object is detached', str(exc.exception))
+
+    def test_absent_file_manager(self):
+        obj = self.Model()
+        del self.db.file_manager
+        self.db.add(obj)
+        self.db.commit()
+        obj.file = f = self.file_manager.new_transient()
+        with open(f.path, 'wb') as fp:
+            fp.write(b'test')
+        self.db.commit()
+        # cleanup self.Model.file._states.items() to get the result
+        # from scratch, not from cache
+        obj_id = obj.id
+        obj = None
+        gc.collect()
+        obj = self.db.query(self.Model).get(obj_id)
+
+        with self.assertRaises(RuntimeError) as exc:
+            obj.file
+        self.assertEqual("Session doesn't support file management", str(exc.exception))
 
 class SqlaFilesTestsSubclass(SqlaFilesTests):
 

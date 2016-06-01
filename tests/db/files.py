@@ -1,5 +1,5 @@
 import unittest, os, tempfile, shutil
-from iktomi.unstable.db.files import TransientFile, PersistentFile, \
+from iktomi.db.files import TransientFile, PersistentFile, \
                                      FileManager, ReadonlyFileManager
 from webob import Request
 from io import BytesIO
