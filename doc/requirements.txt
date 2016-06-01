@@ -1,2 +1,0 @@
-webob>1.1b1
-sqlalchemy
