@@ -7,29 +7,58 @@ class Resizer(object):
         self.expand = expand
         self.filter = filter
 
+    def do__crop(self, img, transformation, params):
+        return img.crop(params)
+
+    def do__resize(self, img, transformation, params):
+        return img.resize(params, self.filter)
+
+    def new_size__resize(self, size, target_size, params):
+        return params
+
+    def new_size__crop(self, size, target_size, params):
+        return (params[2] - params[0], params[3] - params[1])
+
     def transformations(self, size, target_size): # pragma: no cover
-        # should return a list of JSON-serializable commands
-        # that are processed with transform method
+        '''
+        Method describing transformations applied to the image,
+        must be redefined in subclasses.
+
+        Should return a list of JSON-serializable commands
+        that are processed with transform method.
+        Transformations can be dumped and applied on different place,
+        for example, in Javascript
+        '''
         raise NotImplementedError
 
     def transform(self, img, transformation, params):
-        # transformations MUST be idempotent
-        if transformation == 'crop':
-            return img.crop(params)
-        elif transformation == 'resize':
-            return img.resize(params, self.filter)
-        else: # pragma: no cover
-            raise NotImplementedError(transformation)
+        '''
+        Apply transformations to the image.
+
+        New transformations can be defined as methods::
+
+            def do__transformationname(self, img, transformation, params):
+                'returns new image with transformation applied'
+                ...
+
+            def new_size__transformationname(self, size, target_size, params):
+                'dry run, returns a size of image if transformation is applied'
+                ...
+        '''
+        # Transformations MUST be idempotent.
+        # The limitation is caused by implementation of
+        # image upload in iktomi.cms.
+        # The transformation can be applied twice:
+        # on image upload after crop (when TransientFile is created)
+        # and on object save (when PersistentFile is created).
+        method = getattr(self, 'do__' + transformation)
+        return method(img, transformation, params)
 
     def get_target_size(self, size, target_size):
         transforms = self.transformations(size, target_size)
         for transformation, params in transforms:
-            if transformation == 'resize':
-                size = params
-            elif transformation == 'crop':
-                size = (params[2] - params[0], params[3] - params[1])
-            else: # pragma: no cover
-                raise NotImplementedError(transformation)
+            method = getattr(self, 'new_size__' + transformation)
+            size = method(size, target_size, params)
         return size
 
     def __call__(self, img, target_size):
@@ -120,7 +149,7 @@ class ResizeMixed(Resizer):
     is vertical or horizontal.
 
     :param rate: multiplier to height to tune a proportion dividing
-    horisontal images from verticlals. Dy default is equal to 1 (1:1).
+    horisontal images from verticals. Dy default is equal to 1 (1:1).
     '''
 
     def __init__(self, hor_resize, vert_resize, rate=1):
@@ -129,6 +158,7 @@ class ResizeMixed(Resizer):
         self.rate = rate
 
     def get_resizer(self, size, target_size):
+        '''Choose a resizer depending an image size'''
         sw, sh = size
         if sw >= sh * self.rate:
             return self.hor_resize
