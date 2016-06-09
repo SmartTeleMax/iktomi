@@ -22,7 +22,7 @@ def deprecated(comment=None):
             message = "Call to deprecated function {}.".format(func.__name__)
             if comment is not None:
                 message += ' ' + comment
-            warnings.warn(message, category=DeprecationWarning)
+            warnings.warn(message, category=DeprecationWarning, stacklevel=2)
             return func(*args, **kwargs)
         return new_func
     return deco
