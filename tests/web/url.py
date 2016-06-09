@@ -102,6 +102,10 @@ class URLTests(unittest.TestCase):
         #       We encode it according to RFC, but different client handle
         #       it in different ways: Chrome allows unicode and does not 
         #       encode/decode it at all, while Firefox handles it according RFC
+        self.assertEqual(u.qs_set(a=u'1'), u'http://xn--80aswg.xn--p1ai'
+                                    u'/%D1%83%D1%80%D0%BB/'
+                                    u'?q=%D0%BF%D0%BE%D0%B8%D1%81%D0%BA&a=1'
+                                    u'#%D1%8F%D0%BA%D0%BE%D1%80%D1%8C')
 
     def test_no_quote(self):
         u = URL(u'/урл/', host=u'сайт.рф', query={'q': u'поиск'}, fragment=u"якорь")
