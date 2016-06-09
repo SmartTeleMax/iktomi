@@ -66,13 +66,13 @@ class URL(str):
     #             string convertion values
     #     fragment - None or urlencoded string of text_type
 
-    def __new__(cls, path, query=None, host=None, port=None, schema=None,
-                fragment=None, show_host=True):
+    def __new__(cls, path=None, query=None, host=None, port=None, schema=None,
+                fragment=None, show_host=True, uri_path=None, uri_fragment=None):
         '''
         path - urlencoded string or unicode object (not encoded at all)
         '''
-        path = _decode_path(path)
-        fragment = _decode_path(fragment)
+        path = uri_path or _decode_path(path)
+        fragment = uri_fragment or _decode_path(fragment)
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
@@ -121,13 +121,15 @@ class URL(str):
                    port, parsed.scheme, fragment, show_host)
 
     def _copy(self, **kwargs):
-        path = kwargs.pop('path', self.path)
         kw = dict(query=self.query, host=self.host,
                   port=self.port, schema=self.schema,
-                  fragment=self.fragment,
                   show_host=self.show_host)
         kw.update(kwargs)
-        return self.__class__(path, **kw)
+        if 'path' not in kw:
+            kw['uri_path'] = self.path
+        if 'fragment' not in kw:
+            kw['uri_fragment'] = self.fragment
+        return self.__class__(**kw)
 
     def qs_set(self, *args, **kwargs):
         '''Set values in QuerySet MultiDict'''
