@@ -1,3 +1,30 @@
+0.5
+---
+
+* Python 3.5 support.
+* 97% test coverage,  multiple related issues had been discovered and fixed.
+* Moved some features from iktomi.unstable to corresponding modules.
+* Removed unused code: `iktomi.templates.mint`, `iktomi.forms.media`.
+* Refactored handling of argument in cli app.
+* Refactored URI/IRI encoding and decoding in `iktomi.web.url`.
+* Hash part support in url maps, url reverse and URL object.
+
+**Minor features:**
+
+* Paginator: orphan items detection and handling.
+* `anonymous` option for `construct_re` function, allowing to dump url maps to JS-readable regexp format.
+* Appplied fork-exec scheme for code reloading.
+* Moved M_ and N_ to iktomi.utils.i18n
+
+
+**Minor bugfixes:**
+
+* Fixed a bug with process termination
+* Raise NotImplementedError for FileManager accepting FileAttribute
+  as a base item.
+* Fixed a bug with relations on inherited classes in PublicQuery.
+* Fixed HTML cleanup for elements containing only another element with non-empty tail.
+
 0.4.4
 -----
 

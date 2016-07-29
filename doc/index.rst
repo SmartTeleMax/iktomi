@@ -2,7 +2,7 @@ Iktomi
 ==========
 
 Iktomi is a python package providing some basic tools for creating web applications.
-Iktomi is built on top of webob and supports Python 2.7.
+Iktomi is built on top of webob and supports Python 2.7 and Python 3.5.
 
 It contains few independent subpackages, you can use both, or just one of them:
 
