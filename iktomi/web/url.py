@@ -12,7 +12,7 @@ from .url_templates import urlquote
 from iktomi.utils.url import uri_to_iri_parts
 
 
-def construct_url(path, query, host, port, schema, fragment=None):
+def construct_url(path, query, host, port, scheme, fragment=None):
     query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
                             for k, v in six.iteritems(query))
              if query else '')
@@ -22,7 +22,7 @@ def construct_url(path, query, host, port, schema, fragment=None):
     if host:
         host = host.encode('idna').decode('utf-8')
         port = ':' + port if port else ''
-        return ''.join((schema, '://', host, port, path,  query, hash_part))
+        return ''.join((scheme, '://', host, port, path,  query, hash_part))
     else:
         return path + query + hash_part
 
@@ -46,8 +46,9 @@ else:# pragma: no cover
 
 # Note: you should probably not use unicode in fragment part of URL.
 #       We encode it according to RFC, but different client handle
-#       it in different ways: Chrome allows unicode and does not 
+#       it in different ways: Chrome allows unicode and does not
 #       encode/decode it at all, while Firefox handles it according RFC
+
 def _decode_path(path):
     if path is None:
         return None
@@ -66,7 +67,7 @@ class URL(str):
     #             string convertion values
     #     fragment - None or urlencoded string of text_type
 
-    def __new__(cls, path=None, query=None, host=None, port=None, schema=None,
+    def __new__(cls, path=None, query=None, host=None, port=None, scheme=None,
                 fragment=None, show_host=True, uri_path=None, uri_fragment=None):
         '''
         path - urlencoded string or unicode object (not encoded at all)
@@ -76,9 +77,9 @@ class URL(str):
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
-        schema = schema or 'http'
+        scheme = scheme or 'http'
         _self = construct_url(path, query, host if show_host else '',
-                              port, schema, fragment)
+                              port, scheme, fragment)
         self = str.__new__(cls, _self)
         self.path = path
         self.query = query
@@ -86,11 +87,10 @@ class URL(str):
         # force decode idna from both encoded and decoded input
         self.host = host.encode('idna').decode('idna')
         self.port = port
-        self.schema = schema
+        self.scheme = scheme
         self.fragment = fragment
         self.show_host = show_host
         return self
-
 
     @classmethod
     def from_url(cls, url, show_host=True):
@@ -120,9 +120,12 @@ class URL(str):
                    query, host,
                    port, parsed.scheme, fragment, show_host)
 
+    def __reduce__(self):
+        return (self.__class__.from_url, (str(self),))
+
     def _copy(self, **kwargs):
         kw = dict(query=self.query, host=self.host,
-                  port=self.port, schema=self.schema,
+                  port=self.port, scheme=self.scheme,
                   show_host=self.show_host)
         kw.update(kwargs)
         if 'path' not in kw:
@@ -191,7 +194,7 @@ class URL(str):
 
         if self.host:
             port = u':' + self.port if self.port else u''
-            return u''.join((self.schema, '://', self.host, port, path,  query, hash_part))
+            return u''.join((self.scheme, '://', self.host, port, path,  query, hash_part))
         else:
             return path + query + hash_part
 

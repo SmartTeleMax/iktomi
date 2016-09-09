@@ -42,7 +42,7 @@ class Location(object):
         return ''.join(result)
 
     def build_subdomians(self, reverse):
-        subdomains = [getattr(x, 'primary', x) 
+        subdomains = [getattr(x, 'primary', x)
                       for x in self.subdomains
                       if getattr(x, 'primary', x)]
         return u'.'.join(subdomains)
@@ -146,7 +146,7 @@ class Reverse(object):
                 finalize_params = kwargs
             return self.__class__(self._scope, location, path=path, host=host,
                                   fragment=fragment,
-                                  bound_env=self._bound_env, 
+                                  bound_env=self._bound_env,
                                   ready=self._is_endpoint,
                                   parent=self._parent,
                                   finalize_params=finalize_params)
@@ -243,7 +243,7 @@ class Reverse(object):
 
             env.root.build_url('user.profile', user_id=1)
 
-        Checks that all necessary arguments are provided and all 
+        Checks that all necessary arguments are provided and all
         provided arguments are used.
         '''
         used_args, subreverse =  self._build_url_silent(_name, **kwargs)
@@ -299,7 +299,7 @@ class Reverse(object):
 
             return URL(path, host=domain or request_domain,
                        port=port if port != scheme_port else None,
-                       schema=request.scheme, fragment=self._fragment,
+                       scheme=request.scheme, fragment=self._fragment,
                        show_host=host and (domain != primary_domain \
                                            or port != request_port))
         return URL(path, host=domain, port=port,
@@ -321,7 +321,7 @@ class Reverse(object):
 
     def bind_to_env(self, bound_env):
         '''
-        Get a copy of the reverse, bound to `env` object. 
+        Get a copy of the reverse, bound to `env` object.
         Can be found in env.root attribute::
 
             # done in iktomi.web.app.Application
