@@ -122,7 +122,6 @@ class URL(str):
                    query, host,
                    port, parsed.scheme, fragment, show_host)
 
-    # XXX for correct copying and deepcopying
     def __reduce__(self):
         return (self.__class__.from_url, (str(self),))
 
