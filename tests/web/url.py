@@ -124,7 +124,7 @@ class URLTests(unittest.TestCase):
 
     def test_from_url(self):
         url = URL.from_url('http://example.com/url?a=1&b=2&b=3#anchor', show_host=False)
-        self.assertEqual(url.schema, 'http')
+        self.assertEqual(url.scheme, 'http')
         self.assertEqual(url.host, 'example.com')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
@@ -134,7 +134,7 @@ class URLTests(unittest.TestCase):
 
     def test_from_url_unicode(self):
         url = URL.from_url(u'http://сайт.рф/', show_host=False)
-        self.assertEqual(url.schema, 'http')
+        self.assertEqual(url.scheme, 'http')
         self.assertEqual(url.host, u'сайт.рф')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/')
@@ -142,7 +142,7 @@ class URLTests(unittest.TestCase):
 
     def test_from_url_path(self):
         url = URL.from_url('/url?a=1&b=2&b=3')
-        self.assertEqual(url.schema, 'http')
+        self.assertEqual(url.scheme, 'http')
         self.assertEqual(url.host, '')
         self.assertEqual(url.port, '')
         self.assertEqual(url.path, '/url')
