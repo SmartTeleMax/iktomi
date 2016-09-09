@@ -46,8 +46,9 @@ else:# pragma: no cover
 
 # Note: you should probably not use unicode in fragment part of URL.
 #       We encode it according to RFC, but different client handle
-#       it in different ways: Chrome allows unicode and does not 
+#       it in different ways: Chrome allows unicode and does not
 #       encode/decode it at all, while Firefox handles it according RFC
+
 def _decode_path(path):
     if path is None:
         return None
@@ -66,6 +67,8 @@ class URL(str):
     #             string convertion values
     #     fragment - None or urlencoded string of text_type
 
+    # XXX: maybe we should rename `schema` to `scheme`?
+    # https://tools.ietf.org/html/rfc2396#section-3.1
     def __new__(cls, path=None, query=None, host=None, port=None, schema=None,
                 fragment=None, show_host=True, uri_path=None, uri_fragment=None):
         '''
@@ -90,7 +93,6 @@ class URL(str):
         self.fragment = fragment
         self.show_host = show_host
         return self
-
 
     @classmethod
     def from_url(cls, url, show_host=True):
@@ -119,6 +121,10 @@ class URL(str):
         return cls(path,
                    query, host,
                    port, parsed.scheme, fragment, show_host)
+
+    # XXX for correct copying and deepcopying
+    def __reduce__(self):
+        return (self.__class__.from_url, (str(self),))
 
     def _copy(self, **kwargs):
         kw = dict(query=self.query, host=self.host,

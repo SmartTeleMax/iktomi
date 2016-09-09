@@ -10,6 +10,7 @@ else:
 from iktomi.web.reverse import URL
 from iktomi.web.url_templates import UrlTemplate
 from iktomi.web.url_converters import Converter, ConvertError
+import copy
 
 
 class URLTests(unittest.TestCase):
@@ -100,7 +101,7 @@ class URLTests(unittest.TestCase):
                                     u'#%D1%8F%D0%BA%D0%BE%D1%80%D1%8C')
         # Note: you should probably not use unicode in fragment part of URL.
         #       We encode it according to RFC, but different client handle
-        #       it in different ways: Chrome allows unicode and does not 
+        #       it in different ways: Chrome allows unicode and does not
         #       encode/decode it at all, while Firefox handles it according RFC
         self.assertEqual(u.qs_set(a=u'1'), u'http://xn--80aswg.xn--p1ai'
                                     u'/%D1%83%D1%80%D0%BB/'
@@ -182,6 +183,13 @@ class URLTests(unittest.TestCase):
         self.assertEqual(URL('/', fragment=None), '/')
         self.assertEqual(URL('/', fragment='') ,'/#')
 
+    def test_copy_url(self):
+        url_orig = URL.from_url(u"http://test.ru/тест?arg=value#anchor")
+        url_copy = copy.copy(url_orig)
+        self.assertEqual(str(url_orig), str(url_copy))
+
+        url_deepcopy = copy.deepcopy(url_orig)
+        self.assertEqual(str(url_orig), str(url_deepcopy))
 
 class UrlTemplateTest(unittest.TestCase):
     def test_match(self):
