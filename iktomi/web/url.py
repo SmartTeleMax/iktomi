@@ -44,11 +44,6 @@ else:# pragma: no cover
     # in PY3 is accepts and returns decoded str
     _unquote = unquote
 
-# Note: you should probably not use unicode in fragment part of URL.
-#       We encode it according to RFC, but different client handle
-#       it in different ways: Chrome allows unicode and does not
-#       encode/decode it at all, while Firefox handles it according RFC
-
 def _decode_path(path):
     if path is None:
         return None
@@ -60,7 +55,7 @@ def _decode_path(path):
 
 class URL(str):
 
-    # as for now:
+    # attributes stored in the object, as for now:
     #     path - urlencoded string of text_type (not bytes)
     #     host - unicode idna-decoded
     #     query - dict of unicode keys and unicode or implementing
@@ -70,10 +65,34 @@ class URL(str):
     def __new__(cls, path=None, query=None, host=None, port=None, scheme=None,
                 fragment=None, show_host=True, uri_path=None, uri_fragment=None):
         '''
-        path - urlencoded string or unicode object (not encoded at all)
+        path - url path part, unicode string (not encoded at all) of text_type
+            or urlencoded value of binary_type.
+        scheme - an url scheme, http by default
+        host - host without port, idna-encoded or not encoded unicode string
+        port - port number of string type
+        query - dict of text_type keys and values of text_type or supporting
+            convertion to text_type
+        fragment - fragment (hash) part of the url,
+            None (for no hash part)
+            or empty string (for #)
+            or unicode string (not encoded at all) of text_type
+            or urlencoded value of binary_type.
+        show_host - a boolean value indicating whether to show host part
+            (scheme, host, port)
+        uri_path, uri_fragment - same as path and fragment parameters
+            but accepts only urlencoded strings of text_type without guessing
+            whether it is already encoded or not.
+            Useful to avoid double quotting.
+            Overrides path and fragment parameters.
         '''
         path = uri_path or _decode_path(path)
+
+        # Note: it is bad idea to use unicode in fragment part in browsers.
+        #       We encode it according to RFC and Firefox does it as well,
+        #       but Chrome allows unicode and does not encode/decode it at all
+        #       and is uncompatible with RFC.
         fragment = uri_fragment or _decode_path(fragment)
+
         query = MultiDict(query) if query else MultiDict()
         host = host or ''
         port = port or ''
