@@ -16,6 +16,7 @@ replicate::
 
 from weakref import WeakSet
 from sqlalchemy.schema import Column
+from sqlalchemy.util import duck_type_collection
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm.util import identity_key
 from sqlalchemy.orm.attributes import manager_of_class, QueryableAttribute
@@ -82,14 +83,19 @@ def replicate_relation(source, target, attr, target_attr, cache=None):
     if attr.property.uselist:
         adapter = collection_adapter(value)
         if adapter:
-            # Convert any collection to flat iterable
-            value = adapter.adapt_like_to_iterable(value)
+            # XXX The magic passes below are adapted from logic in
+            # CollectionAttributeImpl.set() method without proper
+            # understanding.  The `elif` branch isn't even coverered by tests.
+            if hasattr(value, '_sa_iterator'):
+                value = value._sa_iterator()
+            elif duck_type_collection(value) is dict:
+                value = value.values()
         reflection = process_list(value, target_attr_model, cache=cache)
         impl = instance_state(target).get_impl(attr.key)
-        # Set any collection value from flat list
-        impl._set_iterable(instance_state(target),
-                           instance_dict(target),
-                           reflection)
+        impl.set(instance_state(target), instance_dict(target), reflection,
+                 # XXX We either have to convert reflection back to original
+                 # collection type or use this private parameter.
+                 _adapt=False)
     else:
         reflection = process_scalar(value, target_attr_model, cache=cache)
         setattr(target, attr.key, reflection)
