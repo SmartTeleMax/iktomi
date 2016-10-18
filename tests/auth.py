@@ -4,6 +4,7 @@ import logging
 from iktomi import web
 from iktomi.auth import CookieAuth, SqlaModelAuth, auth_required, encrypt_password
 from iktomi.utils import cached_property
+from iktomi.storage import LocalMemStorage
 
 __all__ = ['CookieAuthTests', 'SqlaModelAuthTests']
 
@@ -119,6 +120,35 @@ class CookieAuthTests(unittest.TestCase):
         self.assertTrue(response.headers['Set-Cookie']\
                         .startswith('auth=; Max-Age=0; Path=/;'))
 
+    def test_expiring_auth(self):
+        @web.request_filter
+        def make_env(env, data, nxt):
+            class Config(object):
+                AUTH_EXPIRES = 7 * 24 * 3600
+            env.cfg = Config()
+            return nxt(env, data)
+        self.app = make_env | self.app
+        expire_call_args = []
+        with mock.patch('iktomi.storage.LocalMemStorage.expire',
+                        create=True,
+                        side_effect=lambda k, t: expire_call_args.append((k, t))):
+            response = self.login('user name', '123')
+            self.assertEqual(response.status_int, 303)
+            self.assertEqual(response.headers['Location'], '/')
+            self.assertTrue('Set-Cookie' in response.headers)
+            # calling protected resource to ensure that expire was also called
+            # on get request
+            web.ask(self.app, '/b',
+                    headers={'Cookie': response.headers['Set-Cookie']})
+
+        self.assertEqual(len(expire_call_args), 2, msg="expire was not called")
+        auth_cookie = response.headers['Set-Cookie'].split(";")[0]
+        exp_key, exp_time = expire_call_args[0]
+        self.assertEqual(exp_key, auth_cookie.replace("=", ":"))
+        self.assertEqual(exp_time, 7 * 24 * 3600)
+        exp_key2, exp_time2 = expire_call_args[1]
+        self.assertEqual(exp_key2, exp_key)
+        self.assertEqual(exp_time, exp_time)
 
 class CookieAuthTestsOnStorageDown(unittest.TestCase):
 

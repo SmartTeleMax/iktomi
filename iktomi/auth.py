@@ -65,10 +65,12 @@ class CookieAuth(web.WebHandler):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
-            user_identity = self.storage.get(self._cookie_name + ':' +
-                                                    key)
+            storage_key = self._cookie_name + ':' + key
+            user_identity = self.storage.get(storage_key)
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
+                if hasattr(env, 'cfg') and hasattr(env.cfg, 'AUTH_EXPIRES'):
+                    self.storage.expire(storage_key, env.cfg.AUTH_EXPIRES)
         logger.debug('Authenticated: %r', user)
         env.user = user
         try:
@@ -78,16 +80,18 @@ class CookieAuth(web.WebHandler):
         return result
     __call__ = cookie_auth
 
-    def login_identity(self, user_identity, response=None, path='/'):
+    def login_identity(self, user_identity, response=None, path='/', ttl=None):
         key = binascii.hexlify(os.urandom(10)).decode('ascii')
         response = web.Response() if response is None else response
         response.set_cookie(self._cookie_name, key, path=path)
-        if not self.storage.set(self._cookie_name+':'+key,
-                                str(user_identity)):
+        storage_key = self._cookie_name+':'+key
+        if not self.storage.set(storage_key, str(user_identity)):
             logger.warning('storage "%r" is unreachable', self.storage)
             if self.crash_without_storage:
                 raise Exception(
                         'Storage {!r} is gone or down'.format(self.storage))
+        if ttl:
+            self.storage.expire(storage_key, ttl)
         return response
 
     def logout_user(self, request, response):
@@ -114,6 +118,10 @@ class CookieAuth(web.WebHandler):
                                                 env, **form.python_data)
                     if user_identity is not None:
                         response = HTTPSeeOther(location=next)
+                        if hasattr(env, 'cfg') and hasattr(env.cfg, 'AUTH_EXPIRES'):
+                            return self.login_identity(user_identity,
+                                                       response,
+                                                       ttl=env.cfg.AUTH_EXPIRES)
                         return self.login_identity(user_identity, response)
                     login_failed = True
             data.form = form
