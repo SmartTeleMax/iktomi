@@ -42,7 +42,8 @@ def identify_user(env, user_identity):
 class CookieAuthTests(unittest.TestCase):
 
     def setUp(self):
-        auth = self.auth = CookieAuth(get_user_identity, identify_user)
+        auth = self.auth = CookieAuth(get_user_identity, identify_user,
+                                      expire_time = 7 * 24 * 3600)
         def anonymouse(env, data):
             self.assertTrue(hasattr(env, 'user'))
             self.assertEqual(env.user, None)
@@ -121,34 +122,35 @@ class CookieAuthTests(unittest.TestCase):
                         .startswith('auth=; Max-Age=0; Path=/;'))
 
     def test_expiring_auth(self):
-        @web.request_filter
-        def make_env(env, data, nxt):
-            class Config(object):
-                AUTH_EXPIRES = 7 * 24 * 3600
-            env.cfg = Config()
-            return nxt(env, data)
-        self.app = make_env | self.app
-        expire_call_args = []
-        with mock.patch('iktomi.storage.LocalMemStorage.expire',
-                        create=True,
-                        side_effect=lambda k, t: expire_call_args.append((k, t))):
+        set_call_args = []
+        def set_mock(key, value, time):
+            set_call_args.append((key, value, time))
+            return True
+
+        with mock.patch('iktomi.storage.LocalMemStorage.set',
+                        side_effect=set_mock):
             response = self.login('user name', '123')
             self.assertEqual(response.status_int, 303)
             self.assertEqual(response.headers['Location'], '/')
             self.assertTrue('Set-Cookie' in response.headers)
+            # checking set was called with right arguments
+            self.assertEqual(len(set_call_args), 1, msg="set was not called")
+            auth_cookie = response.headers['Set-Cookie'].split(";")[0]
+            key, value, time = set_call_args[0]
+            self.assertEqual(key, auth_cookie.replace("=", ":"))
+            self.assertEqual(time, 7 * 24 * 3600)
             # calling protected resource to ensure that expire was also called
             # on get request
-            web.ask(self.app, '/b',
-                    headers={'Cookie': response.headers['Set-Cookie']})
-
-        self.assertEqual(len(expire_call_args), 2, msg="expire was not called")
-        auth_cookie = response.headers['Set-Cookie'].split(";")[0]
-        exp_key, exp_time = expire_call_args[0]
-        self.assertEqual(exp_key, auth_cookie.replace("=", ":"))
-        self.assertEqual(exp_time, 7 * 24 * 3600)
-        exp_key2, exp_time2 = expire_call_args[1]
-        self.assertEqual(exp_key2, exp_key)
-        self.assertEqual(exp_time, exp_time)
+            with mock.patch('iktomi.storage.LocalMemStorage.get',
+                            return_value=value):
+                web.ask(self.app, '/b',
+                        headers={'Cookie': response.headers['Set-Cookie']})
+            # checking set was expire time was renewed with same arguments
+            self.assertEqual(len(set_call_args), 2, msg="set was not called")
+            key2, value2, time2 = set_call_args[1]
+            self.assertEqual(key2, key)
+            self.assertEqual(value2, value)
+            self.assertEqual(time2, time)
 
 class CookieAuthTestsOnStorageDown(unittest.TestCase):
 
