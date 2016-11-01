@@ -53,22 +53,24 @@ class CookieAuth(web.WebHandler):
 
     def __init__(self, get_user_identity, identify_user, storage=None,
                  cookie_name='auth', login_form=LoginForm,
-                 crash_without_storage=True):
+                 crash_without_storage=True, expire_time=0):
         self.get_user_identity = get_user_identity
         self.identify_user = identify_user
         self._cookie_name = cookie_name
         self._login_form = login_form
         self.storage = LocalMemStorage() if storage is None else storage
         self.crash_without_storage = crash_without_storage
+        self.expire_time = expire_time
 
     def cookie_auth(self, env, data):
         user = None
         if self._cookie_name in env.request.cookies:
             key = env.request.cookies[self._cookie_name]
-            user_identity = self.storage.get(self._cookie_name + ':' +
-                                                    key)
+            storage_key = self._cookie_name + ':' + key
+            user_identity = self.storage.get(storage_key)
             if user_identity is not None:
                 user = self.identify_user(env, user_identity)
+                self.storage.set(storage_key, user_identity, self.expire_time)
         logger.debug('Authenticated: %r', user)
         env.user = user
         try:
@@ -82,8 +84,9 @@ class CookieAuth(web.WebHandler):
         key = binascii.hexlify(os.urandom(10)).decode('ascii')
         response = web.Response() if response is None else response
         response.set_cookie(self._cookie_name, key, path=path)
-        if not self.storage.set(self._cookie_name+':'+key,
-                                str(user_identity)):
+        storage_key = self._cookie_name+':'+key
+        if not self.storage.set(storage_key, str(user_identity),
+                                self.expire_time):
             logger.warning('storage "%r" is unreachable', self.storage)
             if self.crash_without_storage:
                 raise Exception(

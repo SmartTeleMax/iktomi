@@ -7,7 +7,7 @@ install_requires = ['six']
 extras_requires = {
     'web': ['webob'],
     'fcgi': ['flup6'],
-    'sqla': ['sqlalchemy>=1.0.6'],
+    'sqla': ['sqlalchemy~=1.0.6'],
     'memcached': ['python-memcached'],
     'cleanhtml': ['lxml'],
     'renderhtml': ['jinja2'],
