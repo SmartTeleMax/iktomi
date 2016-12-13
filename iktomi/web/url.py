@@ -104,7 +104,10 @@ class URL(str):
         self.query = query
 
         # force decode idna from both encoded and decoded input
-        self.host = host.encode('idna').decode('idna')
+        try:
+            self.host = host.encode('idna').decode('idna')
+        except UnicodeError:
+            self.host = host
         self.port = port
         self.scheme = scheme
         self.fragment = fragment

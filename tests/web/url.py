@@ -162,6 +162,17 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.get_readable(),
                          u'http://сайт.рф/урл/?q=поиск#якорь')
 
+    def test_broken_idna(self):
+        src = u'http://xn--.xn--p1ai/'
+
+        url = URL.from_url(src.encode('utf-8'))
+        self.assertEqual(url.get_readable(),
+                         u'http://xn--.рф/')
+
+        url = URL.from_url(src)
+        self.assertEqual(url.get_readable(),
+                         u'http://xn--.рф/')
+
     def test_from_url_broken_unicode(self):
         url = URL.from_url('/search%E3%81?q=hello%E3%81#hash%E3%81')
         self.assertEqual(url.get_readable(),
