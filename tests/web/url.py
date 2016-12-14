@@ -168,6 +168,7 @@ class URLTests(unittest.TestCase):
         url = URL.from_url(src.encode('utf-8'))
         self.assertEqual(url.get_readable(),
                          u'http://xn--.рф/')
+        self.assertEqual(str(url), src)
 
         url = URL.from_url(src)
         self.assertEqual(url.get_readable(),

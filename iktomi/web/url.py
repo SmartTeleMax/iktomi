@@ -22,7 +22,7 @@ def construct_url(path, query, host, port, scheme, fragment=None):
     if host:
         host = host.encode('idna').decode('utf-8')
         port = ':' + port if port else ''
-        return ''.join((scheme, '://', host, port, path,  query, hash_part))
+        return ''.join((scheme, '://', host, port, path, query, hash_part))
     else:
         return path + query + hash_part
 
@@ -44,6 +44,7 @@ else:# pragma: no cover
     # in PY3 is accepts and returns decoded str
     _unquote = unquote
 
+
 def _decode_path(path):
     if path is None:
         return None
@@ -51,6 +52,13 @@ def _decode_path(path):
         path = path.decode('utf-8', errors="replace") # XXX
     path = urlquote(path)
     return path
+
+
+def safe_idna(s):
+    try:
+        return s.encode('idna').decode('idna')
+    except UnicodeError:
+        return s
 
 
 class URL(str):
@@ -104,10 +112,7 @@ class URL(str):
         self.query = query
 
         # force decode idna from both encoded and decoded input
-        try:
-            self.host = host.encode('idna').decode('idna')
-        except UnicodeError:
-            self.host = host
+        self.host = '.'.join(safe_idna(x) for x in host.split('.'))
         self.port = port
         self.scheme = scheme
         self.fragment = fragment
@@ -216,7 +221,7 @@ class URL(str):
 
         if self.host:
             port = u':' + self.port if self.port else u''
-            return u''.join((self.scheme, '://', self.host, port, path,  query, hash_part))
+            return u''.join((self.scheme, '://', self.host, port, path, query, hash_part))
         else:
             return path + query + hash_part
 
