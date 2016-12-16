@@ -1,3 +1,13 @@
+0.5.1
+-----
+
+* Auth expiration feature.
+
+**Minor bugfixes:**
+
+* Fixed copy and deepcopy bug for URL.
+* Fixed unhandled exception caused by broken idna encoding in URL.
+
 0.5
 ---
 
