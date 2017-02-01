@@ -118,3 +118,6 @@ class Form(six.with_metaclass(FormValidationMetaClass, object)):
         if compact:
             data = MultiDict([(k, v) for k, v in data.items() if v])
         return data
+
+    def get_help(self):
+        return None

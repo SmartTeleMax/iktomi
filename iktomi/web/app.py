@@ -69,6 +69,10 @@ class AppEnvironment(StorageFrame):
     def create(cls, *args, **kwargs):
         return VersionedStorage(cls, *args, **kwargs)
 
+    # override this method with configured HelpLoader.get_help to be able to use
+    # help messages in admin
+    def get_help(*args, **kwargs):
+        return ''
 
 class Application(object):
     '''
