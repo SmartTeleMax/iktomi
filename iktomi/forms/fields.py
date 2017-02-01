@@ -41,6 +41,8 @@ class BaseField(object):
     #: Short description of the field
     hint = None
 
+    help = ''
+
     def __init__(self, name, conv=None, parent=None, permissions=None, **kwargs):
         if self._obsolete & set(kwargs):
             raise TypeError(
@@ -94,6 +96,10 @@ class BaseField(object):
         `None` if there is no error.
         '''
         return self.form.errors.get(self.input_name)
+
+    @property
+    def help_message(self):
+        return self.help or self.form.get_help(self.input_name)
 
     @cached_property
     def clean_value(self):
