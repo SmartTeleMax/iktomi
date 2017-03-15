@@ -15,7 +15,7 @@ test-%: devbuild-%
 	venv-${*}/bin/py.test $(name) -q -r fEsxXw --strict
 
 coverage-%: devbuild-%
-	venv-${*}/bin/py.test tests --cov-report=term-missing --cov=venv-${*}/lib/${*}/site-packages/iktomi | sed -e "s/^venv-${*}\\/lib\\/${*}\\/site-packages\\///"
+	venv-${*}/bin/py.test tests --cov=venv-${*}/lib/${*}/site-packages/iktomi | sed -e "s/^venv-${*}\\/lib\\/${*}\\/site-packages\\///"
 
 test2: test-python2.7
 test3: test-python3.5
