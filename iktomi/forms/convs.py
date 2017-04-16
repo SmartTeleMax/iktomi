@@ -659,8 +659,9 @@ class List(Converter):
         if value is None:
             value = []
         result = OrderedDict()
-        for index, item in enumerate(value):
-            result[str(index+1)] = item
+        if value is not None:
+            for index, item in enumerate(value):
+                result[str(index+1)] = item
         return result
 
     def to_python(self, value):
