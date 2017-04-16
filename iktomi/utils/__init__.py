@@ -53,7 +53,12 @@ class cached_property(object):
     def __get__(self, inst, cls):
         if inst is None:
             return self
-        result = self.method(inst)
+        try:
+            result = self.method(inst)
+        except AttributeError:
+            exc_info = sys.exc_info()
+            raise RuntimeError, exc_info[1], exc_info[2]
+
         setattr(inst, self.name, result)
         return result
 
@@ -65,9 +70,14 @@ class cached_class_property(object):
     def __init__(self, method, name=None):
         self.method = method
         self.name = name or method.__name__
+        self.__doc__ = method.__doc__
 
     def __get__(self, inst, cls):
-        result = self.method(cls)
+        try:
+            result = self.method(cls)
+        except AttributeError:
+            exc_info = sys.exc_info()
+            raise RuntimeError, exc_info[1], exc_info[2]
         setattr(cls, self.name, result)
         return result
 
