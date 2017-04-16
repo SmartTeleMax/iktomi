@@ -141,7 +141,11 @@ class Cleaner(clean.Cleaner):
 
     def extra_clean(self, doc):
         for el in doc.xpath('//*[@href]'):
-            scheme, netloc, path, query, fragment = urlsplit(el.attrib['href'])
+            href = el.attrib['href']
+            if href and not href[0].isalpha():
+                el.drop_tag()
+                continue
+            scheme, netloc, path, query, fragment = urlsplit(href)
             if scheme and scheme not in self.allowed_protocols:
                 el.drop_tag()
 
