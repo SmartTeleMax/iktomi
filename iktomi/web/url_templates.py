@@ -12,10 +12,16 @@ from .url_converters import default_converters, ConvertError
 logger = logging.getLogger(__name__)
 
 
-def urlquote(value):
+def urlquote(value, safe='/'):
+    """
+    By default, '/' sign is treated as `safe` in quote function, because it
+    is used as separator for hierarchy components. It is always true for
+    `path` part of url, but in query strings we should be able to escape it
+    because there can be other urls, for example.
+    """
     if isinstance(value, six.integer_types):
         value = six.text_type(value)
-    return quote(value.encode('utf-8'))
+    return quote(value.encode('utf-8'), safe=safe)
 
 
 class UrlBuildingError(Exception): pass
