@@ -13,7 +13,7 @@ from iktomi.utils.url import uri_to_iri_parts
 
 
 def construct_url(path, query, host, port, scheme, fragment=None):
-    query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v))
+    query = ('?' + '&'.join('{}={}'.format(urlquote(k), urlquote(v, safe=''))
                             for k, v in six.iteritems(query))
              if query else '')
 

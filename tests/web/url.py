@@ -63,6 +63,11 @@ class URLTests(unittest.TestCase):
         self.assertEqual(url.qs_set([('a', '1'), ('c', '2')]), '/?b=3&a=1&c=2')
         self.assertRaises(TypeError, url.qs_set, [('a', 1)], z=0)
 
+        url = URL('/')
+        next_url = 'http://foo.bar'
+        url = url.qs_set(next=next_url)
+        self.assertEqual(url, '/?next=foo%3A%2F%2Fbar')
+
     def test_param_add_args(self):
         'Add param to url'
         url = URL('/')
