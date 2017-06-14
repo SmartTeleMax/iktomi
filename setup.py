@@ -7,7 +7,7 @@ install_requires = ['six']
 extras_requires = {
     'web': ['webob'],
     'fcgi': ['flup6'],
-    'sqla': ['sqlalchemy~=1.0.6'],
+    'sqla': ['sqlalchemy'],
     'memcached': ['python-memcached'],
     'cleanhtml': ['lxml'],
     'renderhtml': ['jinja2'],
@@ -34,7 +34,7 @@ extras_requires['tests'] = tests_requires
 
 setup(
     name='iktomi',
-    version='0.5.1',
+    version='0.5.2',
     packages=['iktomi',
               'iktomi.utils',
               'iktomi.forms',
