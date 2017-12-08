@@ -120,7 +120,7 @@ def is_relation_replicatable(attr):
         # Many-to-many. Usualy one side is short list and other is long or
         # absent. Reflect if not dynamic, other cases should be excluded
         # manually.
-        assert attr.property.lazy in (True, False, 'dynamic')
+        assert attr.property.lazy in (True, False, 'dynamic', 'select')
         return attr.property.lazy!='dynamic'
     elif attr.property.direction is MANYTOONE:
         # Many-to-one and one-to-one with FK pointing from from this side to
