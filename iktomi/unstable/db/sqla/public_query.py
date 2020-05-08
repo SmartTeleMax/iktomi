@@ -150,7 +150,6 @@ class PublicQuery(Query):
     def _add_eager_criterion(self, context, statement):
         for attr, value in context.attributes.items():
             if type(attr) is tuple and attr[0] == 'eager_row_processor':
-                mapper, prop = attr[1]
                 alias = value.aliased_class
                 crit = self._entity_criterion(alias)
                 if crit is not None:
