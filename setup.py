@@ -7,7 +7,7 @@ install_requires = ['six']
 extras_requires = {
     'web': ['webob'],
     'fcgi': ['flup6'],
-    'sqla': ['sqlalchemy'],
+    'sqla': ['sqlalchemy', 'packaging'],
     'memcached': ['python-memcached'],
     'cleanhtml': ['lxml'],
     'renderhtml': ['jinja2'],
@@ -16,10 +16,10 @@ extras_requires = {
 
 tests_requires = [
     'pymysql',
-    'testalchemy==0.4',
+    'testalchemy @ https://github.com/ods/testalchemy/tarball/master#egg=testalchemy-0.4',
     'pytest',
     'pytest-cov',
-    'mockcache==1.0.3_alpha',
+    'mockcache @ https://github.com/lunant/mockcache/tarball/master#egg=mockcache-1.0.3_alpha',
     'webtest',
 ]
 if sys.version_info[0] < 3:
@@ -34,7 +34,7 @@ extras_requires['tests'] = tests_requires
 
 setup(
     name='iktomi',
-    version='0.5.2',
+    version='0.6',
     packages=['iktomi',
               'iktomi.utils',
               'iktomi.forms',
