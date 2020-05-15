@@ -4,7 +4,7 @@ python:
   - 3.5
 
 install:
-  - pip install -e .[tests,web,fcgi,sqla,memcached,cleanhtml,renderhtml,images] --process-dependency-links
+  - pip install -e .[tests,web,fcgi,sqla,memcached,cleanhtml,renderhtml,images]
   - pip install --upgrade .
 
 script:
