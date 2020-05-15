@@ -1,9 +1,36 @@
+import sqlalchemy
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.util import AliasedClass
 from sqlalchemy.sql import ClauseElement, Join
 from sqlalchemy.sql.selectable import FromGrouping
 from sqlalchemy import cast, Boolean
 from sqlalchemy.orm.util import _class_to_mapper
+from sqlalchemy import event
+from sqlalchemy import inspect
+from packaging.version import parse as version
+
+
+def init_filter_event(prop_name):
+    @event.listens_for(Query, "before_compile", retval=True)
+    def before_compile(query):
+        """A query compilation rule that will add limiting criteria for every
+        subclass of HasPrivate"""
+        if query._execution_options.get("include_private", False):
+            return query
+
+        for ent in query.column_descriptions:
+            entity = ent['entity']
+            if entity is None:
+                continue
+            insp = inspect(ent['entity'])
+            mapper = getattr(insp, 'mapper', None)
+            if mapper and prop_name in dir(mapper.class_):
+                query = query.enable_assertions(False).filter(
+                    ent['entity'].public == True)
+
+        return query
+    
+    return before_compile
 
 
 class PublicQuery(Query):
@@ -17,9 +44,28 @@ class PublicQuery(Query):
 
     A version from recipe combined with our own vision
     http://www.sqlalchemy.org/trac/wiki/UsageRecipes/PreFilteredQuery
+
+    UPD in v0.6
+    Old recipe is outdated, we should use new one
+    https://github.com/sqlalchemy/sqlalchemy/wiki/FilteredQuery
+
+    Old functionality is untouched for compatibility
     '''
 
     property_name = 'public'
+
+    # Sqlalchemy version should be lower than this version to be able
+    # to handle all cases correctly
+    # For newer versions we will use more modern and simpler solution
+    # that cannot filter eager loading via joinedjoad
+    max_sqla_version = '1.2'
+
+    def __init__(self, *args, **kwargs):
+        if version(sqlalchemy.__version__) >= version(self.max_sqla_version):
+            init_filter_event(self.property_name)
+        super(PublicQuery, self).__init__(*args, **kwargs)
+        
+
 
     def get(self, ident):
         prop = self.property_name
