@@ -13,7 +13,7 @@ class Cleaner(clean.Cleaner):
     allow_external_src = False
     allowed_protocols = frozenset(['http', 'https', 'mailto'])
     # None to allow all classes
-    allow_classes = {}
+    allow_classes = None
     attr_val_is_uri = ['href', 'src', 'cite', 'action', 'longdesc']
     a_without_href = True
     # False : no tags wrapping;

@@ -49,7 +49,9 @@ class FileEventHandlers(object):
 
     def _2persistent(self, target, transient):
         session = object_session(target)
-        persistent_name = getattr(target, self.prop.attribute_name).decode('utf-8')
+        persistent_name = getattr(target, self.prop.attribute_name)
+        if isinstance(persistent_name, six.binary_type):
+            persistent_name = persistent_name.decode('utf-8')
         attr = getattr(type(target), self.prop.key)
         file_manager = session.find_file_manager(attr)
         persistent = file_manager.get_persistent(persistent_name,
@@ -130,8 +132,9 @@ class FileAttribute(object):
                     raise RuntimeError(
                             "Session doesn't support file management")
                 file_manager = session.find_file_manager(self)
-                value = file_manager.get_persistent(value.decode('utf-8'),
-                                                    self.persistent_cls)
+                if isinstance(value, six.binary_type):
+                    value = value.decode('utf-8')
+                value = file_manager.get_persistent(value, self.persistent_cls)
 
                 for file_attr, target_attr in self.cache_properties.items():
                     setattr(value, file_attr, getattr(inst, target_attr))
@@ -158,9 +161,14 @@ class FileAttribute(object):
             #     looks like a hack
             name = value.manager.new_file_name(
                     self.name_template, inst, ext, old_name)
-            setattr(inst, self.attribute_name, name.encode('utf-8'))
+            if six.PY2:
+                name = name.encode('utf-8')
+            setattr(inst, self.attribute_name, name)
         elif isinstance(value, PersistentFile):
-            setattr(inst, self.attribute_name, value.name.encode('utf-8'))
+            name = value.name
+            if six.PY2:
+                name = name.encode('utf-8')
+            setattr(inst, self.attribute_name, name)
 
             for file_attr, target_attr in self.cache_properties.items():
                 setattr(inst, target_attr, getattr(value, file_attr))
