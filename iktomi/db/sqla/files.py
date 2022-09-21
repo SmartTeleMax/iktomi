@@ -70,6 +70,7 @@ class FileEventHandlers(object):
         if changes.deleted:
             old_name = self._get_file_name_to_delete(target, changes)
             if old_name:
+                old_name = old_name.decode('utf-8')
                 session = object_session(target)
 
                 file_attr = getattr(target.__class__, self.prop.key)
