@@ -16,10 +16,8 @@ extras_requires = {
 
 tests_requires = [
     'pymysql',
-    'testalchemy @ https://github.com/ods/testalchemy/tarball/master#egg=testalchemy-0.4',
     'pytest',
     'pytest-cov',
-    'mockcache @ https://github.com/lunant/mockcache/tarball/master#egg=mockcache-1.0.3_alpha',
     'webtest',
 ]
 if sys.version_info[0] < 3:
@@ -34,7 +32,7 @@ extras_requires['tests'] = tests_requires
 
 setup(
     name='iktomi',
-    version='0.9',
+    version='0.10',
     packages=['iktomi',
               'iktomi.utils',
               'iktomi.forms',
