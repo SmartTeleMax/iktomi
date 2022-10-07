@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 class FileEventHandlers(object):
 
+    file_name_encoding = 'utf-8'
+
     def __init__(self, prop):
         self.prop = prop
 
@@ -49,7 +51,8 @@ class FileEventHandlers(object):
 
     def _2persistent(self, target, transient):
         session = object_session(target)
-        persistent_name = getattr(target, self.prop.attribute_name).decode('utf-8')
+        persistent_name = getattr(target, self.prop.attribute_name)
+        persistent_name = self._decode_file_name(persistent_name)
         attr = getattr(type(target), self.prop.key)
         file_manager = session.find_file_manager(attr)
         persistent = file_manager.get_persistent(persistent_name,
@@ -59,6 +62,12 @@ class FileEventHandlers(object):
         file_manager = session.find_file_manager(file_attr)
 
         return file_manager.store(transient, persistent)
+
+    def _decode_file_name(self, file_name):
+        if isinstance(file_name, bytes):
+            return file_name.decode(self.file_name_encoding)
+        else:
+            return file_name
 
     def before_insert(self, mapper, connection, target):
         self._store_transient(target)
@@ -70,7 +79,7 @@ class FileEventHandlers(object):
         if changes.deleted:
             old_name = self._get_file_name_to_delete(target, changes)
             if old_name:
-                old_name = old_name.decode('utf-8')
+                old_name = self._decode_file_name(old_name)
                 session = object_session(target)
 
                 file_attr = getattr(target.__class__, self.prop.key)
@@ -83,16 +92,16 @@ class FileEventHandlers(object):
 
     def _get_file_name_to_delete(self, target, changes):
         if changes and changes.deleted:
-            filename = changes.deleted[0]
-            if filename is not None:
-                return filename.decode('utf-8')
+            file_name = changes.deleted[0]
+            if file_name is not None:
+                return self._decode_file_name(file_name)
 
     def after_delete(self, mapper, connection, target):
         changes = self._get_history(target)
         old_name = self._get_file_name_to_delete(target, changes)
         old_name = old_name or getattr(target, self.prop.attribute_name)
         if old_name is not None:
-            old_name = old_name.decode('utf-8')
+            old_name = self._decode_file_name(old_name)
             session = object_session(target)
 
             file_attr = getattr(target.__class__, self.prop.key)
