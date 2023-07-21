@@ -1,9 +1,15 @@
 from PIL import Image
 
+# pillow 10 support
+if hasattr(Image, "ANTIALIAS"):
+    ANTIALIAS = Image.ANTIALIAS
+else:
+    ANTIALIAS = Image.Resampling.LANCZOS
+
 
 class Resizer(object):
 
-    def __init__(self, expand=False, filter=Image.ANTIALIAS):
+    def __init__(self, expand=False, filter=ANTIALIAS):
         self.expand = expand
         self.filter = filter
 
