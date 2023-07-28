@@ -32,7 +32,7 @@ extras_requires['tests'] = tests_requires
 
 setup(
     name='iktomi',
-    version='0.11',
+    version='0.12',
     packages=['iktomi',
               'iktomi.utils',
               'iktomi.forms',

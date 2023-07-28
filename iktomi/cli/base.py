@@ -153,7 +153,10 @@ class Cli(object):
         for attr, func in funcs:
             func = getattr(self, attr)
             comm = attr.replace('command_', '', 1)
-            args = inspect.getargspec(func).args[1:]
+            if six.PY2:
+                args = inspect.getargspec(func).args[1:]
+            else:
+                args = inspect.getfullargspec(func).args[1:]
             args = (' [' + '] ['.join(args) + ']') if args else ''
 
             _help += "\t{} {}:{}{}\n".format(
