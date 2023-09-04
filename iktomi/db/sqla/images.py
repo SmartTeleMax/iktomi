@@ -114,8 +114,15 @@ class ImageEventHandlers(FileEventHandlers):
                 ext = os.path.splitext(base.name)[1]
                 session = object_session(target)
                 image_attr = getattr(target.__class__, self.prop.key)
-                name = session.find_file_manager(image_attr).new_file_name(
-                        self.prop.name_template, target, ext, '')
+                file_manager = session.find_file_manager(image_attr)
+                if not getattr(file_manager, "transient_root", False):
+                    return
+                name = file_manager.new_file_name(
+                    self.prop.name_template,
+                    target,
+                    ext,
+                    '',
+                )
                 setattr(target, self.prop.attribute_name, name)
 
                 persistent = self._2persistent(target, base)
